@@ -10,3 +10,5 @@ __pycache__/
 
 # Archivos de entorno (que pueden tener contraseñas)
 .env
+
+instance/
