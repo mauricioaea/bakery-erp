@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Punto de Venta - Panadería</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
+        }
+        .header {
+            background: #343a40;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .container {
+            display: flex;
+            height: calc(100vh - 60px);
+        }
+        .left-panel {
+            width: 70%;
+            padding: 20px;
+            background: white;
+            border-right: 1px solid #ddd;
+        }
+        .right-panel {
+            width: 30%;
+            padding: 20px;
+            background: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+        }
+        .search-box {
+            margin-bottom: 20px;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .product-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        .product-item {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .product-item:hover {
+            border-color: #007bff;
+            box-shadow: 0 0 5px rgba(0,123,255,0.5);
+        }
+        .product-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .product-price {
+            color: #28a745;
+        }
+        .ticket {
+            flex-grow: 1;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+            overflow-y: auto;
+        }
+        .ticket-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px dashed #ddd;
+        }
+        .ticket-total {
+            font-weight: bold;
+            font-size: 1.2em;
+            text-align: right;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 2px solid #333;
+        }
+        .checkout-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 15px;
+            font-size: 18px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+        }
+        .checkout-btn:hover {
+            background: #218838;
+        }
+        .method-payment {
+            margin-bottom: 15px;
+        }
+        .method-payment select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .back-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .back-btn:hover {
+            background: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏪 Punto de Venta - Panadería</h1>
+        <div>
+            <a href="{{ url_for('dashboard') }}" class="back-btn">Volver al Dashboard</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="left-panel">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Buscar producto por nombre o código de barras...">
+            </div>
+            <div class="product-list" id="productList">
+                <!-- Los productos se cargarán aquí -->
+            </div>
+        </div>
+        <div class="right-panel">
+            <div class="ticket" id="ticket">
+                <h3>Ticket de Venta</h3>
+                <div id="ticketItems">
+                    <!-- Los items del ticket se mostrarán aquí -->
+                </div>
+                <div class="ticket-total" id="ticketTotal">Total: $0.00</div>
+            </div>
+            <div class="method-payment">
+                <select id="metodoPago">
+                    <option value="efectivo">Efectivo</option>
+                    <option value="tarjeta">Tarjeta</option>
+                    <option value="transferencia">Transferencia</option>
+                </select>
+            </div>
+            <button class="checkout-btn" onclick="registrarVenta()">Registrar Venta</button>
+        </div>
+    </div>
+
+    <script>
+        let carrito = [];
+
+        // Buscar productos al escribir en el buscador
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const query = e.target.value;
+            if (query.length >= 2) {
+                buscarProductos(query);
+            } else {
+                document.getElementById('productList').innerHTML = '';
+            }
+        });
+
+        function buscarProductos(query) {
+            fetch(`/buscar_producto?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(productos => {
+                    const productList = document.getElementById('productList');
+                    productList.innerHTML = '';
+                    productos.forEach(producto => {
+                        const productItem = document.createElement('div');
+                        productItem.className = 'product-item';
+                        productItem.innerHTML = `
+                            <div class="product-name">${producto.nombre}</div>
+                            <div class="product-price">$${producto.precio.toFixed(2)}</div>
+                        `;
+                        productItem.addEventListener('click', () => agregarAlCarrito(producto));
+                        productList.appendChild(productItem);
+                    });
+                });
+        }
+
+        function agregarAlCarrito(producto) {
+            // Verificar si el producto ya está en el carrito
+            const itemExistente = carrito.find(item => item.id === producto.id);
+            if (itemExistente) {
+                itemExistente.cantidad += 1;
+            } else {
+                carrito.push({
+                    id: producto.id,
+                    nombre: producto.nombre,
+                    precio: producto.precio,
+                    cantidad: 1
+                });
+            }
+            actualizarTicket();
+        }
+
+        function actualizarTicket() {
+            const ticketItems = document.getElementById('ticketItems');
+            const ticketTotal = document.getElementById('ticketTotal');
+            ticketItems.innerHTML = '';
+            let total = 0;
+            carrito.forEach(item => {
+                const subtotal = item.precio * item.cantidad;
+                total += subtotal;
+                const itemElement = document.createElement('div');
+                itemElement.className = 'ticket-item';
+                itemElement.innerHTML = `
+                    <span>${item.nombre} x${item.cantidad}</span>
+                    <span>$${subtotal.toFixed(2)}</span>
+                `;
+                ticketItems.appendChild(itemElement);
+            });
+            ticketTotal.textContent = `Total: $${total.toFixed(2)}`;
+        }
+
+        function registrarVenta() {
+            if (carrito.length === 0) {
+                alert('El carrito está vacío');
+                return;
+            }
+            const metodoPago = document.getElementById('metodoPago').value;
+            fetch('/registrar_venta', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    carrito: carrito,
+                    metodo_pago: metodoPago
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Venta registrada exitosamente');
+                    carrito = [];
+                    actualizarTicket();
+                    document.getElementById('searchInput').value = '';
+                    document.getElementById('productList').innerHTML = '';
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al registrar la venta');
+            });
+        }
+    </script>
+</body>
+</html>
