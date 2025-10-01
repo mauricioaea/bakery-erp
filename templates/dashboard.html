@@ -86,7 +86,7 @@
 </head>
 <body>
     <div class="header">
-        <h1>🍞 Sistema de Gestión - Panadería</h1>
+        <h1>🍞 Sistema de Gestión - Panadería Semillas</h1>
         <div>
             Bienvenido, <strong>{{ username }}</strong> 
             <a href="{{ url_for('logout') }}" class="logout-btn">Cerrar Sesión</a>
@@ -106,10 +106,10 @@
                 <span class="available">¡Clic para empezar!</span>
             </div>
             
-            <div class="menu-item">
-                <h3>📦 Gestión de Productos</h3>
-                <p>Administrar inventario y precios</p>
-                <span class="coming-soon">Próximamente</span>
+            <div class="menu-item" onclick="window.location.href='{{ url_for('materias_primas') }}'">
+                <h3>📦 Gestión de Materias Primas</h3>
+                <p>Administrar ingredientes y costos</p>
+                <span class="available">¡Clic para empezar!</span>
             </div>
             
             <div class="menu-item">

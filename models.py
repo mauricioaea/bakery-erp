@@ -26,14 +26,17 @@ class Producto(db.Model):
     codigo_barras = db.Column(db.String(50), unique=True)
     activo = db.Column(db.Boolean, default=True)
 
+    
 class MateriaPrima(db.Model):
     __tablename__ = 'materias_primas'
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
-    unidad_medida = db.Column(db.String(20), nullable=False)  # 'kg', 'g', 'L', 'unidades'
+    proveedor = db.Column(db.String(100), nullable=True)  # Nuevo campo
+    unidad_medida = db.Column(db.String(20), nullable=False)
     stock_actual = db.Column(db.Float, default=0)
     stock_minimo = db.Column(db.Float, default=0)
     costo_promedio = db.Column(db.Float, default=0)
+    activo = db.Column(db.Boolean, default=True)  # Nuevo campo para borrado lógico
 
 class Receta(db.Model):
     __tablename__ = 'recetas'

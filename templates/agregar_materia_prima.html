@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agregar Materia Prima - Panadería</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f8f9fa;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .container {
+            padding: 30px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .form-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        input:focus, select:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+        .btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+        }
+        .btn:hover {
+            background: #218838;
+        }
+        .back-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .back-btn:hover {
+            background: #5a6268;
+        }
+        small {
+            color: #666;
+            font-size: 0.875em;
+        }
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+        .alert {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error-message {
+            color: #dc3545;
+            font-size: 0.875em;
+            margin-top: 5px;
+            display: none;
+        }
+        input:invalid {
+            border-color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>➕ Agregar Materia Prima</h1>
+        <div>
+            <a href="{{ url_for('materias_primas') }}" class="back-btn">← Volver a Materias Primas</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="form-container">
+            <!-- Mensajes Flash -->
+            <div class="flash-messages">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+
+            <form method="POST" id="materiaPrimaForm" onsubmit="return validarFormulario()">
+                <div class="form-group">
+                    <label for="nombre">Nombre de la Materia Prima:</label>
+                    <input type="text" id="nombre" name="nombre" required 
+                           placeholder="Ej: Harina de Trigo, Azúcar, Mantequilla...">
+                </div>
+
+                <div class="form-group">
+                    <label for="proveedor">Proveedor:</label>
+                    <input type="text" id="proveedor" name="proveedor" required 
+                           placeholder="Ej: Distribuidora Alimentos S.A.">
+                </div>
+
+                <div class="form-group">
+                    <label for="unidad_medida">Unidad de Medida:</label>
+                    <select id="unidad_medida" name="unidad_medida" required>
+                        <option value="">Seleccionar unidad...</option>
+                        <option value="kg">Kilogramos (kg)</option>
+                        <option value="g">Gramos (g)</option>
+                        <option value="L">Litros (L)</option>
+                        <option value="ml">Mililitros (ml)</option>
+                        <option value="unidades">Unidades</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="precio_compra">Precio de Compra (COP):</label>
+                    <input type="number" id="precio_compra" name="precio_compra" 
+                           step="0.01" min="0.01" required 
+                           placeholder="Ej: 121000 (pesos colombianos)"
+                           oninput="validarNumeroPositivo(this)">
+                    <div class="error-message" id="error-precio_compra">El precio debe ser mayor a 0</div>
+                    <small>Precio total del paquete/embalaje en pesos colombianos</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="cantidad_embalaje">Cantidad en Embalaje:</label>
+                    <input type="number" id="cantidad_embalaje" name="cantidad_embalaje" 
+                           step="0.01" min="0.01" required 
+                           placeholder="Ej: 50000 (para gramos)"
+                           oninput="validarNumeroPositivo(this)">
+                    <div class="error-message" id="error-cantidad_embalaje">La cantidad debe ser mayor a 0</div>
+                    <small>La cantidad total que viene en el paquete comprado (en la unidad de medida seleccionada)</small>
+                </div>
+
+                <!-- Campos adicionales para stock mínimo -->
+                <div class="form-group">
+                    <label for="stock_minimo">Stock Mínimo (Opcional):</label>
+                    <input type="number" id="stock_minimo" name="stock_minimo" 
+                           step="0.01" min="0" 
+                           placeholder="Ej: 5000"
+                           oninput="validarNumeroNoNegativo(this)">
+                    <div class="error-message" id="error-stock_minimo">El stock mínimo no puede ser negativo</div>
+                    <small>Cantidad mínima antes de hacer un nuevo pedido</small>
+                </div>
+
+                <button type="submit" class="btn">💾 Guardar Materia Prima</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function validarNumeroPositivo(input) {
+            const errorElement = document.getElementById('error-' + input.name);
+            if (parseFloat(input.value) <= 0) {
+                errorElement.style.display = 'block';
+                input.style.borderColor = '#dc3545';
+                return false;
+            } else {
+                errorElement.style.display = 'none';
+                input.style.borderColor = '#ddd';
+                return true;
+            }
+        }
+
+        function validarNumeroNoNegativo(input) {
+            const errorElement = document.getElementById('error-' + input.name);
+            if (parseFloat(input.value) < 0) {
+                errorElement.style.display = 'block';
+                input.style.borderColor = '#dc3545';
+                return false;
+            } else {
+                errorElement.style.display = 'none';
+                input.style.borderColor = '#ddd';
+                return true;
+            }
+        }
+
+        function validarFormulario() {
+            const precioValido = validarNumeroPositivo(document.getElementById('precio_compra'));
+            const cantidadValida = validarNumeroPositivo(document.getElementById('cantidad_embalaje'));
+            const stockMinValido = validarNumeroNoNegativo(document.getElementById('stock_minimo'));
+            
+            return precioValido && cantidadValida && stockMinValido;
+        }
+
+        // Validación en tiempo real
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputs = ['precio_compra', 'cantidad_embalaje', 'stock_minimo'];
+            inputs.forEach(inputId => {
+                const input = document.getElementById(inputId);
+                if (input) {
+                    input.addEventListener('blur', function() {
+                        if (inputId === 'stock_minimo') {
+                            validarNumeroNoNegativo(this);
+                        } else {
+                            validarNumeroPositivo(this);
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

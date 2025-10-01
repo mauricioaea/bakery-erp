@@ -164,5 +164,151 @@ def logout():
     flash('Has cerrado sesión', 'info')
     return redirect(url_for('login'))
 
+
+# Ruta para gestión de materias primas
+@app.route('/materias_primas')
+def materias_primas():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    # Obtener todas las materias primas (activas e inactivas)
+    materias = MateriaPrima.query.all()
+    return render_template('materias_primas.html', materias_primas=materias)
+
+# Ruta para agregar nueva materia prima
+@app.route('/agregar_materia_prima', methods=['GET', 'POST'])
+def agregar_materia_prima():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    if request.method == 'POST':
+        try:
+            nombre = request.form['nombre']
+            proveedor = request.form.get('proveedor', '').strip()
+            unidad_medida = request.form['unidad_medida']
+            precio_compra = float(request.form['precio_compra'])
+            cantidad_embalaje = float(request.form['cantidad_embalaje'])
+            stock_minimo = float(request.form.get('stock_minimo', 0))
+            
+            # VALIDACIONES DEL SERVIDOR
+            if not proveedor:
+                flash('El campo proveedor es requerido', 'error')
+                return redirect(url_for('agregar_materia_prima'))
+                
+            if precio_compra <= 0:
+                flash('El precio de compra debe ser mayor a 0', 'error')
+                return redirect(url_for('agregar_materia_prima'))
+                
+            if cantidad_embalaje <= 0:
+                flash('La cantidad de embalaje debe ser mayor a 0', 'error')
+                return redirect(url_for('agregar_materia_prima'))
+                
+            if stock_minimo < 0:
+                flash('El stock mínimo no puede ser negativo', 'error')
+                return redirect(url_for('agregar_materia_prima'))
+            
+            # Calcular costo por unidad
+            costo_unitario = precio_compra / cantidad_embalaje
+            
+            nueva_materia = MateriaPrima(
+                nombre=nombre,
+                proveedor=proveedor,
+                unidad_medida=unidad_medida,
+                costo_promedio=costo_unitario,
+                stock_actual=0,
+                stock_minimo=stock_minimo,
+                activo=True
+            )
+            
+            db.session.add(nueva_materia)
+            db.session.commit()
+            
+            flash(f'Materia prima "{nombre}" agregada correctamente', 'success')
+            return redirect(url_for('materias_primas'))
+            
+        except ValueError as e:
+            flash('Error: Los campos numéricos deben contener valores válidos', 'error')
+            return redirect(url_for('agregar_materia_prima'))
+        except Exception as e:
+            flash('Error inesperado al agregar la materia prima', 'error')
+            return redirect(url_for('agregar_materia_prima'))
+    
+    return render_template('agregar_materia_prima.html')
+
+# Ruta para editar materia prima
+@app.route('/editar_materia_prima/<int:id>', methods=['GET', 'POST'])
+def editar_materia_prima(id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    materia = MateriaPrima.query.get_or_404(id)
+    
+    if request.method == 'POST':
+        try:
+            materia.nombre = request.form['nombre']
+            materia.proveedor = request.form.get('proveedor', '').strip()
+            materia.unidad_medida = request.form['unidad_medida']
+            materia.stock_minimo = float(request.form.get('stock_minimo', 0))
+            
+            # Validaciones
+            if not materia.proveedor:
+                flash('El campo proveedor es requerido', 'error')
+                return redirect(url_for('editar_materia_prima', id=id))
+                
+            if materia.stock_minimo < 0:
+                flash('El stock mínimo no puede ser negativo', 'error')
+                return redirect(url_for('editar_materia_prima', id=id))
+            
+            db.session.commit()
+            flash(f'Materia prima "{materia.nombre}" actualizada correctamente', 'success')
+            return redirect(url_for('materias_primas'))
+            
+        except ValueError as e:
+            flash('Error: Los campos numéricos deben contener valores válidos', 'error')
+            return redirect(url_for('editar_materia_prima', id=id))
+        except Exception as e:
+            flash('Error inesperado al actualizar la materia prima', 'error')
+            return redirect(url_for('editar_materia_prima', id=id))
+    
+    return render_template('editar_materia_prima.html', materia=materia)
+
+# Ruta para desactivar materia prima (eliminación lógica) - CAMBIADO A GET
+@app.route('/desactivar_materia_prima/<int:id>')
+def desactivar_materia_prima(id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    materia = MateriaPrima.query.get_or_404(id)
+    materia.activo = False
+    db.session.commit()
+    
+    flash(f'Materia prima "{materia.nombre}" desactivada correctamente', 'success')
+    return redirect(url_for('materias_primas'))
+
+# Ruta para activar materia prima - CAMBIADO A GET
+@app.route('/activar_materia_prima/<int:id>')
+def activar_materia_prima(id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    materia = MateriaPrima.query.get_or_404(id)
+    materia.activo = True
+    db.session.commit()
+    
+    flash(f'Materia prima "{materia.nombre}" activada correctamente', 'success')
+    return redirect(url_for('materias_primas'))
+
+# Filtro para formatear moneda en pesos colombianos
+@app.template_filter('currency')
+def format_currency(value):
+    """Formatear valor como moneda en pesos colombianos"""
+    if value is None:
+        return "$0"
+    try:
+        # Formato pesos colombianos: $1.234.567
+        return f"${value:,.0f}".replace(",", ".")
+    except (ValueError, TypeError):
+        return f"${value}"
+
 if __name__ == '__main__':
     app.run(debug=True)
