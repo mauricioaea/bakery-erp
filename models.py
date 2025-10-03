@@ -25,19 +25,62 @@ class Producto(db.Model):
     precio_venta = db.Column(db.Float, nullable=False)
     codigo_barras = db.Column(db.String(50), unique=True)
     activo = db.Column(db.Boolean, default=True)
+    
+class Proveedor(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False)
+    contacto = db.Column(db.String(100))
+    telefono = db.Column(db.String(20))
+    email = db.Column(db.String(100))
+    direccion = db.Column(db.Text)
+    productos_que_suministra = db.Column(db.Text)
+    tiempo_entrega_dias = db.Column(db.Integer, default=1)
+    evaluacion = db.Column(db.Integer, default=5)
+    activo = db.Column(db.Boolean, default=True)
+    fecha_registro = db.Column(db.DateTime, default=datetime.now)
+    
+    # Relación con materias primas
+    materias_primas = db.relationship('MateriaPrima', backref='proveedor_rel', lazy=True)
 
     
 class MateriaPrima(db.Model):
     __tablename__ = 'materias_primas'
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
-    proveedor = db.Column(db.String(100), nullable=True)  # Nuevo campo
+    proveedor_id = db.Column(db.Integer, db.ForeignKey('proveedor.id'))
     unidad_medida = db.Column(db.String(20), nullable=False)
     stock_actual = db.Column(db.Float, default=0)
     stock_minimo = db.Column(db.Float, default=0)
     costo_promedio = db.Column(db.Float, default=0)
-    activo = db.Column(db.Boolean, default=True)  # Nuevo campo para borrado lógico
+    activo = db.Column(db.Boolean, default=True)
+    fecha_vencimiento = db.Column(db.Date)
+    alerta_vencimiento = db.Column(db.Integer, default=15)
+    fecha_ultima_actualizacion = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # NUEVOS CAMPOS PARA GESTIÓN POR EMPAQUES
+    gramos_por_empaque = db.Column(db.Float, nullable=False, default=1.0)
+    unidad_compra = db.Column(db.String(50), nullable=False, default='Unidad')
+    stock_minimo_empaques = db.Column(db.Integer, default=1)
+    
+    @property
+    def valor_inventario(self):
+        """Calcular valor total en inventario para esta materia prima"""
+        return self.stock_actual * self.costo_promedio
 
+class HistorialCompra(db.Model):
+    __tablename__ = 'historial_compras'
+    id = db.Column(db.Integer, primary_key=True)
+    materia_prima_id = db.Column(db.Integer, db.ForeignKey('materias_primas.id'), nullable=False)
+    fecha_compra = db.Column(db.DateTime, default=datetime.utcnow)
+    cantidad_empaques = db.Column(db.Integer, nullable=False)
+    precio_total = db.Column(db.Float, nullable=False)
+    precio_unitario_empaque = db.Column(db.Float, nullable=False)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
+    
+    # Relaciones
+    materia_prima = db.relationship('MateriaPrima', backref='compras')
+    usuario = db.relationship('Usuario')
+    
 class Receta(db.Model):
     __tablename__ = 'recetas'
     id = db.Column(db.Integer, primary_key=True)
