@@ -1,6 +1,6 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
-from models import db, Usuario, Producto, Venta, DetalleVenta, MateriaPrima, Receta, Categoria, Proveedor, HistorialCompra
+from models import db, Usuario, Producto, Venta, DetalleVenta, MateriaPrima, Receta, RecetaIngrediente, OrdenProduccion, Categoria, Proveedor, HistorialCompra, HistorialInventario
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 
@@ -511,6 +511,232 @@ def historial_compras(materia_prima_id):
     
     return render_template('historial_compras.html', materia=materia, historial=historial)
 
+# =============================================
+# RUTAS DE PRODUCCIÓN Y RECETAS - COMPLETAMENTE ACTUALIZADAS
+# =============================================
+
+@app.route('/recetas')
+def recetas():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    todas_recetas = Receta.query.all()
+    return render_template('recetas.html', recetas=todas_recetas)
+
+@app.route('/detalle_receta/<int:id>')
+def detalle_receta(id):
+    """Página de detalle de una receta específica"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    receta = Receta.query.get_or_404(id)
+    return render_template('detalle_receta.html', receta=receta)
+
+@app.route('/editar_receta/<int:id>', methods=['GET', 'POST'])
+def editar_receta(id):
+    """Editar una receta existente"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    receta = Receta.query.get_or_404(id)
+    materias_primas = MateriaPrima.query.filter_by(activo=True).all()
+    
+    if request.method == 'POST':
+        # Por ahora solo mostramos mensaje - implementaremos edición completa después
+        flash('🔧 Funcionalidad de edición completa en desarrollo', 'info')
+        return redirect(url_for('detalle_receta', id=id))
+    
+    return render_template('crear_receta.html', receta=receta, materias_primas=materias_primas, editar=True)
+
+@app.route('/producir_receta/<int:id>', methods=['GET', 'POST'])
+def producir_receta(id):
+    """Producción de una receta - cálculo de ingredientes"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    receta = Receta.query.get_or_404(id)
+    
+    if request.method == 'POST':
+        try:
+            cantidad = int(request.form['cantidad'])
+            
+            # Verificar stock disponible
+            ingredientes_insuficientes = []
+            for ingrediente in receta.ingredientes:
+                cantidad_necesaria = (ingrediente.cantidad_gramos / receta.unidades_obtenidas) * cantidad
+                if ingrediente.materia_prima.stock_actual < cantidad_necesaria:
+                    ingredientes_insuficientes.append({
+                        'nombre': ingrediente.materia_prima.nombre,
+                        'necesario': cantidad_necesaria,
+                        'disponible': ingrediente.materia_prima.stock_actual,
+                        'unidad': ingrediente.materia_prima.unidad_medida
+                    })
+            
+            if ingredientes_insuficientes:
+                return render_template('produccion.html', 
+                                     receta=receta,
+                                     cantidad=cantidad,
+                                     ingredientes_insuficientes=ingredientes_insuficientes)
+            
+            # Crear registro de producción
+            orden_produccion = OrdenProduccion(
+                receta_id=receta.id,
+                cantidad_producir=cantidad,
+                estado='confirmada',
+                usuario_id=session['user_id'],
+                fecha_inicio=datetime.utcnow()
+            )
+            db.session.add(orden_produccion)
+            db.session.flush()  # Para obtener el ID
+            
+            # Descontar ingredientes del inventario y registrar en historial
+            for ingrediente in receta.ingredientes:
+                cantidad_necesaria = (ingrediente.cantidad_gramos / receta.unidades_obtenidas) * cantidad
+                
+                # Actualizar stock
+                ingrediente.materia_prima.stock_actual -= cantidad_necesaria
+                
+                # Registrar en historial de inventario
+                movimiento = HistorialInventario(
+                    materia_prima_id=ingrediente.materia_prima.id,
+                    orden_produccion_id=orden_produccion.id,
+                    cantidad_utilizada=cantidad_necesaria,
+                    tipo_movimiento='produccion'
+                )
+                db.session.add(movimiento)
+            
+            db.session.commit()
+            flash(f'✅ Producción de {cantidad} unidades confirmada. Ingredientes descontados del inventario.', 'success')
+            return redirect(url_for('recetas'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'❌ Error al procesar la producción: {str(e)}', 'error')
+            return redirect(url_for('producir_receta', id=id))
+    
+    # GET request - mostrar formulario de producción
+    cantidad = request.args.get('cantidad', receta.unidades_obtenidas, type=int)
+    return render_template('produccion.html', receta=receta, cantidad=cantidad)
+
+@app.route('/api/calcular_ingredientes/<int:id>')
+def calcular_ingredientes(id):
+    """API para calcular ingredientes necesarios (AJAX)"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    receta = Receta.query.get_or_404(id)
+    cantidad = request.args.get('cantidad', receta.unidades_obtenidas, type=int)
+    
+    ingredientes_calculados = []
+    for ingrediente in receta.ingredientes:
+        cantidad_necesaria = (ingrediente.cantidad_gramos / receta.unidades_obtenidas) * cantidad
+        suficiente = ingrediente.materia_prima.stock_actual >= cantidad_necesaria
+        
+        ingredientes_calculados.append({
+            'id': ingrediente.id,
+            'nombre': ingrediente.materia_prima.nombre,
+            'cantidad_original': ingrediente.cantidad_gramos,
+            'cantidad_calculada': round(cantidad_necesaria, 2),
+            'unidad': ingrediente.materia_prima.unidad_medida,
+            'stock_disponible': ingrediente.materia_prima.stock_actual,
+            'suficiente': suficiente
+        })
+    
+    return jsonify(ingredientes_calculados)
+
+@app.route('/crear_receta', methods=['GET', 'POST'])
+def crear_receta():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    # VERIFICAR QUE HAY MATERIAS PRIMAS DISPONIBLES
+    materias_primas = MateriaPrima.query.filter_by(activo=True).all()
+    print(f"🔍 Materias primas encontradas: {len(materias_primas)}")
+    
+    if request.method == 'POST':
+        try:
+            # Crear la receta base
+            nueva_receta = Receta(
+                nombre=request.form['nombre'],
+                descripcion=request.form.get('descripcion', ''),
+                categoria=request.form['categoria'],
+                peso_unidad_gramos=float(request.form['peso_unidad_gramos']),
+                porcentaje_perdida=float(request.form.get('porcentaje_perdida', 10.0)),
+                activo=True
+            )
+            
+            db.session.add(nueva_receta)
+            db.session.flush()  # Para obtener el ID
+            
+            # Procesar ingredientes - USANDO GRAMOS DIRECTOS
+            ingredientes_data = []
+            costo_total_materias_primas = 0
+            peso_total_masa = 0
+
+            # Recoger ingredientes del formulario
+            i = 0
+            while f'ingredientes[{i}][materia_prima_id]' in request.form:
+                materia_prima_id = request.form[f'ingredientes[{i}][materia_prima_id]']
+                gramos = float(request.form[f'ingredientes[{i}][gramos]'])  # Gramos directos
+                
+                materia_prima = MateriaPrima.query.get(materia_prima_id)
+                if materia_prima and gramos > 0:
+                    cantidad_gramos = gramos
+                    costo_ingrediente = cantidad_gramos * materia_prima.costo_promedio
+                    
+                    ingrediente = RecetaIngrediente(
+                        receta_id=nueva_receta.id,
+                        materia_prima_id=materia_prima_id,
+                        porcentaje_aplicado=0,  # Se calculará después
+                        cantidad_gramos=cantidad_gramos,
+                        costo_ingrediente=costo_ingrediente
+                    )
+                    
+                    db.session.add(ingrediente)
+                    costo_total_materias_primas += costo_ingrediente
+                    peso_total_masa += cantidad_gramos
+                    ingredientes_data.append(ingrediente)
+                
+                i += 1
+            
+            # Calcular porcentajes después de tener el peso total
+            for ingrediente in ingredientes_data:
+                if peso_total_masa > 0:
+                    ingrediente.porcentaje_aplicado = (ingrediente.cantidad_gramos / peso_total_masa) * 100
+            
+            # CALCULAR DATOS DE PRODUCCIÓN
+            unidades_obtenidas = int(peso_total_masa / nueva_receta.peso_unidad_gramos) if nueva_receta.peso_unidad_gramos > 0 else 0
+            peso_horneado_unidad = nueva_receta.peso_unidad_gramos - (nueva_receta.peso_unidad_gramos * (nueva_receta.porcentaje_perdida / 100))
+            costo_indirecto = costo_total_materias_primas * 0.45  # 45% CIF
+            costo_total_produccion = costo_total_materias_primas + costo_indirecto
+            margen_ganancia = costo_total_produccion * 0.45  # 45% de ganancia
+            precio_venta_unitario = (costo_total_produccion + margen_ganancia) / unidades_obtenidas if unidades_obtenidas > 0 else 0
+            precio_por_gramo = precio_venta_unitario / nueva_receta.peso_unidad_gramos if nueva_receta.peso_unidad_gramos > 0 else 0
+            
+            # Actualizar receta con todos los datos calculados
+            nueva_receta.peso_total_masa = peso_total_masa
+            nueva_receta.unidades_obtenidas = unidades_obtenidas
+            nueva_receta.peso_horneado_unidad = peso_horneado_unidad
+            nueva_receta.costo_materias_primas = costo_total_materias_primas
+            nueva_receta.costo_indirecto = costo_indirecto
+            nueva_receta.costo_total = costo_total_produccion
+            nueva_receta.margen_ganancia = margen_ganancia
+            nueva_receta.precio_venta_unitario = precio_venta_unitario
+            nueva_receta.precio_por_gramo = precio_por_gramo
+            nueva_receta.precio_venta = precio_venta_unitario * unidades_obtenidas
+            
+            db.session.commit()
+            
+            flash(f'✅ Receta "{nueva_receta.nombre}" creada exitosamente! Peso total: {peso_total_masa:,.0f}g', 'success')
+            return redirect(url_for('recetas'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'❌ Error al crear la receta: {str(e)}', 'error')
+            return redirect(url_for('crear_receta'))
+    
+    return render_template('crear_receta.html', materias_primas=materias_primas)
+
 # Filtro para formatear moneda en pesos colombianos
 @app.template_filter('currency')
 def format_currency(value):
@@ -522,6 +748,15 @@ def format_currency(value):
         return f"${value:,.0f}".replace(",", ".")
     except (ValueError, TypeError):
         return f"${value}"
+
+# Filtro para formatear números con 2 decimales
+@app.template_filter('round')
+def round_filter(value, decimals=2):
+    """Formatear número con decimales específicos"""
+    try:
+        return round(value, decimals)
+    except (ValueError, TypeError):
+        return value
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Recetas - Panadería</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #667eea;
+        }
+        .btn {
+            background: #667eea;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            display: inline-block;
+        }
+        .btn:hover {
+            background: #5a6fd8;
+        }
+        .btn-success {
+            background: #28a745;
+        }
+        .btn-success:hover {
+            background: #218838;
+        }
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+        .btn-info {
+            background: #17a2b8;
+        }
+        .btn-info:hover {
+            background: #138496;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 0.9em;
+            margin-right: 10px;
+            display: inline-block;
+        }
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        .recetas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+        .receta-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 25px;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .receta-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+        .receta-card h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .receta-info {
+            color: #555;
+            margin-bottom: 20px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .info-item {
+            margin-bottom: 8px;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #333;
+            display: block;
+            font-size: 0.9em;
+        }
+        .info-value {
+            color: #666;
+            font-size: 1em;
+        }
+        .costos-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #667eea;
+        }
+        .costo-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+        .costo-label {
+            font-weight: 600;
+        }
+        .costo-value {
+            font-weight: bold;
+        }
+        .receta-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+        .action-btn {
+            flex: 1;
+            text-align: center;
+            padding: 8px 12px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 0.85em;
+            transition: all 0.3s ease;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .navigation-links {
+            margin-top: 10px;
+        }
+        .alert {
+            padding: 12px 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border-color: #c3e6cb;
+        }
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border-color: #f5c6cb;
+        }
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-color: #bee5eb;
+        }
+        .badge {
+            background: #28a745;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        .badge-inactive {
+            background: #dc3545;
+        }
+        .ingredientes-count {
+            background: #6c757d;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 0.7em;
+            margin-left: 5px;
+        }
+        .fecha-creacion {
+            font-size: 0.8em;
+            color: #888;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>👨‍🍳 Gestión de Recetas</h1>
+                <p class="fecha-creacion">Crea y gestiona las fórmulas de producción de tu panadería</p>
+                <div class="navigation-links">
+                    <a href="{{ url_for('dashboard') }}" class="btn-secondary">🏠 Volver al Dashboard</a>
+                </div>
+            </div>
+            <a href="{{ url_for('crear_receta') }}" class="btn btn-success">➕ Nueva Receta</a>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% if recetas %}
+        <div class="recetas-grid">
+            {% for receta in recetas %}
+            <div class="receta-card">
+                <h3>
+                    {{ receta.nombre }}
+                    <span class="badge {% if not receta.activo %}badge-inactive{% endif %}" style="float: right;">
+                        {{ 'Activa' if receta.activo else 'Inactiva' }}
+                    </span>
+                </h3>
+                
+                <div class="receta-info">
+                    <div style="margin-bottom: 10px;">
+                        <span class="info-label">Descripción:</span>
+                        <span class="info-value">{{ receta.descripcion or 'Sin descripción' }}</span>
+                    </div>
+                    
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Categoría:</span>
+                            <span class="info-value">{{ receta.categoria or 'Sin categoría' }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Peso unidad:</span>
+                            <span class="info-value">{{ receta.peso_unidad_gramos|round(1) }}g</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Peso total masa:</span>
+                            <span class="info-value">{{ receta.peso_total_masa|round(1) if receta.peso_total_masa else 0 }}g</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Unidades obtenidas:</span>
+                            <span class="info-value">{{ receta.unidades_obtenidas or 0 }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Peso horneado/unidad:</span>
+                            <span class="info-value">{{ receta.peso_horneado_unidad|round(1) if receta.peso_horneado_unidad else 0 }}g</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">% Pérdida:</span>
+                            <span class="info-value">{{ receta.porcentaje_perdida|round(1) }}%</span>
+                        </div>
+                    </div>
+
+                    <!-- SECCIÓN DE COSTOS DETALLADOS CON NUEVOS CAMPOS -->
+                    <div class="costos-section">
+                        <h4 style="margin-bottom: 15px; color: #333;">📊 Análisis de Costos</h4>
+                        
+                        <div class="costo-item">
+                            <span class="costo-label">Costo Materias Primas:</span>
+                            <span class="costo-value">{{ receta.costo_materias_primas|currency if receta.costo_materias_primas else '$0' }}</span>
+                        </div>
+                        
+                        <div class="costo-item">
+                            <span class="costo-label">Costo Indirecto (CIF 45%):</span>
+                            <span class="costo-value">{{ receta.costo_indirecto|currency if receta.costo_indirecto else '$0' }}</span>
+                        </div>
+                        
+                        <div class="costo-item">
+                            <span class="costo-label">Costo Total Producción:</span>
+                            <span class="costo-value" style="color: #e74c3c;">{{ receta.costo_total|currency if receta.costo_total else '$0' }}</span>
+                        </div>
+                        
+                        <div class="costo-item">
+                            <span class="costo-label">Margen Ganancia (45%):</span>
+                            <span class="costo-value">{{ receta.margen_ganancia|currency if receta.margen_ganancia else '$0' }}</span>
+                        </div>
+                        
+                        <div class="costo-item" style="border-top: 1px solid #ddd; padding-top: 8px; margin-top: 8px;">
+                            <span class="costo-label">Precio Venta Unitario (PVU):</span>
+                            <span class="costo-value" style="color: #27ae60; font-size: 1.1em;">
+                                {{ receta.precio_venta_unitario|currency if receta.precio_venta_unitario else '$0' }}
+                            </span>
+                        </div>
+                        
+                        <div class="costo-item">
+                            <span class="costo-label">Precio por gramo:</span>
+                            <span class="costo-value">{{ receta.precio_por_gramo|currency if receta.precio_por_gramo else '$0' }}</span>
+                        </div>
+                    </div>
+
+                    <!-- INFORMACIÓN DE INGREDIENTES -->
+                    <div style="background: #e8f5e8; padding: 10px; border-radius: 5px; margin-top: 10px;">
+                        <span class="info-label">Ingredientes:</span>
+                        <span class="info-value">
+                            {{ receta.ingredientes|length }} ingredientes
+                            <span class="ingredientes-count">{{ receta.ingredientes|length }}</span>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- BOTONES DE ACCIÓN ACTUALIZADOS -->
+                <div class="receta-actions">
+                    <a href="{{ url_for('editar_receta', id=receta.id) }}" 
+                       class="action-btn" 
+                       style="background: #ffc107; color: #212529;">
+                       ✏️ Editar
+                    </a>
+                    
+                    <a href="{{ url_for('producir_receta', id=receta.id) }}" 
+                       class="action-btn" 
+                       style="background: #28a745; color: white;">
+                       👨‍🍳 Producir
+                    </a>
+                    
+                    <a href="{{ url_for('detalle_receta', id=receta.id) }}" 
+                       class="action-btn" 
+                       style="background: #17a2b8; color: white;">
+                       📋 Detalles
+                    </a>
+                </div>
+
+                <!-- FECHA DE CREACIÓN -->
+                <div class="fecha-creacion" style="text-align: center; margin-top: 10px;">
+                    Creada: {{ receta.created_at.strftime('%d/%m/%Y') if receta.created_at else 'Fecha no disponible' }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <h3>📝 No hay recetas creadas</h3>
+            <p>Comienza creando tu primera receta para el sistema de producción</p>
+            <a href="{{ url_for('crear_receta') }}" class="btn btn-success" style="margin-top: 15px;">
+                🍞 Crear Primera Receta
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- ESTADÍSTICAS RÁPIDAS -->
+        {% if recetas %}
+        <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+            <h4 style="margin-bottom: 15px;">📈 Resumen de Recetas</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                <div style="text-align: center;">
+                    <div style="font-size: 2em; color: #667eea; font-weight: bold;">{{ recetas|length }}</div>
+                    <div style="color: #666; font-size: 0.9em;">Total Recetas</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 2em; color: #28a745; font-weight: bold;">{{ recetas|selectattr('activo')|list|length }}</div>
+                    <div style="color: #666; font-size: 0.9em;">Recetas Activas</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 2em; color: #17a2b8; font-weight: bold;">
+                        {{ recetas|sum(attribute='unidades_obtenidas') or 0 }}
+                    </div>
+                    <div style="color: #666; font-size: 0.9em;">Unidades Totales</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        // Efectos hover mejorados para las tarjetas
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.receta-card');
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-5px)';
+                    this.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                    this.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                });
+            });
+
+            // Confirmación para acciones importantes
+            const actionButtons = document.querySelectorAll('.action-btn');
+            actionButtons.forEach(btn => {
+                if (btn.textContent.includes('Producir')) {
+                    btn.addEventListener('click', function(e) {
+                        if (!confirm('¿Estás seguro de que quieres proceder con la producción?')) {
+                            e.preventDefault();
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

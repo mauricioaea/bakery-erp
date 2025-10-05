@@ -342,7 +342,11 @@
                             {{ "%.2f"|format(materia.stock_actual) }} {{ materia.unidad_medida }}
                             <br>
                             <small style="color: #666;">
-                                ({{ "%.2f"|format(materia.stock_actual / materia.gramos_por_empaque) }} {{ materia.unidad_compra }})
+                                {% if materia.gramos_por_empaque and materia.gramos_por_empaque > 0 %}
+                                    ({{ "%.2f"|format(materia.stock_actual / materia.gramos_por_empaque) }} {{ materia.unidad_compra }})
+                                {% else %}
+                                    ({{ "%.2f"|format(materia.stock_actual) }} {{ materia.unidad_medida }})
+                                {% endif %}
                             </small>
                             {% if materia.stock_actual <= materia.stock_minimo %}
                                 <span class="badge badge-danger">¡CRÍTICO!</span>
