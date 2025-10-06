@@ -1,4 +1,5 @@
 import os
+
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from models import db, Usuario, Producto, Venta, DetalleVenta, MateriaPrima, Receta, RecetaIngrediente, OrdenProduccion, Categoria, Proveedor, HistorialCompra, HistorialInventario
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -512,7 +513,7 @@ def historial_compras(materia_prima_id):
     return render_template('historial_compras.html', materia=materia, historial=historial)
 
 # =============================================
-# RUTAS DE PRODUCCIÓN Y RECETAS - COMPLETAMENTE ACTUALIZADAS
+# RUTAS DE PRODUCCIÓN Y RECETAS - COMPLETAMENTE ACTUALIZADAS CON PRECIOS REALES
 # =============================================
 
 @app.route('/recetas')
@@ -531,22 +532,6 @@ def detalle_receta(id):
     
     receta = Receta.query.get_or_404(id)
     return render_template('detalle_receta.html', receta=receta)
-
-@app.route('/editar_receta/<int:id>', methods=['GET', 'POST'])
-def editar_receta(id):
-    """Editar una receta existente"""
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    
-    receta = Receta.query.get_or_404(id)
-    materias_primas = MateriaPrima.query.filter_by(activo=True).all()
-    
-    if request.method == 'POST':
-        # Por ahora solo mostramos mensaje - implementaremos edición completa después
-        flash('🔧 Funcionalidad de edición completa en desarrollo', 'info')
-        return redirect(url_for('detalle_receta', id=id))
-    
-    return render_template('crear_receta.html', receta=receta, materias_primas=materias_primas, editar=True)
 
 @app.route('/producir_receta/<int:id>', methods=['GET', 'POST'])
 def producir_receta(id):
@@ -644,6 +629,135 @@ def calcular_ingredientes(id):
     
     return jsonify(ingredientes_calculados)
 
+# ✅ NUEVA API PARA ACTUALIZAR PRECIO REAL EN TIEMPO REAL
+@app.route('/api/actualizar_precio_real/<int:receta_id>', methods=['POST'])
+def actualizar_precio_real(receta_id):
+    """API para actualizar el precio real de una receta desde la lista"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    receta = Receta.query.get_or_404(receta_id)
+    data = request.get_json()
+    nuevo_precio = float(data.get('precio_real', 0))
+    
+    try:
+        receta.precio_venta_real = nuevo_precio
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'precio_actualizado': nuevo_precio,
+            'utilidad_pesos': receta.utilidad_real_pesos,
+            'utilidad_porcentaje': round(receta.utilidad_real_porcentaje, 1),
+            'rentabilidad': receta.rentabilidad_categoria,
+            'punto_equilibrio': receta.punto_equilibrio_unidades,
+            'costo_unitario': receta.costo_unitario
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+# ✅ NUEVO ENDPOINT PARA CÁLCULOS EN TIEMPO REAL DE RECETAS
+@app.route('/api/calcular_precio_receta', methods=['POST'])
+def calcular_precio_receta():
+    """API para cálculos en tiempo real de costos y precios con 45% CIF + 45% Ganancia"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        data = request.get_json()
+        
+        # Calcular costo total de ingredientes
+        costo_total_mp = 0
+        peso_total = 0
+        
+        for ingrediente in data.get('ingredientes', []):
+            materia_prima_id = ingrediente.get('materia_prima_id')
+            cantidad_gramos = float(ingrediente.get('cantidad_gramos', 0))
+            
+            if materia_prima_id and cantidad_gramos > 0:
+                materia_prima = MateriaPrima.query.get(materia_prima_id)
+                if materia_prima:
+                    # Calcular costo del ingrediente
+                    costo_ingrediente = cantidad_gramos * materia_prima.costo_promedio
+                    costo_total_mp += costo_ingrediente
+                    peso_total += cantidad_gramos
+        
+        # Obtener parámetros adicionales
+        peso_unidad = float(data.get('peso_unidad_gramos', 0))
+        porcentaje_perdida = float(data.get('porcentaje_perdida', 10.0))
+        
+        # Calcular unidades obtenidas considerando pérdida por horneado
+        peso_horneado_total = peso_total * (1 - porcentaje_perdida / 100)
+
+        # Calcular unidades obtenidas
+        if peso_unidad > 0:
+            unidades_obtenidas = int(peso_horneado_total / peso_unidad)
+        else:
+            unidades_obtenidas = 0
+
+        # APLICAR FÓRMULAS DEL EXCEL: 45% CIF + 45% GANANCIA
+        costo_mp = costo_total_mp
+        cif = costo_mp * 0.45  # 45% CIF
+        costo_total_con_cif = costo_mp + cif
+        ganancia = costo_total_con_cif * 0.45  # 45% Ganancia
+        precio_total_preparacion = costo_total_con_cif + ganancia
+
+        # Calcular precio por unidad
+        if unidades_obtenidas > 0:
+            precio_venta_unidad = precio_total_preparacion / unidades_obtenidas
+        else:
+            precio_venta_unidad = 0
+
+        # Calcular métricas de rentabilidad
+        if unidades_obtenidas > 0:
+            costo_unitario = costo_total_con_cif / unidades_obtenidas
+        else:
+            costo_unitario = 0
+
+        margen_contribucion = precio_venta_unidad - costo_unitario
+
+        if precio_venta_unidad > 0:
+            margen_porcentaje = (margen_contribucion / precio_venta_unidad) * 100
+        else:
+            margen_porcentaje = 0
+
+        if margen_contribucion > 0:
+            punto_equilibrio = int(costo_total_con_cif / margen_contribucion)
+        else:
+            punto_equilibrio = 0
+
+        if costo_total_con_cif > 0:
+            rentabilidad_porcentaje = (ganancia / costo_total_con_cif) * 100
+        else:
+            rentabilidad_porcentaje = 0
+        
+        return jsonify({
+            'success': True,
+            'costo_materia_prima': round(costo_mp, 2),
+            'cif': round(cif, 2),
+            'costo_total': round(costo_total_con_cif, 2),
+            'ganancia': round(ganancia, 2),
+            'precio_total_preparacion': round(precio_total_preparacion, 2),
+            'precio_venta_unidad': round(precio_venta_unidad, 2),
+            'peso_total': round(peso_total, 2),
+            'unidades_obtenidas': unidades_obtenidas,
+            'margen_contribucion': round(margen_contribucion, 2),
+            'margen_porcentaje': round(margen_porcentaje, 2),
+            'punto_equilibrio': punto_equilibrio,
+            'rentabilidad_porcentaje': round(rentabilidad_porcentaje, 2),
+            'costo_unitario': round(costo_unitario, 2)
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/crear_receta', methods=['GET', 'POST'])
 def crear_receta():
     if 'user_id' not in session:
@@ -655,6 +769,9 @@ def crear_receta():
     
     if request.method == 'POST':
         try:
+            # ✅ CAPTURAR PRECIO REAL DEL FORMULARIO
+            precio_venta_real = float(request.form.get('precio_venta_real', 0)) or 0
+            
             # Crear la receta base
             nueva_receta = Receta(
                 nombre=request.form['nombre'],
@@ -662,7 +779,8 @@ def crear_receta():
                 categoria=request.form['categoria'],
                 peso_unidad_gramos=float(request.form['peso_unidad_gramos']),
                 porcentaje_perdida=float(request.form.get('porcentaje_perdida', 10.0)),
-                activo=True
+                activo=True,
+                precio_venta_real=precio_venta_real  # ✅ ASIGNAR PRECIO REAL
             )
             
             db.session.add(nueva_receta)
@@ -713,7 +831,7 @@ def crear_receta():
             precio_venta_unitario = (costo_total_produccion + margen_ganancia) / unidades_obtenidas if unidades_obtenidas > 0 else 0
             precio_por_gramo = precio_venta_unitario / nueva_receta.peso_unidad_gramos if nueva_receta.peso_unidad_gramos > 0 else 0
             
-            # Actualizar receta con todos los datos calculados
+            # ✅ ACTUALIZAR RECETA CON TODOS LOS DATOS CALCULADOS (INCLUYENDO PRECIO REAL)
             nueva_receta.peso_total_masa = peso_total_masa
             nueva_receta.unidades_obtenidas = unidades_obtenidas
             nueva_receta.peso_horneado_unidad = peso_horneado_unidad
@@ -724,10 +842,23 @@ def crear_receta():
             nueva_receta.precio_venta_unitario = precio_venta_unitario
             nueva_receta.precio_por_gramo = precio_por_gramo
             nueva_receta.precio_venta = precio_venta_unitario * unidades_obtenidas
+            # ✅ precio_venta_real ya fue asignado al crear la receta
             
             db.session.commit()
             
-            flash(f'✅ Receta "{nueva_receta.nombre}" creada exitosamente! Peso total: {peso_total_masa:,.0f}g', 'success')
+            # ✅ MENSAJE MEJORADO QUE MUESTRA AMBOS PRECIOS
+            mensaje = f'✅ Receta "{nueva_receta.nombre}" creada exitosamente! '
+            mensaje += f'Peso total: {peso_total_masa:,.0f}g | '
+            mensaje += f'Precio teórico: ${precio_venta_unitario:,.0f}'
+            
+            if precio_venta_real > 0:
+                mensaje += f' | Precio real: ${precio_venta_real:,.0f}'
+                # ✅ CALCULAR Y MOSTRAR UTILIDAD REAL INMEDIATAMENTE
+                utilidad_pesos = nueva_receta.utilidad_real_pesos
+                utilidad_porcentaje = nueva_receta.utilidad_real_porcentaje
+                mensaje += f' | Utilidad: ${utilidad_pesos:,.0f} ({utilidad_porcentaje:.1f}%)'
+            
+            flash(mensaje, 'success')
             return redirect(url_for('recetas'))
             
         except Exception as e:
@@ -736,6 +867,103 @@ def crear_receta():
             return redirect(url_for('crear_receta'))
     
     return render_template('crear_receta.html', materias_primas=materias_primas)
+
+# ✅ RUTA MEJORADA PARA EDITAR RECETAS EXISTENTES
+@app.route('/editar_receta/<int:id>', methods=['GET', 'POST'])
+def editar_receta(id):
+    """Editar una receta existente - AHORA CON PRECIO REAL"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    receta = Receta.query.get_or_404(id)
+    materias_primas = MateriaPrima.query.filter_by(activo=True).all()
+    
+    if request.method == 'POST':
+        try:
+            # ✅ ACTUALIZAR PRECIO REAL EN EDICIÓN
+            nuevo_precio_real = float(request.form.get('precio_venta_real', 0)) or 0
+            
+            receta.nombre = request.form['nombre']
+            receta.descripcion = request.form.get('descripcion', '')
+            receta.categoria = request.form['categoria']
+            receta.peso_unidad_gramos = float(request.form['peso_unidad_gramos'])
+            receta.porcentaje_perdida = float(request.form.get('porcentaje_perdida', 10.0))
+            receta.precio_venta_real = nuevo_precio_real  # ✅ ACTUALIZAR PRECIO REAL
+            
+            # ✅ ELIMINAR INGREDIENTES EXISTENTES Y AGREGAR NUEVOS
+            RecetaIngrediente.query.filter_by(receta_id=receta.id).delete()
+            
+            # Reprocesar ingredientes (misma lógica que crear)
+            costo_total_materias_primas = 0
+            peso_total_masa = 0
+            ingredientes_data = []
+            
+            i = 0
+            while f'ingredientes[{i}][materia_prima_id]' in request.form:
+                materia_prima_id = request.form[f'ingredientes[{i}][materia_prima_id]']
+                gramos = float(request.form[f'ingredientes[{i}][gramos]'])
+                
+                materia_prima = MateriaPrima.query.get(materia_prima_id)
+                if materia_prima and gramos > 0:
+                    cantidad_gramos = gramos
+                    costo_ingrediente = cantidad_gramos * materia_prima.costo_promedio
+                    
+                    ingrediente = RecetaIngrediente(
+                        receta_id=receta.id,
+                        materia_prima_id=materia_prima_id,
+                        porcentaje_aplicado=0,
+                        cantidad_gramos=cantidad_gramos,
+                        costo_ingrediente=costo_ingrediente
+                    )
+                    
+                    db.session.add(ingrediente)
+                    costo_total_materias_primas += costo_ingrediente
+                    peso_total_masa += cantidad_gramos
+                    ingredientes_data.append(ingrediente)
+                
+                i += 1
+            
+            # Recalcular porcentajes
+            for ingrediente in ingredientes_data:
+                if peso_total_masa > 0:
+                    ingrediente.porcentaje_aplicado = (ingrediente.cantidad_gramos / peso_total_masa) * 100
+            
+            # ✅ RECALCULAR TODOS LOS DATOS DE PRODUCCIÓN
+            unidades_obtenidas = int(peso_total_masa / receta.peso_unidad_gramos) if receta.peso_unidad_gramos > 0 else 0
+            peso_horneado_unidad = receta.peso_unidad_gramos - (receta.peso_unidad_gramos * (receta.porcentaje_perdida / 100))
+            costo_indirecto = costo_total_materias_primas * 0.45
+            costo_total_produccion = costo_total_materias_primas + costo_indirecto
+            margen_ganancia = costo_total_produccion * 0.45
+            precio_venta_unitario = (costo_total_produccion + margen_ganancia) / unidades_obtenidas if unidades_obtenidas > 0 else 0
+            precio_por_gramo = precio_venta_unitario / receta.peso_unidad_gramos if receta.peso_unidad_gramos > 0 else 0
+            
+            # ✅ ACTUALIZAR CAMPOS RECALCULADOS
+            receta.peso_total_masa = peso_total_masa
+            receta.unidades_obtenidas = unidades_obtenidas
+            receta.peso_horneado_unidad = peso_horneado_unidad
+            receta.costo_materias_primas = costo_total_materias_primas
+            receta.costo_indirecto = costo_indirecto
+            receta.costo_total = costo_total_produccion
+            receta.margen_ganancia = margen_ganancia
+            receta.precio_venta_unitario = precio_venta_unitario
+            receta.precio_por_gramo = precio_por_gramo
+            receta.precio_venta = precio_venta_unitario * unidades_obtenidas
+            
+            db.session.commit()
+            
+            flash(f'✅ Receta "{receta.nombre}" actualizada! Precio real: ${nuevo_precio_real:,.0f}', 'success')
+            return redirect(url_for('detalle_receta', id=receta.id))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'❌ Error al actualizar la receta: {str(e)}', 'error')
+            return redirect(url_for('editar_receta', id=id))
+    
+    # Para GET, mostrar formulario con datos existentes
+    return render_template('crear_receta.html', 
+                         receta=receta, 
+                         materias_primas=materias_primas, 
+                         editar=True)
 
 # Filtro para formatear moneda en pesos colombianos
 @app.template_filter('currency')

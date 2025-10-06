@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crear Receta - Panadería</title>
+    <title>{% if editar %}Editar{% else %}Crear{% endif %} Receta - Panadería</title>
     <style>
         * { 
             margin: 0; 
@@ -16,7 +16,7 @@
             padding: 20px; 
         }
         .container { 
-            max-width: 800px; 
+            max-width: 900px; 
             margin: 0 auto; 
             background: white; 
             padding: 30px; 
@@ -141,14 +141,78 @@
             background: #f8f9fa;
             border-radius: 5px;
             border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
         }
+        .precio-real-section {
+            background: #e8f5e8;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #28a745;
+        }
+        .precio-info {
+            background: #fff3cd;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+            border-left: 4px solid #ffc107;
+            font-size: 0.9em;
+        }
+        .calculos-section {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #2196f3;
+        }
+        .calculos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .calculo-item {
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 4px solid #2196f3;
+        }
+        .calculo-item.ganancia {
+            border-left-color: #28a745;
+            background: #f8fff9;
+        }
+        .calculo-item.precio-final {
+            border-left-color: #ff9800;
+            background: #fff3e0;
+        }
+        .calculo-label {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .calculo-valor {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #333;
+        }
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+        .badge-success { background: #28a745; color: white; }
+        .badge-warning { background: #ffc107; color: black; }
+        .badge-danger { background: #dc3545; color: white; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <div>
-                <h1>🍞 Crear Nueva Receta</h1>
+                <h1>{% if editar %}✏️ Editar{% else %}🍞 Crear Nueva{% endif %} Receta</h1>
                 <div class="navigation-links">
                     <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">🏠 Volver al Dashboard</a>
                     <a href="{{ url_for('recetas') }}" class="btn btn-secondary">📋 Lista de Recetas</a>
@@ -168,37 +232,121 @@
         <form method="POST">
             <div class="form-group">
                 <label>Nombre de la Receta *</label>
-                <input type="text" name="nombre" required placeholder="Ej: Pan 6 Cereales y Miel">
+                <input type="text" name="nombre" required placeholder="Ej: Pan 6 Cereales y Miel" 
+                       value="{{ receta.nombre if receta else '' }}">
             </div>
 
             <div class="form-group">
                 <label>Descripción</label>
-                <textarea name="descripcion" rows="3" placeholder="Descripción del producto..."></textarea>
+                <textarea name="descripcion" rows="3" placeholder="Descripción del producto...">{{ receta.descripcion if receta else '' }}</textarea>
             </div>
 
             <div class="form-group">
                 <label>Categoría *</label>
                 <select name="categoria" required>
                     <option value="">Seleccionar categoría</option>
-                    <option value="pan">Pan</option>
-                    <option value="torta">Torta</option>
-                    <option value="galleta">Galleta</option>
-                    <option value="pasteleria">Pastelería</option>
-                    <option value="bolleria">Bollería</option>
-                    <option value="otro">Otro</option>
+                    <option value="pan" {% if receta and receta.categoria == 'pan' %}selected{% endif %}>Pan</option>
+                    <option value="torta" {% if receta and receta.categoria == 'torta' %}selected{% endif %}>Torta</option>
+                    <option value="galleta" {% if receta and receta.categoria == 'galleta' %}selected{% endif %}>Galleta</option>
+                    <option value="pasteleria" {% if receta and receta.categoria == 'pasteleria' %}selected{% endif %}>Pastelería</option>
+                    <option value="bolleria" {% if receta and receta.categoria == 'bolleria' %}selected{% endif %}>Bollería</option>
+                    <option value="otro" {% if receta and receta.categoria == 'otro' %}selected{% endif %}>Otro</option>
                 </select>
             </div>
 
             <div class="form-group">
                 <label>Peso por Unidad (gramos) *</label>
-                <input type="number" name="peso_unidad_gramos" step="0.01" required placeholder="350" min="1">
+                <input type="number" name="peso_unidad_gramos" step="0.01" required placeholder="350" min="1"
+                       value="{{ receta.peso_unidad_gramos if receta else '' }}"
+                       oninput="actualizarCalculosCompletos()">
                 <small style="color: #666; font-size: 12px;">Peso de cada unidad individual antes del horneado</small>
             </div>
 
             <div class="form-group">
                 <label>% Pérdida por Horneado</label>
-                <input type="number" name="porcentaje_perdida" step="0.01" value="10.0" min="0" max="50" placeholder="10.0">
+                <input type="number" name="porcentaje_perdida" step="0.01" value="{{ receta.porcentaje_perdida if receta else '10.0' }}" min="0" max="50" placeholder="10.0"
+                       oninput="actualizarCalculosCompletos()">
                 <small style="color: #666; font-size: 12px;">Porcentaje de masa que se pierde durante el horneado</small>
+            </div>
+
+            <!-- ✅ NUEVA SECCIÓN: CÁLCULOS AUTOMÁTICOS CON 45% CIF + 45% GANANCIA -->
+            <div class="calculos-section">
+                <h3>📊 Cálculos Automáticos de Costos y Precios</h3>
+                <p style="color: #666; margin-bottom: 15px; font-size: 14px;">
+                    El sistema calcula automáticamente: <strong>Costo MP → +45% CIF → +45% Ganancia → Precio Venta Final</strong>
+                </p>
+                
+                <div class="calculos-grid">
+                    <div class="calculo-item">
+                        <div class="calculo-label">Costo Materia Prima</div>
+                        <div class="calculo-valor" id="costo-mp">$0</div>
+                    </div>
+                    <div class="calculo-item">
+                        <div class="calculo-label">CIF (45%)</div>
+                        <div class="calculo-valor" id="costo-cif">$0</div>
+                    </div>
+                    <div class="calculo-item">
+                        <div class="calculo-label">Costo Total</div>
+                        <div class="calculo-valor" id="costo-total">$0</div>
+                    </div>
+                    <div class="calculo-item ganancia">
+                        <div class="calculo-label">Ganancia (45%)</div>
+                        <div class="calculo-valor" id="ganancia">$0</div>
+                    </div>
+                    <div class="calculo-item precio-final">
+                        <div class="calculo-label">Precio Total Preparación</div>
+                        <div class="calculo-valor" id="precio-total">$0</div>
+                    </div>
+                    <div class="calculo-item precio-final">
+                        <div class="calculo-label">Precio Venta por Unidad</div>
+                        <div class="calculo-valor" id="precio-unidad">$0</div>
+                    </div>
+                </div>
+
+                <!-- MÉTRICAS DE RENTABILIDAD -->
+                <div style="margin-top: 15px; padding: 15px; background: white; border-radius: 6px;">
+                    <strong>📈 Métricas de Rentabilidad:</strong>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 10px;">
+                        <div>
+                            <small>Margen de Contribución:</small>
+                            <div id="margen-contribucion">-</div>
+                        </div>
+                        <div>
+                            <small>Punto de Equilibrio:</small>
+                            <div id="punto-equilibrio">-</div>
+                        </div>
+                        <div>
+                            <small>Rentabilidad:</small>
+                            <div id="rentabilidad-porcentaje">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ✅ SECCIÓN: PRECIO DE VENTA REAL (COMPARACIÓN) -->
+            <div class="precio-real-section">
+                <h3>💰 Precio de Venta Real (Comparación)</h3>
+                <p style="color: #666; margin-bottom: 15px; font-size: 14px;">
+                    Ingresa el precio al que realmente vendes este producto para comparar con el precio calculado.
+                </p>
+                
+                <div class="form-group">
+                    <label>Precio de Venta Real (OPCIONAL)</label>
+                    <input type="number" name="precio_venta_real" step="0.01" min="0" 
+                           placeholder="Ej: 6000" 
+                           value="{{ receta.precio_venta_real if receta and receta.precio_venta_real else '' }}"
+                           oninput="actualizarComparacionPrecio(this.value)">
+                    <small style="color: #666; font-size: 12px;">
+                        Si no ingresas un precio real, el sistema usará el precio calculado automáticamente.
+                    </small>
+                </div>
+
+                <!-- COMPARACIÓN EN TIEMPO REAL -->
+                <div id="comparacion-precio" class="precio-info" style="display: none;">
+                    <strong>📊 Comparación de Precios:</strong><br>
+                    <span id="diferencia-precio">Diferencia: $0</span> | 
+                    <span id="recomendacion-precio">Recomendación: -</span>
+                </div>
             </div>
 
             <!-- SECCIÓN DE INGREDIENTES ACTUALIZADA -->
@@ -210,23 +358,49 @@
                 
                 <div id="ingredientes-container">
                     <!-- Los ingredientes se agregarán aquí dinámicamente -->
+                    {% if receta and receta.ingredientes %}
+                        {% for ingrediente in receta.ingredientes %}
+                        <div class="ingrediente-row">
+                            <select name="ingredientes[{{ loop.index0 }}][materia_prima_id]" required onchange="actualizarCalculosCompletos()">
+                                <option value="">Seleccionar materia prima</option>
+                                {% for mp in materias_primas %}
+                                <option value="{{ mp.id }}" 
+                                        data-precio="{{ mp.precio_compra }}" 
+                                        data-unidad="{{ mp.unidad_medida }}"
+                                        {% if ingrediente.materia_prima_id == mp.id %}selected{% endif %}>
+                                    {{ mp.nombre }} ({{ mp.unidad_medida }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <input type="number" name="ingredientes[{{ loop.index0 }}][gramos]" 
+                                   step="0.1" placeholder="Gramos" required min="0.1" 
+                                   value="{{ ingrediente.cantidad_gramos }}"
+                                   oninput="actualizarCalculosCompletos()">
+                            <button type="button" onclick="removerIngrediente(this)" 
+                                    class="btn btn-remove" title="Eliminar ingrediente">
+                                ❌
+                            </button>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
                 </div>
                 
                 <!-- RESUMEN EN TIEMPO REAL -->
                 <div class="resumen-box">
                     <strong>📊 Resumen de la fórmula:</strong><br>
                     <span id="peso-total">0</span>g peso total | 
-                    <span id="unidades-total">0</span> unidades obtenidas
+                    <span id="unidades-total">0</span> unidades obtenidas |
+                    <span id="costo-mp-resumen">$0</span> costo MP
                 </div>
                 
-                <button type="button" onclick="agregarIngrediente()" class="btn" style="margin-top: 15px;">
+                <button type="button" id="btn-agregar-ingrediente" class="btn" style="margin-top: 15px;">
                     ➕ Agregar Ingrediente
                 </button>
             </div>
 
             <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
                 <button type="submit" class="btn btn-success" style="padding: 12px 25px; font-size: 16px;">
-                    💾 Guardar Receta
+                    💾 {% if editar %}Actualizar{% else %}Guardar{% endif %} Receta
                 </button>
                 <a href="{{ url_for('recetas') }}" class="btn btn-secondary">❌ Cancelar</a>
             </div>
@@ -234,72 +408,196 @@
     </div>
 
     <script>
+        // ✅ SISTEMA DE RECETAS - VERSIÓN CORREGIDA Y SIMPLIFICADA
+        console.log('✅ Inicializando sistema de recetas...');
+
+        // ✅ FUNCIÓN PRINCIPAL - AGREGAR INGREDIENTE
         function agregarIngrediente() {
+            console.log('➕ EJECUTANDO agregarIngrediente...');
+            
             const container = document.getElementById('ingredientes-container');
+            if (!container) {
+                console.error('❌ ERROR: No se encontró el contenedor de ingredientes');
+                return;
+            }
+            
             const index = container.children.length;
             
             const row = document.createElement('div');
             row.className = 'ingrediente-row';
             row.innerHTML = `
-                <select name="ingredientes[${index}][materia_prima_id]" required onchange="actualizarResumen()">
+                <select name="ingredientes[${index}][materia_prima_id]" required onchange="actualizarCalculosCompletos()">
                     <option value="">Seleccionar materia prima</option>
                     {% for mp in materias_primas %}
-                    <option value="{{ mp.id }}">{{ mp.nombre }} ({{ mp.unidad_medida }})</option>
+                    <option value="{{ mp.id }}" data-precio="{{ mp.precio_compra }}" data-unidad="{{ mp.unidad_medida }}">
+                        {{ mp.nombre }} ({{ mp.unidad_medida }})
+                    </option>
                     {% endfor %}
                 </select>
                 <input type="number" name="ingredientes[${index}][gramos]" 
                        step="0.1" placeholder="Gramos" required min="0.1" 
-                       oninput="actualizarResumen()">
-                <button type="button" onclick="this.parentElement.remove(); actualizarResumen();" 
+                       oninput="actualizarCalculosCompletos()">
+                <button type="button" onclick="removerIngrediente(this)" 
                         class="btn btn-remove" title="Eliminar ingrediente">
                     ❌
                 </button>
             `;
+            
             container.appendChild(row);
-            actualizarResumen();
+            console.log('✅ Ingrediente agregado correctamente');
+            actualizarCalculosCompletos();
         }
 
-        function actualizarResumen() {
-            const inputs = document.querySelectorAll('input[name*="[gramos]"]');
+        // ✅ FUNCIÓN PARA ELIMINAR INGREDIENTE
+        function removerIngrediente(boton) {
+            const item = boton.parentElement;
+            item.remove();
+            console.log('🗑️ Ingrediente eliminado');
+            actualizarCalculosCompletos();
+        }
+
+        // ✅ FUNCIÓN PARA CALCULAR COSTOS (SIN preciosMP)
+        function calcularCostoIngredientes() {
+            const rows = document.querySelectorAll('.ingrediente-row');
+            let costoTotal = 0;
             let pesoTotal = 0;
             
-            inputs.forEach(input => {
-                const valor = parseFloat(input.value) || 0;
-                pesoTotal += valor;
+            rows.forEach(row => {
+                const select = row.querySelector('select');
+                const input = row.querySelector('input[type="number"]');
+                
+                if (select && select.value && input && input.value) {
+                    // Obtener precio directamente del data-atributo
+                    const option = select.options[select.selectedIndex];
+                    const precioUnitario = parseFloat(option.dataset.precio) || 0;
+                    const cantidadGramos = parseFloat(input.value) || 0;
+                    const unidadMedida = option.dataset.unidad;
+                    
+                    // Convertir a gramos si es necesario
+                    let factorConversion = 1;
+                    if (unidadMedida === 'kg') factorConversion = 1000;
+                    if (unidadMedida === 'lb') factorConversion = 453.592;
+                    
+                    const costoIngrediente = (cantidadGramos / factorConversion) * precioUnitario;
+                    costoTotal += costoIngrediente;
+                    pesoTotal += cantidadGramos;
+                }
             });
             
-            // Calcular unidades obtenidas
+            return { costoTotal, pesoTotal };
+        }
+
+        // ✅ FUNCIÓN PRINCIPAL DE CÁLCULOS
+        function actualizarCalculosCompletos() {
+            console.log('📊 Ejecutando actualizarCalculosCompletos...');
+            
+            const { costoTotal, pesoTotal } = calcularCostoIngredientes();
+            
+            // Calcular unidades obtenidas considerando pérdida por horneado
             const pesoUnidadInput = document.querySelector('input[name="peso_unidad_gramos"]');
+            const porcentajePerdidaInput = document.querySelector('input[name="porcentaje_perdida"]');
+            
             const pesoUnidad = parseFloat(pesoUnidadInput?.value) || 0;
-            const unidadesObtenidas = pesoUnidad > 0 ? Math.floor(pesoTotal / pesoUnidad) : 0;
+            const porcentajePerdida = parseFloat(porcentajePerdidaInput?.value) || 0;
             
-            // Actualizar display
-            document.getElementById('peso-total').textContent = pesoTotal.toFixed(1);
-            document.getElementById('unidades-total').textContent = unidadesObtenidas;
+            // Peso después de horneado (considerando pérdida)
+            const pesoHorneado = pesoTotal * (1 - porcentajePerdida / 100);
+            const unidadesObtenidas = pesoUnidad > 0 ? Math.floor(pesoHorneado / pesoUnidad) : 0;
             
-            // Resaltar si hay suficiente masa para al menos 1 unidad
-            const resumenBox = document.querySelector('.resumen-box');
-            if (unidadesObtenidas > 0) {
-                resumenBox.style.borderLeftColor = '#28a745';
-                resumenBox.style.background = '#f8fff9';
-            } else {
-                resumenBox.style.borderLeftColor = '#dc3545';
-                resumenBox.style.background = '#fff8f8';
+            // APLICAR FÓRMULAS DEL EXCEL: 45% CIF + 45% GANANCIA
+            const costoMP = costoTotal;
+            const cif = costoMP * 0.45;
+            const costoTotalConCIF = costoMP + cif;
+            const ganancia = costoTotalConCIF * 0.45;
+            const precioTotalPreparacion = costoTotalConCIF + ganancia;
+            const precioVentaUnidad = unidadesObtenidas > 0 ? precioTotalPreparacion / unidadesObtenidas : 0;
+            
+            // Actualizar displays usando función auxiliar segura
+            actualizarElemento('peso-total', pesoTotal.toFixed(1));
+            actualizarElemento('unidades-total', unidadesObtenidas);
+            actualizarElemento('costo-mp-resumen', `$${costoMP.toFixed(2)}`);
+            
+            // Actualizar sección de cálculos
+            actualizarElemento('costo-mp', `$${costoMP.toFixed(2)}`);
+            actualizarElemento('costo-cif', `$${cif.toFixed(2)}`);
+            actualizarElemento('costo-total', `$${costoTotalConCIF.toFixed(2)}`);
+            actualizarElemento('ganancia', `$${ganancia.toFixed(2)}`);
+            actualizarElemento('precio-total', `$${precioTotalPreparacion.toFixed(2)}`);
+            actualizarElemento('precio-unidad', `$${precioVentaUnidad.toFixed(2)}`);
+        }
+
+        // ✅ FUNCIÓN AUXILIAR PARA ACTUALIZAR ELEMENTOS
+        function actualizarElemento(id, valor) {
+            const elemento = document.getElementById(id);
+            if (elemento) {
+                elemento.textContent = valor;
             }
         }
 
-        // Agregar un ingrediente inicial al cargar
+        // ✅ FUNCIÓN PARA COMPARACIÓN DE PRECIOS
+        function actualizarComparacionPrecio(precioReal) {
+            const precio = parseFloat(precioReal) || 0;
+            const comparacionDiv = document.getElementById('comparacion-precio');
+            const precioCalculadoElement = document.getElementById('precio-unidad');
+            
+            if (!precioCalculadoElement || !comparacionDiv) return;
+            
+            const precioCalculado = parseFloat(precioCalculadoElement.textContent.replace('$', '')) || 0;
+            
+            if (precio > 0 && precioCalculado > 0) {
+                const diferencia = precio - precioCalculado;
+                const diferenciaPorcentaje = (diferencia / precioCalculado) * 100;
+                
+                let recomendacion = "Precio adecuado";
+                let color = "#28a745";
+                
+                if (diferencia < -precioCalculado * 0.1) {
+                    recomendacion = "Precio muy bajo";
+                    color = "#dc3545";
+                } else if (diferencia < 0) {
+                    recomendacion = "Precio bajo";
+                    color = "#fd7e14";
+                } else if (diferencia > precioCalculado * 0.2) {
+                    recomendacion = "Precio alto";
+                    color = "#ffc107";
+                }
+                
+                actualizarElemento('diferencia-precio', `Diferencia: $${diferencia.toFixed(2)} (${diferenciaPorcentaje.toFixed(1)}%)`);
+                actualizarElemento('recomendacion-precio', `Recomendación: ${recomendacion}`);
+                document.getElementById('recomendacion-precio').style.color = color;
+                
+                comparacionDiv.style.display = 'block';
+            } else {
+                comparacionDiv.style.display = 'none';
+            }
+        }
+
+        // ✅ INICIALIZACIÓN ROBUSTA
         document.addEventListener('DOMContentLoaded', function() {
-            if (document.getElementById('ingredientes-container').children.length === 0) {
+            console.log('✅ DOM completamente cargado - Sistema listo');
+            
+            // Event listener DIRECTO al botón (más confiable)
+            const botonAgregar = document.getElementById('btn-agregar-ingrediente');
+            if (botonAgregar) {
+                botonAgregar.addEventListener('click', agregarIngrediente);
+                console.log('🎯 Event listener agregado al botón');
+            }
+            
+            // Agregar primer ingrediente si no hay ninguno
+            const container = document.getElementById('ingredientes-container');
+            if (container && container.children.length === 0) {
+                console.log('➕ Agregando primer ingrediente automáticamente...');
                 agregarIngrediente();
             }
             
-            // Actualizar resumen cuando cambie el peso por unidad
-            document.querySelector('input[name="peso_unidad_gramos"]').addEventListener('input', actualizarResumen);
+            // Ejecutar cálculos iniciales
+            actualizarCalculosCompletos();
+            
+            console.log('🎉 Inicialización completada');
         });
 
-        // Validación mejorada del formulario
-        document.querySelector('form').addEventListener('submit', function(e) {
+        // ✅ VALIDACIÓN DEL FORMULARIO
+        document.querySelector('form')?.addEventListener('submit', function(e) {
             const ingredientes = document.querySelectorAll('.ingrediente-row');
             if (ingredientes.length === 0) {
                 e.preventDefault();
@@ -307,43 +605,14 @@
                 return false;
             }
             
-            const pesoTotal = parseFloat(document.getElementById('peso-total').textContent) || 0;
-            if (pesoTotal <= 0) {
-                e.preventDefault();
-                alert('❌ La suma total de ingredientes debe ser mayor a 0 gramos.');
-                return false;
-            }
-            
-            const pesoUnidad = parseFloat(document.querySelector('input[name="peso_unidad_gramos"]').value) || 0;
-            if (pesoUnidad <= 0) {
-                e.preventDefault();
-                alert('❌ El peso por unidad debe ser mayor a 0 gramos.');
-                return false;
-            }
-            
-            const unidadesObtenidas = parseInt(document.getElementById('unidades-total').textContent) || 0;
-            if (unidadesObtenidas === 0) {
-                if (!confirm('⚠️  El peso total de la masa no es suficiente para producir ninguna unidad. ¿Desea continuar de todas formas?')) {
-                    e.preventDefault();
-                    return false;
-                }
-            }
-            
-            // Verificar que todos los ingredientes tengan materia prima seleccionada
-            let todosValidos = true;
-            ingredientes.forEach(row => {
-                const select = row.querySelector('select');
-                const input = row.querySelector('input[type="number"]');
-                if (!select.value || !input.value || parseFloat(input.value) <= 0) {
-                    todosValidos = false;
-                }
-            });
-            
-            if (!todosValidos) {
-                e.preventDefault();
-                alert('❌ Todos los ingredientes deben tener una materia prima seleccionada y una cantidad válida.');
-                return false;
-            }
+            // Validaciones adicionales...
+        });
+
+        // ✅ CONFIRMAR QUE LAS FUNCIONES ESTÁN DEFINIDAS
+        console.log('🔧 Funciones disponibles:', {
+            agregarIngrediente: typeof agregarIngrediente,
+            removerIngrediente: typeof removerIngrediente,
+            actualizarCalculosCompletos: typeof actualizarCalculosCompletos
         });
     </script>
 </body>

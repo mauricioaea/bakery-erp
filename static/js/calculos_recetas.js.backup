@@ -1,0 +1,334 @@
+// static/js/calculos_recetas.js
+// Funciones para cálculos en tiempo real de recetas
+
+// =============================================
+// FUNCIONES NUEVAS PARA MANEJAR INGREDIENTES
+// =============================================
+
+function agregarIngrediente() {
+    console.log('➕ Función agregarIngrediente ejecutada');
+    
+    const contenedor = document.getElementById('ingredientes-container');
+    if (!contenedor) {
+        console.error('❌ No se encontró el contenedor de ingredientes');
+        return;
+    }
+    
+    const nuevoIngrediente = document.createElement('div');
+    nuevoIngrediente.className = 'ingrediente-item';
+    nuevoIngrediente.innerHTML = `
+        <input type="text" placeholder="Nombre del ingrediente" name="ingredientes[]" required>
+        <input type="number" placeholder="Cantidad (g)" name="cantidades[]" step="0.1" required 
+               oninput="actualizarCalculosCompletos()">
+        <input type="number" placeholder="Precio por kg ($)" name="precios[]" step="0.01" 
+               oninput="actualizarComparacionPrecio(this)">
+        <button type="button" onclick="removerIngrediente(this)">Eliminar</button>
+    `;
+    
+    contenedor.appendChild(nuevoIngrediente);
+    console.log('✅ Nuevo ingrediente agregado');
+    
+    // Actualizar cálculos después de agregar
+    actualizarCalculosCompletos();
+}
+
+function removerIngrediente(boton) {
+    const item = boton.parentElement;
+    item.remove();
+    console.log('🗑️ Ingrediente eliminado');
+    actualizarCalculosCompletos();
+}
+
+function actualizarCalculosCompletos() {
+    console.log('📊 Actualizando cálculos completos...');
+    
+    const cantidades = document.getElementsByName('cantidades[]');
+    let totalGramos = 0;
+    
+    // Calcular total de gramos
+    Array.from(cantidades).forEach(input => {
+        totalGramos += parseFloat(input.value) || 0;
+    });
+    
+    // Actualizar porcentajes para cada ingrediente
+    Array.from(cantidades).forEach(input => {
+        const valor = parseFloat(input.value) || 0;
+        const porcentaje = totalGramos > 0 ? (valor / totalGramos * 100).toFixed(2) : 0;
+        
+        // Buscar o crear elemento de porcentaje
+        const contenedor = input.parentElement;
+        let porcentajeElement = contenedor.querySelector('.porcentaje-display');
+        
+        if (!porcentajeElement) {
+            porcentajeElement = document.createElement('span');
+            porcentajeElement.className = 'porcentaje-display';
+            porcentajeElement.style.marginLeft = '10px';
+            porcentajeElement.style.color = '#666';
+            input.parentNode.insertBefore(porcentajeElement, input.nextSibling);
+        }
+        
+        porcentajeElement.textContent = `${porcentaje}%`;
+    });
+    
+    // Actualizar display del total
+    const totalDisplay = document.getElementById('peso-total');
+    if (totalDisplay) {
+        totalDisplay.textContent = `${totalGramos.toFixed(2)}g`;
+    }
+    
+    // Actualizar unidades obtenidas si existe el campo
+    const pesoUnidadInput = document.querySelector('input[name="peso_unidad_gramos"]');
+    if (pesoUnidadInput && totalDisplay) {
+        const pesoUnidad = parseFloat(pesoUnidadInput.value) || 0;
+        const unidadesObtenidas = pesoUnidad > 0 ? Math.floor(totalGramos / pesoUnidad) : 0;
+        
+        const unidadesDisplay = document.getElementById('unidades-obtenidas');
+        if (unidadesDisplay) {
+            unidadesDisplay.textContent = unidadesObtenidas;
+        }
+    }
+    
+    console.log(`📦 Peso total: ${totalGramos}g`);
+}
+
+function actualizarComparacionPrecio(input) {
+    console.log('💰 Actualizando comparación de precio...');
+    
+    const precioPorKg = parseFloat(input.value) || 0;
+    const cantidadInput = input.parentElement.querySelector('input[name="cantidades[]"]');
+    const cantidad = parseFloat(cantidadInput?.value) || 0;
+    
+    const costoIngrediente = (precioPorKg * cantidad) / 1000;
+    
+    // Mostrar costo del ingrediente
+    const contenedor = input.parentElement;
+    let costoElement = contenedor.querySelector('.costo-display');
+    
+    if (!costoElement) {
+        costoElement = document.createElement('span');
+        costoElement.className = 'costo-display';
+        costoElement.style.marginLeft = '10px';
+        costoElement.style.color = '#28a745';
+        costoElement.style.fontWeight = 'bold';
+        input.parentNode.insertBefore(costoElement, input.nextSibling);
+    }
+    
+    costoElement.textContent = `$${costoIngrediente.toFixed(2)}`;
+    
+    // Actualizar costo total
+    actualizarCostoTotal();
+}
+
+function actualizarCostoTotal() {
+    const precios = document.getElementsByName('precios[]');
+    const cantidades = document.getElementsByName('cantidades[]');
+    let costoTotal = 0;
+    
+    Array.from(precios).forEach((precioInput, index) => {
+        const precioPorKg = parseFloat(precioInput.value) || 0;
+        const cantidad = parseFloat(cantidades[index]?.value) || 0;
+        costoTotal += (precioPorKg * cantidad) / 1000;
+    });
+    
+    const costoDisplay = document.getElementById('costo-total');
+    if (costoDisplay) {
+        costoDisplay.textContent = `$${costoTotal.toFixed(2)}`;
+    }
+    
+    console.log(`💰 Costo total MP: $${costoTotal.toFixed(2)}`);
+}
+
+// =============================================
+// FUNCIONES ORIGINALES (las que ya tenías)
+// =============================================
+
+function calcularCostosEnTiempoReal() {
+    console.log('📊 Calculando costos en tiempo real...');
+    
+    const ingredientes = [];
+    let pesoTotal = 0;
+    
+    // Recopilar datos de ingredientes
+    document.querySelectorAll('.ingrediente-row').forEach((row, index) => {
+        const select = row.querySelector('select[name*="materia_prima_id"]');
+        const input = row.querySelector('input[name*="gramos"]');
+        
+        if (select && select.value && input && input.value) {
+            const cantidad = parseFloat(input.value) || 0;
+            const materiaPrimaId = select.value;
+            
+            if (cantidad > 0 && materiaPrimaId) {
+                ingredientes.push({
+                    materia_prima_id: materiaPrimaId,
+                    cantidad_gramos: cantidad
+                });
+                pesoTotal += cantidad;
+            }
+        }
+    });
+    
+    // Obtener parámetros adicionales
+    const pesoUnidad = parseFloat(document.querySelector('input[name="peso_unidad_gramos"]')?.value) || 0;
+    const porcentajePerdida = parseFloat(document.querySelector('input[name="porcentaje_perdida"]')?.value) || 10.0;
+    
+    console.log('📦 Datos recopilados:', {
+        ingredientes: ingredientes.length,
+        pesoTotal: pesoTotal,
+        pesoUnidad: pesoUnidad,
+        porcentajePerdida: porcentajePerdida
+    });
+    
+    if (ingredientes.length > 0 && pesoUnidad > 0) {
+        // Realizar petición al servidor para cálculos complejos
+        fetch('/api/calcular_precio_receta', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                ingredientes: ingredientes,
+                peso_unidad_gramos: pesoUnidad,
+                porcentaje_perdida: porcentajePerdida
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log('✅ Respuesta del servidor:', data);
+                actualizarInterfazConResultados(data);
+            } else {
+                console.error('❌ Error del servidor:', data.error);
+                mostrarErrorCalculo(data.error);
+            }
+        })
+        .catch(error => {
+            console.error('❌ Error de conexión:', error);
+            mostrarErrorCalculo('Error de conexión con el servidor');
+        });
+    } else {
+        // Cálculos locales básicos si no hay datos suficientes
+        actualizarCalculosLocales(pesoTotal, pesoUnidad);
+    }
+}
+
+function actualizarInterfazConResultados(data) {
+    // Actualizar sección de cálculos automáticos
+    if (document.getElementById('costo-mp')) {
+        document.getElementById('costo-mp').textContent = `$${data.costo_materia_prima.toFixed(2)}`;
+        document.getElementById('costo-cif').textContent = `$${data.cif.toFixed(2)}`;
+        document.getElementById('costo-total').textContent = `$${data.costo_total.toFixed(2)}`;
+        document.getElementById('ganancia').textContent = `$${data.ganancia.toFixed(2)}`;
+        document.getElementById('precio-total').textContent = `$${data.precio_total_preparacion.toFixed(2)}`;
+        document.getElementById('precio-unidad').textContent = `$${data.precio_venta_unidad.toFixed(2)}`;
+    }
+    
+    // Actualizar resumen
+    if (document.getElementById('peso-total')) {
+        document.getElementById('peso-total').textContent = `${data.peso_total.toFixed(1)}`;
+        document.getElementById('unidades-total').textContent = data.unidades_obtenidas;
+        document.getElementById('costo-mp-resumen').textContent = `$${data.costo_materia_prima.toFixed(2)}`;
+    }
+    
+    // Actualizar métricas de rentabilidad
+    actualizarMetricasRentabilidad(data);
+    
+    // Resaltar si hay suficiente masa
+    const resumenBox = document.querySelector('.resumen-box');
+    if (resumenBox && data.unidades_obtenidas > 0) {
+        resumenBox.style.borderLeftColor = '#28a745';
+        resumenBox.style.background = '#f8fff9';
+    } else if (resumenBox) {
+        resumenBox.style.borderLeftColor = '#dc3545';
+        resumenBox.style.background = '#fff8f8';
+    }
+}
+
+function actualizarMetricasRentabilidad(data) {
+    if (!data.precio_venta_unidad || data.precio_venta_unidad <= 0) return;
+    
+    // Actualizar margen de contribución
+    const margenElement = document.getElementById('margen-contribucion');
+    if (margenElement) {
+        let badgeClass = 'badge-danger';
+        if (data.margen_porcentaje >= 40) badgeClass = 'badge-success';
+        else if (data.margen_porcentaje >= 25) badgeClass = 'badge-warning';
+        
+        margenElement.innerHTML = 
+            `$${data.margen_contribucion.toFixed(2)} <span class="badge ${badgeClass}">${data.margen_porcentaje.toFixed(1)}%</span>`;
+    }
+    
+    // Actualizar punto de equilibrio
+    const equilibrioElement = document.getElementById('punto-equilibrio');
+    if (equilibrioElement) {
+        equilibrioElement.textContent = `${data.punto_equilibrio} unidades`;
+    }
+    
+    // Actualizar rentabilidad
+    const rentabilidadElement = document.getElementById('rentabilidad-porcentaje');
+    if (rentabilidadElement) {
+        let badgeClass = 'badge-danger';
+        if (data.rentabilidad_porcentaje >= 40) badgeClass = 'badge-success';
+        else if (data.rentabilidad_porcentaje >= 25) badgeClass = 'badge-warning';
+        
+        rentabilidadElement.innerHTML = 
+            `<span class="badge ${badgeClass}">${data.rentabilidad_porcentaje.toFixed(1)}%</span>`;
+    }
+}
+
+function actualizarCalculosLocales(pesoTotal, pesoUnidad) {
+    // Cálculos básicos sin necesidad del servidor
+    const unidadesObtenidas = pesoUnidad > 0 ? Math.floor(pesoTotal / pesoUnidad) : 0;
+    
+    // Actualizar displays básicos
+    if (document.getElementById('peso-total')) {
+        document.getElementById('peso-total').textContent = pesoTotal.toFixed(1);
+        document.getElementById('unidades-total').textContent = unidadesObtenidas;
+    }
+    
+    // Resaltar estado
+    const resumenBox = document.querySelector('.resumen-box');
+    if (resumenBox) {
+        if (unidadesObtenidas > 0) {
+            resumenBox.style.borderLeftColor = '#28a745';
+            resumenBox.style.background = '#f8fff9';
+        } else {
+            resumenBox.style.borderLeftColor = '#dc3545';
+            resumenBox.style.background = '#fff8f8';
+        }
+    }
+}
+
+function mostrarErrorCalculo(mensaje) {
+    console.error('❌ Error en cálculo:', mensaje);
+    // Podrías mostrar una notificación al usuario aquí
+    const resumenBox = document.querySelector('.resumen-box');
+    if (resumenBox) {
+        resumenBox.style.borderLeftColor = '#dc3545';
+        resumenBox.style.background = '#fff8f8';
+    }
+}
+
+// Función para debounce (evitar múltiples llamadas rápidas)
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// Exportar funciones para uso global
+window.calculosRecetas = {
+    calcularCostosEnTiempoReal: debounce(calcularCostosEnTiempoReal, 500),
+    actualizarCalculosLocales: actualizarCalculosLocales,
+    agregarIngrediente: agregarIngrediente,
+    removerIngrediente: removerIngrediente,
+    actualizarCalculosCompletos: actualizarCalculosCompletos,
+    actualizarComparacionPrecio: actualizarComparacionPrecio
+};
+
+console.log('✅ calculos_recetas.js cargado correctamente con todas las funciones');

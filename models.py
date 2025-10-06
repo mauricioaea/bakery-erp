@@ -1,5 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+import math  
 
 db = SQLAlchemy()
 
@@ -27,6 +28,7 @@ class Producto(db.Model):
     activo = db.Column(db.Boolean, default=True)
     
 class Proveedor(db.Model):
+    __tablename__ = 'proveedor'
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
     contacto = db.Column(db.String(100))
@@ -39,47 +41,48 @@ class Proveedor(db.Model):
     activo = db.Column(db.Boolean, default=True)
     fecha_registro = db.Column(db.DateTime, default=datetime.now)
     
-    # Relación con materias primas
-    materias_primas = db.relationship('MateriaPrima', backref='proveedor_rel', lazy=True)
-
+    # ✅ RELACIÓN CORREGIDA - Solo esta es necesaria
+    # La relación se define en MateriaPrima con backref
     
 class MateriaPrima(db.Model):
     __tablename__ = 'materias_primas'
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
-    proveedor_id = db.Column(db.Integer, db.ForeignKey('proveedor.id'))
+    proveedor_id = db.Column(db.Integer, db.ForeignKey('proveedor.id'), nullable=False)
     unidad_medida = db.Column(db.String(20), nullable=False)
+    costo_promedio = db.Column(db.Float, default=0)
     stock_actual = db.Column(db.Float, default=0)
     stock_minimo = db.Column(db.Float, default=0)
-    costo_promedio = db.Column(db.Float, default=0)
-    activo = db.Column(db.Boolean, default=True)
-    fecha_vencimiento = db.Column(db.Date)
-    alerta_vencimiento = db.Column(db.Integer, default=15)
     fecha_ultima_actualizacion = db.Column(db.DateTime, default=datetime.utcnow)
+    fecha_vencimiento = db.Column(db.Date, nullable=True)
+    activo = db.Column(db.Boolean, default=True)
     
-    # NUEVOS CAMPOS PARA GESTIÓN POR EMPAQUES
-    gramos_por_empaque = db.Column(db.Float, nullable=False, default=1.0)
-    unidad_compra = db.Column(db.String(50), nullable=False, default='Unidad')
+    # NUEVOS CAMPOS PARA EL SISTEMA DE EMPAQUES
+    unidad_compra = db.Column(db.String(50), default='Unidad')
+    gramos_por_empaque = db.Column(db.Float, default=1.0)
     stock_minimo_empaques = db.Column(db.Integer, default=1)
     
+    # Relación con proveedor
+    proveedor = db.relationship('Proveedor', backref='materias_primas')
+
+    # ✅ AGREGA ESTAS PROPIEDADES QUE FALTAN
     @property
     def valor_inventario(self):
-        """Calcular valor total en inventario para esta materia prima"""
+        """Calcula el valor total del inventario de esta materia prima"""
         return self.stock_actual * self.costo_promedio
 
-class HistorialCompra(db.Model):
-    __tablename__ = 'historial_compras'
-    id = db.Column(db.Integer, primary_key=True)
-    materia_prima_id = db.Column(db.Integer, db.ForeignKey('materias_primas.id'), nullable=False)
-    fecha_compra = db.Column(db.DateTime, default=datetime.utcnow)
-    cantidad_empaques = db.Column(db.Integer, nullable=False)
-    precio_total = db.Column(db.Float, nullable=False)
-    precio_unitario_empaque = db.Column(db.Float, nullable=False)
-    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
-    
-    # Relaciones
-    materia_prima = db.relationship('MateriaPrima', backref='compras')
-    usuario = db.relationship('Usuario')
+    @property
+    def stock_empaques_actual(self):
+        """Calcula el stock actual en empaques"""
+        if self.gramos_por_empaque > 0:
+            return self.stock_actual / self.gramos_por_empaque
+        return 0
+
+    @property
+    def proveedor_rel(self):
+        """Propiedad para compatibilidad con el template"""
+        return self.proveedor
+
     
 class Receta(db.Model):
     __tablename__ = 'recetas'
@@ -94,17 +97,170 @@ class Receta(db.Model):
     activo = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # NUEVOS CAMPOS PARA EL SISTEMA DE PRODUCCIÓN
+    # NUEVOS CAMPOS PARA EL SISTEMA DE PRECIOS REALES
+    precio_venta_real = db.Column(db.Float, default=0)  # ✅ PRECIO REAL DE VENTA
+    precio_venta_unitario = db.Column(db.Float, default=0)  # Precio teórico por unidad
+    precio_por_gramo = db.Column(db.Float, default=0)  # Precio por gramo teórico
+    
+    # CAMPOS EXISTENTES DE PRODUCCIÓN
     peso_total_masa = db.Column(db.Float, default=0)  # Peso total en gramos
     unidades_obtenidas = db.Column(db.Integer, default=0)  # Unidades por lote
     peso_horneado_unidad = db.Column(db.Float, default=0)  # Peso después de horneado
     costo_materias_primas = db.Column(db.Float, default=0)  # Costo solo de materias primas
     costo_indirecto = db.Column(db.Float, default=0)  # Costos indirectos (CIF)
-    margen_ganancia = db.Column(db.Float, default=0)  # Margen de ganancia
-    precio_venta_unitario = db.Column(db.Float, default=0)  # Precio de venta por unidad
-    precio_por_gramo = db.Column(db.Float, default=0)  # Precio por gramo
+    margen_ganancia = db.Column(db.Float, default=0)  # Margen de ganancia teórico
     
     ingredientes = db.relationship('RecetaIngrediente', backref='receta', lazy=True, cascade='all, delete-orphan')
+
+    # PROPIEDADES CALCULADAS PARA ANÁLISIS REAL
+    @property
+    def precio_venta_efectivo(self):
+        """Precio que realmente se usa: real si existe, sino teórico"""
+        return self.precio_venta_real if self.precio_venta_real > 0 else self.precio_venta_unitario
+    
+    @property
+    def costo_unitario(self):
+        """Costo por unidad producida"""
+        if self.unidades_obtenidas > 0:
+            return self.costo_total / self.unidades_obtenidas
+        return 0
+
+    @property
+    def utilidad_real_pesos(self):
+        """Utilidad real en pesos por unidad"""
+        if self.precio_venta_efectivo > 0:
+            return self.precio_venta_efectivo - self.costo_unitario
+        return 0
+
+    @property
+    def utilidad_real_porcentaje(self):
+        """Margen de utilidad real en porcentaje"""
+        if self.precio_venta_efectivo > 0 and self.utilidad_real_pesos > 0:
+            return (self.utilidad_real_pesos / self.precio_venta_efectivo) * 100
+        return 0
+
+    @property
+    def margen_contribucion(self):
+        """Margen de contribución por unidad (igual a utilidad en pesos)"""
+        return self.utilidad_real_pesos
+
+    @property
+    def punto_equilibrio_unidades(self):
+        """Punto de equilibrio en unidades (cuántas vender para cubrir costos fijos)"""
+        if self.utilidad_real_pesos > 0:
+            # Considerando solo costos variables para el punto de equilibrio
+            return math.ceil(self.costo_total / self.utilidad_real_pesos)
+        return 0
+
+    @property
+    def rentabilidad_categoria(self):
+        """Categorizar la rentabilidad basada en el margen real"""
+        margen = self.utilidad_real_porcentaje
+        if margen >= 40:
+            return "Alta"
+        elif margen >= 25:
+            return "Media"
+        elif margen >= 15:
+            return "Baja"
+        elif margen > 0:
+            return "Mínima"
+        else:
+            return "Pérdida"
+
+    @property
+    def eficiencia_costo(self):
+        """Eficiencia en el uso de costos (qué % del precio es costo)"""
+        if self.precio_venta_efectivo > 0:
+            return (self.costo_unitario / self.precio_venta_efectivo) * 100
+        return 100  # Si no hay precio, todo es costo
+
+    @property
+    def valor_produccion_total(self):
+        """Valor total de la producción si se vende todo"""
+        if self.unidades_obtenidas > 0:
+            return self.precio_venta_efectivo * self.unidades_obtenidas
+        return 0
+
+    @property
+    def utilidad_total_lote(self):
+        """Utilidad total si se vende todo el lote"""
+        return self.utilidad_real_pesos * self.unidades_obtenidas
+
+    # PROPIEDADES CALCULADAS ORIGINALES (se mantienen como respaldo)
+    @property
+    def peso_total_masa_calculado(self):
+        """Peso total de la masa sumando todos los ingredientes"""
+        return sum(ing.cantidad_gramos for ing in self.ingredientes)
+
+    @property
+    def unidades_obtenidas_calculadas(self):
+        """Cantidad de unidades que se obtienen del lote"""
+        if self.peso_unidad_gramos > 0:
+            return int(self.peso_total_masa / self.peso_unidad_gramos)
+        return 0
+
+    @property
+    def peso_horneado_unidad_calculado(self):
+        """Peso de cada unidad después del horneado (considerando pérdidas)"""
+        if self.peso_unidad_gramos > 0:
+            perdida_gramos = self.peso_unidad_gramos * (self.porcentaje_perdida / 100)
+            return self.peso_unidad_gramos - perdida_gramos
+        return 0
+
+    @property
+    def costo_unitario_calculado(self):
+        """Costo por unidad producida"""
+        if self.unidades_obtenidas > 0:
+            return self.costo_total / self.unidades_obtenidas
+        return 0
+    
+    # Agregar método a la clase Receta para calcular costos con ganancia
+def calcular_precio_venta(self):
+    """Calcular precio de venta con CIF 45% y ganancia 45%"""
+    # Costo total de materia prima
+    costo_mp = self.calcular_costo_total()
+    
+    # Costo Indirecto de Fabricación (CIF 45%)
+    cif = costo_mp * 0.45
+    
+    # Costo total (MP + CIF)
+    costo_total = costo_mp + cif
+    
+    # Ganancia (45% sobre costo total)
+    ganancia = costo_total * 0.45
+    
+    # Precio total de preparación
+    precio_total = costo_total + ganancia
+    
+    # Precio por unidad
+    if self.unidades_produccion > 0:
+        precio_unidad = precio_total / self.unidades_produccion
+    else:
+        precio_unidad = 0
+    
+    return {
+        'costo_materia_prima': costo_mp,
+        'cif': cif,
+        'costo_total': costo_total,
+        'ganancia': ganancia,
+        'precio_total_preparacion': precio_total,
+        'precio_venta_unidad': precio_unidad
+    }
+    
+class HistorialCompra(db.Model):
+    __tablename__ = 'historial_compras'
+    id = db.Column(db.Integer, primary_key=True)
+    materia_prima_id = db.Column(db.Integer, db.ForeignKey('materias_primas.id'), nullable=False)
+    fecha_compra = db.Column(db.DateTime, default=datetime.utcnow)
+    cantidad_empaques = db.Column(db.Integer, nullable=False)
+    precio_total = db.Column(db.Float, nullable=False)
+    precio_unitario_empaque = db.Column(db.Float, nullable=False)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
+    
+    # Relaciones
+    materia_prima = db.relationship('MateriaPrima', backref='compras')
+    usuario = db.relationship('Usuario')
+    
 
     # PROPIEDADES CALCULADAS (se mantienen como respaldo)
     @property
@@ -218,3 +374,5 @@ class HistorialInventario(db.Model):
     # Relaciones
     materia_prima = db.relationship('MateriaPrima', backref='movimientos_inventario')
     orden_produccion = db.relationship('OrdenProduccion', backref='movimientos_inventario')
+    
+    
