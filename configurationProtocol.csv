@@ -1,0 +1,10 @@
+
+# Crea este contenido básico
+cat > configurationProtocol.csv << EOF
+section,parameter,value,description
+alignment,min_confidence,0.8,Minimum alignment confidence
+validation,timeout_seconds,30,Validation process timeout
+network,max_retries,3,Network connection retries
+logging,level,INFO,Logging level (DEBUG/INFO/WARNING/ERROR)
+database,connection_string,"Host=localhost;Port=5432",DB connection details
+EOF

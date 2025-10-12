@@ -138,6 +138,28 @@
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
+        
+        /* Nuevos estilos para el módulo de producción */
+        .production-highlight {
+            border: 3px solid #28a745;
+            position: relative;
+            overflow: hidden;
+        }
+        .production-highlight::before {
+            content: "NUEVO";
+            position: absolute;
+            top: 10px;
+            right: -25px;
+            background: #28a745;
+            color: white;
+            padding: 5px 30px;
+            transform: rotate(45deg);
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        .card-icon-production {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+        }
     </style>
 </head>
 <body>
@@ -168,11 +190,20 @@
                 <a href="{{ url_for('punto_venta') }}" class="card-btn">¡Clic para empezar!</a>
             </div>
 
+            <!-- 🆕 NUEVO MÓDULO: PRODUCCIÓN DIARIA -->
+            <div class="card production-highlight">
+                <div class="card-icon card-icon-production">🏭</div>
+                <h3>Producción Diaria</h3>
+                <p>Gestión de stock en vitrina, órdenes de producción y alertas inteligentes en tiempo real</p>
+                <a href="{{ url_for('produccion_diaria') }}" class="card-btn">🚀 ¡Ir a Producción!</a>
+            </div>
+
+            <!-- Recetas (mantener pero con descripción actualizada) -->
             <div class="card">
                 <div class="card-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">👨‍🍳</div>
-                <h3>Producción y Recetas</h3>
-                <p>Gestionar recetas, planificar producción y calcular costos automáticamente</p>
-                <a href="{{ url_for('recetas') }}" class="card-btn">¡Clic para empezar!</a>
+                <h3>Recetas y Fórmulas</h3>
+                <p>Crear y editar recetas, calcular costos automáticos y análisis de rentabilidad</p>
+                <a href="{{ url_for('recetas') }}" class="card-btn">📋 Ver Recetas</a>
             </div>
 
             <!-- Gestión de Materias Primas -->
@@ -220,5 +251,20 @@
             <a href="{{ url_for('logout') }}" class="logout-btn">🚪 Cerrar Sesión</a>
         </div>
     </div>
+
+    <script>
+        // Efecto especial para el nuevo módulo de producción
+        document.addEventListener('DOMContentLoaded', function() {
+            const productionCard = document.querySelector('.production-highlight');
+            if (productionCard) {
+                // Efecto de pulso intermitente para llamar la atención
+                setInterval(() => {
+                    productionCard.style.boxShadow = productionCard.style.boxShadow ? 
+                        '0 8px 25px rgba(0,0,0,0.1)' : 
+                        '0 8px 25px rgba(40, 167, 69, 0.3)';
+                }, 1000);
+            }
+        });
+    </script>
 </body>
 </html>

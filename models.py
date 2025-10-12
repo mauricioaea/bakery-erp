@@ -23,6 +23,8 @@ class Producto(db.Model):
     nombre = db.Column(db.String(100), nullable=False)
     descripcion = db.Column(db.Text)
     categoria_id = db.Column(db.Integer, db.ForeignKey('categorias.id'), nullable=False)
+    stock_actual = db.Column(db.Integer, default=0)  # ← NUEVO CAMPO
+    stock_minimo = db.Column(db.Integer, default=10) # ← NUEVO CAMPO
     precio_venta = db.Column(db.Float, nullable=False)
     codigo_barras = db.Column(db.String(50), unique=True)
     activo = db.Column(db.Boolean, default=True)
@@ -110,8 +112,17 @@ class Receta(db.Model):
     costo_indirecto = db.Column(db.Float, default=0)  # Costos indirectos (CIF)
     margen_ganancia = db.Column(db.Float, default=0)  # Margen de ganancia teórico
     
+    
+     # =============================================
+    # ✅ NUEVO: RELACIÓN CON PRODUCTO (PASO 1.1)
+    # =============================================
+    producto_id = db.Column(db.Integer, db.ForeignKey('productos.id'), nullable=True)  # nullable=True temporalmente
+    producto = db.relationship('Producto', backref=db.backref('recetas', lazy=True))
+    # =============================================
+    
     ingredientes = db.relationship('RecetaIngrediente', backref='receta', lazy=True, cascade='all, delete-orphan')
-
+    
+    
     # PROPIEDADES CALCULADAS PARA ANÁLISIS REAL
     @property
     def precio_venta_efectivo(self):
@@ -348,7 +359,10 @@ class OrdenProduccion(db.Model):
     receta_id = db.Column(db.Integer, db.ForeignKey('recetas.id'), nullable=False)
     cantidad_producir = db.Column(db.Integer, nullable=False)
     fecha_produccion = db.Column(db.DateTime, default=datetime.utcnow)
-    estado = db.Column(db.String(20), default='pendiente')  # pendiente, confirmada, completada
+    
+    # ESTADOS ACTUALIZADOS - CAMBIAR 'pendiente' por 'PENDIENTE'
+    estado = db.Column(db.String(20), default='PENDIENTE')  # ← MODIFICADO: PENDIENTE, EN_PRODUCCION, COMPLETADA, CANCELADA
+    
     usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
     
     # NUEVOS CAMPOS PARA SEGUIMIENTO DE PRODUCCIÓN
@@ -357,9 +371,126 @@ class OrdenProduccion(db.Model):
     observaciones = db.Column(db.Text)
     costo_real = db.Column(db.Float, default=0)  # Costo real de la producción
     
+    # NUEVO: Para tracking del stock generado
+    stock_generado = db.Column(db.Boolean, default=False)  # ← NUEVO: Si ya se sumó al stock
+    
     # Relaciones
     receta = db.relationship('Receta', backref='ordenes_produccion')
     usuario = db.relationship('Usuario')
+    
+    def __repr__(self):
+        return f'<OrdenProduccion {self.id} - {self.receta.nombre if self.receta else "Sin receta"} - {self.estado}>'
+    
+    # NUEVO: Método para obtener el producto asociado
+    @property
+    def producto(self):
+        """Devuelve el producto asociado a esta receta"""
+        return self.receta.producto if self.receta else None
+    
+    # NUEVO: Método para calcular ingredientes necesarios
+    def calcular_ingredientes_necesarios(self):
+        """Calcula los ingredientes necesarios para esta orden"""
+        if not self.receta:
+            return {}
+        
+        ingredientes = {}
+        for ingrediente in self.receta.ingredientes:
+            # ✅ CORREGIDO: usar 'cantidad_gramos' en lugar de 'cantidad'
+            # ✅ CORREGIDO: dividir por unidades_obtenidas para calcular por unidad
+            if self.receta.unidades_obtenidas and self.receta.unidades_obtenidas > 0:
+                cantidad_necesaria = (ingrediente.cantidad_gramos / self.receta.unidades_obtenidas) * self.cantidad_producir
+            else:
+                cantidad_necesaria = 0
+                
+            ingredientes[ingrediente.materia_prima.nombre] = {
+                'cantidad': cantidad_necesaria,
+                'unidad': ingrediente.materia_prima.unidad_medida,
+                'materia_prima_id': ingrediente.materia_prima_id
+            }
+        return ingredientes
+    
+    # NUEVO: Método para verificar disponibilidad de ingredientes
+    def verificar_ingredientes_disponibles(self):
+        """Verifica si hay suficientes materias primas para esta orden"""
+        ingredientes = self.calcular_ingredientes_necesarios()
+        faltantes = []
+        
+        for nombre, datos in ingredientes.items():
+            materia_prima = MateriaPrima.query.get(datos['materia_prima_id'])
+            # ✅ CORREGIDO: usar 'stock_actual' en lugar de 'cantidad_disponible'
+            if materia_prima and materia_prima.stock_actual < datos['cantidad']:
+                faltantes.append({
+                    'nombre': nombre,
+                    'necesario': datos['cantidad'],
+                    'disponible': materia_prima.stock_actual,
+                    'unidad': datos['unidad']
+                })
+        
+        return len(faltantes) == 0, faltantes
+    
+    # NUEVO: Método para iniciar producción
+    def iniciar_produccion(self):
+        """Marca la orden como en producción y registra fecha de inicio"""
+        if self.estado == 'PENDIENTE':
+            self.estado = 'EN_PRODUCCION'
+            self.fecha_inicio = datetime.utcnow()
+            return True
+        return False
+    
+    # NUEVO: Método para completar producción
+    def completar_produccion(self):
+        """Marca la orden como completada, actualiza stock y descuenta ingredientes"""
+        if self.estado == 'EN_PRODUCCION':
+            self.estado = 'COMPLETADA'
+            self.fecha_fin = datetime.utcnow()
+            
+            print(f"🔍 DEBUG: Completando producción - Receta: {self.receta.nombre if self.receta else 'N/A'}")
+            print(f"🔍 DEBUG: Cantidad a producir: {self.cantidad_producir}")
+        
+            
+             # =============================================
+            # ✅ CORREGIDO: Actualizar stock del producto asociado
+            # =============================================
+            if self.receta and self.receta.producto:
+                producto = self.receta.producto
+                producto.stock_actual += self.cantidad_producir
+                self.stock_generado = True
+                print(f"✅ Stock actualizado: {self.cantidad_producir} unidades de {producto.nombre}")
+                
+                print(f"🔍 DEBUG: Producto antes de actualizar: {producto.nombre} - Stock: {producto.stock_actual}")
+            
+                producto.stock_actual += self.cantidad_producir
+                self.stock_generado = True
+                
+                print(f"🔍 DEBUG: Producto después de actualizar: {producto.nombre} - Stock: {producto.stock_actual}")
+                print(f"✅ Stock actualizado: {self.cantidad_producir} unidades de {producto.nombre}")
+                
+            else:
+                print(f"⚠️  Advertencia: Receta '{self.receta.nombre if self.receta else 'N/A'}' no tiene producto asociado")
+            # =============================================
+            
+            # Descontar ingredientes utilizados
+            self._descontar_ingredientes()
+            
+             # ✅ NUEVO: Forzar commit de la sesión
+            db.session.commit()
+            print("🔍 DEBUG: Cambios guardados en la base de datos")
+                
+            return True
+        return False
+    
+    # NUEVO: Método privado para descontar ingredientes
+    def _descontar_ingredientes(self):
+        """Descuenta las materias primas utilizadas en la producción"""
+        ingredientes = self.calcular_ingredientes_necesarios()
+        
+        for nombre, datos in ingredientes.items():
+            materia_prima = MateriaPrima.query.get(datos['materia_prima_id'])
+            if materia_prima:
+                # ✅ CORREGIDO: usar 'stock_actual' en lugar de 'cantidad_disponible'
+                materia_prima.stock_actual -= datos['cantidad']
+                # Registrar en historial de inventario si existe ese modelo
+                # self._registrar_movimiento_inventario(materia_prima, datos['cantidad'])
 
 # NUEVA CLASE PARA HISTORIAL DE DESCUENTO DE INVENTARIO
 class HistorialInventario(db.Model):
@@ -374,5 +505,65 @@ class HistorialInventario(db.Model):
     # Relaciones
     materia_prima = db.relationship('MateriaPrima', backref='movimientos_inventario')
     orden_produccion = db.relationship('OrdenProduccion', backref='movimientos_inventario')
+
+# =============================================
+# NUEVOS MODELOS PARA STOCK Y PRODUCCIÓN DIARIA
+# =============================================
+
+class StockProducto(db.Model):
+    __tablename__ = 'stock_productos'
+    id = db.Column(db.Integer, primary_key=True)
+    receta_id = db.Column(db.Integer, db.ForeignKey('recetas.id'), nullable=False)
+    stock_actual = db.Column(db.Integer, default=0)
+    stock_minimo = db.Column(db.Integer, default=10)
+    fecha_actualizacion = db.Column(db.DateTime, default=datetime.utcnow)
     
+    # Relación con receta
+    receta = db.relationship('Receta', backref=db.backref('stock_info', lazy=True))
+
+# MANTENER ESTA (elimina la otra)
+class ConfiguracionProduccion(db.Model):
+    __tablename__ = 'configuracion_produccion'
+    id = db.Column(db.Integer, primary_key=True)
+    receta_id = db.Column(db.Integer, db.ForeignKey('recetas.id'), nullable=False)
     
+    # ✅ CONFIGURACIÓN PERSONALIZABLE POR PRODUCTO
+    stock_objetivo = db.Column(db.Integer, default=50)
+    stock_minimo = db.Column(db.Integer, default=10)  # ✅ NUEVO: Stock mínimo personalizado
+    stock_maximo = db.Column(db.Integer, default=100) # ✅ NUEVO: Stock máximo
+    
+    # Parámetros de alertas
+    porcentaje_critico = db.Column(db.Float, default=20.0)    # ≤ 20% = CRÍTICO
+    porcentaje_bajo = db.Column(db.Float, default=50.0)       # ≤ 50% = BAJO  
+    porcentaje_medio = db.Column(db.Float, default=80.0)      # ≤ 80% = MEDIO
+    
+    # Métricas de ventas
+    tendencia_ventas = db.Column(db.Float, default=1.0)  # Factor de tendencia
+    rotacion_diaria_esperada = db.Column(db.Float, default=10.0)  # ✅ NUEVO: Rotación esperada por día
+    
+    activo = db.Column(db.Boolean, default=True)
+    fecha_actualizacion = db.Column(db.DateTime, default=datetime.now)
+    
+    receta = db.relationship('Receta', backref=db.backref('config_produccion', lazy=True))
+    
+    def __repr__(self):
+        return f'<ConfiguracionProduccion {self.receta_id}>'
+    
+    # ✅ NUEVO: Método mejorado para calcular estado
+    def calcular_estado_stock(self, stock_actual):
+        """Calcula el estado del stock basado en stock mínimo personalizado"""
+        if stock_actual <= self.stock_minimo:
+            return "CRÍTICO"
+        elif stock_actual <= (self.stock_minimo * 2):
+            return "BAJO"
+        elif stock_actual <= self.stock_objetivo:
+            return "MEDIO"
+        else:
+            return "ÓPTIMO"
+    
+    # ✅ NUEVO: Calcular días de inventario
+    def calcular_dias_inventario(self, stock_actual, ventas_promedio):
+        """Calcula cuántos días de inventario quedan"""
+        if ventas_promedio > 0:
+            return stock_actual / ventas_promedio
+        return 999  # Si no hay ventas, inventario infinito

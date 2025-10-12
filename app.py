@@ -1,7 +1,7 @@
 import os
 
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
-from models import db, Usuario, Producto, Venta, DetalleVenta, MateriaPrima, Receta, RecetaIngrediente, OrdenProduccion, Categoria, Proveedor, HistorialCompra, HistorialInventario
+from models import db, Usuario, Producto, Venta, DetalleVenta, MateriaPrima, Receta, RecetaIngrediente, OrdenProduccion, Categoria, Proveedor, HistorialCompra, HistorialInventario, ConfiguracionProduccion    
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 
@@ -964,6 +964,479 @@ def editar_receta(id):
                          receta=receta, 
                          materias_primas=materias_primas, 
                          editar=True)
+    
+    
+    
+# =============================================
+# RUTAS DE PRODUCCIÓN DIARIA - NUEVO MÓDULO
+# =============================================
+
+@app.route('/produccion_diaria')
+def produccion_diaria():
+    """Dashboard principal de producción diaria - ACTUALIZADO"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    # Obtener todas las recetas activas
+    recetas_activas = Receta.query.filter_by(activo=True).all()
+    
+    recetas_con_stock = []
+    alertas = []
+    
+    for receta in recetas_activas:
+        # Calcular stock actual
+        stock_actual = calcular_stock_vitrina(receta.id)
+        
+        # Obtener configuración personalizada
+        config = ConfiguracionProduccion.query.filter_by(receta_id=receta.id).first()
+        if not config:
+            # Crear configuración por defecto si no existe
+            config = ConfiguracionProduccion(
+                receta_id=receta.id,
+                stock_minimo=10,
+                stock_objetivo=50,
+                stock_maximo=100,
+                rotacion_diaria_esperada=10.0
+            )
+            db.session.add(config)
+            db.session.commit()
+        
+        # ✅ USAR STOCK MÍNIMO PERSONALIZADO
+        stock_minimo_personalizado = config.stock_minimo
+        
+        # Calcular ventas del día actual
+        hoy = datetime.now().date()
+        ventas_hoy = calcular_ventas_hoy(receta.nombre, hoy)
+        
+        # Proyección de agotamiento (mejorada)
+        proyeccion_horas = None
+        if config.rotacion_diaria_esperada > 0 and stock_actual > 0:
+            horas_restantes = (stock_actual / config.rotacion_diaria_esperada) * 24
+            if horas_restantes < 168:  # Mostrar si es menos de 7 días
+                proyeccion_horas = int(horas_restantes)
+        
+        # ✅ GENERAR ALERTAS MEJORADAS
+        if stock_actual <= stock_minimo_personalizado:
+            alertas.append({
+                'nivel': 'critico',
+                'mensaje': f'🔴 STOCK CRÍTICO: {receta.nombre} - Solo {stock_actual} unidades (Mínimo: {stock_minimo_personalizado})'
+            })
+        elif stock_actual <= (stock_minimo_personalizado * 2):
+            alertas.append({
+                'nivel': 'advertencia', 
+                'mensaje': f'🟡 STOCK BAJO: {receta.nombre} - {stock_actual} unidades (Mínimo: {stock_minimo_personalizado})'
+            })
+        elif stock_actual >= config.stock_maximo:
+            alertas.append({
+                'nivel': 'info',
+                'mensaje': f'🔵 STOCK ALTO: {receta.nombre} - {stock_actual} unidades (Máximo: {config.stock_maximo})'
+            })
+        
+        recetas_con_stock.append({
+            'id': receta.id,
+            'nombre': receta.nombre,
+            'stock_actual': stock_actual,
+            'stock_minimo': stock_minimo_personalizado,  # ✅ PERSONALIZADO
+            'stock_maximo': config.stock_maximo,
+            'ventas_hoy': ventas_hoy,
+            'proyeccion_horas': proyeccion_horas,
+            'rotacion_esperada': config.rotacion_diaria_esperada,
+            'config': config  # ✅ Pasar configuración completa
+        })
+    
+    # Obtener órdenes de producción activas (código existente)
+    ordenes_activas = OrdenProduccion.query.filter(
+        OrdenProduccion.estado.in_(['PENDIENTE', 'EN_PRODUCCION'])
+    ).order_by(OrdenProduccion.fecha_produccion.desc()).limit(10).all()
+    
+    # ✅ Obtener órdenes completadas del día para el historial
+    hoy = datetime.now().date()
+    ordenes_completadas_hoy_db = OrdenProduccion.query.filter(
+        OrdenProduccion.estado == 'COMPLETADA',
+        db.func.date(OrdenProduccion.fecha_fin) == hoy
+    ).all()
+    
+    return render_template('produccion_diaria.html',
+                         recetas_con_stock=recetas_con_stock,
+                         ordenes_activas=ordenes_activas,
+                         todas_las_ordenes_completadas=ordenes_completadas_hoy_db,
+                         alertas=alertas)
+    
+# ✅ NUEVA RUTA: Configuración personalizada de stock por producto
+@app.route('/configurar_stock_producto/<int:receta_id>', methods=['GET', 'POST'])
+def configurar_stock_producto(receta_id):
+    """Configuración personalizada de stock por producto"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    receta = Receta.query.get_or_404(receta_id)
+    config = ConfiguracionProduccion.query.filter_by(receta_id=receta_id).first()
+    
+    # Crear configuración si no existe
+    if not config:
+        config = ConfiguracionProduccion(
+            receta_id=receta_id,
+            stock_minimo=10,
+            stock_objetivo=50,
+            stock_maximo=100,
+            rotacion_diaria_esperada=10.0
+        )
+        db.session.add(config)
+        db.session.commit()
+    
+    if request.method == 'POST':
+        try:
+            # Actualizar configuración
+            config.stock_minimo = int(request.form['stock_minimo'])
+            config.stock_objetivo = int(request.form['stock_objetivo'])
+            config.stock_maximo = int(request.form['stock_maximo'])
+            config.rotacion_diaria_esperada = float(request.form['rotacion_diaria_esperada'])
+            config.tendencia_ventas = float(request.form.get('tendencia_ventas', 1.0))
+            config.fecha_actualizacion = datetime.utcnow()
+            
+            db.session.commit()
+            flash(f'✅ Configuración de stock para "{receta.nombre}" actualizada', 'success')
+            return redirect(url_for('produccion_diaria'))
+            
+        except Exception as e:
+            flash(f'❌ Error al actualizar configuración: {str(e)}', 'error')
+    
+    # Obtener estadísticas reales para sugerencias
+    stock_actual = calcular_stock_vitrina(receta_id)
+    ventas_ultima_semana = calcular_ventas_ultima_semana(receta.nombre)
+    
+    return render_template('configurar_stock_producto.html', 
+                         receta=receta, 
+                         config=config,
+                         stock_actual=stock_actual,
+                         ventas_ultima_semana=ventas_ultima_semana)
+
+# ✅ NUEVA FUNCIÓN: Calcular ventas de la última semana
+def calcular_ventas_ultima_semana(nombre_receta):
+    """Calcular ventas de los últimos 7 días para una receta"""
+    try:
+        fecha_inicio = datetime.now().date() - timedelta(days=7)
+        
+        ventas_semana = db.session.query(
+            db.func.sum(DetalleVenta.cantidad)
+        ).join(Producto).join(Venta).filter(
+            Producto.nombre == nombre_receta,
+            Venta.fecha_hora >= fecha_inicio
+        ).scalar() or 0
+        
+        return ventas_semana
+    except Exception as e:
+        print(f"Error calculando ventas semana: {e}")
+        return 0
+    
+# ✅ NUEVO: Ruta para configurar stock mínimo por receta
+@app.route('/configurar_stock/<int:receta_id>', methods=['GET', 'POST'])
+def configurar_stock(receta_id):
+    """Configurar stock objetivo y parámetros para una receta"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    receta = Receta.query.get_or_404(receta_id)
+    config = ConfiguracionProduccion.query.filter_by(receta_id=receta_id).first()
+    
+    if not config:
+        config = ConfiguracionProduccion(receta_id=receta_id)
+        db.session.add(config)
+        db.session.commit()
+    
+    if request.method == 'POST':
+        try:
+            config.stock_objetivo = int(request.form['stock_objetivo'])
+            config.porcentaje_critico = float(request.form['porcentaje_critico'])
+            config.porcentaje_bajo = float(request.form['porcentaje_bajo'])
+            config.porcentaje_medio = float(request.form['porcentaje_medio'])
+            config.tendencia_ventas = float(request.form.get('tendencia_ventas', 1.0))
+            config.fecha_actualizacion = datetime.utcnow()
+            
+            db.session.commit()
+            flash(f'✅ Configuración de stock para "{receta.nombre}" actualizada', 'success')
+            return redirect(url_for('produccion_diaria'))
+            
+        except Exception as e:
+            flash(f'❌ Error al actualizar configuración: {str(e)}', 'error')
+    
+    return render_template('configurar_stock.html', receta=receta, config=config)
+
+# ✅ NUEVO: API para obtener configuración de stock
+@app.route('/api/configuracion_stock/<int:receta_id>')
+def api_configuracion_stock(receta_id):
+    """API para obtener configuración de stock de una receta"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    config = ConfiguracionProduccion.query.filter_by(receta_id=receta_id).first()
+    if not config:
+        config = ConfiguracionProduccion(receta_id=receta_id)
+        db.session.add(config)
+        db.session.commit()
+    
+    return jsonify({
+        'stock_objetivo': config.stock_objetivo,
+        'porcentaje_critico': config.porcentaje_critico,
+        'porcentaje_bajo': config.porcentaje_bajo,
+        'porcentaje_medio': config.porcentaje_medio,
+        'tendencia_ventas': config.tendencia_ventas
+    })
+
+@app.route('/produccion/ordenar_produccion', methods=['POST'])
+def ordenar_produccion():
+    """Crear nueva orden de producción desde el dashboard"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        receta_id = request.form.get('receta_id', type=int)
+        cantidad = request.form.get('cantidad', type=int)
+        
+        if not receta_id or not cantidad or cantidad <= 0:
+            return jsonify({'error': 'Datos inválidos'}), 400
+        
+        # Crear orden de producción
+        nueva_orden = OrdenProduccion(
+            receta_id=receta_id,
+            cantidad_producir=cantidad,
+            estado='PENDIENTE',
+            usuario_id=session['user_id']
+        )
+        
+        db.session.add(nueva_orden)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'orden_id': nueva_orden.id,
+            'mensaje': f'Orden de producción creada para {cantidad} unidades'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+# FUNCIONES AUXILIARES PARA CÁLCULOS
+def calcular_stock_vitrina(receta_id):
+    """Calcular stock actual en vitrina para una receta"""
+    try:
+        receta = Receta.query.get(receta_id)
+        print(f"🔍 DEBUG calcular_stock_vitrina: Receta: {receta.nombre if receta else 'N/A'}")
+        
+        # Si la receta tiene producto asociado, usar el stock del producto
+        if receta and receta.producto:
+            stock = receta.producto.stock_actual
+            print(f"🔍 DEBUG: Usando stock del producto: {stock} unidades")
+            return stock
+        
+        # Método antiguo (backup)
+        produccion_total = db.session.query(
+            db.func.sum(OrdenProduccion.cantidad_producir)
+        ).filter(
+            OrdenProduccion.receta_id == receta_id,
+            OrdenProduccion.estado == 'COMPLETADA'
+        ).scalar() or 0
+        
+        ventas_totales = db.session.query(
+            db.func.sum(DetalleVenta.cantidad)
+        ).join(Producto).filter(
+            Producto.nombre == receta.nombre
+        ).scalar() or 0
+        
+        stock_calculado = max(0, produccion_total - ventas_totales)
+        print(f"🔍 DEBUG: Stock calculado (método antiguo): {stock_calculado}")
+        
+        return stock_calculado
+        
+    except Exception as e:
+        print(f"❌ Error calculando stock: {e}")
+        return 0
+
+def calcular_ventas_hoy(nombre_receta, fecha):
+    """Calcular ventas del día actual para una receta"""
+    try:
+        inicio_dia = datetime.combine(fecha, datetime.min.time())
+        fin_dia = datetime.combine(fecha, datetime.max.time())
+        
+        ventas_hoy = db.session.query(
+            db.func.sum(DetalleVenta.cantidad)
+        ).join(Producto).join(Venta).filter(
+            Producto.nombre == nombre_receta,
+            Venta.fecha_hora >= inicio_dia,
+            Venta.fecha_hora <= fin_dia
+        ).scalar() or 0
+        
+        return ventas_hoy
+        
+    except Exception as e:
+        print(f"Error calculando ventas hoy: {e}")
+        return 0
+    
+    
+
+# =============================================
+# NUEVAS RUTAS PARA PRODUCCIÓN DIARIA MEJORADA
+# =============================================
+
+@app.route('/produccion/iniciar_produccion/<int:orden_id>')
+def iniciar_produccion(orden_id):
+    """Iniciar una orden de producción - Cambia estado a EN_PRODUCCION"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        orden = OrdenProduccion.query.get_or_404(orden_id)
+        
+        # Verificar que la orden esté en estado PENDIENTE
+        if orden.estado != 'PENDIENTE':
+            return jsonify({'error': 'Solo se pueden iniciar órdenes pendientes'}), 400
+        
+        # Verificar disponibilidad de ingredientes
+        suficiente, faltantes = orden.verificar_ingredientes_disponibles()
+        if not suficiente:
+            return jsonify({
+                'error': 'Ingredientes insuficientes',
+                'faltantes': faltantes
+            }), 400
+        
+        # Iniciar producción
+        if orden.iniciar_produccion():
+            db.session.commit()
+            return jsonify({
+                'success': True,
+                'mensaje': f'Producción de {orden.receta.nombre} iniciada'
+            })
+        else:
+            return jsonify({'error': 'No se pudo iniciar la producción'}), 500
+            
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/produccion/confirmar_produccion/<int:orden_id>')
+def confirmar_produccion(orden_id):
+    """Confirmar producción completada - Actualiza stock y descuenta ingredientes"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        orden = OrdenProduccion.query.get_or_404(orden_id)
+        
+        # Verificar que la orden esté en estado EN_PRODUCCION
+        if orden.estado != 'EN_PRODUCCION':
+            return jsonify({'error': 'Solo se pueden confirmar órdenes en producción'}), 400
+        
+        # Completar producción (esto actualiza stock y descuenta ingredientes automáticamente)
+        if orden.completar_produccion():
+            db.session.commit()
+            return jsonify({
+                'success': True,
+                'mensaje': f'Producción de {orden.cantidad_producir} unidades de {orden.receta.nombre} completada. Stock actualizado.'
+            })
+        else:
+            return jsonify({'error': 'No se pudo completar la producción'}), 500
+            
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/produccion/cancelar_orden/<int:orden_id>')
+def cancelar_orden_produccion(orden_id):
+    """Cancelar una orden de producción"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        orden = OrdenProduccion.query.get_or_404(orden_id)
+        
+        # Solo se pueden cancelar órdenes pendientes o en producción
+        if orden.estado not in ['PENDIENTE', 'EN_PRODUCCION']:
+            return jsonify({'error': 'No se puede cancelar una orden completada'}), 400
+        
+        orden.estado = 'CANCELADA'
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'mensaje': f'Orden de producción cancelada'
+        })
+            
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/stock_vitrina')
+def stock_vitrina():
+    """Vista completa de stock en vitrina - Nueva pestaña"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    # Obtener todas las recetas con su stock actual
+    recetas_activas = Receta.query.filter_by(activo=True).all()
+    
+    stock_completo = []
+    for receta in recetas_activas:
+        stock_actual = calcular_stock_vitrina(receta.id)
+        
+        # Obtener configuración
+        config = ConfiguracionProduccion.query.filter_by(receta_id=receta.id).first()
+        if not config:
+            config = ConfiguracionProduccion(receta_id=receta.id, stock_objetivo=50)
+            db.session.add(config)
+            db.session.commit()
+        
+        stock_completo.append({
+            'id': receta.id,
+            'nombre': receta.nombre,
+            'stock_actual': stock_actual,
+            'stock_objetivo': config.stock_objetivo,
+            'categoria': receta.categoria,
+            'estado': 'CRÍTICO' if stock_actual <= config.stock_objetivo * 0.2 else 
+                     'BAJO' if stock_actual <= config.stock_objetivo * 0.5 else
+                     'ÓPTIMO' if stock_actual >= config.stock_objetivo else 'MEDIO'
+        })
+    
+    # Ordenar por estado (crítico primero)
+    stock_completo.sort(key=lambda x: ['CRÍTICO', 'BAJO', 'MEDIO', 'ÓPTIMO'].index(x['estado']))
+    
+    return render_template('stock_vitrina.html', stock_completo=stock_completo)
+
+@app.route('/reporte_produccion_diaria')
+def reporte_produccion_diaria():
+    """Reporte imprimible de producción diaria"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    hoy = datetime.now().date()
+    
+    # Órdenes completadas hoy
+    ordenes_hoy = OrdenProduccion.query.filter(
+        OrdenProduccion.estado == 'COMPLETADA',
+        db.func.date(OrdenProduccion.fecha_fin) == hoy
+    ).all()
+    
+    # Stock actual
+    recetas_activas = Receta.query.filter_by(activo=True).all()
+    stock_actual = []
+    for receta in recetas_activas:
+        stock = calcular_stock_vitrina(receta.id)
+        stock_actual.append({
+            'nombre': receta.nombre,
+            'stock': stock,
+            'categoria': receta.categoria
+        })
+    
+    # Métricas del día
+    total_producido = sum(orden.cantidad_producir for orden in ordenes_hoy)
+    total_recetas = len(set(orden.receta_id for orden in ordenes_hoy))
+    
+    return render_template("reporte_produccion.html",
+                         ordenes_hoy=ordenes_hoy,
+                         stock_actual=stock_actual,
+                         total_producido=total_producido,
+                         total_recetas=total_recetas,
+                         fecha=hoy)
 
 # Filtro para formatear moneda en pesos colombianos
 @app.template_filter('currency')
