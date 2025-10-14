@@ -1,10 +1,9 @@
 import os
 
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
-from models import db, Usuario, Producto, Venta, DetalleVenta, MateriaPrima, Receta, RecetaIngrediente, OrdenProduccion, Categoria, Proveedor, HistorialCompra, HistorialInventario, ConfiguracionProduccion    
+from models import db, Usuario, Producto, Venta, DetalleVenta, MateriaPrima, Receta, RecetaIngrediente, OrdenProduccion, Categoria, Proveedor, HistorialCompra, HistorialInventario, ConfiguracionProduccion, HistorialRotacionProducto, ControlVidaUtil, Factura, ProductoExterno, CompraExterna
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
-
 # Obtener la ruta base del proyecto
 basedir = os.path.abspath(os.path.dirname(__file__))
 
@@ -126,29 +125,111 @@ def punto_venta():
         return redirect(url_for('login'))
     return render_template('punto_venta.html')
 
+# EN app.py - AGREGAR ESTA RUTA DE DIAGNÓSTICO URGENTE
+@app.route('/debug_punto_venta')
+def debug_punto_venta():
+    """Diagnóstico urgente del punto de venta"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    # 1. Verificar todos los productos
+    todos_productos = Producto.query.all()
+    
+    # 2. Productos que deberían aparecer en búsqueda
+    productos_busqueda = Producto.query.filter(
+        Producto.activo == True,
+        Producto.stock_actual > 0
+    ).all()
+    
+    # 3. Productos de producción específicamente
+    productos_produccion = Producto.query.filter_by(tipo_producto='produccion').all()
+    
+    # 4. Recetas con productos asociados
+    recetas_con_producto = Receta.query.filter(Receta.producto_id.isnot(None)).all()
+    
+    debug_info = {
+        'total_productos': len(todos_productos),
+        'productos_activos_con_stock': len(productos_busqueda),
+        'productos_produccion': len(productos_produccion),
+        'recetas_con_producto': len(recetas_con_producto),
+        'detalle_productos': [],
+        'detalle_recetas': []
+    }
+    
+    for producto in todos_productos:
+        debug_info['detalle_productos'].append({
+            'id': producto.id,
+            'nombre': producto.nombre,
+            'tipo': producto.tipo_producto,
+            'activo': producto.activo,
+            'stock_actual': producto.stock_actual,
+            'precio': producto.precio_venta,
+            'tiene_receta': producto.receta_id is not None,
+            'aparece_en_busqueda': producto.activo and producto.stock_actual > 0
+        })
+    
+    for receta in recetas_con_producto:
+        debug_info['detalle_recetas'].append({
+            'id': receta.id,
+            'nombre': receta.nombre,
+            'producto_id': receta.producto_id,
+            'producto_nombre': receta.producto.nombre if receta.producto else 'NO',
+            'producto_stock': receta.producto.stock_actual if receta.producto else 0
+        })
+    
+    return render_template('debug_punto_venta.html', debug=debug_info)
+
 # Ruta para buscar productos (API)
+# En app.py - MEJORAR LA BÚSQUEDA PARA INCLUIR AMBOS TIPOS
+# EN app.py - CORREGIR ESTA RUTA
 @app.route('/buscar_producto')
 def buscar_producto():
     if 'user_id' not in session:
         return jsonify({'error': 'No autorizado'}), 401
-    query = request.args.get('q', '').lower()
-    productos = Producto.query.filter(Producto.activo == True).all()
+    
+    query = request.args.get('q', '').strip()
+    
+    # ✅ CORREGIDO: Solo productos con stock > 0
+    productos = Producto.query.filter(
+        Producto.activo == True,
+        Producto.stock_actual > 0,  # ← ¡DESCOMENTADO! Solo productos con stock
+        db.or_(
+            Producto.nombre.ilike(f'%{query}%'),
+            Producto.codigo_barras.ilike(f'%{query}%'),
+            Producto.descripcion.ilike(f'%{query}%') if Producto.descripcion else False
+        )
+    ).all()
+    
     resultados = []
     for producto in productos:
-        if query in producto.nombre.lower() or query in producto.codigo_barras.lower():
-            resultados.append({
-                'id': producto.id,
-                'nombre': producto.nombre,
-                'precio': producto.precio_venta,
-                'codigo_barras': producto.codigo_barras
-            })
+        # Obtener nombre de categoría de forma segura
+        categoria_nombre = "General"
+        if producto.categoria_id:
+            categoria = Categoria.query.get(producto.categoria_id)
+            if categoria:
+                categoria_nombre = categoria.nombre
+        
+        resultados.append({
+            'id': producto.id,
+            'nombre': producto.nombre,
+            'precio': producto.precio_venta,
+            'codigo_barras': producto.codigo_barras,
+            'stock_actual': producto.stock_actual,
+            'categoria': categoria_nombre,
+            'tipo_producto': producto.tipo_producto,
+            'es_produccion': producto.es_produccion_interna,
+            'utilidad': producto.utilidad_unitaria if producto.es_producto_externo else None
+        })
+    
+    print(f"✅ API Productos: {len(resultados)} productos con stock encontrados")
     return jsonify(resultados)
-
 # Ruta para registrar la venta (checkout)
+# ✅ RUTA ACTUALIZADA: /registrar_venta con aprendizaje automático
 @app.route('/registrar_venta', methods=['POST'])
 def registrar_venta():
     if 'user_id' not in session:
         return jsonify({'error': 'No autorizado'}), 401
+    
     data = request.get_json()
     carrito = data.get('carrito', [])
     metodo_pago = data.get('metodo_pago', 'efectivo')
@@ -156,30 +237,126 @@ def registrar_venta():
     if not carrito:
         return jsonify({'error': 'El carrito está vacío'}), 400
 
-    # Calcular total
-    total = sum(item['precio'] * item['cantidad'] for item in carrito)
+    try:
+        # Calcular total (SIN IVA para pan)
+        subtotal = sum(item['precio'] * item['cantidad'] for item in carrito)
+        iva = 0.0  # ✅ CERO IVA para pan (según legislación colombiana)
+        total = subtotal  # Total igual a subtotal sin IVA
 
-    # Crear la venta
-    nueva_venta = Venta(
-        total=total,
-        metodo_pago=metodo_pago,
-        usuario_id=session['user_id']
-    )
-    db.session.add(nueva_venta)
-    db.session.flush()  # Para obtener el ID de la venta
-
-    # Crear los detalles de la venta
-    for item in carrito:
-        detalle = DetalleVenta(
-            venta_id=nueva_venta.id,
-            producto_id=item['id'],
-            cantidad=item['cantidad'],
-            precio_unitario=item['precio']
+        # Crear la venta
+        nueva_venta = Venta(
+            total=total,
+            metodo_pago=metodo_pago,
+            usuario_id=session['user_id']
         )
-        db.session.add(detalle)
+        db.session.add(nueva_venta)
+        db.session.flush()  # Para obtener el ID de la venta
 
-    db.session.commit()
-    return jsonify({'success': True, 'venta_id': nueva_venta.id, 'total': total})
+        # Crear los detalles de la venta y actualizar aprendizaje automático
+        for item in carrito:
+            detalle = DetalleVenta(
+                venta_id=nueva_venta.id,
+                producto_id=item['id'],
+                cantidad=item['cantidad'],
+                precio_unitario=item['precio']
+            )
+            db.session.add(detalle)
+            
+            # ✅ NUEVO: ACTUALIZAR APRENDIZAJE AUTOMÁTICO POR CADA VENTA
+            producto = Producto.query.get(item['id'])
+            if producto:
+                # Actualizar stock del producto
+                producto.stock_actual = max(0, producto.stock_actual - item['cantidad'])
+                
+                # Registrar para aprendizaje automático (solo si tiene receta)
+                if producto.receta:
+                    config = ConfiguracionProduccion.query.filter_by(receta_id=producto.receta.id).first()
+                    if config:
+                        # Crear registro en historial de rotación
+                        hoy = datetime.now().date()
+                        historial_existente = HistorialRotacionProducto.query.filter_by(
+                            producto_id=producto.id, 
+                            fecha=hoy
+                        ).first()
+                        
+                        if historial_existente:
+                            historial_existente.ventas_dia += item['cantidad']
+                        else:
+                            nuevo_historial = HistorialRotacionProducto(
+                                producto_id=producto.id,
+                                ventas_dia=item['cantidad'],
+                                rotacion_real=calcular_rotacion_automatica(producto.id)
+                            )
+                            db.session.add(nuevo_historial)
+
+        # ✅ NUEVO: CREAR FACTURA/RECIBO
+        numero_factura = f"FAC-{nueva_venta.id:06d}"
+        nueva_factura = Factura(
+            venta_id=nueva_venta.id,
+            numero_factura=numero_factura,
+            subtotal=subtotal,
+            iva=iva,
+            total=total
+        )
+        db.session.add(nueva_factura)
+
+        db.session.commit()
+        
+        # ✅ NUEVO: EJECUTAR ACTUALIZACIONES AUTOMÁTICAS
+        actualizar_rotaciones_automaticas()
+        actualizar_control_vida_util()
+        
+        return jsonify({
+            'success': True, 
+            'venta_id': nueva_venta.id, 
+            'total': total,
+            'factura_id': nueva_factura.id,
+            'numero_factura': numero_factura
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Error al registrar venta: {str(e)}'}), 500
+    
+@app.route('/agregar_al_carrito', methods=['POST'])
+def agregar_al_carrito():
+    try:
+        data = request.get_json()
+        producto_id = data['producto_id']
+        cantidad = data['cantidad']
+        
+        # Validar que la cantidad sea positiva
+        if cantidad <= 0:
+            return jsonify({'success': False, 'message': 'La cantidad debe ser mayor a 0'})
+        
+        # Inicializar carrito en sesión si no existe
+        if 'carrito' not in session:
+            session['carrito'] = {}
+        
+        # Convertir a string porque las claves de session deben ser strings
+        producto_id_str = str(producto_id)
+        
+        # Agregar o actualizar producto en carrito
+        carrito = session['carrito']
+        if producto_id_str in carrito:
+            carrito[producto_id_str] += cantidad
+        else:
+            carrito[producto_id_str] = cantidad
+        
+        session['carrito'] = carrito
+        session.modified = True
+        
+        print(f"Carrito actualizado: {session['carrito']}")  # Para debug
+        
+        return jsonify({
+            'success': True, 
+            'message': f'Producto agregado al carrito ({cantidad} unidades)',
+            'carrito': session['carrito']
+        })
+    
+    except Exception as e:
+        print(f"Error: {e}")  # Para debug
+        return jsonify({'success': False, 'message': 'Error interno del servidor'})
 
 # Ruta para cerrar sesión
 @app.route('/logout')
@@ -271,6 +448,119 @@ def toggle_proveedor(id):
     estado = "activado" if proveedor.activo else "desactivado"
     flash(f'Proveedor "{proveedor.nombre}" {estado} correctamente', 'success')
     return redirect(url_for('proveedores'))
+
+
+# =============================================
+# RUTAS DE PRODUCTOS EXTERNOS
+# =============================================
+
+@app.route('/productos_externos')
+def productos_externos():
+    """Gestión de productos externos (bebidas, helados)"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    productos = ProductoExterno.query.filter_by(activo=True).all()
+    proveedores = Proveedor.query.filter_by(activo=True).all()
+    
+    # Calcular métricas adicionales para cada producto
+    for producto in productos:
+        producto.utilidad_unitaria = producto.precio_venta - producto.precio_compra
+        producto.margen_ganancia = (producto.utilidad_unitaria / producto.precio_compra * 100) if producto.precio_compra > 0 else 0
+    
+    return render_template('productos_externos.html', 
+                         productos=productos, 
+                         proveedores=proveedores)
+
+
+@app.route('/registrar_compra_externa', methods=['POST'])
+def registrar_compra_externa():
+    """Registrar compra de productos externos y actualizar stock"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'No autorizado'})
+    
+    try:
+        producto_id = request.form['producto_id']
+        proveedor_id = request.form['proveedor_id']
+        cantidad = int(request.form['cantidad'])
+        precio_compra = float(request.form['precio_compra'])
+        notas = request.form.get('notas', '')
+        
+        producto = ProductoExterno.query.get(producto_id)
+        if not producto:
+            return jsonify({'success': False, 'message': 'Producto no encontrado'})
+        
+        # Registrar la compra
+        compra = CompraExterna(
+            producto_id=producto_id,
+            proveedor_id=proveedor_id,
+            cantidad=cantidad,
+            precio_compra=precio_compra,
+            total_compra=cantidad * precio_compra,
+            notas=notas
+        )
+        
+        # Actualizar stock y precios del producto
+        producto.stock_actual += cantidad
+        producto.precio_compra = precio_compra  # Actualizar último precio de compra
+        producto.fecha_ultima_compra = datetime.utcnow()
+        
+        db.session.add(compra)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'message': f'Compra registrada: {cantidad} unidades de {producto.nombre}'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+
+@app.route('/editar_producto_externo/<int:producto_id>', methods=['POST'])
+def editar_producto_externo(producto_id):
+    """Editar producto externo existente"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'No autorizado'})
+    
+    try:
+        producto = ProductoExterno.query.get(producto_id)
+        if not producto:
+            return jsonify({'success': False, 'message': 'Producto no encontrado'})
+        
+        producto.nombre = request.form['nombre']
+        producto.categoria = request.form['categoria']
+        producto.marca = request.form.get('marca', '')
+        producto.descripcion = request.form.get('descripcion', '')
+        producto.codigo_barras = request.form.get('codigo_barras', '')
+        producto.proveedor_id = request.form.get('proveedor_id')
+        producto.precio_venta = float(request.form['precio_venta'])
+        producto.stock_minimo = int(request.form.get('stock_minimo', 5))
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'message': f'Producto "{producto.nombre}" actualizado exitosamente'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+
+@app.route('/eliminar_producto_externo/<int:producto_id>')
+def eliminar_producto_externo(producto_id):
+    """Eliminar producto externo (soft delete)"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    producto = ProductoExterno.query.get(producto_id)
+    if producto:
+        producto.activo = False
+        db.session.commit()
+        flash(f'Producto "{producto.nombre}" eliminado exitosamente', 'success')
+    
+    return redirect(url_for('productos_externos'))
 
 # =============================================
 # RUTAS DE MATERIAS PRIMAS - COMPLETAMENTE ACTUALIZADAS
@@ -844,11 +1134,33 @@ def crear_receta():
             nueva_receta.precio_venta = precio_venta_unitario * unidades_obtenidas
             # ✅ precio_venta_real ya fue asignado al crear la receta
             
+            # ✅ NUEVO: CREAR PRODUCTO AUTOMÁTICAMENTE A PARTIR DE LA RECETA
+            producto_automatico = Producto(
+                nombre=nueva_receta.nombre,
+                descripcion=nueva_receta.descripcion,
+                categoria_id=obtener_categoria_id(nueva_receta.categoria),
+                precio_venta=precio_venta_real if precio_venta_real > 0 else precio_venta_unitario,
+                stock_actual=0,  # Inicialmente sin stock - se llena con producción
+                stock_minimo=10,
+                codigo_barras=f"PROD{nueva_receta.id:06d}",
+                tipo_producto='produccion',
+                es_pan=True if 'pan' in nueva_receta.nombre.lower() else False,
+                receta_id=nueva_receta.id,
+                activo=True
+            )
+            
+            db.session.add(producto_automatico)
+            db.session.flush()  # Para obtener el ID del producto
+            
+            # ✅ ASIGNAR EL PRODUCTO A LA RECETA (relación bidireccional)
+            nueva_receta.producto_id = producto_automatico.id
+            
             db.session.commit()
             
-            # ✅ MENSAJE MEJORADO QUE MUESTRA AMBOS PRECIOS
+            # ✅ MENSAJE MEJORADO QUE INCLUYE LA CREACIÓN DEL PRODUCTO
             mensaje = f'✅ Receta "{nueva_receta.nombre}" creada exitosamente! '
             mensaje += f'Peso total: {peso_total_masa:,.0f}g | '
+            mensaje += f'Unidades: {unidades_obtenidas} | '
             mensaje += f'Precio teórico: ${precio_venta_unitario:,.0f}'
             
             if precio_venta_real > 0:
@@ -857,6 +1169,8 @@ def crear_receta():
                 utilidad_pesos = nueva_receta.utilidad_real_pesos
                 utilidad_porcentaje = nueva_receta.utilidad_real_porcentaje
                 mensaje += f' | Utilidad: ${utilidad_pesos:,.0f} ({utilidad_porcentaje:.1f}%)'
+            
+            mensaje += f' | ✅ Producto automático creado: {producto_automatico.nombre}'
             
             flash(mensaje, 'success')
             return redirect(url_for('recetas'))
@@ -867,6 +1181,22 @@ def crear_receta():
             return redirect(url_for('crear_receta'))
     
     return render_template('crear_receta.html', materias_primas=materias_primas)
+
+# ✅ NUEVA FUNCIÓN HELPER - AGREGAR ESTA FUNCIÓN EN app.py
+def obtener_categoria_id(nombre_categoria):
+    """Obtiene el ID de categoría basado en el nombre - crea si no existe"""
+    # Normalizar nombre de categoría
+    nombre_categoria = nombre_categoria.strip().title()
+    
+    categoria = Categoria.query.filter_by(nombre=nombre_categoria).first()
+    if not categoria:
+        # Crear categoría si no existe
+        categoria = Categoria(nombre=nombre_categoria)
+        db.session.add(categoria)
+        db.session.commit()
+        print(f"✅ Nueva categoría creada: {nombre_categoria}")
+    
+    return categoria.id
 
 # ✅ RUTA MEJORADA PARA EDITAR RECETAS EXISTENTES
 @app.route('/editar_receta/<int:id>', methods=['GET', 'POST'])
@@ -966,6 +1296,96 @@ def editar_receta(id):
                          editar=True)
     
     
+
+# =============================================
+# RUTA DE DIAGNÓSTICO - PRODUCTOS Y PUNTO DE VENTA
+# =============================================
+
+@app.route('/diagnostico_productos')
+def diagnostico_productos():
+    """Página de diagnóstico para verificar productos y punto de venta"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    # Obtener todos los productos
+    productos = Producto.query.all()
+    
+    # Obtener recetas con/sin producto
+    recetas = Receta.query.all()
+    
+    # Probar la búsqueda
+    resultados_busqueda_pan = []
+    try:
+        productos_pan = Producto.query.filter(
+            Producto.activo == True,
+            db.or_(
+                Producto.nombre.ilike(f'%pan%'),
+                Producto.codigo_barras.ilike(f'%pan%')
+            )
+        ).all()
+        
+        for producto in productos_pan:
+            resultados_busqueda_pan.append({
+                'nombre': producto.nombre,
+                'stock': producto.stock_actual,
+                'precio': producto.precio_venta,
+                'activo': producto.activo,
+                'tipo': producto.tipo_producto
+            })
+    except Exception as e:
+        resultados_busqueda_pan = f"Error en búsqueda: {str(e)}"
+    
+    diagnostico = {
+        'total_productos': len(productos),
+        'total_recetas': len(recetas),
+        'recetas_sin_producto': [],
+        'productos_con_receta': [],
+        'productos_externos': [],
+        'productos_activos': [],
+        'productos_con_stock': [],
+        'busqueda_pan': resultados_busqueda_pan
+    }
+    
+    for receta in recetas:
+        if not receta.producto:
+            diagnostico['recetas_sin_producto'].append({
+                'id': receta.id,
+                'nombre': receta.nombre,
+                'categoria': receta.categoria
+            })
+        else:
+            diagnostico['productos_con_receta'].append({
+                'id': receta.producto.id,
+                'nombre': receta.producto.nombre,
+                'receta': receta.nombre,
+                'stock': receta.producto.stock_actual,
+                'precio': receta.producto.precio_venta,
+                'activo': receta.producto.activo
+            })
+    
+    for producto in productos:
+        if producto.activo:
+            diagnostico['productos_activos'].append({
+                'nombre': producto.nombre,
+                'stock': producto.stock_actual,
+                'precio': producto.precio_venta,
+                'tipo': producto.tipo_producto
+            })
+            
+        if producto.stock_actual > 0:
+            diagnostico['productos_con_stock'].append({
+                'nombre': producto.nombre,
+                'stock': producto.stock_actual,
+                'precio': producto.precio_venta
+            })
+            
+        if producto.tipo_producto == 'externo':
+            diagnostico['productos_externos'].append({
+                'nombre': producto.nombre,
+                'stock': producto.stock_actual
+            })
+    
+    return render_template('diagnostico_productos.html', diagnostico=diagnostico)
     
 # =============================================
 # RUTAS DE PRODUCCIÓN DIARIA - NUEVO MÓDULO
@@ -1217,6 +1637,152 @@ def ordenar_produccion():
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+
+@app.route('/debug_produccion')
+def debug_produccion():
+    """Página de debug para producción"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    # Obtener órdenes de producción
+    ordenes = OrdenProduccion.query.all()
+    
+    debug_info = {
+        'total_ordenes': len(ordenes),
+        'ordenes_detalle': []
+    }
+    
+    for orden in ordenes:
+        debug_info['ordenes_detalle'].append({
+            'id': orden.id,
+            'receta': orden.receta.nombre if orden.receta else 'N/A',
+            'cantidad': orden.cantidad_producir,
+            'estado': orden.estado,
+            'producto_asociado': orden.receta.producto.nombre if orden.receta and orden.receta.producto else 'NO',
+            'stock_actual': orden.receta.producto.stock_actual if orden.receta and orden.receta.producto else 0
+        })
+    
+    return render_template('debug_produccion.html', debug=debug_info)
+# =============================================
+# ✅ NUEVAS FUNCIONES PARA APRENDIZAJE AUTOMÁTICO
+# =============================================
+
+def calcular_rotacion_automatica(producto_id, dias_historial=30):
+    """Calcula la rotación diaria automática basada en historial real"""
+    try:
+        fecha_inicio = datetime.now().date() - timedelta(days=dias_historial)
+        
+        # Obtener ventas de los últimos 'dias_historial' días
+        ventas_totales = db.session.query(
+            db.func.sum(DetalleVenta.cantidad)
+        ).join(Venta).filter(
+            DetalleVenta.producto_id == producto_id,
+            Venta.fecha_hora >= fecha_inicio
+        ).scalar() or 0
+        
+        # Calcular promedio diario (excluyendo días sin ventas)
+        dias_con_ventas = db.session.query(
+            db.func.count(db.distinct(db.func.date(Venta.fecha_hora)))
+        ).join(DetalleVenta).filter(
+            DetalleVenta.producto_id == producto_id,
+            Venta.fecha_hora >= fecha_inicio
+        ).scalar() or 1  # Evitar división por cero
+        
+        rotacion_promedio = ventas_totales / dias_con_ventas
+        
+        return round(rotacion_promedio, 2)
+    except Exception as e:
+        print(f"❌ Error calculando rotación automática: {e}")
+        return 10.0  # Valor por defecto
+
+def actualizar_rotaciones_automaticas():
+    """Actualiza automáticamente todas las rotaciones basado en datos históricos"""
+    try:
+        productos_activos = Producto.query.filter_by(activo=True).all()
+        actualizaciones = 0
+        
+        for producto in productos_activos:
+            if producto.receta:  # Solo productos con receta
+                config = ConfiguracionProduccion.query.filter_by(receta_id=producto.receta.id).first()
+                if config:
+                    nueva_rotacion = calcular_rotacion_automatica(producto.id)
+                    
+                    # Solo actualizar si hay cambio significativo (> 10%)
+                    cambio_significativo = abs(config.rotacion_diaria_esperada - nueva_rotacion) > (config.rotacion_diaria_esperada * 0.1)
+                    
+                    if cambio_significativo:
+                        config.rotacion_diaria_esperada = nueva_rotacion
+                        actualizaciones += 1
+                        
+                        # ✅ CORREGIDO: HistorialRotacionProducto (no historicalRotacionProducto)
+                        historial = HistorialRotacionProducto(
+                            producto_id=producto.id,
+                            rotacion_real=nueva_rotacion
+                        )
+                        db.session.add(historial)
+        
+        db.session.commit()
+        print(f"✅ Rotaciones automáticas actualizadas: {actualizaciones} productos")
+        return actualizaciones
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Error actualizando rotaciones automáticas: {e}")
+        return 0
+
+def actualizar_control_vida_util():
+    """Actualiza el control de vida útil de todos los productos"""
+    try:
+        productos_pan = Producto.query.filter_by(es_pan=True, activo=True).all()
+        hoy = datetime.now().date()
+        
+        for producto in productos_pan:
+            # Buscar registro de vida útil del día
+            control = ControlVidaUtil.query.filter_by(
+                producto_id=producto.id, 
+                fecha_produccion=hoy
+            ).first()
+            
+            if not control and producto.stock_actual > 0:
+                # Crear nuevo registro para el día
+                # ✅ CORREGIDO: dias_sin_rotacion (no días_sin_notacion)
+                control = ControlVidaUtil(
+                    producto_id=producto.id,
+                    fecha_produccion=hoy,
+                    stock_inicial=producto.stock_actual,
+                    stock_actual=producto.stock_actual,
+                    dias_sin_rotacion=0,
+                    estado='FRESCO'
+                )
+                db.session.add(control)
+            elif control:
+                # Actualizar stock actual
+                control.stock_actual = producto.stock_actual
+                
+                # Calcular rotación del día
+                rotacion_hoy = control.stock_inicial - control.stock_actual
+                
+                if rotacion_hoy == 0:
+                    control.dias_sin_rotacion += 1
+                else:
+                    control.dias_sin_rotacion = 0
+                
+                # Determinar estado basado en días sin rotación
+                if control.dias_sin_rotacion >= 3:
+                    control.estado = 'PERDIDA'
+                elif control.dias_sin_rotacion == 2:
+                    control.estado = 'RIESGO'
+                elif control.dias_sin_rotacion == 1:
+                    control.estado = 'ALERTA'
+                else:
+                    control.estado = 'FRESCO'
+        
+        db.session.commit()
+        print(f"✅ Control de vida útil actualizado para {len(productos_pan)} productos")
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Error actualizando control vida útil: {e}")
+        
+        
 # FUNCIONES AUXILIARES PARA CÁLCULOS
 def calcular_stock_vitrina(receta_id):
     """Calcular stock actual en vitrina para una receta"""
@@ -1437,6 +2003,228 @@ def reporte_produccion_diaria():
                          total_producido=total_producido,
                          total_recetas=total_recetas,
                          fecha=hoy)
+    
+# =============================================
+# ✅ NUEVAS RUTAS PARA PUNTO DE VENTA INTELIGENTE
+# =============================================
+
+@app.route('/api/verificar_stock/<int:producto_id>')
+def verificar_stock_tiempo_real(producto_id):
+    """API para verificar stock en tiempo real durante venta"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    producto = Producto.query.get_or_404(producto_id)
+    cantidad = request.args.get('cantidad', 1, type=int)
+    
+    # Obtener configuración de producción si existe
+    config = None
+    if producto.receta:
+        config = ConfiguracionProduccion.query.filter_by(receta_id=producto.receta.id).first()
+    
+    return jsonify({
+        'stock_actual': producto.stock_actual,
+        'stock_suficiente': producto.stock_actual >= cantidad,
+        'alerta_reorden': producto.stock_actual <= (config.stock_minimo if config else 10),
+        'produccion_sugerida': (config.stock_objetivo - producto.stock_actual) if config and config.stock_objetivo > producto.stock_actual else 0,
+        'mensaje_alerta': f'Stock bajo: {producto.stock_actual} unidades' if producto.stock_actual <= (config.stock_minimo if config else 10) else None
+    })
+
+@app.route('/api/productos_sugeridos')
+def productos_sugeridos_venta():
+    """API para obtener productos sugeridos basados en rotación"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    # Productos con alta rotación y buen stock
+    productos_alta_rotacion = []
+    
+    productos_activos = Producto.query.filter_by(activo=True).all()
+    for producto in productos_activos:
+        if producto.receta:
+            config = ConfiguracionProduccion.query.filter_by(receta_id=producto.receta.id).first()
+            if config and producto.stock_actual > 0:
+                # Priorizar productos con alta rotación esperada
+                if config.rotacion_diaria_esperada >= 5:  # Alta rotación
+                    productos_alta_rotacion.append({
+                        'id': producto.id,
+                        'nombre': producto.nombre,
+                        'precio': producto.precio_venta,
+                        'stock_actual': producto.stock_actual,
+                        'rotacion_esperada': config.rotacion_diaria_esperada
+                    })
+    
+    # Ordenar por rotación esperada (mayor primero)
+    productos_alta_rotacion.sort(key=lambda x: x['rotacion_esperada'], reverse=True)
+    
+    return jsonify(productos_alta_rotacion[:8])  # Top 8 productos
+
+@app.route('/imprimir_factura/<int:factura_id>')
+def imprimir_factura(factura_id):
+    """Generar vista imprimible de factura"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    factura = Factura.query.get_or_404(factura_id)
+    detalles_venta = DetalleVenta.query.filter_by(venta_id=factura.venta_id).all()
+    
+    # Obtener información de productos para cada detalle
+    detalles_con_productos = []
+    for detalle in detalles_venta:
+        producto = Producto.query.get(detalle.producto_id)
+        detalles_con_productos.append({
+            'detalle': detalle,
+            'producto_nombre': producto.nombre if producto else f"Producto #{detalle.producto_id}",
+            'cantidad': detalle.cantidad,
+            'precio_unitario': detalle.precio_unitario
+        })
+    
+    return render_template('factura.html', 
+                         factura=factura, 
+                         detalles_con_productos=detalles_con_productos,
+                         venta=factura.venta)
+    
+# En app.py - NUEVAS RUTAS PARA PRODUCTOS EXTERNOS
+
+@app.route('/agregar_producto_externo', methods=['POST'])
+def agregar_producto_externo():
+    """Agregar nuevo producto externo usando el modelo ProductoExterno"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'No autorizado'})
+    
+    try:
+        nombre = request.form['nombre']
+        categoria = request.form['categoria']  # 'Bebidas' o 'Helados'
+        marca = request.form.get('marca', '')
+        descripcion = request.form.get('descripcion', '')
+        codigo_barras = request.form.get('codigo_barras', '')
+        proveedor_id = request.form.get('proveedor_id')
+        precio_compra = float(request.form['precio_compra'])
+        precio_venta = float(request.form['precio_venta'])
+        stock_minimo = int(request.form.get('stock_minimo', 5))
+        
+        # Validaciones
+        if precio_venta <= precio_compra:
+            return jsonify({'success': False, 'message': 'El precio de venta debe ser mayor al de compra'})
+        
+        # Crear producto con el NUEVO modelo
+        nuevo_producto = ProductoExterno(
+            nombre=nombre,
+            categoria=categoria,
+            marca=marca,
+            descripcion=descripcion,
+            codigo_barras=codigo_barras,
+            proveedor_id=proveedor_id if proveedor_id else None,
+            precio_compra=precio_compra,
+            precio_venta=precio_venta,
+            stock_minimo=stock_minimo,
+            stock_actual=0  # Inicia en 0 hasta que se compre
+        )
+        
+        db.session.add(nuevo_producto)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'message': f'Producto "{nombre}" agregado exitosamente'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+
+@app.route('/actualizar_stock_externo/<int:producto_id>', methods=['POST'])
+def actualizar_stock_externo(producto_id):
+    """Actualizar stock de producto externo (compras)"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    producto = Producto.query.get_or_404(producto_id)
+    
+    try:
+        cantidad = int(request.form['cantidad'])
+        costo_compra = float(request.form.get('costo_compra', producto.costo_compra))
+        
+        # Actualizar stock y costo promedio
+        producto.stock_actual += cantidad
+        if costo_compra > 0:
+            producto.costo_compra = costo_compra
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'nuevo_stock': producto.stock_actual,
+            'utilidad_unitaria': producto.utilidad_unitaria,
+            'margen_utilidad': round(producto.margen_utilidad, 1)
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+# En app.py - NUEVOS REPORTES
+@app.route('/reporte_utilidades')
+def reporte_utilidades():
+    """Reporte de utilidades por producto"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    # Productos de producción
+    productos_produccion = Producto.query.filter_by(tipo_producto='produccion', activo=True).all()
+    
+    # Productos externos
+    productos_externos = Producto.query.filter_by(tipo_producto='externo', activo=True).all()
+    
+    # Calcular ventas del mes
+    hoy = datetime.now()
+    inicio_mes = hoy.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    
+    utilidades_data = []
+    
+    # Procesar productos de producción
+    for producto in productos_produccion:
+        ventas_mes = db.session.query(db.func.sum(DetalleVenta.cantidad)).join(Venta).filter(
+            DetalleVenta.producto_id == producto.id,
+            Venta.fecha_hora >= inicio_mes
+        ).scalar() or 0
+        
+        if producto.receta:
+            utilidad_unitaria = producto.receta.utilidad_real_pesos
+        else:
+            utilidad_unitaria = 0
+            
+        utilidad_total = utilidad_unitaria * ventas_mes
+        
+        utilidades_data.append({
+            'producto': producto.nombre,
+            'tipo': 'Producción',
+            'ventas_mes': ventas_mes,
+            'utilidad_unitaria': utilidad_unitaria,
+            'utilidad_total': utilidad_total,
+            'margen': producto.receta.utilidad_real_porcentaje if producto.receta else 0
+        })
+    
+    # Procesar productos externos
+    for producto in productos_externos:
+        ventas_mes = db.session.query(db.func.sum(DetalleVenta.cantidad)).join(Venta).filter(
+            DetalleVenta.producto_id == producto.id,
+            Venta.fecha_hora >= inicio_mes
+        ).scalar() or 0
+        
+        utilidad_total = producto.utilidad_unitaria * ventas_mes
+        
+        utilidades_data.append({
+            'producto': producto.nombre,
+            'tipo': 'Externo',
+            'ventas_mes': ventas_mes,
+            'utilidad_unitaria': producto.utilidad_unitaria,
+            'utilidad_total': utilidad_total,
+            'margen': producto.margen_utilidad
+        })
+    
+    return render_template('reporte_utilidades.html', utilidades=utilidades_data)
+
+
 
 # Filtro para formatear moneda en pesos colombianos
 @app.template_filter('currency')
@@ -1458,6 +2246,145 @@ def round_filter(value, decimals=2):
         return round(value, decimals)
     except (ValueError, TypeError):
         return value
+   
+# =============================================
+# RUTA DE DIAGNÓSTICO PARA PRODUCTOS - AGREGAR ESTO
+# =============================================
+@app.route('/debug_api_productos')
+def debug_api_productos():
+    """Diagnóstico de la API de productos"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        # Contar productos totales
+        total_productos = Producto.query.count()
+        
+        # Productos activos
+        productos_activos = Producto.query.filter_by(activo=True).all()
+        
+        # Productos con stock
+        productos_con_stock = Producto.query.filter(Producto.stock_actual > 0).all()
+        
+        # Lista completa de productos
+        todos_productos = Producto.query.all()
+        
+        productos_data = []
+        for producto in todos_productos:
+            # Obtener nombre de categoría de forma segura
+            categoria_nombre = "Sin categoría"
+            if producto.categoria_id:
+                categoria = Categoria.query.get(producto.categoria_id)
+                if categoria:
+                    categoria_nombre = categoria.nombre
+            
+            productos_data.append({
+                'id': producto.id,
+                'nombre': producto.nombre,
+                'activo': producto.activo,
+                'stock_actual': producto.stock_actual,
+                'precio_venta': producto.precio_venta,
+                'tipo_producto': producto.tipo_producto,
+                'categoria_id': producto.categoria_id,
+                'categoria_nombre': categoria_nombre,
+                'tiene_receta': producto.receta_id is not None
+            })
+        
+        return jsonify({
+            'estado': 'OK',
+            'total_productos': total_productos,
+            'productos_activos': len(productos_activos),
+            'productos_con_stock': len(productos_con_stock),
+            'productos': productos_data
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'estado': 'ERROR',
+            'error': str(e)
+        }), 500
 
+# =============================================
+# RUTA DE EMERGENCIA - CREAR PRODUCTOS DE PRUEBA
+# =============================================
+@app.route('/crear_productos_prueba')
+def crear_productos_prueba():
+    """Crear productos de prueba si no existen"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        # Verificar si ya existen productos
+        if Producto.query.count() > 0:
+            return jsonify({'mensaje': 'Ya existen productos en la base de datos'})
+        
+        # Obtener o crear categorías
+        categoria_pan = Categoria.query.filter_by(nombre="Panadería").first()
+        if not categoria_pan:
+            categoria_pan = Categoria(nombre="Panadería")
+            db.session.add(categoria_pan)
+            db.session.flush()
+        
+        categoria_bebida = Categoria.query.filter_by(nombre="Bebidas").first()
+        if not categoria_bebida:
+            categoria_bebida = Categoria(nombre="Bebidas")
+            db.session.add(categoria_bebida)
+            db.session.flush()
+        
+        # Crear productos de prueba
+        productos_prueba = [
+            Producto(
+                nombre="Pan Mantequilla",
+                categoria_id=categoria_pan.id,
+                precio_venta=3000,
+                stock_actual=15,
+                activo=True,
+                tipo_producto='produccion'
+            ),
+            Producto(
+                nombre="Pan Integral", 
+                categoria_id=categoria_pan.id,
+                precio_venta=4000,
+                stock_actual=10,
+                activo=True,
+                tipo_producto='produccion'
+            ),
+            Producto(
+                nombre="Café Americano",
+                categoria_id=categoria_bebida.id,
+                precio_venta=2000,
+                stock_actual=20,
+                activo=True,
+                tipo_producto='externo',
+                costo_compra=800
+            ),
+            Producto(
+                nombre="Jugo de Naranja",
+                categoria_id=categoria_bebida.id, 
+                precio_venta=4000,
+                stock_actual=12,
+                activo=True,
+                tipo_producto='externo',
+                costo_compra=1500
+            )
+        ]
+        
+        for producto in productos_prueba:
+            db.session.add(producto)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'mensaje': '✅ Productos de prueba creados exitosamente',
+            'productos_creados': len(productos_prueba)
+        })
+        
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+# AGREGAR EL CÓDIGO ANTERIOR JUSTO ANTES DE ESTAS LÍNEAS:
 if __name__ == '__main__':
     app.run(debug=True)
+

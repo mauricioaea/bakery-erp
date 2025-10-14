@@ -28,6 +28,43 @@ class Producto(db.Model):
     precio_venta = db.Column(db.Float, nullable=False)
     codigo_barras = db.Column(db.String(50), unique=True)
     activo = db.Column(db.Boolean, default=True)
+     # ✅ NUEVO: Campos para aprendizaje automático
+    vida_util_dias = db.Column(db.Integer, default=3)  # ✅ Vida útil realista del pan
+    es_pan = db.Column(db.Boolean, default=True)  # ✅ Para identificar productos sin IVA
+    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
+    # ✅ NUEVO: Tipo de producto
+    tipo_producto = db.Column(db.String(20), default='produccion')  # 'produccion' o 'externo'
+    
+    # ✅ NUEVO: Campos para productos externos
+    costo_compra = db.Column(db.Float, default=0)  # Solo para productos externos
+    proveedor_externo = db.Column(db.String(100))  # Solo para productos externos
+    
+    # ✅ ACTUALIZAR RELACIÓN CON RECETA (One-to-One)
+    receta_id = db.Column(db.Integer, db.ForeignKey('recetas.id'), nullable=True)
+    receta = db.relationship('Receta', 
+                           foreign_keys=[receta_id],
+                           backref=db.backref('producto_asociado', uselist=False))
+    
+    # ✅ NUEVAS PROPIEDADES CALCULADAS
+    @property
+    def es_produccion_interna(self):
+        return self.tipo_producto == 'produccion'
+    
+    @property
+    def es_producto_externo(self):
+        return self.tipo_producto == 'externo'
+    
+    @property
+    def utilidad_unitaria(self):
+        if self.es_producto_externo:
+            return self.precio_venta - self.costo_compra
+        return 0  # Para producción interna, la utilidad se calcula en la receta
+    
+    @property
+    def margen_utilidad(self):
+        if self.es_producto_externo and self.precio_venta > 0:
+            return (self.utilidad_unitaria / self.precio_venta) * 100
+        return 0  
     
 class Proveedor(db.Model):
     __tablename__ = 'proveedor'
@@ -45,7 +82,69 @@ class Proveedor(db.Model):
     
     # ✅ RELACIÓN CORREGIDA - Solo esta es necesaria
     # La relación se define en MateriaPrima con backref
+
+class ProductoExterno(db.Model):
+    __tablename__ = 'productos_externos'
     
+    id = db.Column(db.Integer, primary_key=True)
+    codigo_barras = db.Column(db.String(100), unique=True)
+    nombre = db.Column(db.String(200), nullable=False)
+    descripcion = db.Column(db.Text)
+    categoria = db.Column(db.String(100), nullable=False)  # Bebidas, Helados
+    marca = db.Column(db.String(100))
+    
+    # RELACIÓN CON PROVEEDOR
+    proveedor_id = db.Column(db.Integer, db.ForeignKey('proveedor.id'))
+    proveedor = db.relationship('Proveedor', backref='productos')
+    
+    # INVENTARIO Y PRECIOS
+    stock_actual = db.Column(db.Integer, default=0)
+    stock_minimo = db.Column(db.Integer, default=5)
+    precio_compra = db.Column(db.Float, nullable=False)
+    precio_venta = db.Column(db.Float, nullable=False)
+    
+    # MÉTRICAS AUTOMÁTICAS
+    total_ventas = db.Column(db.Integer, default=0)  # Unidades vendidas
+    total_ingresos = db.Column(db.Float, default=0.0)  # Dinero generado
+    utilidad_total = db.Column(db.Float, default=0.0)  # Ganancia acumulada
+    
+    # CONTROL
+    activo = db.Column(db.Boolean, default=True)
+    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
+    fecha_ultima_compra = db.Column(db.DateTime)
+    fecha_ultima_venta = db.Column(db.DateTime)
+    
+    def calcular_utilidad_unitaria(self):
+        """Calcula la utilidad por unidad"""
+        return self.precio_venta - self.precio_compra
+    
+    def calcular_margen_ganancia(self):
+        """Calcula el porcentaje de ganancia"""
+        if self.precio_compra > 0:
+            return (self.calcular_utilidad_unitaria() / self.precio_compra) * 100
+        return 0
+    
+    def valor_inventario(self):
+        """Valor total del inventario actual"""
+        return self.stock_actual * self.precio_compra
+
+class CompraExterna(db.Model):
+    __tablename__ = 'compras_externas'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    proveedor_id = db.Column(db.Integer, db.ForeignKey('proveedor.id'))
+    producto_id = db.Column(db.Integer, db.ForeignKey('productos_externos.id'))
+    cantidad = db.Column(db.Integer, nullable=False)
+    precio_compra = db.Column(db.Float, nullable=False)
+    total_compra = db.Column(db.Float, nullable=False)
+    fecha_compra = db.Column(db.DateTime, default=datetime.utcnow)
+    notas = db.Column(db.Text)
+    
+    # RELACIONES
+    proveedor = db.relationship('Proveedor', backref='compras')
+    producto = db.relationship('ProductoExterno', backref='compras')
+
+
 class MateriaPrima(db.Model):
     __tablename__ = 'materias_primas'
     id = db.Column(db.Integer, primary_key=True)
@@ -116,8 +215,10 @@ class Receta(db.Model):
      # =============================================
     # ✅ NUEVO: RELACIÓN CON PRODUCTO (PASO 1.1)
     # =============================================
-    producto_id = db.Column(db.Integer, db.ForeignKey('productos.id'), nullable=True)  # nullable=True temporalmente
-    producto = db.relationship('Producto', backref=db.backref('recetas', lazy=True))
+    producto_id = db.Column(db.Integer, db.ForeignKey('productos.id'), nullable=True)
+    producto = db.relationship('Producto', 
+                             foreign_keys=[producto_id],
+                             backref=db.backref('receta_asociada', uselist=False)) 
     # =============================================
     
     ingredientes = db.relationship('RecetaIngrediente', backref='receta', lazy=True, cascade='all, delete-orphan')
@@ -308,6 +409,8 @@ class Venta(db.Model):
     total = db.Column(db.Float, nullable=False)
     metodo_pago = db.Column(db.String(20), nullable=False)  # 'efectivo', 'tarjeta', 'transferencia'
     usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
+    
+    usuario = db.relationship('Usuario', backref='ventas') 
 
 class DetalleVenta(db.Model):
     __tablename__ = 'detalle_ventas'
@@ -316,6 +419,8 @@ class DetalleVenta(db.Model):
     producto_id = db.Column(db.Integer, db.ForeignKey('productos.id'), nullable=False)
     cantidad = db.Column(db.Integer, nullable=False)
     precio_unitario = db.Column(db.Float, nullable=False)
+    
+    producto = db.relationship('Producto', backref='detalles_venta')
 
 class Compra(db.Model):
     __tablename__ = 'compras'
@@ -438,6 +543,8 @@ class OrdenProduccion(db.Model):
         return False
     
     # NUEVO: Método para completar producción
+ # En models.py - EN LA CLASE OrdenProduccion, agrega este método:
+
     def completar_produccion(self):
         """Marca la orden como completada, actualiza stock y descuenta ingredientes"""
         if self.estado == 'EN_PRODUCCION':
@@ -447,39 +554,89 @@ class OrdenProduccion(db.Model):
             print(f"🔍 DEBUG: Completando producción - Receta: {self.receta.nombre if self.receta else 'N/A'}")
             print(f"🔍 DEBUG: Cantidad a producir: {self.cantidad_producir}")
         
-            
-             # =============================================
-            # ✅ CORREGIDO: Actualizar stock del producto asociado
+            # =============================================
+            # ✅ CORREGIDO: Actualizar stock del producto asociado (UNA SOLA VEZ)
             # =============================================
             if self.receta and self.receta.producto:
                 producto = self.receta.producto
-                producto.stock_actual += self.cantidad_producir
-                self.stock_generado = True
-                print(f"✅ Stock actualizado: {self.cantidad_producir} unidades de {producto.nombre}")
                 
                 print(f"🔍 DEBUG: Producto antes de actualizar: {producto.nombre} - Stock: {producto.stock_actual}")
-            
+                
+                # ✅ CORRECCIÓN: Sumar solo UNA VEZ
                 producto.stock_actual += self.cantidad_producir
                 self.stock_generado = True
                 
                 print(f"🔍 DEBUG: Producto después de actualizar: {producto.nombre} - Stock: {producto.stock_actual}")
-                print(f"✅ Stock actualizado: {self.cantidad_producir} unidades de {producto.nombre}")
+                print(f"✅ Stock actualizado: +{self.cantidad_producir} unidades de {producto.nombre}")
                 
             else:
                 print(f"⚠️  Advertencia: Receta '{self.receta.nombre if self.receta else 'N/A'}' no tiene producto asociado")
+                # ✅ NUEVO: Si no hay producto asociado, intentar crearlo automáticamente
+                if self.receta and not self.receta.producto:
+                    try:
+                        self._crear_producto_desde_receta()
+                        print(f"✅ Producto creado automáticamente para receta: {self.receta.nombre}")
+                    except Exception as e:
+                        print(f"❌ Error creando producto automático: {e}")
             # =============================================
             
             # Descontar ingredientes utilizados
             self._descontar_ingredientes()
             
-             # ✅ NUEVO: Forzar commit de la sesión
+            # ✅ NUEVO: Forzar commit de la sesión
             db.session.commit()
             print("🔍 DEBUG: Cambios guardados en la base de datos")
                 
             return True
         return False
-    
-    # NUEVO: Método privado para descontar ingredientes
+
+    # ✅ NUEVO: MÉTODO PARA CREAR PRODUCTO AUTOMÁTICAMENTE SI NO EXISTE
+    def _crear_producto_desde_receta(self):
+        """Crea un producto automáticamente a partir de la receta si no existe"""
+        if not self.receta or self.receta.producto:
+            return False
+        
+        try:
+            # Buscar categoría existente o crear una nueva (SIN DEPENDER DE app.py)
+            nombre_categoria = self.receta.categoria.strip().title()
+            categoria = Categoria.query.filter_by(nombre=nombre_categoria).first()
+            
+            if not categoria:
+                # Crear categoría si no existe
+                categoria = Categoria(nombre=nombre_categoria)
+                db.session.add(categoria)
+                db.session.flush()  # Para obtener el ID
+            
+            # Crear producto automático
+            producto_automatico = Producto(
+                nombre=self.receta.nombre,
+                descripcion=self.receta.descripcion,
+                categoria_id=categoria.id,
+                precio_venta=self.receta.precio_venta_efectivo,
+                stock_actual=self.cantidad_producir,  # Stock de esta producción
+                stock_minimo=10,
+                codigo_barras=f"PROD{self.receta.id:06d}",
+                tipo_producto='produccion',
+                es_pan=True if 'pan' in self.receta.nombre.lower() else False,
+                receta_id=self.receta.id,
+                activo=True
+            )
+            
+            db.session.add(producto_automatico)
+            db.session.flush()  # Para obtener el ID
+            
+            # Asignar el producto a la receta
+            self.receta.producto_id = producto_automatico.id
+            self.stock_generado = True
+            
+            print(f"✅ Producto automático creado: {producto_automatico.nombre} con {self.cantidad_producir} unidades")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error en _crear_producto_desde_receta: {e}")
+            return False
+
+    # ✅ MANTENER ESTE MÉTODO EXISTENTE - NO ELIMINAR
     def _descontar_ingredientes(self):
         """Descuenta las materias primas utilizadas en la producción"""
         ingredientes = self.calcular_ingredientes_necesarios()
@@ -487,11 +644,26 @@ class OrdenProduccion(db.Model):
         for nombre, datos in ingredientes.items():
             materia_prima = MateriaPrima.query.get(datos['materia_prima_id'])
             if materia_prima:
-                # ✅ CORREGIDO: usar 'stock_actual' en lugar de 'cantidad_disponible'
                 materia_prima.stock_actual -= datos['cantidad']
-                # Registrar en historial de inventario si existe ese modelo
-                # self._registrar_movimiento_inventario(materia_prima, datos['cantidad'])
 
+    def calcular_ingredientes_necesarios(self):
+        """Calcula los ingredientes necesarios para esta orden"""
+        if not self.receta:
+            return {}
+        
+        ingredientes = {}
+        for ingrediente in self.receta.ingredientes:
+            if self.receta.unidades_obtenidas and self.receta.unidades_obtenidas > 0:
+                cantidad_necesaria = (ingrediente.cantidad_gramos / self.receta.unidades_obtenidas) * self.cantidad_producir
+            else:
+                cantidad_necesaria = 0
+                
+            ingredientes[ingrediente.materia_prima.nombre] = {
+                'cantidad': cantidad_necesaria,
+                'unidad': ingrediente.materia_prima.unidad_medida,
+                'materia_prima_id': ingrediente.materia_prima_id
+            }
+        return ingredientes
 # NUEVA CLASE PARA HISTORIAL DE DESCUENTO DE INVENTARIO
 class HistorialInventario(db.Model):
     __tablename__ = 'historial_inventario'
@@ -567,3 +739,49 @@ class ConfiguracionProduccion(db.Model):
         if ventas_promedio > 0:
             return stock_actual / ventas_promedio
         return 999  # Si no hay ventas, inventario infinito
+    
+# =============================================
+# ✅ NUEVOS MODELOS PARA APRENDIZAJE AUTOMÁTICO
+# =============================================
+
+class HistorialRotacionProducto(db.Model):
+    __tablename__ = 'historial_rotacion_producto'
+    id = db.Column(db.Integer, primary_key=True)
+    producto_id = db.Column(db.Integer, db.ForeignKey('productos.id'), nullable=False)
+    fecha = db.Column(db.Date, nullable=False, default=datetime.utcnow().date)
+    ventas_dia = db.Column(db.Integer, default=0)
+    rotacion_real = db.Column(db.Float, default=0.0)
+    tendencia_semanal = db.Column(db.Float, default=1.0)
+    
+    producto = db.relationship('Producto', backref='historial_rotacion')
+    
+    __table_args__ = (db.UniqueConstraint('producto_id', 'fecha', name='unique_rotacion_diaria'),)
+
+class ControlVidaUtil(db.Model):
+    __tablename__ = 'control_vida_util'
+    id = db.Column(db.Integer, primary_key=True)
+    producto_id = db.Column(db.Integer, db.ForeignKey('productos.id'), nullable=False)
+    fecha_produccion = db.Column(db.Date, nullable=False, default=datetime.utcnow().date)
+    stock_inicial = db.Column(db.Integer, nullable=False)
+    stock_actual = db.Column(db.Integer, nullable=False)
+    dias_sin_rotacion = db.Column(db.Integer, default=0)
+    estado = db.Column(db.String(20), default='FRESCO')  # FRESCO, ALERTA, RIESGO, PERDIDA
+    
+    producto = db.relationship('Producto', backref='control_vida_util')
+
+class Factura(db.Model):
+    __tablename__ = 'facturas'
+    id = db.Column(db.Integer, primary_key=True)
+    venta_id = db.Column(db.Integer, db.ForeignKey('ventas.id'), nullable=False)
+    numero_factura = db.Column(db.String(50), unique=True, nullable=False)
+    fecha_emision = db.Column(db.DateTime, default=datetime.utcnow)
+    subtotal = db.Column(db.Float, nullable=False)
+    iva = db.Column(db.Float, default=0.0)  # ✅ CERO para pan
+    total = db.Column(db.Float, nullable=False)
+    # Información de la panadería (configurable)
+    nombre_panaderia = db.Column(db.String(200), default='Semillas Panadería')
+    nit_panaderia = db.Column(db.String(50), default='1085297960')
+    direccion_panaderia = db.Column(db.Text, default='Carrera 18 #9-45, Pasto')
+    telefono_panaderia = db.Column(db.String(20), default='+57 3189098818')
+    
+    venta = db.relationship('Venta', backref='factura')

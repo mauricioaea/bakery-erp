@@ -160,6 +160,76 @@
         .card-icon-production {
             background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
         }
+        
+        /* Estilos para productos externos */
+        .external-highlight {
+            border: 3px solid #ff6b6b;
+            position: relative;
+            overflow: hidden;
+        }
+        .external-highlight::before {
+            content: "NUEVO";
+            position: absolute;
+            top: 10px;
+            right: -25px;
+            background: #ff6b6b;
+            color: white;
+            padding: 5px 30px;
+            transform: rotate(45deg);
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        .card-icon-external {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 100%) !important;
+        }
+        
+        /* Estilos para reportes activos */
+        .reports-active {
+            border: 3px solid #17a2b8;
+        }
+        .card-icon-reports {
+            background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%) !important;
+        }
+        
+        /* Navegación rápida */
+        .quick-nav {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+        }
+        .quick-nav h3 {
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .nav-buttons {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .nav-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+        .nav-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .nav-btn.external {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 100%);
+        }
+        .nav-btn.reports {
+            background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%);
+        }
     </style>
 </head>
 <body>
@@ -181,6 +251,18 @@
             <p>Selecciona un módulo para comenzar a gestionar tu panadería</p>
         </div>
 
+        <!-- Navegación Rápida -->
+        <div class="quick-nav">
+            <h3>🚀 Acceso Rápido</h3>
+            <div class="nav-buttons">
+                <a href="{{ url_for('punto_venta') }}" class="nav-btn">💳 Punto de Venta</a>
+                <a href="{{ url_for('produccion_diaria') }}" class="nav-btn">🏭 Producción</a>
+                <a href="{{ url_for('productos_externos') }}" class="nav-btn external">🥤 Productos Externos</a>
+                <a href="{{ url_for('reporte_utilidades') }}" class="nav-btn reports">📈 Reporte Utilidades</a>
+                
+            </div>
+        </div>
+
         <div class="modules-grid">
             <!-- Punto de Venta -->
             <div class="card">
@@ -190,7 +272,7 @@
                 <a href="{{ url_for('punto_venta') }}" class="card-btn">¡Clic para empezar!</a>
             </div>
 
-            <!-- 🆕 NUEVO MÓDULO: PRODUCCIÓN DIARIA -->
+            <!-- 🆕 MÓDULO: PRODUCCIÓN DIARIA -->
             <div class="card production-highlight">
                 <div class="card-icon card-icon-production">🏭</div>
                 <h3>Producción Diaria</h3>
@@ -198,7 +280,15 @@
                 <a href="{{ url_for('produccion_diaria') }}" class="card-btn">🚀 ¡Ir a Producción!</a>
             </div>
 
-            <!-- Recetas (mantener pero con descripción actualizada) -->
+            <!-- 🆕 MÓDULO: PRODUCTOS EXTERNOS -->
+            <div class="card external-highlight">
+                <div class="card-icon card-icon-external">🥤</div>
+                <h3>Productos Externos</h3>
+                <p>Gestionar bebidas, helados y productos externos con control de stock y utilidades</p>
+                <a href="{{ url_for('productos_externos') }}" class="card-btn">➕ Agregar Productos</a>
+            </div>
+
+            <!-- Recetas -->
             <div class="card">
                 <div class="card-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">👨‍🍳</div>
                 <h3>Recetas y Fórmulas</h3>
@@ -222,15 +312,15 @@
                 <a href="{{ url_for('proveedores') }}" class="card-btn">¡Clic para empezar!</a>
             </div>
 
-            <!-- Reportes y Estadísticas -->
-            <div class="card">
-                <div class="card-icon" style="background: #95a5a6;">📊</div>
-                <h3>Reportes y Estadísticas</h3>
-                <p>Ver reportes de ventas, utilidades y análisis de negocio</p>
-                <a href="#" class="card-btn disabled">Próximamente</a>
+            <!-- 🆕 REPORTES ACTIVOS -->
+            <div class="card reports-active">
+                <div class="card-icon card-icon-reports">📊</div>
+                <h3>Reportes y Utilidades</h3>
+                <p>Ver reportes de ventas, utilidades por producto y análisis de rentabilidad</p>
+                <a href="{{ url_for('reporte_utilidades') }}" class="card-btn">📈 Ver Reportes</a>
             </div>
 
-            <!-- Gestión de Usuarios -->
+                        <!-- Gestión de Usuarios -->
             <div class="card">
                 <div class="card-icon" style="background: #95a5a6;">👥</div>
                 <h3>Gestión de Usuarios</h3>
@@ -247,23 +337,60 @@
             </div>
         </div>
 
+        <!-- Información del Sistema -->
+        <div class="quick-nav">
+            <h3>ℹ️ Información del Sistema</h3>
+            <div class="nav-buttons">
+                <a href="/debug_api_productos" class="nav-btn" target="_blank">📦 Ver Productos API</a>
+                
+                <a href="/crear_productos_prueba" class="nav-btn" target="_blank">🧪 Crear Productos Prueba</a>
+            </div>
+        </div>
+
         <div class="logout-section">
             <a href="{{ url_for('logout') }}" class="logout-btn">🚪 Cerrar Sesión</a>
         </div>
     </div>
 
     <script>
-        // Efecto especial para el nuevo módulo de producción
+        // Efectos especiales para tarjetas destacadas
         document.addEventListener('DOMContentLoaded', function() {
+            // Efecto para producción
             const productionCard = document.querySelector('.production-highlight');
             if (productionCard) {
-                // Efecto de pulso intermitente para llamar la atención
                 setInterval(() => {
                     productionCard.style.boxShadow = productionCard.style.boxShadow ? 
                         '0 8px 25px rgba(0,0,0,0.1)' : 
                         '0 8px 25px rgba(40, 167, 69, 0.3)';
                 }, 1000);
             }
+            
+            // Efecto para productos externos
+            const externalCard = document.querySelector('.external-highlight');
+            if (externalCard) {
+                setInterval(() => {
+                    externalCard.style.boxShadow = externalCard.style.boxShadow ? 
+                        '0 8px 25px rgba(0,0,0,0.1)' : 
+                        '0 8px 25px rgba(255, 107, 107, 0.3)';
+                }, 1200);
+            }
+            
+            // Efecto para reportes
+            const reportsCard = document.querySelector('.reports-active');
+            if (reportsCard) {
+                setInterval(() => {
+                    reportsCard.style.boxShadow = reportsCard.style.boxShadow ? 
+                        '0 8px 25px rgba(0,0,0,0.1)' : 
+                        '0 8px 25px rgba(23, 162, 184, 0.3)';
+                }, 1500);
+            }
+            
+            console.log('🎯 Dashboard cargado. Módulos activos:');
+            console.log('- 💳 Punto de Venta');
+            console.log('- 🏭 Producción Diaria'); 
+            console.log('- 🥤 Productos Externos');
+            console.log('- 📈 Reportes de Utilidades');
+            
         });
     </script>
 </body>
