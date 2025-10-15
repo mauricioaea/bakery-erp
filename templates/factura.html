@@ -86,15 +86,23 @@
         <!-- Detalles de productos -->
         <div class="detalles">
             {% for item in detalles_con_productos %}
-            <div class="detalle-producto">
-                <div style="flex: 2;">
-                    <strong>{{ item.producto_nombre }}</strong><br>
-                    <small>{{ item.cantidad }} x ${{ "{:,.0f}".format(item.precio_unitario) }}</small>
-                </div>
-                <div style="flex: 1; text-align: right;">
-                    ${{ "{:,.0f}".format(item.cantidad * item.precio_unitario) }}
-                </div>
-            </div>
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>
+                    <strong>
+                        {% if item.detalle.producto %}
+                            {{ item.detalle.producto.nombre }}
+                        {% elif item.detalle.producto_externo %}
+                            {{ item.detalle.producto_externo.nombre }}
+                        {% else %}
+                            Producto #{{ item.detalle.producto_id or item.detalle.producto_externo_id }}
+                        {% endif %}
+                    </strong>
+                </td>
+                <td>{{ item.detalle.cantidad }}</td>
+                <td>${{ "%.2f"|format(item.detalle.precio_unitario) }}</td>
+                <td>${{ "%.2f"|format(item.detalle.cantidad * item.detalle.precio_unitario) }}</td>
+            </tr>
             {% endfor %}
         </div>
 

@@ -93,6 +93,7 @@ class ProductoExterno(db.Model):
     categoria = db.Column(db.String(100), nullable=False)  # Bebidas, Helados
     marca = db.Column(db.String(100))
     
+    
     # RELACIÓN CON PROVEEDOR
     proveedor_id = db.Column(db.Integer, db.ForeignKey('proveedor.id'))
     proveedor = db.relationship('Proveedor', backref='productos')
@@ -413,14 +414,17 @@ class Venta(db.Model):
     usuario = db.relationship('Usuario', backref='ventas') 
 
 class DetalleVenta(db.Model):
-    __tablename__ = 'detalle_ventas'
+    __tablename__ = 'detalle_venta'
     id = db.Column(db.Integer, primary_key=True)
     venta_id = db.Column(db.Integer, db.ForeignKey('ventas.id'), nullable=False)
-    producto_id = db.Column(db.Integer, db.ForeignKey('productos.id'), nullable=False)
+    producto_id = db.Column(db.Integer, db.ForeignKey('productos.id'), nullable=True)  # Hacer nullable
+    producto_externo_id = db.Column(db.Integer, db.ForeignKey('productos_externos.id'), nullable=True)  # ✅ NUEVO
     cantidad = db.Column(db.Integer, nullable=False)
     precio_unitario = db.Column(db.Float, nullable=False)
     
+    # Relaciones
     producto = db.relationship('Producto', backref='detalles_venta')
+    producto_externo = db.relationship('ProductoExterno', backref='detalles_venta')  # ✅ NUEVO
 
 class Compra(db.Model):
     __tablename__ = 'compras'

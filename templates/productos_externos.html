@@ -22,6 +22,20 @@
             <div class="navbar-nav ms-auto">
                 <a class="nav-link" href="/punto_venta">Punto de Venta</a>
                 <a class="nav-link" href="/productos_externos">Productos Externos</a>
+                
+                <!-- AGREGAR AQUÍ EL DROPDOWN DE REPORTES -->
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="reportesDropdown" role="button" data-bs-toggle="dropdown">
+                        📊 Reportes
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/reporte_inventario_externo">📦 Inventario Externo</a></li>
+                        <li><a class="dropdown-item" href="/reporte_ventas_externas">💰 Ventas Externas</a></li>
+                        <li><a class="dropdown-item" href="/dashboard_externos">📈 Dashboard Externo</a></li>
+                    </ul>
+                </div>
+                <!-- FIN DEL DROPDOWN -->
+                
                 <a class="nav-link" href="/proveedores">Proveedores</a>
                 <span class="navbar-text me-3">Hola, {{ session.username }}</span>
                 <a class="btn btn-outline-light btn-sm" href="/logout">Cerrar Sesión</a>

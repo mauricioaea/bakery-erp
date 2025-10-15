@@ -1,6 +1,8 @@
 import os
 
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+import uuid
+
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, Response
 from models import db, Usuario, Producto, Venta, DetalleVenta, MateriaPrima, Receta, RecetaIngrediente, OrdenProduccion, Categoria, Proveedor, HistorialCompra, HistorialInventario, ConfiguracionProduccion, HistorialRotacionProducto, ControlVidaUtil, Factura, ProductoExterno, CompraExterna
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
@@ -180,143 +182,223 @@ def debug_punto_venta():
     return render_template('debug_punto_venta.html', debug=debug_info)
 
 # Ruta para buscar productos (API)
-# En app.py - MEJORAR LA BÚSQUEDA PARA INCLUIR AMBOS TIPOS
-# EN app.py - CORREGIR ESTA RUTA
 @app.route('/buscar_producto')
 def buscar_producto():
+    """Búsqueda unificada de productos (panadería + externos) - VERSIÓN FUNCIONAL"""
+    query = request.args.get('q', '').lower()
+    
+    try:
+        resultados = []
+        
+        print(f"🔍 Iniciando búsqueda con query: '{query}'")
+        
+        # PRODUCTOS DE PANADERÍA
+        productos_panaderia = Producto.query.filter(
+            Producto.activo == True,
+            Producto.stock_actual > 0
+        ).all()
+        print(f"🍞 Productos panadería encontrados: {len(productos_panaderia)}")
+        
+        # PRODUCTOS EXTERNOS
+        productos_externos = ProductoExterno.query.filter(
+            ProductoExterno.activo == True, 
+            ProductoExterno.stock_actual > 0
+        ).all()
+        print(f"🥤 Productos externos encontrados: {len(productos_externos)}")
+        
+        # AGREGAR PRODUCTOS DE PANADERÍA
+        for producto in productos_panaderia:
+            nombre_lower = producto.nombre.lower()
+            if query in nombre_lower or query == '':
+                resultados.append({
+                    'id': producto.id,
+                    'nombre': producto.nombre,
+                    'precio': float(producto.precio_venta),
+                    'stock_actual': producto.stock_actual,
+                    'categoria': getattr(producto.categoria, 'nombre', 'Panadería') if hasattr(producto, 'categoria') and producto.categoria else 'Panadería',
+                    'tipo_producto': getattr(producto, 'tipo_producto', 'produccion'),
+                    'es_externo': False
+                })
+                print(f"✅ Agregado panadería: {producto.nombre}")
+        
+        # AGREGAR PRODUCTOS EXTERNOS
+        for producto in productos_externos:
+            nombre_lower = producto.nombre.lower()
+            if query in nombre_lower or query == '':
+                resultados.append({
+                    'id': producto.id + 10000,  # Offset para evitar conflictos
+                    'nombre': producto.nombre,
+                    'precio': float(producto.precio_venta),
+                    'stock_actual': producto.stock_actual,
+                    'categoria': producto.categoria,
+                    'tipo_producto': 'produccion',  # Mismo tipo para compatibilidad
+                    'es_externo': True,
+                    'producto_externo_id': producto.id
+                })
+                print(f"✅ Agregado externo: {producto.nombre}")
+        
+        print(f"🎯 Total resultados: {len(resultados)}")
+        
+        # DEBUG: Mostrar primeros resultados
+        for i, r in enumerate(resultados[:3]):
+            print(f"  {i+1}. {r['nombre']} (ID: {r['id']}, Precio: {r['precio']})")
+        
+        return jsonify(resultados)
+        
+    except Exception as e:
+        print(f"❌ Error en búsqueda de productos: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify([])
+
+
+@app.route('/debug_productos_punto_venta')
+def debug_productos_punto_venta():
+    """Debug: Verificar qué productos están disponibles para punto de venta"""
     if 'user_id' not in session:
-        return jsonify({'error': 'No autorizado'}), 401
+        return redirect(url_for('login'))
     
-    query = request.args.get('q', '').strip()
-    
-    # ✅ CORREGIDO: Solo productos con stock > 0
-    productos = Producto.query.filter(
+    # Productos de panadería
+    productos_panaderia = Producto.query.filter(
         Producto.activo == True,
-        Producto.stock_actual > 0,  # ← ¡DESCOMENTADO! Solo productos con stock
-        db.or_(
-            Producto.nombre.ilike(f'%{query}%'),
-            Producto.codigo_barras.ilike(f'%{query}%'),
-            Producto.descripcion.ilike(f'%{query}%') if Producto.descripcion else False
-        )
+        Producto.stock_actual > 0
     ).all()
     
-    resultados = []
-    for producto in productos:
-        # Obtener nombre de categoría de forma segura
-        categoria_nombre = "General"
-        if producto.categoria_id:
-            categoria = Categoria.query.get(producto.categoria_id)
-            if categoria:
-                categoria_nombre = categoria.nombre
-        
-        resultados.append({
-            'id': producto.id,
-            'nombre': producto.nombre,
-            'precio': producto.precio_venta,
-            'codigo_barras': producto.codigo_barras,
-            'stock_actual': producto.stock_actual,
-            'categoria': categoria_nombre,
-            'tipo_producto': producto.tipo_producto,
-            'es_produccion': producto.es_produccion_interna,
-            'utilidad': producto.utilidad_unitaria if producto.es_producto_externo else None
-        })
+    # Productos externos
+    productos_externos = ProductoExterno.query.filter(
+        ProductoExterno.activo == True, 
+        ProductoExterno.stock_actual > 0
+    ).all()
     
-    print(f"✅ API Productos: {len(resultados)} productos con stock encontrados")
-    return jsonify(resultados)
-# Ruta para registrar la venta (checkout)
+    resultado = {
+        'panaderia_count': len(productos_panaderia),
+        'externos_count': len(productos_externos),
+        'panaderia': [{'id': p.id, 'nombre': p.nombre, 'stock': p.stock_actual} for p in productos_panaderia],
+        'externos': [{'id': p.id, 'nombre': p.nombre, 'stock': p.stock_actual} for p in productos_externos]
+    }
+    
+    return jsonify(resultado)
+    
 # ✅ RUTA ACTUALIZADA: /registrar_venta con aprendizaje automático
 @app.route('/registrar_venta', methods=['POST'])
 def registrar_venta():
+    """Registrar venta con productos mixtos (panadería + externos)"""
     if 'user_id' not in session:
-        return jsonify({'error': 'No autorizado'}), 401
+        return jsonify({'success': False, 'error': 'No autorizado'})
     
-    data = request.get_json()
-    carrito = data.get('carrito', [])
-    metodo_pago = data.get('metodo_pago', 'efectivo')
-    
-    if not carrito:
-        return jsonify({'error': 'El carrito está vacío'}), 400
-
     try:
-        # Calcular total (SIN IVA para pan)
-        subtotal = sum(item['precio'] * item['cantidad'] for item in carrito)
-        iva = 0.0  # ✅ CERO IVA para pan (según legislación colombiana)
-        total = subtotal  # Total igual a subtotal sin IVA
-
+        data = request.get_json()
+        carrito = data.get('carrito', [])
+        metodo_pago = data.get('metodo_pago', 'efectivo')
+        
         # Crear la venta
         nueva_venta = Venta(
-            total=total,
-            metodo_pago=metodo_pago,
-            usuario_id=session['user_id']
+            usuario_id=session['user_id'],
+            total=0,  # Se calculará después
+            metodo_pago=metodo_pago
         )
         db.session.add(nueva_venta)
-        db.session.flush()  # Para obtener el ID de la venta
-
-        # Crear los detalles de la venta y actualizar aprendizaje automático
+        db.session.flush()  # Para obtener el ID
+        
+        total_venta = 0
+        detalles_venta = []
+        
+        # PROCESAR CADA PRODUCTO DEL CARRITO
         for item in carrito:
-            detalle = DetalleVenta(
-                venta_id=nueva_venta.id,
-                producto_id=item['id'],
-                cantidad=item['cantidad'],
-                precio_unitario=item['precio']
-            )
-            db.session.add(detalle)
+            producto_id = item['id']
+            cantidad = item['cantidad']
             
-            # ✅ NUEVO: ACTUALIZAR APRENDIZAJE AUTOMÁTICO POR CADA VENTA
-            producto = Producto.query.get(item['id'])
-            if producto:
-                # Actualizar stock del producto
-                producto.stock_actual = max(0, producto.stock_actual - item['cantidad'])
+            # DETERMINAR SI ES PRODUCTO EXTERNO (ID > 10000)
+            if producto_id > 10000:
+                # Es producto externo
+                producto_externo_id = producto_id - 10000
+                producto = ProductoExterno.query.get(producto_externo_id)
                 
-                # Registrar para aprendizaje automático (solo si tiene receta)
-                if producto.receta:
-                    config = ConfiguracionProduccion.query.filter_by(receta_id=producto.receta.id).first()
-                    if config:
-                        # Crear registro en historial de rotación
-                        hoy = datetime.now().date()
-                        historial_existente = HistorialRotacionProducto.query.filter_by(
-                            producto_id=producto.id, 
-                            fecha=hoy
-                        ).first()
-                        
-                        if historial_existente:
-                            historial_existente.ventas_dia += item['cantidad']
-                        else:
-                            nuevo_historial = HistorialRotacionProducto(
-                                producto_id=producto.id,
-                                ventas_dia=item['cantidad'],
-                                rotacion_real=calcular_rotacion_automatica(producto.id)
-                            )
-                            db.session.add(nuevo_historial)
-
-        # ✅ NUEVO: CREAR FACTURA/RECIBO
-        numero_factura = f"FAC-{nueva_venta.id:06d}"
-        nueva_factura = Factura(
+                if not producto or producto.stock_actual < cantidad:
+                    return jsonify({
+                        'success': False, 
+                        'error': f'Stock insuficiente: {producto.nombre if producto else "Producto"}'
+                    })
+                
+                # Actualizar stock externo
+                producto.stock_actual -= cantidad
+                producto.total_ventas += cantidad
+                producto.total_ingresos += cantidad * producto.precio_venta
+                producto.utilidad_total += cantidad * (producto.precio_venta - producto.precio_compra)
+                producto.fecha_ultima_venta = datetime.utcnow()
+                
+                # Calcular total
+                subtotal = cantidad * producto.precio_venta
+                total_venta += subtotal
+                
+                # Crear detalle de venta
+                detalle = DetalleVenta(
+                    venta_id=nueva_venta.id,
+                    producto_id=None,  # No asociado a Producto tradicional
+                    producto_externo_id=producto_externo_id,
+                    cantidad=cantidad,
+                    precio_unitario=producto.precio_venta
+                )
+                detalles_venta.append(detalle)
+                
+            else:
+                # Es producto normal de panadería
+                producto = Producto.query.get(producto_id)
+                
+                if not producto or producto.stock_actual < cantidad:
+                    return jsonify({
+                        'success': False, 
+                        'error': f'Stock insuficiente: {producto.nombre if producto else "Producto"}'
+                    })
+                
+                # Actualizar stock panadería
+                producto.stock_actual -= cantidad
+                
+                # Calcular total
+                subtotal = cantidad * producto.precio_venta
+                total_venta += subtotal
+                
+                # Crear detalle de venta
+                detalle = DetalleVenta(
+                    venta_id=nueva_venta.id,
+                    producto_id=producto_id,
+                    producto_externo_id=None,
+                    cantidad=cantidad,
+                    precio_unitario=producto.precio_venta
+                )
+                detalles_venta.append(detalle)
+        
+        # Actualizar total de la venta
+        nueva_venta.total = total_venta
+        
+        # Agregar todos los detalles
+        for detalle in detalles_venta:
+            db.session.add(detalle)
+        
+        # Crear factura
+        factura = Factura(
             venta_id=nueva_venta.id,
-            numero_factura=numero_factura,
-            subtotal=subtotal,
-            iva=iva,
-            total=total
+            numero_factura=f"F{datetime.now().strftime('%Y%m%d')}{nueva_venta.id:04d}",
+            subtotal=total_venta,
+            iva=0,
+            total=total_venta
         )
-        db.session.add(nueva_factura)
-
+        db.session.add(factura)
+        
         db.session.commit()
         
-        # ✅ NUEVO: EJECUTAR ACTUALIZACIONES AUTOMÁTICAS
-        actualizar_rotaciones_automaticas()
-        actualizar_control_vida_util()
-        
         return jsonify({
-            'success': True, 
-            'venta_id': nueva_venta.id, 
-            'total': total,
-            'factura_id': nueva_factura.id,
-            'numero_factura': numero_factura
+            'success': True,
+            'venta_id': nueva_venta.id,
+            'factura_id': factura.id,
+            'numero_factura': factura.numero_factura,
+            'total': total_venta
         })
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': f'Error al registrar venta: {str(e)}'}), 500
+        print(f"Error al registrar venta: {e}")
+        return jsonify({'success': False, 'error': str(e)})
     
 @app.route('/agregar_al_carrito', methods=['POST'])
 def agregar_al_carrito():
@@ -2088,50 +2170,80 @@ def imprimir_factura(factura_id):
 
 @app.route('/agregar_producto_externo', methods=['POST'])
 def agregar_producto_externo():
-    """Agregar nuevo producto externo usando el modelo ProductoExterno"""
+    """Agregar nuevo producto externo al inventario"""
     if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'No autorizado'})
+        return jsonify({'success': False, 'message': 'No autorizado'}), 401
     
     try:
-        nombre = request.form['nombre']
-        categoria = request.form['categoria']  # 'Bebidas' o 'Helados'
-        marca = request.form.get('marca', '')
-        descripcion = request.form.get('descripcion', '')
-        codigo_barras = request.form.get('codigo_barras', '')
+        # Obtener datos del formulario
+        codigo_barras = request.form.get('codigo_barras', '').strip()
+        nombre = request.form.get('nombre', '').strip()
+        descripcion = request.form.get('descripcion', '').strip()
+        categoria = request.form.get('categoria', '').strip()
+        marca = request.form.get('marca', '').strip()
         proveedor_id = request.form.get('proveedor_id')
-        precio_compra = float(request.form['precio_compra'])
-        precio_venta = float(request.form['precio_venta'])
-        stock_minimo = int(request.form.get('stock_minimo', 5))
+        stock_actual = request.form.get('stock_actual', 0)
+        stock_minimo = request.form.get('stock_minimo', 0)
+        precio_compra = request.form.get('precio_compra', 0)
+        precio_venta = request.form.get('precio_venta', 0)
         
-        # Validaciones
+        # Validaciones básicas
+        if not nombre:
+            return jsonify({'success': False, 'message': '❌ El nombre del producto es requerido'})
+        
+        if not proveedor_id:
+            return jsonify({'success': False, 'message': '❌ Debe seleccionar un proveedor'})
+        
+        # Verificar si el código de barras ya existe
+        if codigo_barras:
+            producto_existente = ProductoExterno.query.filter_by(codigo_barras=codigo_barras).first()
+            if producto_existente:
+                return jsonify({'success': False, 'message': '❌ Ya existe un producto con ese código de barras'})
+        
+        # Si no se proporciona código, generar uno único
+        import uuid
+        if not codigo_barras:
+            codigo_barras = str(uuid.uuid4().int)[:13]  # Código único de 13 dígitos
+        
+        # Convertir tipos de datos
+        stock_actual = int(stock_actual) if stock_actual else 0
+        stock_minimo = int(stock_minimo) if stock_minimo else 0
+        precio_compra = float(precio_compra) if precio_compra else 0.0
+        precio_venta = float(precio_venta) if precio_venta else 0.0
+        
+        # Validar precios
         if precio_venta <= precio_compra:
-            return jsonify({'success': False, 'message': 'El precio de venta debe ser mayor al de compra'})
+            return jsonify({'success': False, 'message': '❌ El precio de venta debe ser mayor al precio de compra'})
         
-        # Crear producto con el NUEVO modelo
+        # Crear nuevo producto
         nuevo_producto = ProductoExterno(
+            codigo_barras=codigo_barras,
             nombre=nombre,
+            descripcion=descripcion,
             categoria=categoria,
             marca=marca,
-            descripcion=descripcion,
-            codigo_barras=codigo_barras,
-            proveedor_id=proveedor_id if proveedor_id else None,
+            proveedor_id=proveedor_id,
+            stock_actual=stock_actual,
+            stock_minimo=stock_minimo,
             precio_compra=precio_compra,
             precio_venta=precio_venta,
-            stock_minimo=stock_minimo,
-            stock_actual=0  # Inicia en 0 hasta que se compre
+            activo=True
         )
         
+        # Guardar en la base de datos
         db.session.add(nuevo_producto)
         db.session.commit()
         
-        return jsonify({
-            'success': True, 
-            'message': f'Producto "{nombre}" agregado exitosamente'
-        })
+        return jsonify({'success': True, 'message': f'✅ Producto "{nombre}" agregado exitosamente'})
         
+    except ValueError as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': '❌ Error en los datos numéricos. Verifique los valores ingresados'})
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+        print(f"Error: {e}")
+        return jsonify({'success': False, 'message': '❌ Error al agregar el producto. Intente nuevamente'})
+    
 
 @app.route('/actualizar_stock_externo/<int:producto_id>', methods=['POST'])
 def actualizar_stock_externo(producto_id):
@@ -2161,6 +2273,319 @@ def actualizar_stock_externo(producto_id):
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+@app.route('/reporte_inventario_externo')
+def reporte_inventario_externo():
+    """Reporte completo de inventario de productos externos"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    productos = ProductoExterno.query.filter_by(activo=True).all()
+    
+    # Cálculos automáticos
+    total_valor_inventario = 0
+    productos_stock_bajo = []
+    
+    for producto in productos:
+        # Valor del inventario
+        producto.valor_inventario = producto.stock_actual * producto.precio_compra
+        total_valor_inventario += producto.valor_inventario
+        
+        # Utilidad unitaria y margen
+        producto.utilidad_unitaria = producto.precio_venta - producto.precio_compra
+        producto.margen_ganancia = (producto.utilidad_unitaria / producto.precio_compra * 100) if producto.precio_compra > 0 else 0
+        
+        # Alertas de stock bajo
+        if producto.stock_actual <= producto.stock_minimo:
+            productos_stock_bajo.append(producto)
+    
+    return render_template('reporte_inventario_externo.html',
+                         productos=productos,
+                         total_valor_inventario=total_valor_inventario,
+                         productos_stock_bajo=productos_stock_bajo,
+                         total_productos=len(productos))
+
+@app.route('/exportar_inventario_externo')
+def exportar_inventario_externo():
+    """Exportar inventario a PDF"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    productos = ProductoExterno.query.filter_by(activo=True).all()
+    
+    from reportlab.lib.pagesizes import letter
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+    from reportlab.lib import colors
+    from reportlab.lib.styles import getSampleStyleSheet
+    from io import BytesIO
+    
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    elements = []
+    
+    # Estilos
+    styles = getSampleStyleSheet()
+    
+    # Título
+    title = Paragraph("Reporte de Inventario Externo", styles['Title'])
+    elements.append(title)
+    elements.append(Paragraph("<br/>", styles['Normal']))
+    
+    # Preparar datos de la tabla
+    data = [['Producto', 'Categoría', 'Stock', 'Stock Mín', 'Precio Compra', 
+             'Precio Venta', 'Utilidad', 'Margen %', 'Valor Inv.']]
+    
+    for producto in productos:
+        utilidad = producto.precio_venta - producto.precio_compra
+        margen = (utilidad / producto.precio_compra * 100) if producto.precio_compra > 0 else 0
+        valor_inventario = producto.stock_actual * producto.precio_compra
+        
+        data.append([
+            producto.nombre,
+            producto.categoria,
+            str(producto.stock_actual),
+            str(producto.stock_minimo),
+            f"${producto.precio_compra:,.0f}",
+            f"${producto.precio_venta:,.0f}",
+            f"${utilidad:,.0f}",
+            f"{margen:.1f}%",
+            f"${valor_inventario:,.0f}"
+        ])
+    
+    # Crear tabla
+    table = Table(data)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 8),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    
+    elements.append(table)
+    
+    # Generar PDF
+    doc.build(elements)
+    buffer.seek(0)
+    
+    return Response(
+        buffer.getvalue(),
+        mimetype="application/pdf",
+        headers={"Content-disposition": "attachment; filename=inventario_externo.pdf"}
+    )
+    
+    
+@app.route('/reporte_ventas_externas')
+def reporte_ventas_externas():
+    """Reporte de ventas y rentabilidad de productos externos"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    # Parámetros de fecha (opcionales)
+    fecha_inicio = request.args.get('fecha_inicio')
+    fecha_fin = request.args.get('fecha_fin')
+    
+    # Consulta base de detalles de venta de productos externos
+    query = DetalleVenta.query.join(ProductoExterno).filter(
+        DetalleVenta.producto_externo_id.isnot(None)
+    )
+    
+    # Filtrar por fechas si se proporcionan
+    if fecha_inicio and fecha_fin:
+        try:
+            fecha_inicio = datetime.strptime(fecha_inicio, '%Y-%m-%d')
+            fecha_fin = datetime.strptime(fecha_fin, '%Y-%m-%d')
+            query = query.join(Venta).filter(
+                Venta.fecha_hora.between(fecha_inicio, fecha_fin)
+            )
+        except ValueError:
+            pass
+    
+    detalles_venta = query.all()
+    
+    # Procesar datos para el reporte
+    ventas_por_producto = {}
+    total_ventas = 0
+    total_utilidad = 0
+    
+    for detalle in detalles_venta:
+        producto = detalle.producto_externo
+        if producto.id not in ventas_por_producto:
+            ventas_por_producto[producto.id] = {
+                'producto': producto,
+                'cantidad_vendida': 0,
+                'ingresos_totales': 0,
+                'utilidad_total': 0
+            }
+        
+        ventas_por_producto[producto.id]['cantidad_vendida'] += detalle.cantidad
+        ventas_por_producto[producto.id]['ingresos_totales'] += detalle.cantidad * detalle.precio_unitario
+        utilidad_producto = detalle.cantidad * (producto.precio_venta - producto.precio_compra)
+        ventas_por_producto[producto.id]['utilidad_total'] += utilidad_producto
+        
+        total_ventas += detalle.cantidad * detalle.precio_unitario
+        total_utilidad += utilidad_producto
+    
+    # Ordenar por cantidad vendida (más vendidos primero)
+    productos_ordenados = sorted(
+        ventas_por_producto.values(), 
+        key=lambda x: x['cantidad_vendida'], 
+        reverse=True
+    )
+    
+    return render_template('reporte_ventas_externas.html',
+                         productos_ventas=productos_ordenados,
+                         total_ventas=total_ventas,
+                         total_utilidad=total_utilidad,
+                         fecha_inicio=fecha_inicio,
+                         fecha_fin=fecha_fin)
+
+@app.route('/exportar_ventas_externas')
+def exportar_ventas_externas():
+    """Exportar reporte de ventas a PDF"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    detalles_venta = DetalleVenta.query.join(ProductoExterno).filter(
+        DetalleVenta.producto_externo_id.isnot(None)
+    ).all()
+    
+    from reportlab.lib.pagesizes import letter
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+    from reportlab.lib import colors
+    from reportlab.lib.styles import getSampleStyleSheet
+    from io import BytesIO
+    
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    elements = []
+    
+    # Estilos
+    styles = getSampleStyleSheet()
+    
+    # Título
+    title = Paragraph("Reporte de Ventas Externas", styles['Title'])
+    elements.append(title)
+    elements.append(Paragraph("<br/>", styles['Normal']))
+    
+    # Procesar datos
+    ventas_por_producto = {}
+    
+    for detalle in detalles_venta:
+        producto = detalle.producto_externo
+        if producto.id not in ventas_por_producto:
+            ventas_por_producto[producto.id] = {
+                'producto': producto,
+                'cantidad': 0,
+                'ingresos': 0,
+                'costo': 0
+            }
+        
+        ventas_por_producto[producto.id]['cantidad'] += detalle.cantidad
+        ventas_por_producto[producto.id]['ingresos'] += detalle.cantidad * detalle.precio_unitario
+        ventas_por_producto[producto.id]['costo'] += detalle.cantidad * producto.precio_compra
+    
+    # Preparar datos de la tabla - CORREGIDO (cambiar nombre de variable)
+    table_data = [['Producto', 'Categoría', 'Unidades', 'Ingresos', 'Costo', 'Utilidad', 'Margen %']]  # ← Cambié 'data' por 'table_data'
+    
+    for venta_data in ventas_por_producto.values():  # ← Cambié 'data' por 'venta_data'
+        utilidad = venta_data['ingresos'] - venta_data['costo']
+        margen = (utilidad / venta_data['ingresos'] * 100) if venta_data['ingresos'] > 0 else 0
+        
+        table_data.append([  # ← Usar 'table_data' en lugar de 'data'
+            venta_data['producto'].nombre,
+            venta_data['producto'].categoria,
+            str(venta_data['cantidad']),
+            f"${venta_data['ingresos']:,.0f}",
+            f"${venta_data['costo']:,.0f}",
+            f"${utilidad:,.0f}",
+            f"{margen:.1f}%"
+        ])
+    
+    # Crear tabla
+    table = Table(table_data)  # ← Usar 'table_data'
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 8),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    
+    elements.append(table)
+    
+    # Generar PDF
+    doc.build(elements)
+    buffer.seek(0)
+    
+    return Response(
+        buffer.getvalue(),
+        mimetype="application/pdf",
+        headers={"Content-disposition": "attachment; filename=ventas_externas.pdf"}
+    )
+    
+@app.route('/dashboard_externos')
+def dashboard_externos():
+    """Dashboard ejecutivo de productos externos"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    # Métricas generales
+    total_productos = ProductoExterno.query.filter_by(activo=True).count()
+    productos_stock_bajo = ProductoExterno.query.filter(
+        ProductoExterno.stock_actual <= ProductoExterno.stock_minimo,
+        ProductoExterno.activo == True
+    ).count()
+    
+    # Valor total del inventario
+    productos = ProductoExterno.query.filter_by(activo=True).all()
+    valor_inventario = sum(p.stock_actual * p.precio_compra for p in productos)
+    
+    # Ventas del último mes
+    un_mes_atras = datetime.utcnow() - timedelta(days=30)
+
+    ventas_recientes = DetalleVenta.query.join(ProductoExterno).join(Venta).filter(
+        DetalleVenta.producto_externo_id.isnot(None),
+        Venta.fecha_hora >= un_mes_atras
+    ).all()
+
+    ingresos_ultimo_mes = sum(d.cantidad * d.precio_unitario for d in ventas_recientes)
+    utilidad_ultimo_mes = sum(d.cantidad * (d.producto_externo.precio_venta - d.producto_externo.precio_compra) for d in ventas_recientes)
+
+    # ← AGREGA ESTA LÍNEA FALTANTE ↓
+    margen_promedio = (utilidad_ultimo_mes / ingresos_ultimo_mes * 100) if ingresos_ultimo_mes > 0 else 0
+
+    # Productos más vendidos (top 5) - CORREGIDO
+    top_productos = db.session.query(
+        ProductoExterno,
+        db.func.sum(DetalleVenta.cantidad).label('total_vendido')
+    ).join(DetalleVenta).filter(
+        DetalleVenta.producto_externo_id.isnot(None)
+    ).group_by(ProductoExterno.id).order_by(
+        db.desc('total_vendido')
+    ).limit(5).all()
+    
+    return render_template('dashboard_externos.html',
+                         total_productos=total_productos,
+                         productos_stock_bajo=productos_stock_bajo,
+                         valor_inventario=valor_inventario,
+                         ingresos_ultimo_mes=ingresos_ultimo_mes,
+                         utilidad_ultimo_mes=utilidad_ultimo_mes,
+                         top_productos=top_productos,
+                         margen_promedio=margen_promedio)
+
+    
+    
     
 # En app.py - NUEVOS REPORTES
 @app.route('/reporte_utilidades')
