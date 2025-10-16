@@ -1,6 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
-import math  
+from datetime import datetime, timedelta
+import math
+from sqlalchemy import func, extract
 
 db = SQLAlchemy()
 
@@ -789,3 +790,299 @@ class Factura(db.Model):
     telefono_panaderia = db.Column(db.String(20), default='+57 3189098818')
     
     venta = db.relationship('Venta', backref='factura')
+    
+# =============================================
+# FUNCIONES DE APOYO PARA ANÁLISIS ML (agregar al final de models.py)
+# =============================================
+
+def calcular_tendencia_ventas(fecha_inicio, fecha_fin):
+    """Calcula tendencia de ventas usando datos históricos"""
+    try:
+        # Período anterior para comparación (misma duración)
+        dias_periodo = (fecha_fin - fecha_inicio).days + 1
+        fecha_inicio_anterior = fecha_inicio - timedelta(days=dias_periodo)
+        fecha_fin_anterior = fecha_inicio - timedelta(days=1)
+        
+        # Ventas período actual
+        ventas_actual = Venta.query.filter(
+            db.func.date(Venta.fecha_hora) >= fecha_inicio,
+            db.func.date(Venta.fecha_hora) <= fecha_fin
+        ).all()
+        total_actual = sum(venta.total for venta in ventas_actual)
+        
+        # Ventas período anterior
+        ventas_anterior = Venta.query.filter(
+            db.func.date(Venta.fecha_hora) >= fecha_inicio_anterior,
+            db.func.date(Venta.fecha_hora) <= fecha_fin_anterior
+        ).all()
+        total_anterior = sum(venta.total for venta in ventas_anterior)
+        
+        if total_anterior > 0:
+            return ((total_actual - total_anterior) / total_anterior) * 100
+        return 100 if total_actual > 0 else 0
+        
+    except Exception as e:
+        print(f"Error calculando tendencia: {e}")
+        return 0
+
+def analizar_productos_periodo(detalles):
+    """Análisis básico de productos en un período (sin categorías)"""
+    productos = {}
+    
+    for detalle in detalles:
+        try:
+            if detalle.producto:
+                key = f"P{detalle.producto.id}"
+                nombre = detalle.producto.nombre
+                categoria = "Producción"
+            elif detalle.producto_externo:
+                key = f"E{detalle.producto_externo.id}"
+                nombre = detalle.producto_externo.nombre
+                categoria = "Externo"
+            else:
+                continue
+            
+            if key not in productos:
+                productos[key] = {
+                    'nombre': nombre,
+                    'categoria': categoria,
+                    'cantidad': 0,
+                    'ingresos': 0,
+                    'frecuencia': 0
+                }
+            
+            productos[key]['cantidad'] += detalle.cantidad
+            productos[key]['ingresos'] += detalle.cantidad * detalle.precio_unitario
+            productos[key]['frecuencia'] += 1
+                
+        except Exception as e:
+            print(f"Error procesando detalle: {e}")
+            continue
+    
+    return productos
+
+def calcular_rotacion_automatica(producto_id):
+    """Calcula la rotación automática de un producto basado en ventas históricas"""
+    try:
+        # Obtener ventas de los últimos 30 días
+        fecha_inicio = datetime.now() - timedelta(days=30)
+        
+        ventas = DetalleVenta.query.join(Venta).filter(
+            DetalleVenta.producto_id == producto_id,
+            Venta.fecha_hora >= fecha_inicio
+        ).all()
+        
+        # Calcular total vendido en el período
+        total_vendido = sum(detalle.cantidad for detalle in ventas)
+        
+        # Calcular rotación diaria promedio
+        rotacion_diaria = total_vendido / 30.0  # Promedio de 30 días
+        
+        return round(rotacion_diaria, 2)
+        
+    except Exception as e:
+        print(f"Error calculando rotación automática para producto {producto_id}: {e}")
+        return 0
+    
+def actualizar_rotaciones_automaticas():
+    """Actualiza las rotaciones automáticas para todos los productos activos"""
+    try:
+        productos_activos = Producto.query.filter_by(activo=True).all()
+        actualizaciones = 0
+        
+        for producto in productos_activos:
+            rotacion = calcular_rotacion_automatica(producto.id)
+            
+            # Buscar o crear registro en HistorialRotacionProducto
+            historial = HistorialRotacionProducto.query.filter_by(
+                producto_id=producto.id,
+                fecha=datetime.now().date()
+            ).first()
+            
+            if not historial:
+                historial = HistorialRotacionProducto(
+                    producto_id=producto.id,
+                    fecha=datetime.now().date(),
+                    rotacion_calculada=rotacion,
+                    tipo_calculo='automático'
+                )
+                db.session.add(historial)
+            else:
+                historial.rotacion_calculada = rotacion
+            
+            actualizaciones += 1
+        
+        db.session.commit()
+        return actualizaciones
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error actualizando rotaciones automáticas: {e}")
+        return 0
+
+def calcular_rotacion_automatica_por_nombre(nombre_producto):
+    """Calcula rotación automática por nombre de producto"""
+    try:
+        from app import db
+        # Buscar producto por nombre
+        producto = Producto.query.filter_by(nombre=nombre_producto).first()
+        if producto:
+            return calcular_rotacion_automatica(producto.id)
+        
+        producto_externo = ProductoExterno.query.filter_by(nombre=nombre_producto).first()
+        if producto_externo:
+            # Para productos externos, cálculo simplificado
+            return producto_externo.total_ventas / 30 if producto_externo.total_ventas else 0
+            
+        return 0
+    except Exception as e:
+        print(f"Error calculando rotación para {nombre_producto}: {e}")
+        return 0
+
+def calcular_proyeccion_ventas(producto_id, dias_proyeccion=7):
+    """Calcula proyección de ventas usando datos históricos y ML"""
+    try:
+        from datetime import datetime, timedelta
+        from sqlalchemy import func
+        from app import db
+        
+        # Obtener ventas históricas (últimos 60 días)
+        fecha_inicio = datetime.now().date() - timedelta(days=60)
+        
+        ventas = DetalleVenta.query.join(Venta).filter(
+            DetalleVenta.producto_id == producto_id,
+            Venta.fecha_hora >= fecha_inicio
+        ).all()
+        
+        if not ventas:
+            return {'proyeccion': 0, 'rotacion_actual': 0, 'dias_stock': 999, 'nivel_riesgo': 'BAJO'}
+        
+        # Agrupar ventas por día
+        ventas_por_dia = {}
+        for venta in ventas:
+            if venta.venta and venta.venta.fecha_hora:
+                fecha = venta.venta.fecha_hora.date()
+                if fecha not in ventas_por_dia:
+                    ventas_por_dia[fecha] = 0
+                ventas_por_dia[fecha] += venta.cantidad
+        
+        # Calcular promedio y tendencia
+        ventas_diarias = list(ventas_por_dia.values())
+        promedio_ventas = sum(ventas_diarias) / len(ventas_diarias) if ventas_diarias else 0
+        
+        # Proyección simple
+        proyeccion = promedio_ventas * dias_proyeccion
+        
+        # Obtener stock actual
+        producto = Producto.query.get(producto_id)
+        stock_actual = producto.stock_actual if producto else 0
+        
+        # Calcular días de stock restante
+        dias_stock = stock_actual / promedio_ventas if promedio_ventas > 0 else 999
+        
+        # Determinar nivel de riesgo
+        if dias_stock < 2:
+            nivel_riesgo = 'ALTO'
+        elif dias_stock < 5:
+            nivel_riesgo = 'MEDIO'
+        else:
+            nivel_riesgo = 'BAJO'
+        
+        return {
+            'proyeccion': round(proyeccion),
+            'rotacion_actual': round(promedio_ventas, 2),
+            'dias_stock': round(dias_stock, 1),
+            'nivel_riesgo': nivel_riesgo
+        }
+        
+    except Exception as e:
+        print(f"Error en proyección para producto {producto_id}: {e}")
+        return {'proyeccion': 0, 'rotacion_actual': 0, 'dias_stock': 0, 'nivel_riesgo': 'DESCONOCIDO'}
+
+def generar_recomendacion_stock(producto_id, proyeccion):
+    """Genera recomendación inteligente de stock"""
+    dias_stock = proyeccion.get('dias_stock', 0)
+    nivel_riesgo = proyeccion.get('nivel_riesgo', 'BAJO')
+    
+    if nivel_riesgo == 'ALTO':
+        return "⚠️ PRODUCIR URGENTE - Stock crítico"
+    elif nivel_riesgo == 'MEDIO':
+        return "📦 Programar producción - Stock bajo"
+    else:
+        return "✅ Stock adecuado - Monitorear"
+
+def generar_alertas_inteligentes():
+    """Genera alertas inteligentes basadas en análisis ML"""
+    alertas = []
+    
+    try:
+        # Alertas de stock crítico
+        productos_bajo_stock = Producto.query.filter(
+            Producto.stock_actual <= Producto.stock_minimo
+        ).all()
+        
+        for producto in productos_bajo_stock:
+            alertas.append({
+                'tipo': 'STOCK_CRITICO',
+                'mensaje': f'Stock crítico: {producto.nombre} ({producto.stock_actual} unidades)',
+                'prioridad': 'ALTA'
+            })
+        
+        # Alertas de productos sin movimiento (con manejo de errores)
+        try:
+            productos_sin_ventas = obtener_productos_sin_ventas_recientes()
+            for producto in productos_sin_ventas:
+                alertas.append({
+                    'tipo': 'SIN_MOVIMIENTO',
+                    'mensaje': f'Sin ventas recientes: {producto.nombre}',
+                    'prioridad': 'MEDIA'
+                })
+        except Exception as e:
+            print(f"Error generando alertas de productos sin movimiento: {e}")
+            # Continuar sin estas alertas en lugar de fallar completamente
+        
+        return alertas
+        
+    except Exception as e:
+        print(f"Error general en generar_alertas_inteligentes: {e}")
+        return []  # Retornar lista vacía en lugar de fallar
+    
+
+def obtener_productos_sin_ventas_recientes(dias=7):
+    """Identifica productos sin ventas en los últimos días - Versión segura"""
+    from datetime import datetime, timedelta
+    
+    fecha_limite = datetime.now() - timedelta(days=dias)
+    
+    try:
+        # Obtener todos los IDs de ventas recientes
+        ventas_recientes = Venta.query.filter(
+            Venta.fecha_hora >= fecha_limite
+        ).with_entities(Venta.id).all()
+        
+        venta_ids = [vr[0] for vr in ventas_recientes]
+        
+        if not venta_ids:
+            # Si no hay ventas recientes, todos los productos están sin ventas
+            return Producto.query.filter_by(activo=True).all()
+        
+        # Obtener productos que SÍ tienen ventas recientes
+        productos_con_ventas = DetalleVenta.query.filter(
+            DetalleVenta.venta_id.in_(venta_ids),
+            DetalleVenta.producto_id.isnot(None)
+        ).with_entities(DetalleVenta.producto_id).distinct().all()
+        
+        ids_con_ventas = [pcv[0] for pcv in productos_con_ventas if pcv[0] is not None]
+        
+        # Productos activos que NO están en la lista de con ventas
+        productos_sin_ventas = Producto.query.filter(
+            Producto.activo == True,
+            ~Producto.id.in_(ids_con_ventas)
+        ).all()
+        
+        return productos_sin_ventas
+        
+    except Exception as e:
+        print(f"Error en obtener_productos_sin_ventas_recientes: {e}")
+        # En caso de error, retornar lista vacía para no romper el sistema
+        return []

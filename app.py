@@ -1,11 +1,14 @@
 import os
-
 import uuid
-
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, Response
 from models import db, Usuario, Producto, Venta, DetalleVenta, MateriaPrima, Receta, RecetaIngrediente, OrdenProduccion, Categoria, Proveedor, HistorialCompra, HistorialInventario, ConfiguracionProduccion, HistorialRotacionProducto, ControlVidaUtil, Factura, ProductoExterno, CompraExterna
+from models import calcular_rotacion_automatica, actualizar_rotaciones_automaticas
+from models import calcular_tendencia_ventas, analizar_productos_periodo, calcular_rotacion_automatica_por_nombre
+from models import calcular_proyeccion_ventas, generar_recomendacion_stock, generar_alertas_inteligentes, obtener_productos_sin_ventas_recientes
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
+from sqlalchemy import func, extract
+
 # Obtener la ruta base del proyecto
 basedir = os.path.abspath(os.path.dirname(__file__))
 
@@ -2809,7 +2812,251 @@ def crear_productos_prueba():
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
-# AGREGAR EL CÓDIGO ANTERIOR JUSTO ANTES DE ESTAS LÍNEAS:
+# =============================================
+# RUTAS DE REPORTES PDF CON APRENDIZAJE AUTOMÁTICO
+# =============================================
+
+@app.route('/reporte/cierre_caja')
+def reporte_cierre_caja():
+    """Reporte de cierre de caja con análisis automático"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    fecha = request.args.get('fecha', datetime.now().date().isoformat())
+    
+    try:
+        # Obtener ventas del día
+        fecha_obj = datetime.strptime(fecha, '%Y-%m-%d').date()
+        inicio_dia = datetime.combine(fecha_obj, datetime.min.time())
+        fin_dia = datetime.combine(fecha_obj, datetime.max.time())
+        
+        ventas_dia = Venta.query.filter(
+            Venta.fecha_hora >= inicio_dia,
+            Venta.fecha_hora <= fin_dia
+        ).all()
+        
+        # Calcular métricas
+        total_ventas = sum(venta.total for venta in ventas_dia)
+        ventas_por_metodo = {}
+        
+        for venta in ventas_dia:
+            if venta.metodo_pago not in ventas_por_metodo:
+                ventas_por_metodo[venta.metodo_pago] = 0
+            ventas_por_metodo[venta.metodo_pago] += venta.total
+        
+        # Obtener comparativa con día anterior
+        dia_anterior = fecha_obj - timedelta(days=1)
+        ventas_dia_anterior = Venta.query.filter(
+            db.func.date(Venta.fecha_hora) == dia_anterior
+        ).all()
+        
+        total_dia_anterior = sum(venta.total for venta in ventas_dia_anterior)
+        
+        # Calcular tendencia
+        if total_dia_anterior > 0:
+            tendencia = ((total_ventas - total_dia_anterior) / total_dia_anterior) * 100
+        else:
+            tendencia = 100 if total_ventas > 0 else 0
+        
+        # Productos más vendidos del día
+        detalles_dia = DetalleVenta.query.join(Venta).filter(
+            Venta.fecha_hora >= inicio_dia,
+            Venta.fecha_hora <= fin_dia
+        ).all()
+        
+        productos_vendidos = {}
+        for detalle in detalles_dia:
+            if detalle.producto:
+                nombre = detalle.producto.nombre
+            elif detalle.producto_externo:
+                nombre = detalle.producto_externo.nombre
+            else:
+                continue
+                
+            if nombre not in productos_vendidos:
+                productos_vendidos[nombre] = 0
+            productos_vendidos[nombre] += detalle.cantidad
+        
+        productos_top = sorted(productos_vendidos.items(), key=lambda x: x[1], reverse=True)[:5]
+        
+        return render_template('cierre_caja.html',
+                            fecha=fecha_obj,
+                            total_ventas=total_ventas,
+                            ventas_por_metodo=ventas_por_metodo,
+                            tendencia=tendencia,
+                            total_dia_anterior=total_dia_anterior,
+                            productos_top=productos_top,
+                            total_transacciones=len(ventas_dia))
+    
+    except Exception as e:
+        flash(f'Error generando reporte: {str(e)}', 'error')
+        return redirect(url_for('punto_venta'))
+
+@app.route('/reporte/ventas')
+def reporte_ventas():
+    """Reporte de ventas por período con análisis predictivo"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    # Obtener parámetros de fecha o usar valores por defecto
+    fecha_inicio_str = request.args.get('fecha_inicio')
+    fecha_fin_str = request.args.get('fecha_fin')
+    periodo = request.args.get('periodo', 'semana')  # Cambiado a 'semana' como default
+    
+    hoy = datetime.now().date()
+    
+    if fecha_inicio_str and fecha_fin_str:
+        # Usar fechas proporcionadas por el usuario
+        fecha_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d').date()
+        fecha_fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d').date()
+        periodo = 'personalizado'
+    else:
+        # Valores por defecto (últimos 7 días)
+        fecha_fin = hoy
+        fecha_inicio = fecha_fin - timedelta(days=7)
+        periodo = 'semana'
+    
+    # Validar que fecha_inicio no sea mayor que fecha_fin
+    if fecha_inicio > fecha_fin:
+        flash('La fecha de inicio no puede ser mayor que la fecha fin', 'error')
+        fecha_inicio = fecha_fin - timedelta(days=7)
+    
+    # Obtener ventas del período
+    ventas_periodo = Venta.query.filter(
+        db.func.date(Venta.fecha_hora) >= fecha_inicio,
+        db.func.date(Venta.fecha_hora) <= fecha_fin
+    ).all()
+    
+    # Calcular métricas avanzadas
+    total_ventas = sum(venta.total for venta in ventas_periodo)
+    promedio_venta = total_ventas / len(ventas_periodo) if ventas_periodo else 0
+    
+    # Análisis de tendencia usando ML
+    tendencia = calcular_tendencia_ventas(fecha_inicio, fecha_fin)
+    
+    # Productos más vendidos del período
+    detalles_periodo = DetalleVenta.query.join(Venta).filter(
+        db.func.date(Venta.fecha_hora) >= fecha_inicio,
+        db.func.date(Venta.fecha_hora) <= fecha_fin
+    ).all()
+    
+    productos_analisis = analizar_productos_periodo(detalles_periodo)
+    
+    return render_template('ventas_periodo.html',
+                         periodo=periodo,
+                         fecha_inicio=fecha_inicio,
+                         fecha_fin=fecha_fin,
+                         total_ventas=total_ventas,
+                         promedio_venta=promedio_venta,
+                         tendencia=tendencia,
+                         productos_analisis=productos_analisis,
+                         total_transacciones=len(ventas_periodo),
+                         datetime=datetime)  # Añadido para usar en templates
+
+@app.route('/reporte/productos_populares')
+def reporte_productos_populares():
+    """Reporte de productos más vendidos con análisis de rotación"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    # Obtener parámetros de fecha o usar valores por defecto
+    fecha_inicio_str = request.args.get('fecha_inicio')
+    fecha_fin_str = request.args.get('fecha_fin')
+    
+    if fecha_inicio_str and fecha_fin_str:
+        # Usar fechas proporcionadas por el usuario
+        fecha_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d').date()
+        fecha_fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d').date()
+    else:
+        # Valores por defecto (últimos 30 días)
+        fecha_fin = datetime.now().date()
+        fecha_inicio = fecha_fin - timedelta(days=30)
+    
+    # Actualizar rotaciones automáticas antes de generar reporte
+    actualizaciones = actualizar_rotaciones_automaticas()
+    
+    # Obtener productos más vendidos del período
+    detalles = DetalleVenta.query.join(Venta).filter(
+        Venta.fecha_hora >= fecha_inicio,
+        Venta.fecha_hora <= fecha_fin
+    ).all()
+    
+    # Analizar productos
+    analisis_productos = {}
+    
+    for detalle in detalles:
+        if detalle.producto:
+            producto_id = detalle.producto.id
+            nombre = detalle.producto.nombre
+            tipo = 'Producción'
+        elif detalle.producto_externo:
+            producto_id = detalle.producto_externo.id
+            nombre = detalle.producto_externo.nombre
+            tipo = 'Externo'
+        else:
+            continue
+        
+        if producto_id not in analisis_productos:
+            analisis_productos[producto_id] = {
+                'nombre': nombre,
+                'tipo': tipo,
+                'cantidad_vendida': 0,
+                'ingresos_totales': 0,
+                'rotacion_promedio': 0
+            }
+        
+        analisis_productos[producto_id]['cantidad_vendida'] += detalle.cantidad
+        analisis_productos[producto_id]['ingresos_totales'] += detalle.cantidad * detalle.precio_unitario
+    
+    # Ordenar por cantidad vendida
+    productos_ordenados = sorted(analisis_productos.values(), 
+                               key=lambda x: x['cantidad_vendida'], 
+                               reverse=True)
+    
+    # Agregar datos de rotación automática
+    for producto in productos_ordenados[:20]:  # Top 20
+        rotacion = calcular_rotacion_automatica_por_nombre(producto['nombre'])
+        producto['rotacion_promedio'] = rotacion
+    
+    return render_template('productos_populares.html',
+                         productos=productos_ordenados[:20],
+                         fecha_inicio=fecha_inicio,
+                         fecha_fin=fecha_fin,
+                         actualizaciones_ml=actualizaciones,
+                         datetime=datetime)  # ← ¡ESTO ES LO QUE FALTA!
+
+@app.route('/reporte/analisis_predictivo')
+def reporte_analisis_predictivo():
+    """Reporte de análisis predictivo con recomendaciones ML"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    # Obtener datos para análisis predictivo
+    productos_analisis = []
+    recetas_activas = Receta.query.filter_by(activo=True).all()
+    
+    for receta in recetas_activas:
+        if receta.producto:
+            # Calcular proyecciones usando ML
+            proyeccion = calcular_proyeccion_ventas(receta.producto.id)
+            productos_analisis.append({
+                'producto': receta.producto.nombre,
+                'stock_actual': receta.producto.stock_actual,
+                'rotacion_actual': proyeccion.get('rotacion_actual', 0),
+                'proyeccion_ventas': proyeccion.get('proyeccion', 0),
+                'dias_stock': proyeccion.get('dias_stock', 0),
+                'recomendacion': generar_recomendacion_stock(receta.producto.id, proyeccion),
+                'nivel_riesgo': proyeccion.get('nivel_riesgo', 'BAJO')
+            })
+    
+    # Alertas inteligentes
+    alertas = generar_alertas_inteligentes()
+    
+    return render_template('analisis_predictivo.html',
+                     productos_analisis=productos_analisis,
+                     alertas=alertas,
+                     fecha_analisis=datetime.now().date(),
+                     datetime=datetime)  # ¡Importante! Pasar datetime al template
 if __name__ == '__main__':
     app.run(debug=True)
 
