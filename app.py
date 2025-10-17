@@ -2,6 +2,8 @@ import os
 import uuid
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, Response
 from models import db, Usuario, Producto, Venta, DetalleVenta, MateriaPrima, Receta, RecetaIngrediente, OrdenProduccion, Categoria, Proveedor, HistorialCompra, HistorialInventario, ConfiguracionProduccion, HistorialRotacionProducto, ControlVidaUtil, Factura, ProductoExterno, CompraExterna
+# IMPORTACIONES ACTUALIZADAS:
+from models import RegistroDiario, SaldoBanco, PagoIndividual
 from models import calcular_rotacion_automatica, actualizar_rotaciones_automaticas
 from models import calcular_tendencia_ventas, analizar_productos_periodo, calcular_rotacion_automatica_por_nombre
 from models import calcular_proyeccion_ventas, generar_recomendacion_stock, generar_alertas_inteligentes, obtener_productos_sin_ventas_recientes
@@ -2588,70 +2590,6 @@ def dashboard_externos():
                          margen_promedio=margen_promedio)
 
     
-    
-    
-# En app.py - NUEVOS REPORTES
-@app.route('/reporte_utilidades')
-def reporte_utilidades():
-    """Reporte de utilidades por producto"""
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    
-    # Productos de producción
-    productos_produccion = Producto.query.filter_by(tipo_producto='produccion', activo=True).all()
-    
-    # Productos externos
-    productos_externos = Producto.query.filter_by(tipo_producto='externo', activo=True).all()
-    
-    # Calcular ventas del mes
-    hoy = datetime.now()
-    inicio_mes = hoy.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    
-    utilidades_data = []
-    
-    # Procesar productos de producción
-    for producto in productos_produccion:
-        ventas_mes = db.session.query(db.func.sum(DetalleVenta.cantidad)).join(Venta).filter(
-            DetalleVenta.producto_id == producto.id,
-            Venta.fecha_hora >= inicio_mes
-        ).scalar() or 0
-        
-        if producto.receta:
-            utilidad_unitaria = producto.receta.utilidad_real_pesos
-        else:
-            utilidad_unitaria = 0
-            
-        utilidad_total = utilidad_unitaria * ventas_mes
-        
-        utilidades_data.append({
-            'producto': producto.nombre,
-            'tipo': 'Producción',
-            'ventas_mes': ventas_mes,
-            'utilidad_unitaria': utilidad_unitaria,
-            'utilidad_total': utilidad_total,
-            'margen': producto.receta.utilidad_real_porcentaje if producto.receta else 0
-        })
-    
-    # Procesar productos externos
-    for producto in productos_externos:
-        ventas_mes = db.session.query(db.func.sum(DetalleVenta.cantidad)).join(Venta).filter(
-            DetalleVenta.producto_id == producto.id,
-            Venta.fecha_hora >= inicio_mes
-        ).scalar() or 0
-        
-        utilidad_total = producto.utilidad_unitaria * ventas_mes
-        
-        utilidades_data.append({
-            'producto': producto.nombre,
-            'tipo': 'Externo',
-            'ventas_mes': ventas_mes,
-            'utilidad_unitaria': producto.utilidad_unitaria,
-            'utilidad_total': utilidad_total,
-            'margen': producto.margen_utilidad
-        })
-    
-    return render_template('reporte_utilidades.html', utilidades=utilidades_data)
-
 
 
 # Filtro para formatear moneda en pesos colombianos
@@ -3057,6 +2995,317 @@ def reporte_analisis_predictivo():
                      alertas=alertas,
                      fecha_analisis=datetime.now().date(),
                      datetime=datetime)  # ¡Importante! Pasar datetime al template
+    
+
+# Busca un lugar después de las otras rutas y agrega:
+
+# ================================================== MÓDULO FINANCIERO ====================================================
+# === NUEVO MÓDULO FINANCIERO INTUITIVO ===
+
+# === FUNCIONES AUXILIARES ===
+# ================================================== MÓDULO FINANCIERO ====================================================
+
+# === FUNCIONES AUXILIARES MEJORADAS ===
+def obtener_ventas_del_dia(fecha):
+    """Obtener ventas reales del punto de venta para una fecha específica"""
+    try:
+        from datetime import datetime, timedelta
+        # Convertir fecha para comparación
+        fecha_inicio = datetime(fecha.year, fecha.month, fecha.day)
+        fecha_fin = fecha_inicio + timedelta(days=1)
+        
+        # Buscar ventas en ese rango de fechas
+        ventas = Venta.query.filter(
+            Venta.fecha_hora >= fecha_inicio,
+            Venta.fecha_hora < fecha_fin
+        ).all()
+        
+        total_ventas = sum(venta.total for venta in ventas)
+        return total_ventas
+        
+    except Exception as e:
+        print(f"Error al obtener ventas: {e}")
+        return 0
+
+def actualizar_saldo_automatico(efectivo=0, transferencias=0, pagos=0, accion_efectivo="depositar"):
+    """
+    Actualizar saldo automáticamente considerando ingresos y egresos
+    - transferencias: dinero que ENTRA a la cuenta
+    - pagos: dinero que SALE de la cuenta
+    - efectivo: depende de la acción seleccionada
+    """
+    try:
+        saldo_actual_obj = SaldoBanco.query.order_by(SaldoBanco.fecha_actualizacion.desc()).first()
+        saldo_actual = saldo_actual_obj.saldo_actual if saldo_actual_obj else 0
+        
+        # Calcular nuevo saldo
+        nuevo_saldo = saldo_actual
+        
+        # SUMAR: Transferencias (siempre entran a la cuenta)
+        nuevo_saldo += (transferencias or 0)
+        
+        # SUMAR: Efectivo solo si se deposita
+        if accion_efectivo == "depositar":
+            nuevo_saldo += (efectivo or 0)
+        
+        # RESTAR: Pagos realizados (dinero que sale de la cuenta)
+        nuevo_saldo -= (pagos or 0)
+        
+        # Generar comentario descriptivo
+        comentario = f"Actualización: "
+        partes = []
+        if transferencias > 0:
+            partes.append(f"+${transferencias:,.0f} transferencias")
+        if efectivo > 0 and accion_efectivo == "depositar":
+            partes.append(f"+${efectivo:,.0f} efectivo depositado")
+        if pagos > 0:
+            partes.append(f"-${pagos:,.0f} pagos")
+        
+        comentario += " | ".join(partes) if partes else "Sin movimientos"
+        
+        # Crear nuevo registro de saldo
+        nuevo_registro_saldo = SaldoBanco(
+            saldo_actual=nuevo_saldo,
+            comentario=comentario
+        )
+        
+        db.session.add(nuevo_registro_saldo)
+        return nuevo_saldo
+        
+    except Exception as e:
+        print(f"Error al actualizar saldo: {e}")
+        return saldo_actual
+
+def sanitizar_numero(valor, default=0.0):
+    """Convierte valores a float de forma segura, manejando None y strings vacíos"""
+    try:
+        if valor is None or valor == '':
+            return default
+        return float(valor)
+    except (ValueError, TypeError):
+        return default
+
+# === RUTAS MEJORADAS ===
+
+@app.route('/registrar_dia', methods=['POST'])
+def registrar_dia():
+    """Registrar los ingresos y gastos del día"""
+    try:
+        from datetime import datetime
+        
+        # Obtener datos del formulario con sanitización
+        fecha = datetime.strptime(request.form['fecha'], '%Y-%m-%d').date()
+        venta_total = sanitizar_numero(request.form.get('venta_total'))
+        
+        # Ingresos con sanitización
+        efectivo = sanitizar_numero(request.form.get('efectivo'))
+        transferencias = sanitizar_numero(request.form.get('transferencias'))
+        tarjetas = sanitizar_numero(request.form.get('tarjetas'))
+        
+        # Gastos con sanitización
+        gasto_proveedores = sanitizar_numero(request.form.get('gasto_proveedores'))
+        gasto_servicios = sanitizar_numero(request.form.get('gasto_servicios'))
+        gasto_nomina = sanitizar_numero(request.form.get('gasto_nomina'))
+        gasto_alquiler = sanitizar_numero(request.form.get('gasto_alquiler'))
+        gasto_otros = sanitizar_numero(request.form.get('gasto_otros'))
+        
+        descripcion = request.form.get('descripcion', '')
+        numero_factura = request.form.get('numero_factura', '')
+        
+        # Verificar si ya existe registro para esta fecha
+        registro_existente = RegistroDiario.query.filter_by(fecha=fecha).first()
+        
+        if registro_existente:
+            # Actualizar registro existente
+            registro = registro_existente
+        else:
+            # Crear nuevo registro
+            registro = RegistroDiario(fecha=fecha)
+        
+        # Actualizar datos
+        registro.venta_total = venta_total
+        registro.efectivo = efectivo
+        registro.transferencias = transferencias
+        registro.tarjetas = tarjetas
+        registro.gasto_proveedores = gasto_proveedores
+        registro.gasto_servicios = gasto_servicios
+        registro.gasto_nomina = gasto_nomina
+        registro.gasto_alquiler = gasto_alquiler
+        registro.gasto_otros = gasto_otros
+        registro.descripcion_gastos = descripcion
+        registro.numero_factura = numero_factura
+        
+        # Calcular totales automáticamente
+        registro.calcular_totales()
+        
+        if not registro_existente:
+            db.session.add(registro)
+        
+        db.session.commit()
+        
+        flash('✅ ¡Día registrado correctamente!', 'success')
+        
+    except Exception as e:
+        flash(f'❌ Error al registrar: {str(e)}', 'error')
+    
+    return redirect(url_for('control_diario'))
+
+@app.route('/control_diario')
+def control_diario():
+    """Vista principal del control financiero diario"""
+    from datetime import datetime, date
+    
+    # Obtener saldo actual
+    saldo_banco = SaldoBanco.query.order_by(SaldoBanco.fecha_actualizacion.desc()).first()
+    saldo_actual = saldo_banco.saldo_actual if saldo_banco else 0
+    
+    # Obtener registros recientes (últimos 7 días)
+    registros_recientes = RegistroDiario.query.order_by(RegistroDiario.fecha.desc()).limit(7).all()
+    
+    # Obtener proveedores para el dropdown
+    proveedores = Proveedor.query.all()
+    
+    # Obtener pagos de hoy
+    hoy = date.today()
+    pagos_hoy = PagoIndividual.query.filter_by(fecha_pago=hoy).all()
+    registro_hoy = RegistroDiario.query.filter_by(fecha=hoy).first()
+    
+    return render_template('control_diario.html',
+                         saldo_actual=saldo_actual,
+                         registros_recientes=registros_recientes,
+                         registro_hoy=registro_hoy,
+                         proveedores=proveedores,
+                         pagos_hoy=pagos_hoy,
+                         hoy=hoy)
+
+@app.route('/registrar_pago_individual', methods=['POST'])
+def registrar_pago_individual():
+    """Registrar un pago individual con actualización automática del saldo"""
+    try:
+        from datetime import datetime
+        
+        # Obtener datos del formulario con manejo de campos vacíos
+        categoria = request.form['categoria']
+        monto = sanitizar_numero(request.form.get('monto'), 0.0)
+        
+        # Validar que el monto sea positivo
+        if monto <= 0:
+            flash('❌ El monto debe ser mayor a 0', 'error')
+            return redirect(url_for('control_diario'))
+        
+        fecha_pago = datetime.strptime(request.form['fecha_pago'], '%Y-%m-%d').date()
+        referencia = request.form.get('referencia', '')
+        descripcion = request.form.get('descripcion', '')
+        numero_factura = request.form.get('numero_factura', '')
+        
+        # Proveedor (solo para categoría de materias primas)
+        proveedor_id = None
+        if categoria == 'MATERIAS_PRIMAS':
+            proveedor_id_str = request.form.get('proveedor_id', '')
+            if proveedor_id_str and proveedor_id_str.strip():
+                try:
+                    proveedor_id = int(proveedor_id_str)
+                except ValueError:
+                    proveedor_id = None
+        
+        # Crear nuevo pago
+        nuevo_pago = PagoIndividual(
+            categoria=categoria,
+            proveedor_id=proveedor_id,
+            monto=monto,
+            fecha_pago=fecha_pago,
+            referencia=referencia,
+            descripcion=descripcion,
+            numero_factura=numero_factura
+        )
+        
+        db.session.add(nuevo_pago)
+        
+        # 🆕 ACTUALIZAR SALDO - RESTAR EL PAGO
+        saldo_actual = actualizar_saldo_automatico(
+            efectivo=0,
+            transferencias=0, 
+            pagos=monto,  # Restar el monto del pago
+            accion_efectivo="depositar"  # No relevante para pagos
+        )
+        
+        db.session.commit()
+        
+        flash(f'✅ Pago registrado: ${monto:,.0f} - {categoria} - Saldo actual: ${saldo_actual:,.0f}', 'success')
+        
+    except ValueError as e:
+        flash(f'❌ Error en los datos numéricos: {str(e)}', 'error')
+    except Exception as e:
+        flash(f'❌ Error al registrar pago: {str(e)}', 'error')
+    
+    return redirect(url_for('control_diario'))
+
+@app.route('/registrar_cierre_caja', methods=['POST'])
+def registrar_cierre_caja():
+    """Registrar el cierre de caja diario con validaciones de seguridad"""
+    try:
+        from datetime import datetime
+        
+        # Obtener datos del formulario con sanitización
+        fecha = datetime.strptime(request.form['fecha'], '%Y-%m-%d').date()
+        venta_total = sanitizar_numero(request.form.get('venta_total', 0))
+        efectivo = sanitizar_numero(request.form.get('efectivo', 0))
+        transferencias = sanitizar_numero(request.form.get('transferencias', 0))
+        tarjetas = sanitizar_numero(request.form.get('tarjetas', 0))
+        accion_efectivo = request.form.get('accion_efectivo', 'depositar')
+        
+        # 🔒 VALIDACIÓN CRÍTICA: Verificar que la suma coincida con el total
+        suma_metodos = efectivo + transferencias + tarjetas
+        diferencia = abs(suma_metodos - venta_total)
+        
+        if diferencia > 1:
+            if suma_metodos > venta_total:
+                flash(f'❌ El total ingresado en métodos de pago (${suma_metodos:,.0f}) es SUPERIOR al total de ventas (${venta_total:,.0f}). Diferencia: +${diferencia:,.0f}', 'error')
+            else:
+                flash(f'❌ El total ingresado en métodos de pago (${suma_metodos:,.0f}) es INFERIOR al total de ventas (${venta_total:,.0f}). Diferencia: -${diferencia:,.0f}', 'error')
+            return redirect(url_for('control_diario'))
+        
+        # Verificar si ya existe registro para esta fecha
+        registro_existente = RegistroDiario.query.filter_by(fecha=fecha).first()
+        
+        if registro_existente:
+            registro = registro_existente
+        else:
+            registro = RegistroDiario(fecha=fecha)
+        
+        # Actualizar datos de ingresos
+        registro.venta_total = venta_total
+        registro.efectivo = efectivo
+        registro.transferencias = transferencias
+        registro.tarjetas = tarjetas
+        
+        # Calcular totales automáticamente
+        registro.calcular_totales()
+        
+        if not registro_existente:
+            db.session.add(registro)
+        
+        # 🆕 ACTUALIZAR SALDO - SOLO INGRESOS (no pagos aquí)
+        saldo_actual = actualizar_saldo_automatico(
+            efectivo=efectivo, 
+            transferencias=transferencias, 
+            pagos=0,  # Los pagos se actualizan en su propia ruta
+            accion_efectivo=accion_efectivo
+        )
+        
+        db.session.commit()
+        
+        # Mensaje personalizado
+        if accion_efectivo == "depositar":
+            flash(f'✅ Cierre de caja registrado! Ingresos: ${venta_total:,.0f} - Saldo actualizado: ${saldo_actual:,.0f}', 'success')
+        else:
+            flash(f'✅ Cierre de caja registrado! Ingresos: ${venta_total:,.0f} - Saldo actualizado: ${saldo_actual:,.0f} (Efectivo en caja)', 'success')
+        
+    except Exception as e:
+        flash(f'❌ Error al registrar cierre: {str(e)}', 'error')
+    
+    return redirect(url_for('control_diario'))
+
+
 if __name__ == '__main__':
     app.run(debug=True)
-

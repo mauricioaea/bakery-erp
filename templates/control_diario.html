@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control Diario - Panadería</title>
+    <style>
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        body { 
+            font-family: 'Arial', sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh; 
+            padding: 20px; 
+        }
+        .container { 
+            max-width: 1000px; 
+            margin: 0 auto; 
+        }
+        
+        /* Header */
+        .header {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.2em;
+        }
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+            margin-bottom: 20px;
+        }
+        
+        /* Cards */
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+        }
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+        
+        /* Saldo Section */
+        .saldo-section {
+            text-align: center;
+            border-left: 5px solid #27ae60;
+        }
+        .saldo-monto {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #27ae60;
+            margin: 10px 0;
+        }
+        .saldo-alerta {
+            color: #e74c3c;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border 0.3s ease;
+        }
+        .form-control:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+        .form-control[readonly] {
+            background-color: #f8f9fa;
+            color: #666;
+        }
+        
+        /* Métodos de Pago */
+        .metodos-pago {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        .metodo-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+        }
+        .metodo-item label {
+            font-weight: normal;
+            margin-bottom: 5px;
+            color: #666;
+        }
+        
+        /* Gastos Grid */
+        .gastos-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .gasto-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+        }
+        
+        /* Botones */
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 1em;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+            color: white;
+        }
+        .btn-warning {
+            background: linear-gradient(135deg, #f39c12 0%, #f1c40f 100%);
+            color: white;
+        }
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        /* Historial */
+        .historial-item {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+        }
+        .historial-fecha {
+            font-weight: bold;
+            color: #333;
+        }
+        .historial-totals {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+        }
+        .ingreso-text { color: #27ae60; font-weight: bold; }
+        .egreso-text { color: #e74c3c; font-weight: bold; }
+        
+        /* Flash Messages */
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        /* Navigation */
+        .nav-buttons {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .metodos-pago, .gastos-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Mensajes Flash -->
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <!-- Header -->
+        <div class="header">
+            <h1>💰 Control Diario de Dinero</h1>
+            <p class="subtitle">Registro simple de ingresos y gastos - Panadería Semillas</p>
+            
+            <div class="nav-buttons">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-primary">🏠 Volver al Dashboard</a>
+                <a href="#saldo" class="btn btn-warning">💳 Actualizar Saldo</a>
+            </div>
+        </div>
+
+        <!-- Sección de Saldo Actual -->
+        <div class="card saldo-section">
+            <h2>💳 Saldo en Cuenta</h2>
+            <div class="saldo-monto">${{ "{:,.0f}".format(saldo_actual) }}</div>
+            <p>Saldo actual en cuenta bancaria</p>
+            <div style="margin-top: 15px; padding: 10px; background: #e8f5e8; border-radius: 8px;">
+                <small>💡 <strong>El saldo se actualiza automáticamente</strong> cuando registras transferencias en el cierre de caja</small>
+            </div>
+        </div>
+
+        <!-- FORMULARIO DE VENTAS DIARIAS - NUEVO -->
+        <div class="card">
+            <h2>📊 Cierre de Caja del Día</h2>
+            
+            <form action="{{ url_for('registrar_cierre_caja') }}" method="POST">
+                <div class="form-group">
+                    <label>📅 Fecha del cierre:</label>
+                    <input type="date" name="fecha" value="{{ hoy }}" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                    <label>💰 Total vendido hoy:</label>
+                    <input type="number" step="0.01" name="venta_total" placeholder="Ej: 850,000" class="form-control" required min="0">
+                    <small>Ingresa el total de ventas del día según tu cierre de caja</small>
+                </div>
+
+                <div class="form-group">
+                    <label>💵 ¿Cómo recibiste el dinero?</label>
+                    <div class="metodos-pago">
+                        <div class="metodo-item">
+                            <label>Efectivo (para depositar)</label>
+                            <input type="number" step="0.01" name="efectivo" placeholder="0" class="form-control" required min="0">
+                        </div>
+                        <div class="metodo-item">
+                            <label>Transferencias (ya en cuenta)</label>
+                            <input type="number" step="0.01" name="transferencias" placeholder="0" class="form-control" required min="0">
+                            <small style="color: #27ae60; font-size: 0.8em;">✅ Actualiza automáticamente el saldo</small>
+                        </div>
+                        <div class="metodo-item">
+                            <label>Tarjetas (por cobrar)</label>
+                            <input type="number" step="0.01" name="tarjetas" placeholder="0" class="form-control" required min="0">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Validación automática MEJORADA -->
+                <div id="validacion-total" style="padding: 15px; background: #f8d7da; border-radius: 8px; margin-bottom: 15px; display: none; border-left: 4px solid #dc3545;">
+                    <strong>⚠️ Atención:</strong> 
+                    <span id="mensaje-validacion"></span>
+                    <br><small>Debes corregir esta diferencia para poder guardar el registro.</small>
+                </div>
+
+                <button type="submit" id="btn-guardar" class="btn btn-success" style="width: 100%; padding: 15px; font-size: 1.1em;">
+                    💾 Guardar Cierre de Caja y Actualizar Saldo
+                </button>
+            </form>
+        </div>
+
+        <!-- SECCIÓN MEJORADA DE GASTOS -->
+        <div class="card">
+            <h2>💸 Registro de Pagos del Día</h2>
+            
+            <!-- Formulario para agregar UN pago -->
+            <form action="{{ url_for('registrar_pago_individual') }}" method="POST">
+                <!-- Categoría del Gasto -->
+                <div class="form-group">
+                    <label>📂 Categoría del Gasto:</label>
+                    <select name="categoria" class="form-control" required onchange="mostrarProveedores(this.value)">
+                        <option value="">Selecciona una categoría</option>
+                        <option value="MATERIAS_PRIMAS">Proveedores - Materias Primas</option>
+                        <option value="SERVICIOS_PUBLICOS">Servicios Públicos (Luz, Agua, Gas)</option>
+                        <option value="NOMINA">Nómina y Salarios</option>
+                        <option value="ALQUILER">Alquiler del Local</option>
+                        <option value="SERVICIOS_EXTERNOS">Servicios Externos (Internet, Contador)</option>
+                        <option value="MANTENIMIENTO">Mantenimiento y Reparaciones</option>
+                        <option value="IMPUESTOS">Impuestos y Tributos</option>
+                        <option value="GASTOS_ADMINISTRATIVOS">Gastos Administrativos</option>
+                        <option value="INVERSIONES">Inversiones y Mejoras</option>
+                        <option value="OTROS">Otros Gastos</option>
+                    </select>
+                </div>
+
+                <!-- Fecha del Pago - NUEVO CAMPO -->
+                <div class="form-group">
+                    <label>📅 Fecha del pago:</label>
+                    <input type="date" name="fecha_pago" value="{{ hoy }}" class="form-control" required>
+                </div>
+
+                <!-- Proveedor (solo visible para categoría MATERIAS_PRIMAS) -->
+                <div class="form-group" id="proveedor-group" style="display: none;">
+                    <label>🏢 Proveedor:</label>
+                    <select name="proveedor_id" class="form-control">
+                        <option value="">Selecciona un proveedor</option>
+                        {% for proveedor in proveedores %}
+                        <option value="{{ proveedor.id }}">{{ proveedor.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Información del Pago -->
+                <div class="form-group">
+                    <label>💰 Valor Pagado:</label>
+                    <input type="number" step="0.01" name="monto" placeholder="Ej: 350,000" class="form-control" required min="0.01">
+                </div>
+
+                <div class="form-group">
+                    <label>🔢 Número de Referencia:</label>
+                    <input type="text" name="referencia" placeholder="Número de transferencia o recibo" class="form-control">
+                </div>
+
+                <div class="form-group">
+                    <label>📝 Descripción:</label>
+                    <input type="text" name="descripcion" placeholder="Ej: Pago mensual de servicios" class="form-control">
+                </div>
+
+                <div class="form-group">
+                    <label>🧾 Número de Factura:</label>
+                    <input type="text" name="numero_factura" placeholder="Número de factura" class="form-control">
+                </div>
+
+                <button type="submit" class="btn btn-success">
+                    💾 Guardar Pago
+                </button>
+            </form>
+
+            <div class="form-group">
+                <label>💵 ¿Qué harás con el efectivo?</label>
+                <select name="accion_efectivo" class="form-control" required>
+                    <option value="depositar">💰 Depositar el efectivo en el banco</option>
+                    <option value="guardar_caja">💼 Guardar efectivo en caja para cambio</option>
+                </select>
+                <small>Selecciona si el efectivo se depositará en el banco o se quedará en caja</small>
+            </div>
+
+            <!-- Lista de Pagos Registrados Hoy -->
+            <div style="margin-top: 30px; border-top: 2px solid #f0f0f0; padding-top: 20px;">
+                <h4>📋 Pagos Registrados Hoy</h4>
+                {% if pagos_hoy %}
+                    {% for pago in pagos_hoy %}
+                    <div class="historial-item" style="margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>{{ pago.categoria }}</strong>
+                                {% if pago.proveedor %}
+                                <br><small>Proveedor: {{ pago.proveedor.nombre }}</small>
+                                {% endif %}
+                                {% if pago.descripcion %}
+                                <br><small>{{ pago.descripcion }}</small>
+                                {% endif %}
+                            </div>
+                            <div style="color: #e74c3c; font-weight: bold;">
+                                -${{ "{:,.0f}".format(pago.monto) }}
+                            </div>
+                        </div>
+                        {% if pago.referencia or pago.numero_factura %}
+                        <div style="font-size: 0.8em; color: #666; margin-top: 5px;">
+                            {% if pago.referencia %}Ref: {{ pago.referencia }}{% endif %}
+                            {% if pago.numero_factura %} | Factura: {{ pago.numero_factura }}{% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p>No hay pagos registrados hoy.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Historial Reciente -->
+        <div class="card">
+            <h2>📋 Historial de Últimos 7 Días</h2>
+            
+            {% if registros_recientes %}
+                {% for registro in registros_recientes %}
+                <div class="historial-item">
+                    <div class="historial-fecha">
+                        {{ registro.fecha.strftime('%d/%m/%Y') }}
+                        {% if registro.fecha == hoy %}
+                        <span style="background: #27ae60; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; margin-left: 10px;">HOY</span>
+                        {% endif %}
+                    </div>
+                    <div class="historial-totals">
+                        <span class="ingreso-text">Ingresos: ${{ "{:,.0f}".format(registro.total_ingresos) }}</span>
+                        <span class="egreso-text">Gastos: ${{ "{:,.0f}".format(registro.total_egresos) }}</span>
+                    </div>
+                    <div style="margin-top: 5px; font-size: 0.9em; color: #666;">
+                        Saldo del día: <strong>${{ "{:,.0f}".format(registro.saldo_dia) }}</strong>
+                    </div>
+                    {% if registro.descripcion_gastos %}
+                    <div style="margin-top: 5px; font-size: 0.8em; color: #888;">
+                        {{ registro.descripcion_gastos }}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            {% else %}
+                <p>No hay registros recientes. ¡Comienza registrando tu primer día!</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('💰 Control Diario cargado - Saldo: ${{ saldo_actual }}');
+            
+            // Auto-calcular total de ingresos
+            const efectivoInput = document.querySelector('input[name="efectivo"]');
+            const transferenciasInput = document.querySelector('input[name="transferencias"]');
+            const tarjetasInput = document.querySelector('input[name="tarjetas"]');
+            const ventaTotalInput = document.querySelector('input[name="venta_total_sistema"]');
+            
+            function calcularTotalIngresos() {
+                const efectivo = parseFloat(efectivoInput.value) || 0;
+                const transferencias = parseFloat(transferenciasInput.value) || 0;
+                const tarjetas = parseFloat(tarjetasInput.value) || 0;
+                const total = efectivo + transferencias + tarjetas;
+                
+                if (total > 0 && ventaTotalInput) {
+                    ventaTotalInput.value = total;
+                }
+            }
+            
+            [efectivoInput, transferenciasInput, tarjetasInput].forEach(input => {
+                input.addEventListener('input', calcularTotalIngresos);
+            });
+        });
+
+        // Mostrar/ocultar campo de proveedor según categoría
+        function mostrarProveedores(categoria) {
+            const proveedorGroup = document.getElementById('proveedor-group');
+            if (categoria === 'MATERIAS_PRIMAS') {
+                proveedorGroup.style.display = 'block';
+            } else {
+                proveedorGroup.style.display = 'none';
+                document.querySelector('select[name="proveedor_id"]').value = '';
+            }
+        }
+
+        // Validación en tiempo real de cierre de caja
+        // Validación en tiempo real de cierre de caja MEJORADA
+        function configurarValidacionCierre() {
+            const ventaTotalInput = document.querySelector('input[name="venta_total"]');
+            const efectivoInput = document.querySelector('input[name="efectivo"]');
+            const transferenciasInput = document.querySelector('input[name="transferencias"]');
+            const tarjetasInput = document.querySelector('input[name="tarjetas"]');
+            const validacionDiv = document.getElementById('validacion-total');
+            const mensajeValidacion = document.getElementById('mensaje-validacion');
+            const btnGuardar = document.getElementById('btn-guardar');
+            
+            function validarTotal() {
+                const ventaTotal = parseFloat(ventaTotalInput.value) || 0;
+                const efectivo = parseFloat(efectivoInput.value) || 0;
+                const transferencias = parseFloat(transferenciasInput.value) || 0;
+                const tarjetas = parseFloat(tarjetasInput.value) || 0;
+                
+                const sumaMetodos = efectivo + transferencias + tarjetas;
+                const diferencia = Math.abs(sumaMetodos - ventaTotal);
+                
+                if (ventaTotal > 0 && sumaMetodos > 0 && diferencia > 1) {
+                    validacionDiv.style.display = 'block';
+                    
+                    // Mensaje específico según el tipo de diferencia
+                    if (sumaMetodos > ventaTotal) {
+                        mensajeValidacion.innerHTML = `La suma de los métodos de pago (<strong>$${sumaMetodos.toLocaleString()}</strong>) es <strong>SUPERIOR</strong> al total vendido (<strong>$${ventaTotal.toLocaleString()}</strong>). Diferencia: <strong style="color: #dc3545;">+$${diferencia.toLocaleString()}</strong>`;
+                    } else {
+                        mensajeValidacion.innerHTML = `La suma de los métodos de pago (<strong>$${sumaMetodos.toLocaleString()}</strong>) es <strong>INFERIOR</strong> al total vendido (<strong>$${ventaTotal.toLocaleString()}</strong>). Diferencia: <strong style="color: #dc3545;">-$${diferencia.toLocaleString()}</strong>`;
+                    }
+                    
+                    // Deshabilitar el botón de guardar
+                    btnGuardar.disabled = true;
+                    btnGuardar.style.opacity = '0.6';
+                    btnGuardar.style.cursor = 'not-allowed';
+                } else {
+                    validacionDiv.style.display = 'none';
+                    // Habilitar el botón de guardar
+                    btnGuardar.disabled = false;
+                    btnGuardar.style.opacity = '1';
+                    btnGuardar.style.cursor = 'pointer';
+                }
+            }
+            
+            [ventaTotalInput, efectivoInput, transferenciasInput, tarjetasInput].forEach(input => {
+                input.addEventListener('input', validarTotal);
+            });
+            
+            // Validar al cargar la página por si hay valores precargados
+            validarTotal();
+        }
+
+        // Ejecutar cuando cargue la página
+        document.addEventListener('DOMContentLoaded', function() {
+            configurarValidacionCierre();
+            console.log('💰 Control Diario cargado - Saldo: ${{ saldo_actual }}');
+            
+            // Establecer valores por defecto de 0 en campos numéricos vacíos
+            const inputsNumericos = document.querySelectorAll('input[type="number"]');
+            inputsNumericos.forEach(input => {
+                if (input.value === '') {
+                    input.value = '0';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

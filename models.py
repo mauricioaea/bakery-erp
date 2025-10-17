@@ -1086,3 +1086,113 @@ def obtener_productos_sin_ventas_recientes(dias=7):
         print(f"Error en obtener_productos_sin_ventas_recientes: {e}")
         # En caso de error, retornar lista vacía para no romper el sistema
         return []
+    
+
+# ======================================= NUEVO MÓDULO FINANCIERO MEJORADO =================================================
+# ======================================= NUEVO MÓDULO FINANCIERO MEJORADO =================================================
+
+class RegistroDiario(db.Model):
+    """Registro diario simplificado para el usuario"""
+    __tablename__ = 'registros_diarios'
+    id = db.Column(db.Integer, primary_key=True)
+    fecha = db.Column(db.Date, nullable=False, default=datetime.now().date)
+    
+    # INGRESOS
+    venta_total = db.Column(db.Float, default=0)
+    efectivo = db.Column(db.Float, default=0)
+    transferencias = db.Column(db.Float, default=0)
+    tarjetas = db.Column(db.Float, default=0)
+    
+    # EGRESOS
+    gasto_proveedores = db.Column(db.Float, default=0)
+    gasto_servicios = db.Column(db.Float, default=0)
+    gasto_nomina = db.Column(db.Float, default=0)
+    gasto_alquiler = db.Column(db.Float, default=0)
+    gasto_otros = db.Column(db.Float, default=0)
+    
+    # INFORMACIÓN ADICIONAL
+    descripcion_gastos = db.Column(db.String(300))
+    numero_factura = db.Column(db.String(100))
+    
+    # CÁLCULOS AUTOMÁTICOS
+    total_ingresos = db.Column(db.Float, default=0)
+    total_egresos = db.Column(db.Float, default=0)
+    saldo_dia = db.Column(db.Float, default=0)
+    
+    fecha_creacion = db.Column(db.DateTime, default=datetime.now)
+    
+    def calcular_totales(self):
+        """Calcula automáticamente los totales con manejo seguro de None"""
+        try:
+            # Convertir None a 0 para evitar errores
+            self.efectivo = self.efectivo or 0
+            self.transferencias = self.transferencias or 0
+            self.tarjetas = self.tarjetas or 0
+            
+            self.total_ingresos = self.efectivo + self.transferencias + self.tarjetas
+            
+            # Convertir None a 0 en gastos
+            self.gasto_proveedores = self.gasto_proveedores or 0
+            self.gasto_servicios = self.gasto_servicios or 0
+            self.gasto_nomina = self.gasto_nomina or 0
+            self.gasto_alquiler = self.gasto_alquiler or 0
+            self.gasto_otros = self.gasto_otros or 0
+            
+            self.total_egresos = (self.gasto_proveedores + self.gasto_servicios + 
+                                self.gasto_nomina + self.gasto_alquiler + self.gasto_otros)
+            self.saldo_dia = self.total_ingresos - self.total_egresos
+        except Exception as e:
+            print(f"Error en calcular_totales: {e}")
+            # Valores por defecto en caso de error
+            self.total_ingresos = 0
+            self.total_egresos = 0
+            self.saldo_dia = 0
+    
+    def validar_cierre_caja(self):
+        """Valida que los métodos de pago coincidan con el total vendido"""
+        try:
+            suma_metodos = (self.efectivo or 0) + (self.transferencias or 0) + (self.tarjetas or 0)
+            diferencia = abs(suma_metodos - (self.venta_total or 0))
+            
+            # Permitir pequeñas diferencias por redondeo (menos de $1)
+            return diferencia <= 1, suma_metodos, diferencia
+        except Exception as e:
+            print(f"Error en validar_cierre_caja: {e}")
+            return False, 0, 0
+    
+    def __repr__(self):
+        return f'<RegistroDiario {self.fecha} - Ingresos: ${self.total_ingresos}>'
+
+class SaldoBanco(db.Model):
+    """Seguimiento del saldo bancario actual"""
+    __tablename__ = 'saldos_banco'
+    id = db.Column(db.Integer, primary_key=True)
+    fecha_actualizacion = db.Column(db.DateTime, default=datetime.now)
+    saldo_actual = db.Column(db.Float, default=0)
+    comentario = db.Column(db.String(200))
+    
+    def __repr__(self):
+        return f'<SaldoBanco ${self.saldo_actual}>'
+    
+# === NUEVA CLASE PARA PAGOS INDIVIDUALES ===
+
+class PagoIndividual(db.Model): 
+    """Registro individual de cada pago"""
+    __tablename__ = 'pagos_individuales'
+    id = db.Column(db.Integer, primary_key=True)
+    fecha_registro = db.Column(db.DateTime, default=datetime.now)
+    fecha_pago = db.Column(db.Date, nullable=False)
+    
+    # Información del pago
+    categoria = db.Column(db.String(50), nullable=False)
+    proveedor_id = db.Column(db.Integer, db.ForeignKey('proveedor.id'), nullable=True)
+    monto = db.Column(db.Float, nullable=False)
+    referencia = db.Column(db.String(100))
+    descripcion = db.Column(db.String(300))
+    numero_factura = db.Column(db.String(100))
+    
+    # Relaciones
+    proveedor = db.relationship('Proveedor', backref='pagos')
+    
+    def __repr__(self):
+        return f'<Pago {self.categoria} - ${self.monto}>'

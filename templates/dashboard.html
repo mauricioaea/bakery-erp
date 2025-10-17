@@ -258,7 +258,7 @@
                 <a href="{{ url_for('punto_venta') }}" class="nav-btn">💳 Punto de Venta</a>
                 <a href="{{ url_for('produccion_diaria') }}" class="nav-btn">🏭 Producción</a>
                 <a href="{{ url_for('productos_externos') }}" class="nav-btn external">🥤 Productos Externos</a>
-                <a href="{{ url_for('reporte_utilidades') }}" class="nav-btn reports">📈 Reporte Utilidades</a>
+                
                 
             </div>
         </div>
@@ -312,13 +312,7 @@
                 <a href="{{ url_for('proveedores') }}" class="card-btn">¡Clic para empezar!</a>
             </div>
 
-            <!-- 🆕 REPORTES ACTIVOS -->
-            <div class="card reports-active">
-                <div class="card-icon card-icon-reports">📊</div>
-                <h3>Reportes y Utilidades</h3>
-                <p>Ver reportes de ventas, utilidades por producto y análisis de rentabilidad</p>
-                <a href="{{ url_for('reporte_utilidades') }}" class="card-btn">📈 Ver Reportes</a>
-            </div>
+            
 
                         <!-- Gestión de Usuarios -->
             <div class="card">
@@ -328,13 +322,14 @@
                 <a href="#" class="card-btn disabled">Próximamente</a>
             </div>
 
-            <!-- Control de Gastos -->
-            <div class="card">
-                <div class="card-icon" style="background: #95a5a6;">💸</div>
-                <h3>Control de Gastos</h3>
-                <p>Registrar y categorizar gastos operativos</p>
-                <a href="#" class="card-btn disabled">Próximamente</a>
-            </div>
+            
+            <!-- 🆕 GESTIÓN FINANCIERA Y CONTABILIDAD -->
+                <div class="card">
+                    <div class="card-icon" style="background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);">💰</div>
+                    <h3>Gestión Financiera y Contabilidad</h3>
+                    <p>Control completo de finanzas: gastos operativos, ingresos, flujo de caja, estados financieros y análisis de rentabilidad</p>
+                    <a href="{{ url_for('control_diario') }}" class="card-btn">💰 Control Diario</a>
+                </div>
         </div>
 
         <!-- Información del Sistema -->
@@ -376,20 +371,13 @@
             }
             
             // Efecto para reportes
-            const reportsCard = document.querySelector('.reports-active');
-            if (reportsCard) {
-                setInterval(() => {
-                    reportsCard.style.boxShadow = reportsCard.style.boxShadow ? 
-                        '0 8px 25px rgba(0,0,0,0.1)' : 
-                        '0 8px 25px rgba(23, 162, 184, 0.3)';
-                }, 1500);
-            }
+            
             
             console.log('🎯 Dashboard cargado. Módulos activos:');
             console.log('- 💳 Punto de Venta');
             console.log('- 🏭 Producción Diaria'); 
             console.log('- 🥤 Productos Externos');
-            console.log('- 📈 Reportes de Utilidades');
+            
             
         });
     </script>
