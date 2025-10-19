@@ -1,17 +1,44 @@
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import UserMixin
 from datetime import datetime, timedelta
 import math
 from sqlalchemy import func, extract
+from werkzeug.security import generate_password_hash, check_password_hash 
 
+# SOLO esta línea - elimina cualquier otra db
 db = SQLAlchemy()
 
-class Usuario(db.Model):
+
+class Usuario(UserMixin, db.Model):
     __tablename__ = 'usuarios'
+    
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
-    password_hash = db.Column(db.String(120), nullable=False)
-    rol = db.Column(db.String(20), nullable=False, default='cajero')  # 'admin' o 'cajero'
-    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
+    password_hash = db.Column(db.String(200), nullable=False)
+    rol = db.Column(db.String(20), default='usuario')
+    activo = db.Column(db.Boolean, default=True)
+    
+    def get_id(self):
+        return str(self.id)
+    
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+    
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+    
+    # Propiedades requeridas por Flask-Login
+    @property
+    def is_active(self):
+        return self.activo
+    
+    @property
+    def is_authenticated(self):
+        return True
+    
+    @property
+    def is_anonymous(self):
+        return False
 
 class Categoria(db.Model):
     __tablename__ = 'categorias'
@@ -1196,3 +1223,57 @@ class PagoIndividual(db.Model):
     
     def __repr__(self):
         return f'<Pago {self.categoria} - ${self.monto}>'
+    
+# ============================================ MODELO DE ACTIVOS FIJOS ========================================================
+# === MODELO DE ACTIVOS FIJOS ===
+class ActivoFijo(db.Model):
+    __tablename__ = 'activos_fijos'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(200), nullable=False)
+    categoria = db.Column(db.String(100), nullable=False)
+    descripcion = db.Column(db.Text)
+    numero_serie = db.Column(db.String(100))
+    fecha_compra = db.Column(db.Date, nullable=False)
+    proveedor = db.Column(db.String(200))
+    valor_compra = db.Column(db.Float, nullable=False)
+    metodo_pago = db.Column(db.String(100))
+    vida_util = db.Column(db.Integer)  # en años
+    valor_residual = db.Column(db.Float, default=0)
+    metodo_depreciacion = db.Column(db.String(50), default='LINEAL')
+    ubicacion = db.Column(db.String(200))
+    estado = db.Column(db.String(50), default='ACTIVO')  # ACTIVO, MANTENIMIENTO, BAJA
+    responsable = db.Column(db.String(200))
+    fecha_registro = db.Column(db.DateTime, default=datetime.now)
+    fecha_baja = db.Column(db.Date)
+    
+    def calcular_depreciacion_mensual(self):
+        if self.vida_util and self.vida_util > 0:
+            depreciacion_anual = (self.valor_compra - self.valor_residual) / self.vida_util
+            return depreciacion_anual / 12
+        return 0
+    
+    def depreciacion_acumulada(self):
+        if not self.fecha_compra:
+            return 0
+            
+        meses_transcurridos = (datetime.now().date() - self.fecha_compra).days // 30
+        return min(meses_transcurridos * self.calcular_depreciacion_mensual(), 
+                  self.valor_compra - self.valor_residual)
+    
+    def valor_actual(self):
+        return self.valor_compra - self.depreciacion_acumulada()
+
+# Categorías predefinidas para activos fijos
+CATEGORIAS_ACTIVOS = {
+    "MAQUINARIA_EQUIPOS": "Maquinaria y Equipos",
+    "EQUIPOS_TECNOLOGICOS": "Equipos Tecnológicos", 
+    "MOBILIARIO": "Mobiliario y Mesas",
+    "HERRAMIENTAS": "Herramientas de Panadería",
+    "VEHICULOS": "Vehículos de Reparto",
+    "INSTALACIONES": "Instalaciones y Mejoras",
+    "SOFTWARE": "Software y Licencias",
+    "LICENCIAS_PERMISOS": "Licencias y Permisos",
+    "SEÑALETICA": "Señalética y Publicidad",
+    "SEGURIDAD": "Equipos de Seguridad"
+}

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrar Activo - Panadería</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: #ffc107;
+            padding: 25px;
+            text-align: center;
+        }
+        .header h1 {
+            color: black;
+            margin-bottom: 5px;
+            font-size: 2.2em;
+        }
+        .subtitle {
+            color: #333;
+            font-size: 1.1em;
+        }
+        .form-container {
+            padding: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+        .form-control:focus {
+            border-color: #ffc107;
+            outline: none;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .btn {
+            padding: 12px 25px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        .btn-warning {
+            background: #ffc107;
+            color: black;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .form-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        .required::after {
+            content: " *";
+            color: #dc3545;
+        }
+        .help-text {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 5px;
+        }
+        .back-btn {
+            background: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div style="max-width: 800px; margin: 0 auto 20px auto;">
+        <a href="{{ url_for('activos_fijos') }}" class="back-btn">← Volver a Activos Fijos</a>
+    </div>
+
+    <div class="container">
+        <!-- Mensajes Flash -->
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <div class="header">
+            <h1>➕ Registrar Nuevo Activo</h1>
+            <p class="subtitle">Completa la información del equipo, herramienta o inversión</p>
+        </div>
+
+        <div class="form-container">
+            <form method="POST" action="{{ url_for('registrar_activo') }}">
+                <!-- Datos Básicos -->
+                <h3 style="margin-bottom: 20px; color: #333;">📋 Datos Básicos del Activo</h3>
+                
+                <div class="form-group">
+                    <label for="nombre" class="required">Nombre del Activo</label>
+                    <input type="text" id="nombre" name="nombre" class="form-control" 
+                           placeholder="Ej: Horno Industrial, Mesa de Trabajo, Licuadora..." required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="categoria" class="required">Categoría</label>
+                        <select id="categoria" name="categoria" class="form-control" required>
+                            <option value="">Selecciona una categoría</option>
+                            {% for key, value in categorias.items() %}
+                            <option value="{{ key }}">{{ value }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="numero_serie">Número de Serie/Placa</label>
+                        <input type="text" id="numero_serie" name="numero_serie" class="form-control" 
+                               placeholder="Opcional">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="descripcion">Descripción</label>
+                    <textarea id="descripcion" name="descripcion" class="form-control" 
+                              rows="3" placeholder="Describe el activo, características, modelo..."></textarea>
+                </div>
+
+                <!-- Información de Compra -->
+                <h3 style="margin-bottom: 20px; color: #333; margin-top: 30px;">💰 Información de Compra</h3>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="fecha_compra" class="required">Fecha de Compra</label>
+                        <input type="date" id="fecha_compra" name="fecha_compra" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="valor_compra" class="required">Valor de Compra ($)</label>
+                        <input type="number" id="valor_compra" name="valor_compra" class="form-control" 
+                               step="0.01" min="0" placeholder="0.00" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="proveedor">Proveedor</label>
+                        <input type="text" id="proveedor" name="proveedor" class="form-control" 
+                               placeholder="Quién vendió el activo">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="metodo_pago">Método de Pago</label>
+                        <select id="metodo_pago" name="metodo_pago" class="form-control">
+                            <option value="">Selecciona método</option>
+                            <option value="EFECTIVO">Efectivo</option>
+                            <option value="TARJETA_CREDITO">Tarjeta Crédito</option>
+                            <option value="TARJETA_DEBITO">Tarjeta Débito</option>
+                            <option value="TRANSFERENCIA">Transferencia</option>
+                            <option value="FINANCIADO">Financiado</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Depreciación -->
+                <h3 style="margin-bottom: 20px; color: #333; margin-top: 30px;">📊 Depreciación</h3>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="vida_util" class="required">Vida Útil (años)</label>
+                        <input type="number" id="vida_util" name="vida_util" class="form-control" 
+                               min="1" max="50" value="5" required>
+                        <div class="help-text">Años esperados de uso del activo</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="valor_residual">Valor Residual ($)</label>
+                        <input type="number" id="valor_residual" name="valor_residual" class="form-control" 
+                               step="0.01" min="0" value="0" placeholder="0.00">
+                        <div class="help-text">Valor al final de su vida útil</div>
+                    </div>
+                </div>
+
+                <!-- Ubicación y Estado -->
+                <h3 style="margin-bottom: 20px; color: #333; margin-top: 30px;">📍 Ubicación y Estado</h3>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="ubicacion">Ubicación en Panadería</label>
+                        <input type="text" id="ubicacion" name="ubicacion" class="form-control" 
+                               placeholder="Ej: Área de producción, Almacén, Oficina...">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="responsable">Responsable</label>
+                        <input type="text" id="responsable" name="responsable" class="form-control" 
+                               placeholder="Persona a cargo del activo">
+                    </div>
+                </div>
+
+                <!-- Botones de Acción -->
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">💾 Guardar Activo</button>
+                    <a href="{{ url_for('activos_fijos') }}" class="btn btn-secondary">❌ Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Establecer fecha actual como predeterminada
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('fecha_compra').value = today;
+            
+            console.log('📝 Formulario de registro de activo cargado');
+        });
+    </script>
+</body>
+</html>

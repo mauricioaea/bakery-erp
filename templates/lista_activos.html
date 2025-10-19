@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Activos - Panadería</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: white;
+            padding: 25px;
+            text-align: center;
+            border-bottom: 3px solid #f8f9fa;
+        }
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.2em;
+        }
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+        .actions-bar {
+            background: #ffc107;
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-warning {
+            background: #ffc107;
+            color: black;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .content {
+            padding: 25px;
+        }
+        .table-container {
+            overflow-x: auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        th {
+            background: #343a40;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: bold;
+        }
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        tr:hover {
+            background: #f8f9fa;
+        }
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        .status-maintenance {
+            background: #fff3cd;
+            color: #856404;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        .status-inactive {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        .category-badge {
+            background: #e9ecef;
+            color: #495057;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.7em;
+        }
+        .back-btn {
+            background: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .empty-state i {
+            font-size: 3em;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+        @media (max-width: 768px) {
+            .actions-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .btn {
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div style="max-width: 1200px; margin: 0 auto 20px auto;">
+        <a href="{{ url_for('activos_fijos') }}" class="back-btn">← Volver a Activos Fijos</a>
+    </div>
+
+    <div class="container">
+        <!-- Mensajes Flash -->
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <div class="header">
+            <h1>📋 Lista Completa de Activos</h1>
+            <p class="subtitle">Gestiona y visualiza todos los activos fijos de tu panadería</p>
+        </div>
+
+        <!-- Barra de Acciones -->
+        <div class="actions-bar">
+            <div>
+                <h3 style="color: black; margin: 0;">Total: {{ activos|length }} activos</h3>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <a href="{{ url_for('registrar_activo') }}" class="btn btn-success">➕ Nuevo Activo</a>
+                <a href="{{ url_for('reporte_activos') }}" class="btn btn-warning">📊 Generar Reporte</a>
+                <a href="{{ url_for('activos_fijos') }}" class="btn btn-secondary">🏠 Dashboard</a>
+            </div>
+        </div>
+
+        <!-- Tabla de Activos -->
+        <div class="content">
+            {% if activos %}
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Categoría</th>
+                            <th>Valor Compra</th>
+                            <th>Valor Actual</th>
+                            <th>Fecha Compra</th>
+                            <th>Estado</th>
+                            <th>Ubicación</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for activo in activos %}
+                        <tr>
+                            <td>
+                                <strong>{{ activo.nombre }}</strong>
+                                {% if activo.numero_serie %}
+                                <br><small style="color: #666;">Serie: {{ activo.numero_serie }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="category-badge">{{ categorias[activo.categoria] }}</span>
+                            </td>
+                            <td>${{ "{:,.0f}".format(activo.valor_compra) }}</td>
+                            <td><strong>${{ "{:,.0f}".format(activo.valor_actual()) }}</strong></td>
+                            <td>{{ activo.fecha_compra.strftime('%d/%m/%Y') }}</td>
+                            <td>
+                                {% if activo.estado == 'ACTIVO' %}
+                                <span class="status-active">✅ ACTIVO</span>
+                                {% elif activo.estado == 'MANTENIMIENTO' %}
+                                <span class="status-maintenance">🔧 MANTENIMIENTO</span>
+                                {% else %}
+                                <span class="status-inactive">❌ INACTIVO</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ activo.ubicacion or 'No especificado' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Resumen Estadístico -->
+            <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                <h3 style="margin-bottom: 15px; color: #333;">📈 Resumen Estadístico</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 1.5em; font-weight: bold; color: #333;">
+                            ${{ "{:,.0f}".format(activos|sum(attribute='valor_compra')) }}
+                        </div>
+                        <div style="color: #666; font-size: 0.9em;">Inversión Total</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 1.5em; font-weight: bold; color: #333;">
+                            ${{ "{:,.0f}".format(activos|sum(attribute='valor_compra')) }}
+                        </div>
+                        <div style="color: #666; font-size: 0.9em;">Depreciación Acumulada</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 1.5em; font-weight: bold; color: #333;">
+                            {{ (activos|selectattr('estado', 'equalto', 'ACTIVO')|list|length) }}
+                        </div>
+                        <div style="color: #666; font-size: 0.9em;">Activos Activos</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 1.5em; font-weight: bold; color: #333;">
+                            {{ (activos|selectattr('estado', 'equalto', 'MANTENIMIENTO')|list|length) }}
+                        </div>
+                        <div style="color: #666; font-size: 0.9em;">En Mantenimiento</div>
+                    </div>
+                </div>
+            </div>
+
+            {% else %}
+            <div class="empty-state">
+                <div>📭</div>
+                <h3>No hay activos registrados</h3>
+                <p>Comienza registrando tu primer activo fijo</p>
+                <a href="{{ url_for('registrar_activo') }}" class="btn btn-success" style="margin-top: 15px;">
+                    ➕ Registrar Primer Activo
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📋 Lista de activos cargada');
+            console.log('Total de activos: {{ activos|length }}');
+        });
+    </script>
+</body>
+</html>

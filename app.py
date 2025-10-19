@@ -1,30 +1,54 @@
 import os
 import uuid
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, Response
-from models import db, Usuario, Producto, Venta, DetalleVenta, MateriaPrima, Receta, RecetaIngrediente, OrdenProduccion, Categoria, Proveedor, HistorialCompra, HistorialInventario, ConfiguracionProduccion, HistorialRotacionProducto, ControlVidaUtil, Factura, ProductoExterno, CompraExterna
-# IMPORTACIONES ACTUALIZADAS:
-from models import RegistroDiario, SaldoBanco, PagoIndividual
-from models import calcular_rotacion_automatica, actualizar_rotaciones_automaticas
-from models import calcular_tendencia_ventas, analizar_productos_periodo, calcular_rotacion_automatica_por_nombre
-from models import calcular_proyeccion_ventas, generar_recomendacion_stock, generar_alertas_inteligentes, obtener_productos_sin_ventas_recientes
+from flask_login import LoginManager, login_required, current_user, login_user, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from sqlalchemy import func, extract
+from reportes import GeneradorReportes
+from io import BytesIO
+import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')
 
 # Obtener la ruta base del proyecto
 basedir = os.path.abspath(os.path.dirname(__file__))
 
+# Crear aplicación Flask
 app = Flask(__name__)
-# Configurar la base de datos en la carpeta principal
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'panaderia.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = 'clave_secreta_muy_segura_panaderia_2025'
 
+# Importar db desde models - UNA sola instancia
+from models import db
+
+# Inicializar db con la app
 db.init_app(app)
 
-# Crear las tablas y un usuario admin por defecto
+# Configurar Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
+# Importar modelos DESPUÉS de inicializar db
+from models import Usuario, Producto, Venta, DetalleVenta, MateriaPrima, Receta, RecetaIngrediente
+from models import OrdenProduccion, Categoria, Proveedor, HistorialCompra, HistorialInventario
+from models import ConfiguracionProduccion, HistorialRotacionProducto, ControlVidaUtil, Factura
+from models import ProductoExterno, CompraExterna, RegistroDiario, SaldoBanco, PagoIndividual
+from models import calcular_rotacion_automatica, actualizar_rotaciones_automaticas
+from models import calcular_tendencia_ventas, analizar_productos_periodo, calcular_rotacion_automatica_por_nombre
+from models import calcular_proyeccion_ventas, generar_recomendacion_stock, generar_alertas_inteligentes
+from models import obtener_productos_sin_ventas_recientes, ActivoFijo, CATEGORIAS_ACTIVOS
+
+@login_manager.user_loader
+def load_user(user_id):
+    return Usuario.query.get(int(user_id))
+
+# Crear tablas y datos iniciales
 with app.app_context():
     db.create_all()
+    
     # Verificar si ya existe un usuario admin
     admin = Usuario.query.filter_by(username='admin').first()
     if not admin:
@@ -101,6 +125,7 @@ with app.app_context():
     print("✅ Base de datos lista!")
     print(f"📁 Ubicación de la BD: {os.path.join(basedir, 'panaderia.db')}")
 
+
 # Ruta para el login
 @app.route('/', methods=['GET', 'POST'])
 def login():
@@ -108,7 +133,10 @@ def login():
         username = request.form['username']
         password = request.form['password']
         user = Usuario.query.filter_by(username=username).first()
-        if user and check_password_hash(user.password_hash, password):
+        
+        # Verificar usuario y contraseña
+        if user and user.check_password(password):
+            login_user(user)
             session['user_id'] = user.id
             session['username'] = user.username
             session['rol'] = user.rol
@@ -116,7 +144,10 @@ def login():
             return redirect(url_for('dashboard'))
         else:
             flash('Usuario o contraseña incorrectos', 'error')
+    
     return render_template('login.html')
+
+#======COLOCA AQUÍ TODAS TUS RUTAS EXISTENTES=======
 
 # Ruta para el dashboard
 @app.route('/dashboard')
@@ -3306,6 +3337,526 @@ def registrar_cierre_caja():
     
     return redirect(url_for('control_diario'))
 
+# ... todo tu código existente ...
+
+# ================================================== MÓDULO DE REPORTES ====================================================
+
+from reportes import GeneradorReportes
+from io import BytesIO
+
+@app.route('/reportes')
+def reportes():
+    """Vista principal de reportes"""
+    return render_template('reportes.html')
+
+@app.route('/generar_reporte_estado_resultados')
+def generar_reporte_estado_resultados():
+    """Genera reporte de Estado de Resultados en PDF"""
+    try:
+        from datetime import datetime
+        
+        fecha_inicio = request.args.get('fecha_inicio')
+        fecha_fin = request.args.get('fecha_fin')
+        
+        # Validar fechas
+        if not fecha_inicio or not fecha_fin:
+            flash('❌ Debes seleccionar ambas fechas', 'error')
+            return redirect(url_for('reportes'))
+        
+        fecha_inicio = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+        fecha_fin = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
+        
+        if fecha_inicio > fecha_fin:
+            flash('❌ La fecha de inicio no puede ser mayor a la fecha fin', 'error')
+            return redirect(url_for('reportes'))
+        
+        generador = GeneradorReportes()
+        pdf_buffer = generador.generar_reporte_estado_resultados(fecha_inicio, fecha_fin)
+        
+        nombre_archivo = f"estado_resultados_{fecha_inicio}_{fecha_fin}.pdf"
+        
+        return Response(
+            pdf_buffer,
+            mimetype='application/pdf',
+            headers={
+                'Content-Disposition': f'attachment; filename={nombre_archivo}'
+            }
+        )
+        
+    except Exception as e:
+        flash(f'❌ Error al generar reporte: {str(e)}', 'error')
+        return redirect(url_for('reportes'))
+
+@app.route('/generar_reporte_flujo_caja')
+def generar_reporte_flujo_caja():
+    """Genera reporte de Flujo de Caja en PDF"""
+    try:
+        from datetime import datetime
+        
+        fecha_inicio = request.args.get('fecha_inicio')
+        fecha_fin = request.args.get('fecha_fin')
+        
+        # Validar fechas
+        if not fecha_inicio or not fecha_fin:
+            flash('❌ Debes seleccionar ambas fechas', 'error')
+            return redirect(url_for('reportes'))
+        
+        fecha_inicio = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+        fecha_fin = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
+        
+        if fecha_inicio > fecha_fin:
+            flash('❌ La fecha de inicio no puede ser mayor a la fecha fin', 'error')
+            return redirect(url_for('reportes'))
+        
+        generador = GeneradorReportes()
+        pdf_buffer = generador.generar_reporte_flujo_caja(fecha_inicio, fecha_fin)
+        
+        nombre_archivo = f"flujo_caja_{fecha_inicio}_{fecha_fin}.pdf"
+        
+        return Response(
+            pdf_buffer,
+            mimetype='application/pdf',
+            headers={
+                'Content-Disposition': f'attachment; filename={nombre_archivo}'
+            }
+        )
+        
+    except Exception as e:
+        flash(f'❌ Error al generar reporte: {str(e)}', 'error')
+        return redirect(url_for('reportes'))
+    
+#===============================================libro contable==========================================================
+
+@app.route('/generar_reporte_libro_diario')
+def generar_reporte_libro_diario():
+    """Genera reporte de Libro Diario Contable en PDF"""
+    try:
+        from datetime import datetime
+        
+        fecha_inicio = request.args.get('fecha_inicio')
+        fecha_fin = request.args.get('fecha_fin')
+        
+        # Validar fechas
+        if not fecha_inicio or not fecha_fin:
+            flash('❌ Debes seleccionar ambas fechas', 'error')
+            return redirect(url_for('reportes'))
+        
+        fecha_inicio = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+        fecha_fin = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
+        
+        if fecha_inicio > fecha_fin:
+            flash('❌ La fecha de inicio no puede ser mayor a la fecha fin', 'error')
+            return redirect(url_for('reportes'))
+        
+        generador = GeneradorReportes()
+        pdf_buffer = generador.generar_reporte_libro_diario(fecha_inicio, fecha_fin)
+        
+        nombre_archivo = f"libro_diario_{fecha_inicio}_{fecha_fin}.pdf"
+        
+        return Response(
+            pdf_buffer,
+            mimetype='application/pdf',
+            headers={
+                'Content-Disposition': f'attachment; filename={nombre_archivo}'
+            }
+        )
+        
+    except Exception as e:
+        flash(f'❌ Error al generar reporte: {str(e)}', 'error')
+        return redirect(url_for('reportes'))
+#===========================================Conciliacion Babcaria===================================================
+@app.route('/generar_reporte_conciliacion')
+def generar_reporte_conciliacion():
+    """Genera reporte de Conciliación Bancaria en PDF"""
+    try:
+        fecha_corte = request.args.get('fecha_corte')
+        saldo_extracto_str = request.args.get('saldo_extracto', '0')
+        
+        # Validar fecha
+        if not fecha_corte:
+            flash('❌ Debes seleccionar la fecha de corte', 'error')
+            return redirect(url_for('reportes'))
+        
+        fecha_corte = datetime.strptime(fecha_corte, '%Y-%m-%d').date()
+        saldo_extracto = float(saldo_extracto_str) if saldo_extracto_str else 0
+        
+        print(f"🔍 Generando conciliación para fecha: {fecha_corte}, saldo: {saldo_extracto}")
+        
+        generador = GeneradorReportes()
+        pdf_buffer = generador.generar_reporte_conciliacion_bancaria(fecha_corte, saldo_extracto)
+        
+        # Verificar que el buffer no esté vacío
+        buffer_size = pdf_buffer.getbuffer().nbytes
+        print(f"📊 Tamaño del buffer PDF: {buffer_size} bytes")
+        
+        if buffer_size == 0:
+            raise Exception("El PDF generado está vacío")
+        
+        nombre_archivo = f"conciliacion_bancaria_{fecha_corte}.pdf"
+        
+        # Obtener los datos del buffer
+        pdf_data = pdf_buffer.getvalue()
+        
+        return Response(
+            pdf_data,
+            mimetype='application/pdf',
+            headers={
+                'Content-Disposition': f'attachment; filename={nombre_archivo}'
+            }
+        )
+        
+    except Exception as e:
+        print(f"❌ Error detallado en generación de conciliación: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        flash(f'❌ Error al generar conciliación: {str(e)}', 'error')
+        return redirect(url_for('reportes'))
+    
+#========================================== Análisis de Gastos por Categoría=================================================
+# DEBUG: Verificar métodos disponibles
+print("🔍 Verificando métodos de GeneradorReportes...")
+generador_test = GeneradorReportes()
+metodos = [method for method in dir(generador_test) if callable(getattr(generador_test, method)) and not method.startswith('_')]
+print("📋 Métodos disponibles:", metodos)
+
+@app.route('/generar_reporte_analisis_gastos')
+def generar_reporte_analisis_gastos():
+    """Genera reporte de Análisis de Gastos por Categoría en PDF"""
+    try:
+        fecha_inicio = request.args.get('fecha_inicio')
+        fecha_fin = request.args.get('fecha_fin')
+        
+        # Validar fechas
+        if not fecha_inicio or not fecha_fin:
+            flash('❌ Debes seleccionar ambas fechas', 'error')
+            return redirect(url_for('reportes'))
+        
+        fecha_inicio = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+        fecha_fin = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
+        
+        if fecha_inicio > fecha_fin:
+            flash('❌ La fecha de inicio no puede ser mayor a la fecha fin', 'error')
+            return redirect(url_for('reportes'))
+        
+        generador = GeneradorReportes()
+        pdf_buffer = generador.generar_reporte_analisis_gastos(fecha_inicio, fecha_fin)
+        
+        # Verificar que el buffer no esté vacío
+        if pdf_buffer.getbuffer().nbytes == 0:
+            raise Exception("El PDF generado está vacío")
+        
+        nombre_archivo = f"analisis_gastos_{fecha_inicio}_a_{fecha_fin}.pdf"
+        
+        return Response(
+            pdf_buffer.getvalue(),
+            mimetype='application/pdf',
+            headers={
+                'Content-Disposition': f'attachment; filename={nombre_archivo}'
+            }
+        )
+        
+    except Exception as e:
+        print(f"Error al generar análisis de gastos: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        flash(f'❌ Error al generar análisis de gastos: {str(e)}', 'error')
+        return redirect(url_for('reportes'))
+
+# Verificación temporal de métodos
+def verificar_metodos():
+    generador = GeneradorReportes()
+    metodos = [method for method in dir(generador) if callable(getattr(generador, method)) and not method.startswith('_')]
+    print("🔍 Métodos disponibles en GeneradorReportes:", metodos)
+
+# Ejecutar verificación (esto se mostrará en la terminal de Flask al iniciar)
+verificar_metodos()
+
+#==========================================================Tendencia de Ventas==============================================
+
+@app.route('/generar_reporte_tendencia_ventas')
+def generar_reporte_tendencia_ventas():
+    """Genera reporte de Tendencia de Ventas en PDF"""
+    try:
+        fecha_inicio = request.args.get('fecha_inicio')
+        fecha_fin = request.args.get('fecha_fin')
+        
+        # Validar fechas
+        if not fecha_inicio or not fecha_fin:
+            flash('❌ Debes seleccionar ambas fechas', 'error')
+            return redirect(url_for('reportes'))
+        
+        fecha_inicio = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+        fecha_fin = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
+        
+        if fecha_inicio > fecha_fin:
+            flash('❌ La fecha de inicio no puede ser mayor a la fecha fin', 'error')
+            return redirect(url_for('reportes'))
+        
+        generador = GeneradorReportes()
+        pdf_buffer = generador.generar_reporte_tendencia_ventas(fecha_inicio, fecha_fin)
+        
+        nombre_archivo = f"tendencia_ventas_{fecha_inicio}_a_{fecha_fin}.pdf"
+        
+        return Response(
+            pdf_buffer.getvalue(),
+            mimetype='application/pdf',
+            headers={
+                'Content-Disposition': f'attachment; filename={nombre_archivo}'
+            }
+        )
+        
+    except Exception as e:
+        print(f"Error al generar tendencia de ventas: {str(e)}")
+        flash(f'❌ Error al generar tendencia de ventas: {str(e)}', 'error')
+        return redirect(url_for('reportes'))
+    
+# ===============================================Recomendaciones con IA===========================================================
+    
+    # ========================================================== IA Predictivo ===============================================
+
+@app.route('/generar_reporte_ia_predictivo')
+def generar_reporte_ia_predictivo():
+    """Genera reporte de IA Predictivo en PDF"""
+    try:
+        fecha_inicio = request.args.get('fecha_inicio')
+        fecha_fin = request.args.get('fecha_fin')
+        
+        # Validar fechas
+        if not fecha_inicio or not fecha_fin:
+            flash('❌ Debes seleccionar ambas fechas', 'error')
+            return redirect(url_for('reportes'))
+        
+        fecha_inicio = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+        fecha_fin = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
+        
+        if fecha_inicio > fecha_fin:
+            flash('❌ La fecha de inicio no puede ser mayor a la fecha fin', 'error')
+            return redirect(url_for('reportes'))
+        
+        generador = GeneradorReportes()
+        pdf_buffer = generador.generar_reporte_ia_predictivo(fecha_inicio, fecha_fin)
+        
+        nombre_archivo = f"analisis_ia_predictivo_{fecha_inicio}_a_{fecha_fin}.pdf"
+        
+        return Response(
+            pdf_buffer.getvalue(),
+            mimetype='application/pdf',
+            headers={
+                'Content-Disposition': f'attachment; filename={nombre_archivo}'
+            }
+        )
+        
+    except Exception as e:
+        print(f"Error al generar reporte de IA: {str(e)}")
+        flash(f'❌ Error al generar análisis de IA: {str(e)}', 'error')
+        return redirect(url_for('reportes'))
+    
+
+#========================================= Análisis de Inventarios=============================================================
+
+# ========================================================== Análisis de Inventarios ===============================================
+
+@app.route('/generar_reporte_analisis_inventarios')
+def generar_reporte_analisis_inventarios():
+    """Genera reporte de Análisis de Inventarios en PDF"""
+    try:
+        fecha_inicio = request.args.get('fecha_inicio')
+        fecha_fin = request.args.get('fecha_fin')
+        
+        # Validar fechas
+        if not fecha_inicio or not fecha_fin:
+            flash('❌ Debes seleccionar ambas fechas', 'error')
+            return redirect(url_for('reportes'))
+        
+        fecha_inicio = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+        fecha_fin = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
+        
+        if fecha_inicio > fecha_fin:
+            flash('❌ La fecha de inicio no puede ser mayor a la fecha fin', 'error')
+            return redirect(url_for('reportes'))
+        
+        generador = GeneradorReportes()
+        pdf_buffer = generador.generar_reporte_analisis_inventarios(fecha_inicio, fecha_fin)
+        
+        nombre_archivo = f"analisis_inventarios_{fecha_inicio}_a_{fecha_fin}.pdf"
+        
+        return Response(
+            pdf_buffer.getvalue(),
+            mimetype='application/pdf',
+            headers={
+                'Content-Disposition': f'attachment; filename={nombre_archivo}'
+            }
+        )
+        
+    except Exception as e:
+        print(f"Error al generar análisis de inventarios: {str(e)}")
+        flash(f'❌ Error al generar análisis de inventarios: {str(e)}', 'error')
+        return redirect(url_for('reportes'))
+    
+# ============================================ MODELO DE ACTIVOS FIJOS ========================================================
+
+# === RUTAS DE ACTIVOS FIJOS ===
+
+@app.route('/activos_fijos')
+@login_required
+def activos_fijos():
+    activos = ActivoFijo.query.all()
+    
+    # Calcular métricas
+    total_activos = len(activos)
+    valor_total = sum(activo.valor_actual() for activo in activos)
+    activos_mantenimiento = len([a for a in activos if a.estado == 'MANTENIMIENTO'])
+    
+    return render_template('activos_fijos.html', 
+                         activos=activos,
+                         total_activos=total_activos,
+                         valor_total=valor_total,
+                         activos_mantenimiento=activos_mantenimiento,
+                         proxima_depreciacion=0,
+                         categorias=CATEGORIAS_ACTIVOS)
+
+@app.route('/registrar_activo', methods=['GET', 'POST'])
+@login_required
+def registrar_activo():
+    if request.method == 'POST':
+        try:
+            # Obtener datos del formulario
+            nombre = request.form['nombre']
+            categoria = request.form['categoria']
+            descripcion = request.form['descripcion']
+            numero_serie = request.form['numero_serie']
+            fecha_compra = datetime.strptime(request.form['fecha_compra'], '%Y-%m-%d').date()
+            proveedor = request.form['proveedor']
+            valor_compra = float(request.form['valor_compra'])
+            metodo_pago = request.form['metodo_pago']
+            vida_util = int(request.form['vida_util'])
+            valor_residual = float(request.form.get('valor_residual', 0))
+            ubicacion = request.form['ubicacion']
+            responsable = request.form['responsable']
+            
+            # Crear nuevo activo
+            nuevo_activo = ActivoFijo(
+                nombre=nombre,
+                categoria=categoria,
+                descripcion=descripcion,
+                numero_serie=numero_serie,
+                fecha_compra=fecha_compra,
+                proveedor=proveedor,
+                valor_compra=valor_compra,
+                metodo_pago=metodo_pago,
+                vida_util=vida_util,
+                valor_residual=valor_residual,
+                ubicacion=ubicacion,
+                responsable=responsable,
+                estado='ACTIVO'
+            )
+            
+            db.session.add(nuevo_activo)
+            db.session.commit()
+            
+            flash('Activo registrado exitosamente', 'success')
+            return redirect(url_for('activos_fijos'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error al registrar activo: {str(e)}', 'error')
+    
+    return render_template('registrar_activo.html', categorias=CATEGORIAS_ACTIVOS)
+
+@app.route('/lista_activos')
+@login_required
+def lista_activos():
+    activos = ActivoFijo.query.order_by(ActivoFijo.fecha_compra.desc()).all()
+    return render_template('lista_activos.html', activos=activos, categorias=CATEGORIAS_ACTIVOS)
+
+@app.route('/reporte_activos')
+@login_required
+def reporte_activos():
+    activos = ActivoFijo.query.all()
+    
+    # Generar gráficos si hay activos
+    if activos:
+        try:
+            fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(12, 10))
+            
+            # Gráfico 1: Distribución por categoría
+            categorias_count = {}
+            for activo in activos:
+                cat_nombre = CATEGORIAS_ACTIVOS.get(activo.categoria, activo.categoria)
+                categorias_count[cat_nombre] = categorias_count.get(cat_nombre, 0) + 1
+            
+            if categorias_count:
+                ax1.pie(categorias_count.values(), labels=categorias_count.keys(), autopct='%1.1f%%')
+                ax1.set_title('Distribución de Activos por Categoría')
+            
+            # Gráfico 2: Valor por categoría
+            categorias_valor = {}
+            for activo in activos:
+                cat_nombre = CATEGORIAS_ACTIVOS.get(activo.categoria, activo.categoria)
+                categorias_valor[cat_nombre] = categorias_valor.get(cat_nombre, 0) + activo.valor_actual()
+            
+            if categorias_valor:
+                ax2.bar(categorias_valor.keys(), categorias_valor.values())
+                ax2.set_title('Valor Actual por Categoría')
+                ax2.tick_params(axis='x', rotation=45)
+            
+            # Gráfico 3: Estado de activos
+            estados_count = {}
+            for activo in activos:
+                estados_count[activo.estado] = estados_count.get(activo.estado, 0) + 1
+            
+            if estados_count:
+                ax3.pie(estados_count.values(), labels=estados_count.keys(), autopct='%1.1f%%')
+                ax3.set_title('Estado de los Activos')
+            
+            # Gráfico 4: Depreciación acumulada
+            nombres = [activo.nombre[:15] + '...' if len(activo.nombre) > 15 else activo.nombre for activo in activos]
+            valores_compra = [activo.valor_compra for activo in activos]
+            depreciacion = [activo.depreciacion_acumulada() for activo in activos]
+            
+            x = range(len(activos))
+            ax4.bar(x, valores_compra, label='Valor Compra', alpha=0.7)
+            ax4.bar(x, depreciacion, label='Depreciación Acumulada', alpha=0.7)
+            ax4.set_title('Depreciación Acumulada')
+            ax4.legend()
+            ax4.set_xticks(x)
+            ax4.set_xticklabels(nombres, rotation=45, ha='right')
+            
+            plt.tight_layout()
+            
+            # Guardar gráfico
+            graph_path = os.path.join('static', 'temp', 'activos_report.png')
+            os.makedirs(os.path.dirname(graph_path), exist_ok=True)
+            plt.savefig(graph_path)
+            plt.close()
+            
+        except Exception as e:
+            print(f"Error generando gráficos: {e}")
+            graph_path = None
+    else:
+        graph_path = None
+    
+    return render_template('reporte_activos.html', 
+                         activos=activos, 
+                         graph_path=graph_path,
+                         total_valor=sum(activo.valor_actual() for activo in activos),
+                         total_depreciacion=sum(activo.depreciacion_acumulada() for activo in activos),
+                         now=datetime.now(),
+                         categorias=CATEGORIAS_ACTIVOS)
+
+@app.route('/api/activos_metrics')
+@login_required
+def api_activos_metrics():
+    activos = ActivoFijo.query.all()
+    
+    metrics = {
+        'total_activos': len(activos),
+        'valor_total': sum(activo.valor_actual() for activo in activos),
+        'activos_mantenimiento': len([a for a in activos if a.estado == 'MANTENIMIENTO']),
+        'proxima_depreciacion': 0
+    }
+    
+    return jsonify(metrics)
 
 if __name__ == '__main__':
     app.run(debug=True)

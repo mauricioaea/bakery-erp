@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte de Activos - Panadería</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: #17a2b8;
+            padding: 25px;
+            text-align: center;
+            color: white;
+        }
+        .header h1 {
+            margin-bottom: 10px;
+            font-size: 2.2em;
+        }
+        .subtitle {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 25px;
+        }
+        .report-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        .report-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #17a2b8;
+            padding-bottom: 10px;
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .metric-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-left: 4px solid #17a2b8;
+        }
+        .metric-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .metric-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .chart-container {
+            text-align: center;
+            margin: 20px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .chart-container img {
+            max-width: 100%;
+            border-radius: 8px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            display: inline-block;
+        }
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        .btn-warning {
+            background: #ffc107;
+            color: black;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .actions-bar {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        .back-btn {
+            background: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        .table-container {
+            overflow-x: auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-top: 15px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        th {
+            background: #343a40;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+        }
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        tr:hover {
+            background: #f8f9fa;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .empty-state i {
+            font-size: 3em;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+        .print-only {
+            display: none;
+        }
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .container {
+                box-shadow: none;
+                border-radius: 0;
+            }
+            .btn, .back-btn {
+                display: none;
+            }
+            .print-only {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div style="max-width: 1200px; margin: 0 auto 20px auto;">
+        <a href="{{ url_for('activos_fijos') }}" class="back-btn">← Volver a Activos Fijos</a>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>📊 Reporte de Activos Fijos</h1>
+            <p class="subtitle">Panadería Semillas - Generado el {{ now.strftime('%d/%m/%Y %H:%M') }}</p>
+        </div>
+
+        <div class="content">
+            <!-- Barra de Acciones -->
+            <div class="actions-bar">
+                <button onclick="window.print()" class="btn btn-primary">🖨️ Imprimir Reporte</button>
+                <a href="{{ url_for('activos_fijos') }}" class="btn btn-secondary">🏠 Dashboard</a>
+                <a href="{{ url_for('lista_activos') }}" class="btn btn-warning">📋 Ver Lista Completa</a>
+            </div>
+
+            <!-- Métricas Principales -->
+            <div class="report-section">
+                <h3>📈 Métricas Principales</h3>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-value">{{ activos|length }}</div>
+                        <div class="metric-label">Total Activos</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">${{ "{:,.0f}".format(total_valor) }}</div>
+                        <div class="metric-label">Valor Total Actual</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">${{ "{:,.0f}".format(total_depreciacion) }}</div>
+                        <div class="metric-label">Depreciación Acumulada</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">${{ "{:,.0f}".format(activos|sum(attribute='valor_compra')) }}</div>
+                        <div class="metric-label">Inversión Total</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráficos -->
+            {% if graph_path %}
+            <div class="report-section">
+                <h3>📊 Análisis Visual</h3>
+                <div class="chart-container">
+                    <img src="{{ url_for('static', filename='temp/activos_report.png') }}" 
+                         alt="Gráficos de análisis de activos">
+                    <p style="margin-top: 10px; color: #666; font-size: 0.9em;">
+                        Distribución por categoría, valor y estado de los activos
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Resumen por Categoría -->
+            <div class="report-section">
+                <h3>📦 Resumen por Categoría</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Categoría</th>
+                                <th>Cantidad</th>
+                                <th>Valor Compra</th>
+                                <th>Valor Actual</th>
+                                <th>% del Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% set categorias_summary = {} %}
+                            {% for activo in activos %}
+                                {% set cat_nombre = categorias.get(activo.categoria, activo.categoria) %}
+                                {% if cat_nombre not in categorias_summary %}
+                                    {% set _ = categorias_summary.update({cat_nombre: {'count': 0, 'valor_compra': 0, 'valor_actual': 0}}) %}
+                                {% endif %}
+                                {% set _ = categorias_summary[cat_nombre].update({
+                                    'count': categorias_summary[cat_nombre].count + 1,
+                                    'valor_compra': categorias_summary[cat_nombre].valor_compra + activo.valor_compra,
+                                    'valor_actual': categorias_summary[cat_nombre].valor_actual + activo.valor_actual()
+                                }) %}
+                            {% endfor %}
+                            
+                            {% for categoria, datos in categorias_summary.items() %}
+                            <tr>
+                                <td>{{ categoria }}</td>
+                                <td>{{ datos.count }}</td>
+                                <td class="text-right">${{ "{:,.0f}".format(datos.valor_compra) }}</td>
+                                <td class="text-right">${{ "{:,.0f}".format(datos.valor_actual) }}</td>
+                                <td class="text-right">
+                                    {% if total_valor > 0 %}
+                                        {{ "%.1f"|format((datos.valor_actual / total_valor * 100)) }}%
+                                    {% else %}
+                                        0%
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Activos con Mayor Depreciación - CORREGIDO -->
+            <div class="report-section">
+                <h3>📉 Activos con Mayor Depreciación</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Activo</th>
+                                <th>Valor Compra</th>
+                                <th>Depreciación</th>
+                                <th>Valor Actual</th>
+                                <th>% Depreciado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for activo in activos %}
+                                {% set depreciacion = activo.depreciacion_acumulada() %}
+                                {% set valor_actual = activo.valor_actual() %}
+                            {% endfor %}
+                            
+                            {% for activo in activos | sort(attribute='valor_compra') | reverse %}
+                                {% if loop.index0 < 10 %}
+                                <tr>
+                                    <td>{{ activo.nombre }}</td>
+                                    <td class="text-right">${{ "{:,.0f}".format(activo.valor_compra) }}</td>
+                                    <td class="text-right">${{ "{:,.0f}".format(activo.depreciacion_acumulada()) }}</td>
+                                    <td class="text-right">${{ "{:,.0f}".format(activo.valor_actual()) }}</td>
+                                    <td class="text-right">
+                                        {% if activo.valor_compra > 0 %}
+                                            {{ "%.1f"|format((activo.depreciacion_acumulada() / activo.valor_compra * 100)) }}%
+                                        {% else %}
+                                            0%
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Alternativa más simple para Activos con Mayor Depreciación -->
+            <div class="report-section">
+                <h3>📋 Activos por Valor de Compra (Top 10)</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Activo</th>
+                                <th>Valor Compra</th>
+                                <th>Depreciación</th>
+                                <th>Valor Actual</th>
+                                <th>% Depreciado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for activo in activos | sort(attribute='valor_compra', reverse=true) %}
+                                {% if loop.index <= 10 %}
+                                <tr>
+                                    <td>{{ activo.nombre }}</td>
+                                    <td class="text-right">${{ "{:,.0f}".format(activo.valor_compra) }}</td>
+                                    <td class="text-right">${{ "{:,.0f}".format(activo.depreciacion_acumulada()) }}</td>
+                                    <td class="text-right">${{ "{:,.0f}".format(activo.valor_actual()) }}</td>
+                                    <td class="text-right">
+                                        {% if activo.valor_compra > 0 %}
+                                            {{ "%.1f"|format((activo.depreciacion_acumulada() / activo.valor_compra * 100)) }}%
+                                        {% else %}
+                                            0%
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {% if not activos %}
+            <div class="empty-state">
+                <div>📭</div>
+                <h3>No hay datos para generar el reporte</h3>
+                <p>Registra algunos activos para ver análisis y estadísticas</p>
+                <a href="{{ url_for('registrar_activo') }}" class="btn btn-success" style="margin-top: 15px;">
+                    ➕ Registrar Primer Activo
+                </a>
+            </div>
+            {% endif %}
+
+            <!-- Información para Impresión -->
+            <div class="print-only" style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #ccc;">
+                <p><strong>Reporte generado el:</strong> {{ now.strftime('%d/%m/%Y %H:%M') }}</p>
+                <p><strong>Sistema:</strong> Panadería Semillas - Módulo de Activos Fijos</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📊 Reporte de activos generado');
+            console.log('Total de activos: {{ activos|length }}');
+            console.log('Valor total: ${{ total_valor }}');
+        });
+    </script>
+</body>
+</html>

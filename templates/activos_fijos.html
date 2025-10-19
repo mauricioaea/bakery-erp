@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activos Fijos - Panadería</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: white;
+            padding: 30px;
+            text-align: center;
+            border-bottom: 3px solid #f8f9fa;
+        }
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        .subtitle {
+            color: #666;
+            font-size: 1.2em;
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        .metric-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-left: 4px solid #ffc107;
+        }
+        .metric-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .metric-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .actions-bar {
+            background: #ffc107;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-warning {
+            background: #ffc107;
+            color: black;
+        }
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .content {
+            padding: 20px;
+        }
+        .assets-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .asset-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 1px solid #e9ecef;
+            transition: transform 0.3s ease;
+        }
+        .asset-card:hover {
+            transform: translateY(-5px);
+        }
+        .asset-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .asset-name {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+        }
+        .asset-category {
+            background: #e9ecef;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            color: #666;
+        }
+        .asset-details {
+            margin-bottom: 15px;
+        }
+        .asset-detail {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+        .asset-value {
+            font-weight: bold;
+            color: #333;
+        }
+        .asset-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 0.8em;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .empty-state i {
+            font-size: 3em;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .back-btn {
+            background: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Botón Volver -->
+        <div style="padding: 20px 20px 0 20px;">
+            <a href="{{ url_for('dashboard') }}" class="back-btn">← Volver al Dashboard</a>
+        </div>
+
+        <!-- Mensajes Flash -->
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <div class="header">
+            <h1>🏢 Gestión de Activos Fijos</h1>
+            <p class="subtitle">Administra todos los equipos, herramientas e inversiones de tu panadería</p>
+        </div>
+
+        <!-- Métricas -->
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-value">{{ total_activos }}</div>
+                <div class="metric-label">Total de Activos</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">${{ "{:,.0f}".format(valor_total) }}</div>
+                <div class="metric-label">Valor Total</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">{{ activos_mantenimiento }}</div>
+                <div class="metric-label">En Mantenimiento</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">{{ proxima_depreciacion }}</div>
+                <div class="metric-label">Próxima Depreciación</div>
+            </div>
+        </div>
+
+        <!-- Barra de Acciones -->
+        <div class="actions-bar">
+            <div>
+                <h3 style="color: black; margin: 0;">Acciones Rápidas</h3>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <a href="{{ url_for('registrar_activo') }}" class="btn btn-success">➕ Nuevo Activo</a>
+                <a href="{{ url_for('lista_activos') }}" class="btn btn-primary">📋 Lista Completa</a>
+                <a href="{{ url_for('reporte_activos') }}" class="btn btn-warning">📊 Generar Reporte</a>
+            </div>
+        </div>
+
+        <!-- Contenido Principal -->
+        <div class="content">
+            <h3>📦 Activos Recientes</h3>
+            
+            {% if activos %}
+            <div class="assets-grid">
+                {% for activo in activos[:6] %}
+                <div class="asset-card">
+                    <div class="asset-header">
+                        <div class="asset-name">{{ activo.nombre }}</div>
+                        <div class="asset-category">{{ categorias[activo.categoria] }}</div>
+                    </div>
+                    
+                    <div class="asset-details">
+                        <div class="asset-detail">
+                            <span>Valor:</span>
+                            <span class="asset-value">${{ "{:,.0f}".format(activo.valor_compra) }}</span>
+                        </div>
+                        <div class="asset-detail">
+                            <span>Fecha Compra:</span>
+                            <span class="asset-value">{{ activo.fecha_compra.strftime('%d/%m/%Y') }}</span>
+                        </div>
+                        <div class="asset-detail">
+                            <span>Valor Actual:</span>
+                            <span class="asset-value">${{ "{:,.0f}".format(activo.valor_actual()) }}</span>
+                        </div>
+                        <div class="asset-detail">
+                            <span>Estado:</span>
+                            <span class="asset-value" style="color: {% if activo.estado == 'ACTIVO' %}#28a745{% elif activo.estado == 'MANTENIMIENTO' %}#ffc107{% else %}#dc3545{% endif %};">
+                                {{ activo.estado }}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="asset-actions">
+                        <button class="btn btn-primary btn-sm">👁️ Ver</button>
+                        <button class="btn btn-warning btn-sm">✏️ Editar</button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div>📭</div>
+                <h3>No hay activos registrados</h3>
+                <p>Comienza registrando tu primer activo fijo</p>
+                <a href="{{ url_for('registrar_activo') }}" class="btn btn-success" style="margin-top: 15px;">
+                    ➕ Registrar Primer Activo
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        console.log('🏢 Módulo de Activos Fijos cargado');
+        console.log('Total de activos: {{ total_activos }}');
+        console.log('Valor total: ${{ valor_total }}');
+    </script>
+</body>
+</html>
