@@ -231,7 +231,7 @@
             background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%);
         }
 
-        /* Estilos para tarjeta de activos fijos */
+        /* Estilos para tarjeta de activos fijos - CORREGIDOS */
         .assets-highlight {
             border: 3px solid #ffc107;
             position: relative;
@@ -251,23 +251,37 @@
         .card-icon-assets {
             background: linear-gradient(135deg, #ffc107 0%, #ffd54f 100%) !important;
         }
-        .assets-stats {
+        
+        /* Botones para activos fijos */
+        .assets-buttons {
             display: flex;
-            justify-content: space-around;
-            margin: 15px 0;
-            text-align: center;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
         }
-        .stat-item {
-            flex: 1;
-        }
-        .stat-value {
-            font-size: 1.5em;
+        .btn-manage {
+            background: #ffc107;
+            color: black;
+            padding: 10px 20px;
+            border-radius: 20px;
+            text-decoration: none;
             font-weight: bold;
-            color: #333;
+            transition: all 0.3s ease;
+            border: 2px solid #ffc107;
         }
-        .stat-label {
-            font-size: 0.8em;
-            color: #666;
+        .btn-new {
+            background: transparent;
+            color: #333;
+            padding: 10px 20px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            border: 2px solid #ffc107;
+        }
+        .btn-manage:hover, .btn-new:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(255, 193, 7, 0.3);
         }
     </style>
 </head>
@@ -311,7 +325,7 @@
             </div>
 
             <!-- 🆕 MÓDULO: PRODUCCIÓN DIARIA -->
-            <div class="card production-highlight">
+            <div class="card">
                 <div class="card-icon card-icon-production">🏭</div>
                 <h3>Producción Diaria</h3>
                 <p>Gestión de stock en vitrina, órdenes de producción y alertas inteligentes en tiempo real</p>
@@ -319,40 +333,14 @@
             </div>
 
             <!-- 🆕 MÓDULO: PRODUCTOS EXTERNOS -->
-            <div class="card external-highlight">
+            <div class="card">
                 <div class="card-icon card-icon-external">🥤</div>
                 <h3>Productos Externos</h3>
                 <p>Gestionar bebidas, helados y productos externos con control de stock y utilidades</p>
                 <a href="{{ url_for('productos_externos') }}" class="card-btn">➕ Agregar Productos</a>
             </div>
 
-            <!-- 🆕 MÓDULO: ACTIVOS FIJOS -->
-            <div class="card assets-highlight">
-                <div class="card-icon card-icon-assets">🏢</div>
-                <h3>Activos Fijos</h3>
-                <p>Gestionar equipos, herramientas, mobiliario y todas las inversiones de la panadería</p>
-                
-                <div class="assets-stats">
-                    <div class="stat-item">
-                        <div class="stat-value" id="total-activos">0</div>
-                        <div class="stat-label">Total</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value">$<span id="valor-activos">0</span></div>
-                        <div class="stat-label">Valor</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value" id="mantenimiento-activos">0</div>
-                        <div class="stat-label">Manten.</div>
-                    </div>
-                </div>
-                
-                <div style="display: flex; gap: 10px; justify-content: center;">
-                    <a href="{{ url_for('activos_fijos') }}" class="card-btn" style="background: #ffc107; color: black;">Gestionar</a>
-                    <a href="{{ url_for('registrar_activo') }}" class="card-btn" style="background: transparent; border: 2px solid #ffc107; color: #333;">Nuevo</a>
-                </div>
-            </div>
-
+            
             <!-- Recetas -->
             <div class="card">
                 <div class="card-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">👨‍🍳</div>
@@ -391,6 +379,19 @@
                 <h3>Reportes Profesionales</h3>
                 <p>Genera reportes contables y analíticos para tu negocio</p>
                 <a href="{{ url_for('reportes') }}" class="card-btn">📈 Ver Reportes</a>
+            </div>
+
+            <!--  MÓDULO: ACTIVOS FIJOS -->
+            <div class="card">
+                <div class="card-icon card-icon-assets">🏢</div>
+                <h3>Activos Fijos</h3>
+                <p>Gestionar equipos, herramientas, mobiliario y todas las inversiones de la panadería</p>
+                
+                <!-- Botones de gestión - SIN MÉTRICAS NUMÉRICAS -->
+                <div class="assets-buttons">
+                    <a href="{{ url_for('activos_fijos') }}" class="btn-manage">Gestionar</a>
+                    <a href="{{ url_for('registrar_activo') }}" class="btn-new">Nuevo</a>
+                </div>
             </div>
 
             <!-- Gestión de Usuarios -->
@@ -449,21 +450,11 @@
                 }, 1100);
             }
             
-            // Cargar métricas de activos fijos
-            fetch('/api/activos_metrics')
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('total-activos').textContent = data.total_activos;
-                    document.getElementById('valor-activos').textContent = data.valor_total.toLocaleString();
-                    document.getElementById('mantenimiento-activos').textContent = data.activos_mantenimiento;
-                })
-                .catch(error => console.error('Error loading activos metrics:', error));
-            
             console.log('🎯 Dashboard cargado. Módulos activos:');
             console.log('- 💳 Punto de Venta');
             console.log('- 🏭 Producción Diaria'); 
             console.log('- 🥤 Productos Externos');
-            console.log('- 🏢 Activos Fijos');
+            console.log('- 🏢 Activos Fijos (sin métricas)');
         });
     </script>
 </body>

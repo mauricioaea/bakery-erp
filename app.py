@@ -1,5 +1,6 @@
 import os
 import uuid
+import json
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, Response
 from flask_login import LoginManager, login_required, current_user, login_user, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -10,6 +11,7 @@ from io import BytesIO
 import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('Agg')
+from models import JornadaVentas, CierreDiario, obtener_jornada_activa, cerrar_jornada_actual, obtener_ventas_dia, obtener_historial_cierres
 
 # Obtener la ruta base del proyecto
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -2780,6 +2782,106 @@ def crear_productos_prueba():
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+    
+# =============================================
+# RUTAS PARA CIERRE DIARIO - AGREGAR ANTES DE LOS REPORTES PDF
+# =============================================
+
+@app.route('/api/cierre_diario/estado')
+def estado_cierre_diario():
+    """API para obtener estado actual del día"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    hoy = datetime.now().date()
+    jornada = obtener_jornada_activa()
+    
+    # Obtener ventas del día actual
+    ventas_hoy = obtener_ventas_dia(hoy)
+    total_hoy = sum(venta.total for venta in ventas_hoy)
+    
+    # Verificar si ya se hizo cierre hoy
+    cierre_hoy = CierreDiario.query.filter_by(fecha=hoy).first()
+    
+    return jsonify({
+        'fecha': hoy.isoformat(),
+        'jornada_activa': jornada.estado == 'ACTIVA',
+        'total_ventas_hoy': total_hoy,
+        'total_transacciones': len(ventas_hoy),
+        'cierre_realizado': cierre_hoy is not None,
+        'hora_actual': datetime.now().strftime('%H:%M')
+    })
+
+@app.route('/api/cierre_diario/procesar', methods=['POST'])
+def procesar_cierre_diario():
+    """API para procesar el cierre diario"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        cierre, mensaje = cerrar_jornada_actual()
+        
+        if cierre:
+            return jsonify({
+                'success': True,
+                'mensaje': mensaje,
+                'cierre': {
+                    'fecha': cierre.fecha.isoformat(),
+                    'total_ventas': cierre.total_ventas,
+                    'total_transacciones': cierre.total_transacciones,
+                    'tendencia': cierre.tendencia
+                }
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': mensaje
+            }), 400
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'Error al procesar cierre: {str(e)}'
+        }), 500
+
+@app.route('/api/cierre_diario/historial')
+def historial_cierres():
+    """API para obtener historial de cierres"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    limite = request.args.get('limite', 30, type=int)
+    cierres = obtener_historial_cierres(limite)
+    
+    resultado = []
+    for cierre in cierres:
+        resultado.append({
+            'fecha': cierre.fecha.isoformat(),
+            'total_ventas': cierre.total_ventas,
+            'total_transacciones': cierre.total_transacciones,
+            'total_efectivo': cierre.total_efectivo,
+            'total_transferencia': cierre.total_transferencia,
+            'total_tarjeta': cierre.total_tarjeta,
+            'tendencia': cierre.tendencia,
+            'productos_top': json.loads(cierre.productos_top) if cierre.productos_top else []
+        })
+    
+    return jsonify(resultado)
+
+@app.route('/cierre_diario')
+def pagina_cierre_diario():
+    """Página de cierre diario"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    hoy = datetime.now().date()
+    cierre_hoy = CierreDiario.query.filter_by(fecha=hoy).first()
+    ventas_hoy = obtener_ventas_dia(hoy)
+    
+    return render_template('cierre_diario.html',
+                         cierre_hoy=cierre_hoy,
+                         ventas_hoy=ventas_hoy,
+                         hoy=hoy)
 
 # =============================================
 # RUTAS DE REPORTES PDF CON APRENDIZAJE AUTOMÁTICO
@@ -3859,4 +3961,5 @@ def api_activos_metrics():
     return jsonify(metrics)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
+

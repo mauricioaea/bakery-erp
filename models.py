@@ -1,3 +1,4 @@
+import json
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from datetime import datetime, timedelta
@@ -818,6 +819,58 @@ class Factura(db.Model):
     
     venta = db.relationship('Venta', backref='factura')
     
+    
+# =============================================
+# NUEVAS TABLAS PARA CIERRE DIARIO - AGREGAR ANTES DE LAS FUNCIONES ML
+# =============================================
+
+class JornadaVentas(db.Model):
+    """Control de jornadas comerciales diarias"""
+    __tablename__ = 'jornadas_ventas'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    fecha = db.Column(db.Date, nullable=False, unique=True)
+    estado = db.Column(db.String(20), default='ACTIVA')  # ACTIVA, CERRADA
+    total_ventas = db.Column(db.Float, default=0)
+    total_efectivo = db.Column(db.Float, default=0)
+    total_transferencia = db.Column(db.Float, default=0)
+    total_tarjeta = db.Column(db.Float, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    cerrada_at = db.Column(db.DateTime)
+    
+    def __repr__(self):
+        return f'<Jornada {self.fecha} - {self.estado}>'
+
+class CierreDiario(db.Model):
+    """Registro de cierres diarios"""
+    __tablename__ = 'cierres_diarios'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    fecha = db.Column(db.Date, nullable=False, unique=True)
+    jornada_id = db.Column(db.Integer, db.ForeignKey('jornadas_ventas.id'))
+    
+    # TOTALES CALCULADOS
+    total_ventas = db.Column(db.Float, nullable=False)
+    total_efectivo = db.Column(db.Float, nullable=False)
+    total_transferencia = db.Column(db.Float, nullable=False)
+    total_tarjeta = db.Column(db.Float, nullable=False)
+    total_transacciones = db.Column(db.Integer, nullable=False)
+    
+    # PRODUCTOS MÁS VENDIDOS (serializado como JSON)
+    productos_top = db.Column(db.Text)  # JSON con productos más vendidos
+    
+    # COMPARATIVAS
+    ventas_dia_anterior = db.Column(db.Float, default=0)
+    tendencia = db.Column(db.Float, default=0)  # % vs día anterior
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relación
+    jornada = db.relationship('JornadaVentas', backref=db.backref('cierre', uselist=False))
+    
+    def __repr__(self):
+        return f'<CierreDiario {self.fecha} - ${self.total_ventas:,.0f}>'
+    
 # =============================================
 # FUNCIONES DE APOYO PARA ANÁLISIS ML (agregar al final de models.py)
 # =============================================
@@ -1113,6 +1166,126 @@ def obtener_productos_sin_ventas_recientes(dias=7):
         print(f"Error en obtener_productos_sin_ventas_recientes: {e}")
         # En caso de error, retornar lista vacía para no romper el sistema
         return []
+
+# =============================================
+# FUNCIONES PARA CIERRE DIARIO - AGREGAR DESPUÉS DE LAS FUNCIONES ML
+# =============================================
+
+def obtener_jornada_activa():
+    """Obtiene o crea la jornada activa del día actual"""
+    hoy = datetime.now().date()
+    jornada = JornadaVentas.query.filter_by(fecha=hoy).first()
+    
+    if not jornada:
+        jornada = JornadaVentas(fecha=hoy, estado='ACTIVA')
+        db.session.add(jornada)
+        db.session.commit()
+    
+    return jornada
+
+def cerrar_jornada_actual():
+    """Cierra la jornada actual y crea registro de cierre"""
+    hoy = datetime.now().date()
+    jornada = JornadaVentas.query.filter_by(fecha=hoy, estado='ACTIVA').first()
+    
+    if not jornada:
+        return None, "No hay jornada activa para cerrar"
+    
+    try:
+        # Obtener ventas del día
+        inicio_dia = datetime.combine(hoy, datetime.min.time())
+        fin_dia = datetime.combine(hoy, datetime.max.time())
+        
+        ventas_dia = Venta.query.filter(
+            Venta.fecha_hora >= inicio_dia,
+            Venta.fecha_hora <= fin_dia
+        ).all()
+        
+        # Calcular totales
+        total_ventas = sum(venta.total for venta in ventas_dia)
+        total_efectivo = sum(v.total for v in ventas_dia if v.metodo_pago == 'efectivo')
+        total_transferencia = sum(v.total for v in ventas_dia if v.metodo_pago == 'transferencia')
+        total_tarjeta = sum(v.total for v in ventas_dia if v.metodo_pago == 'tarjeta')
+        
+        # Obtener productos más vendidos
+        detalles_dia = DetalleVenta.query.join(Venta).filter(
+            Venta.fecha_hora >= inicio_dia,
+            Venta.fecha_hora <= fin_dia
+        ).all()
+        
+        productos_vendidos = {}
+        for detalle in detalles_dia:
+            if detalle.producto:
+                nombre = detalle.producto.nombre
+            elif detalle.producto_externo:
+                nombre = detalle.producto_externo.nombre
+            else:
+                continue
+                
+            if nombre not in productos_vendidos:
+                productos_vendidos[nombre] = 0
+            productos_vendidos[nombre] += detalle.cantidad
+        
+        productos_top = sorted(productos_vendidos.items(), key=lambda x: x[1], reverse=True)[:5]
+        
+        # Calcular comparativa con día anterior
+        dia_anterior = hoy - timedelta(days=1)
+        ventas_anterior = Venta.query.filter(
+            db.func.date(Venta.fecha_hora) == dia_anterior
+        ).all()
+        total_anterior = sum(v.total for v in ventas_anterior)
+        
+        tendencia = 0
+        if total_anterior > 0:
+            tendencia = ((total_ventas - total_anterior) / total_anterior) * 100
+        
+        # Crear registro de cierre
+        cierre = CierreDiario(
+            fecha=hoy,
+            jornada_id=jornada.id,
+            total_ventas=total_ventas,
+            total_efectivo=total_efectivo,
+            total_transferencia=total_transferencia,
+            total_tarjeta=total_tarjeta,
+            total_transacciones=len(ventas_dia),
+            productos_top=json.dumps(productos_top),
+            ventas_dia_anterior=total_anterior,
+            tendencia=tendencia
+        )
+        
+        # Cerrar jornada
+        jornada.estado = 'CERRADA'
+        jornada.cerrada_at = datetime.utcnow()
+        jornada.total_ventas = total_ventas
+        jornada.total_efectivo = total_efectivo
+        jornada.total_transferencia = total_transferencia
+        jornada.total_tarjeta = total_tarjeta
+        
+        db.session.add(cierre)
+        db.session.commit()
+        
+        return cierre, "Jornada cerrada exitosamente"
+        
+    except Exception as e:
+        db.session.rollback()
+        return None, f"Error al cerrar jornada: {str(e)}"
+
+def obtener_ventas_dia(fecha=None):
+    """Obtiene ventas de un día específico (hoy por defecto)"""
+    if not fecha:
+        fecha = datetime.now().date()
+    
+    inicio_dia = datetime.combine(fecha, datetime.min.time())
+    fin_dia = datetime.combine(fecha, datetime.max.time())
+    
+    return Venta.query.filter(
+        Venta.fecha_hora >= inicio_dia,
+        Venta.fecha_hora <= fin_dia
+    ).all()
+
+def obtener_historial_cierres(limite=30):
+    """Obtiene historial de cierres recientes"""
+    return CierreDiario.query.order_by(CierreDiario.fecha.desc()).limit(limite).all()
     
 
 # ======================================= NUEVO MÓDULO FINANCIERO MEJORADO =================================================

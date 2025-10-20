@@ -20,7 +20,35 @@ const iconosCategorias = {
     'Promociones': 'fas fa-tag',
     'General': 'fas fa-box'
 };
+// =============================================
+// CONFIGURACIÓN DE TICKETS PERSONALIZADOS
+// =============================================
 
+const configTicket = {
+    empresa: {
+        nombre: "Panadería Semillas",
+        direccion: "Cra 18 #9-45 Atahualpa #123",
+        telefono: "+57 3189098818",
+        ruc: "123456789-0"  // ← Cambié "rut" por "ruc"
+    },
+    ticket: {
+        mostrarLogo: true,
+        logoUrl: "static/img/semillas.png",  // ← Ruta CORREGIDA
+        mensajePersonalizado: "¡Gracias por su compra! Vuelva pronto",
+        mostrarQR: true,
+        qrMensaje: "Escanea para dejar tu reseña",
+        qrUrl: "https://semillasbakery.com/resenas",
+        mostrarPromociones: true,
+        
+    },
+    diseño: {
+        encabezadoColor: "#2c3e50",
+        textoColor: "#2c3e50", 
+        enfasisColor: "#e74c3c",
+        fontSize: "12px",
+        mostrarBordes: true
+    }
+};
 // =============================================
 // 1. INICIALIZACIÓN
 // =============================================
@@ -29,6 +57,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Cargar carrito desde localStorage
     cargarCarritoPersistente();
+
+    cargarConfiguracionTickets()
     
     // Cargar productos y categorías
     cargarProductos();
@@ -41,6 +71,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Configurar búsqueda en tiempo real
     configurarBusquedaTiempoReal();
+    
+    // Verificar estado de cierre diario
+    verificarEstadoCierreDiario();
     
     console.log('✅ POS Moderno inicializado');
 });
@@ -521,7 +554,276 @@ function limpiarCarrito() {
         mostrarNotificacion('🛒 Carrito limpiado', 'info');
     }
 }
+// =============================================
+// GENERADOR DE TICKETS OPTIMIZADO PARA IMPRESORAS TÉRMICAS
+// =============================================
 
+function generarTicketHTML(ventaData) {
+    const { carrito, total, metodo_pago, numero_factura, fecha } = ventaData;
+    
+    return `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Ticket - ${configTicket.empresa.nombre}</title>
+            <style>
+                /* RESET PARA IMPRESORAS TÉRMICAS */
+                * { 
+                    margin: 0; 
+                    padding: 0; 
+                    box-sizing: border-box; 
+                    font-family: 'Courier New', monospace !important;
+                }
+                
+                body { 
+                    width: 80mm !important; 
+                    max-width: 80mm !important;
+                    margin: 0 !important;
+                    padding: 2mm !important;
+                    font-size: 12px !important;
+                    line-height: 1.2 !important;
+                    background: white !important;
+                    color: black !important;
+                }
+                
+                .ticket-container {
+                    width: 100% !important;
+                    max-width: 76mm !important;
+                    margin: 0 auto !important;
+                }
+                
+                /* ENCABEZADO */
+                .ticket-header {
+                    text-align: center;
+                    border-bottom: 1px dashed #000;
+                    padding-bottom: 3mm;
+                    margin-bottom: 3mm;
+                }
+                
+                .ticket-empresa {
+                    font-weight: bold;
+                    font-size: 14px;
+                    margin-bottom: 2mm;
+                    text-transform: uppercase;
+                }
+                
+                .ticket-info {
+                    font-size: 10px;
+                    margin-bottom: 2mm;
+                }
+                
+                /* INFORMACIÓN DE VENTA */
+                .venta-info {
+                    text-align: center;
+                    margin-bottom: 3mm;
+                    font-size: 11px;
+                }
+                
+                /* TABLA DE PRODUCTOS */
+                .ticket-items {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin: 3mm 0;
+                    font-size: 11px;
+                }
+                
+                .ticket-items th {
+                    text-align: left;
+                    border-bottom: 1px solid #000;
+                    padding: 1mm 0;
+                    font-weight: bold;
+                }
+                
+                .ticket-items td {
+                    padding: 1mm 0;
+                    border-bottom: 1px dotted #ccc;
+                }
+                
+                .cantidad { text-align: center; width: 15%; }
+                .precio { text-align: right; width: 25%; }
+                .producto { width: 60%; }
+                
+                /* TOTAL */
+                .ticket-total {
+                    font-weight: bold;
+                    font-size: 13px;
+                    text-align: right;
+                    margin-top: 3mm;
+                    padding-top: 2mm;
+                    border-top: 2px dashed #000;
+                }
+                
+                /* MENSAJES */
+                .ticket-mensaje {
+                    text-align: center;
+                    margin: 3mm 0;
+                    padding: 2mm;
+                    font-style: italic;
+                    font-size: 10px;
+                }
+                
+                .ticket-promocion {
+                    text-align: center;
+                    font-size: 9px;
+                    margin: 2mm 0;
+                    font-weight: bold;
+                }
+                
+                /* QR SIMPLIFICADO */
+                .ticket-qr {
+                    text-align: center;
+                    margin: 3mm 0;
+                    font-size: 9px;
+                }
+                
+                .qr-placeholder {
+                    background: #f0f0f0;
+                    padding: 3mm;
+                    display: inline-block;
+                    margin: 2mm 0;
+                    font-size: 8px;
+                }
+                
+                /* FOOTER */
+                .ticket-footer {
+                    text-align: center;
+                    font-size: 8px;
+                    margin-top: 4mm;
+                    border-top: 1px dashed #ccc;
+                    padding-top: 2mm;
+                }
+                
+                /* OCULTAR ELEMENTOS EN IMPRESIÓN */
+                @media print {
+                    .no-print { display: none !important; }
+                    body { 
+                        width: 80mm !important; 
+                        margin: 0 !important; 
+                        padding: 0 !important;
+                    }
+                    .ticket-container { 
+                        padding: 2mm !important;
+                    }
+                }
+                
+                /* ESTILOS PARA VISTA PREVIA */
+                @media screen {
+                    body { 
+                        background: #f5f5f5; 
+                        padding: 10px;
+                    }
+                    .ticket-container {
+                        background: white;
+                        padding: 5mm;
+                        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="ticket-container">
+                <!-- ENCABEZADO CON LOGO -->
+                <div class="ticket-header">
+                    ${configTicket.ticket.mostrarLogo ? 
+                        `<div style="text-align: center; margin-bottom: 2mm;">
+                            <strong>[LOGO]</strong><br>
+                            <small>${configTicket.empresa.nombre}</small>
+                        </div>` 
+                        : `<div class="ticket-empresa">${configTicket.empresa.nombre}</div>`
+                    }
+                    
+                    <div class="ticket-info">
+                        ${configTicket.empresa.direccion}<br>
+                        Tel: ${configTicket.empresa.telefono}<br>
+                        ${configTicket.empresa.ruc ? `NIT: ${configTicket.empresa.ruc}` : ''}
+                    </div>
+                </div>
+
+                <!-- INFORMACIÓN DE LA VENTA -->
+                <div class="venta-info">
+                    <strong>FACTURA: ${numero_factura}</strong><br>
+                    ${new Date(fecha).toLocaleDateString('es-CO')} ${new Date(fecha).toLocaleTimeString('es-CO', {hour: '2-digit', minute:'2-digit'})}<br>
+                    Método: ${metodo_pago.toUpperCase()}
+                </div>
+
+                <!-- ITEMS DE LA VENTA -->
+                <table class="ticket-items">
+                    <thead>
+                        <tr>
+                            <th class="producto">PRODUCTO</th>
+                            <th class="cantidad">CANT</th>
+                            <th class="precio">TOTAL</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${carrito.map(item => `
+                            <tr>
+                                <td class="producto">${item.nombre}</td>
+                                <td class="cantidad">${item.cantidad}</td>
+                                <td class="precio">$${(item.precio * item.cantidad).toLocaleString()}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+
+                <!-- TOTAL -->
+                <div class="ticket-total">
+                    TOTAL: $${total.toLocaleString()}
+                </div>
+
+                <!-- MENSAJE PERSONALIZADO -->
+                ${configTicket.ticket.mensajePersonalizado ? `
+                    <div class="ticket-mensaje">
+                        ${configTicket.ticket.mensajePersonalizado}
+                    </div>
+                ` : ''}
+
+                <!-- PROMOCIÓN -->
+                ${configTicket.ticket.mostrarPromociones && configTicket.ticket.promocionActual ? `
+                    <div class="ticket-promocion">
+                        💫 ${configTicket.ticket.promocionActual}
+                    </div>
+                ` : ''}
+
+                <!-- CÓDIGO QR -->
+                ${configTicket.ticket.mostrarQR ? `
+                    <div class="ticket-qr">
+                        <div>${configTicket.ticket.qrMensaje}</div>
+                        <div class="qr-placeholder">
+                            [ CÓDIGO QR ]<br>
+                            <small>${configTicket.ticket.qrUrl}</small>
+                        </div>
+                    </div>
+                ` : ''}
+
+                <!-- FOOTER -->
+                <div class="ticket-footer">
+                    ¡Gracias por su preferencia!<br>
+                    Sistema POS Panadería v1.0
+                </div>
+
+                <!-- BOTONES SOLO EN VISTA PREVIA -->
+                <div class="no-print" style="text-align: center; margin-top: 5mm; padding-top: 3mm; border-top: 1px dashed #ccc;">
+                    <button onclick="window.print()" style="padding: 5px 10px; margin: 0 5px; font-size: 12px;">
+                        🖨️ Imprimir
+                    </button>
+                    <button onclick="window.close()" style="padding: 5px 10px; margin: 0 5px; font-size: 12px;">
+                        ❌ Cerrar
+                    </button>
+                </div>
+            </div>
+            
+            <script>
+                // Auto-imprimir en impresoras térmicas
+                setTimeout(() => {
+                    window.print();
+                }, 500);
+            </script>
+        </body>
+        </html>
+    `;
+}
 // =============================================
 // 7. PROCESAMIENTO DE VENTA
 // =============================================
@@ -589,12 +891,177 @@ async function procesarVenta() {
     }
 }
 
+// =============================================
+// IMPRESIÓN MEJORADA DE TICKETS
+// =============================================
+
 function imprimirFactura() {
-    if (window.ultimaFacturaId) {
-        window.open(`/imprimir_factura/${window.ultimaFacturaId}`, '_blank');
+    if (!window.ultimaFacturaId) {
+        mostrarNotificacion('❌ No hay factura para imprimir', 'error');
+        return;
+    }
+
+    try {
+        // Datos de ejemplo para el ticket (en un sistema real vendrían del backend)
+        const ticketData = {
+            numero_factura: `FAC-${Date.now().toString().slice(-6)}`,
+            fecha: new Date().toISOString(),
+            carrito: carrito,
+            total: window.ultimoTotal || calcularTotalCarrito(),
+            metodo_pago: document.querySelector('input[name="metodoPago"]:checked').value
+        };
+
+        // Generar ventana de ticket personalizado
+        const ticketWindow = window.open('', '_blank', 'width=400,height=600');
+        ticketWindow.document.write(generarTicketHTML(ticketData));
+        ticketWindow.document.close();
+
+        // Auto-imprimir después de cargar (opcional)
+        setTimeout(() => {
+            ticketWindow.print();
+        }, 500);
+
+    } catch (error) {
+        console.error('Error generando ticket:', error);
+        // Fallback a la impresión original
+        if (window.ultimaFacturaId) {
+            window.open(`/imprimir_factura/${window.ultimaFacturaId}`, '_blank');
+        }
     }
 }
 
+// Función auxiliar para calcular total
+function calcularTotalCarrito() {
+    return carrito.reduce((total, item) => total + (item.precio * item.cantidad), 0);
+}
+
+// =============================================
+// CONFIGURADOR DE TICKETS DESDE INTERFAZ
+// =============================================
+
+function mostrarConfiguracionTickets() {
+    const modalHTML = `
+        <div class="modal fade" id="configTicketModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">
+                            <i class="fas fa-receipt me-2"></i>
+                            Configuración de Tickets
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="formConfigTicket">
+                            <!-- Información de Empresa -->
+                            <div class="mb-3">
+                                <label class="form-label">Nombre de Empresa</label>
+                                <input type="text" class="form-control" 
+                                       value="${configTicket.empresa.nombre}" 
+                                       id="empresaNombre">
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label">Dirección</label>
+                                    <input type="text" class="form-control" 
+                                           value="${configTicket.empresa.direccion}" 
+                                           id="empresaDireccion">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Teléfono</label>
+                                    <input type="text" class="form-control" 
+                                           value="${configTicket.empresa.telefono}" 
+                                           id="empresaTelefono">
+                                </div>
+                            </div>
+
+                            <!-- Mensajes Personalizados -->
+                            <div class="mb-3">
+                                <label class="form-label">Mensaje Personalizado</label>
+                                <textarea class="form-control" rows="2" 
+                                          id="ticketMensaje">${configTicket.ticket.mensajePersonalizado}</textarea>
+                            </div>
+
+                            <!-- Opciones de Ticket -->
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" 
+                                               ${configTicket.ticket.mostrarLogo ? 'checked' : ''}
+                                               id="mostrarLogo">
+                                        <label class="form-check-label">Mostrar Logo</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" 
+                                               ${configTicket.ticket.mostrarQR ? 'checked' : ''}
+                                               id="mostrarQR">
+                                        <label class="form-check-label">Mostrar QR</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Vista Previa -->
+                            <div class="mt-4 p-3 border rounded">
+                                <h6>Vista Previa del Ticket</h6>
+                                <div style="font-size: 12px; font-family: 'Courier New';">
+                                    <strong>${configTicket.empresa.nombre}</strong><br>
+                                    ${configTicket.empresa.direccion}<br>
+                                    ${configTicket.ticket.mensajePersonalizado}
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" onclick="guardarConfigTicket()">
+                            Guardar Configuración
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Agregar modal al DOM
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    const modal = new bootstrap.Modal(document.getElementById('configTicketModal'));
+    modal.show();
+
+    // Limpiar al cerrar
+    document.getElementById('configTicketModal').addEventListener('hidden.bs.modal', function() {
+        this.remove();
+    });
+}
+
+function guardarConfigTicket() {
+    // Actualizar configuración (en un sistema real, guardarías en base de datos)
+    configTicket.empresa.nombre = document.getElementById('empresaNombre').value;
+    configTicket.empresa.direccion = document.getElementById('empresaDireccion').value;
+    configTicket.empresa.telefono = document.getElementById('empresaTelefono').value;
+    configTicket.ticket.mensajePersonalizado = document.getElementById('ticketMensaje').value;
+    configTicket.ticket.mostrarLogo = document.getElementById('mostrarLogo').checked;
+    configTicket.ticket.mostrarQR = document.getElementById('mostrarQR').checked;
+
+    // Guardar en localStorage
+    localStorage.setItem('config_ticket_panaderia', JSON.stringify(configTicket));
+    
+    mostrarNotificacion('✅ Configuración de tickets guardada', 'success');
+    
+    // Cerrar modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('configTicketModal'));
+    modal.hide();
+}
+
+// Cargar configuración al iniciar
+function cargarConfiguracionTickets() {
+    const configGuardada = localStorage.getItem('config_ticket_panaderia');
+    if (configGuardada) {
+        Object.assign(configTicket, JSON.parse(configGuardada));
+    }
+}
 // =============================================
 // 8. DASHBOARD EN TIEMPO REAL
 // =============================================
@@ -607,6 +1074,9 @@ function iniciarDashboardTiempoReal() {
     
     // Actualizar cada 30 segundos
     setInterval(actualizarDashboard, 30000);
+    
+    // Verificar estado de cierre diario cada 30 segundos
+    setInterval(verificarEstadoCierreDiario, 30000);
 }
 
 function actualizarHora() {
@@ -765,7 +1235,148 @@ function abrirAnalisisPredictivo() {
 }
 
 // =============================================
-// 11. INICIALIZACIÓN FINAL
+// 11. FUNCIONES PARA CIERRE DIARIO
+// =============================================
+
+async function procesarCierreDiario() {
+    if (!confirm('¿Estás seguro de que deseas realizar el CIERRE DIARIO?\n\nEsta acción no se puede deshacer y reiniciará los contadores para el siguiente día.')) {
+        return;
+    }
+    
+    const btnCierre = document.getElementById('btnCierreDiario');
+    const textoOriginal = btnCierre.innerHTML;
+    
+    try {
+        btnCierre.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Procesando...';
+        btnCierre.disabled = true;
+        
+        const response = await fetch('/api/cierre_diario/procesar', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const resultado = await response.json();
+        
+        if (resultado.success) {
+            // Mostrar modal de éxito
+            mostrarModalCierreExitoso(resultado.cierre);
+            
+            // Recargar datos del dashboard
+            actualizarDashboard();
+            verificarEstadoCierreDiario();
+            
+            // Reiniciar contadores locales
+            reiniciarContadoresDia();
+            
+        } else {
+            throw new Error(resultado.error);
+        }
+        
+    } catch (error) {
+        console.error('Error en cierre diario:', error);
+        alert('❌ Error al procesar cierre diario: ' + error.message);
+    } finally {
+        btnCierre.innerHTML = textoOriginal;
+        btnCierre.disabled = false;
+    }
+}
+
+function mostrarModalCierreExitoso(cierre) {
+    const modalHTML = `
+        <div class="modal fade" id="cierreExitosoModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title">
+                            <i class="fas fa-check-circle me-2"></i>
+                            Cierre Diario Exitoso
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="text-center mb-3">
+                            <i class="fas fa-lock fa-3x text-success mb-3"></i>
+                            <h4>Jornada Cerrada Correctamente</h4>
+                        </div>
+                        
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <div class="metric-value text-primary">$${cierre.total_ventas.toLocaleString()}</div>
+                                <div class="metric-label">Total Ventas</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="metric-value text-info">${cierre.total_transacciones}</div>
+                                <div class="metric-label">Transacciones</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-3 p-3 bg-light rounded">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Los contadores se han reiniciado para el nuevo día.
+                            </small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+                            <i class="fas fa-check me-1"></i>
+                            Entendido
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Agregar modal al DOM y mostrarlo
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    const modal = new bootstrap.Modal(document.getElementById('cierreExitosoModal'));
+    modal.show();
+    
+    // Limpiar modal después de cerrar
+    document.getElementById('cierreExitosoModal').addEventListener('hidden.bs.modal', function() {
+        this.remove();
+    });
+}
+
+function reiniciarContadoresDia() {
+    // Reiniciar contadores locales del dashboard
+    document.getElementById('ventasHoy').textContent = '0';
+    document.getElementById('ingresosHoy').textContent = '0';
+    document.getElementById('totalItems').textContent = '0';
+    
+    // Aquí puedes agregar más reinicios según necesites
+    console.log('Contadores del día reiniciados');
+}
+
+// Función para verificar estado del cierre diario
+async function verificarEstadoCierreDiario() {
+    try {
+        const response = await fetch('/api/cierre_diario/estado');
+        const estado = await response.json();
+        
+        // Actualizar dashboard con datos reales
+        document.getElementById('ventasHoy').textContent = estado.total_transacciones;
+        document.getElementById('ingresosHoy').textContent = estado.total_ventas_hoy.toLocaleString();
+        
+        // Deshabilitar botón de cierre si ya se realizó
+        const btnCierre = document.getElementById('btnCierreDiario');
+        if (estado.cierre_realizado) {
+            btnCierre.disabled = true;
+            btnCierre.innerHTML = '<i class="fas fa-lock me-2"></i> CERRADO';
+            btnCierre.classList.remove('btn-warning');
+            btnCierre.classList.add('btn-secondary');
+        }
+        
+    } catch (error) {
+        console.error('Error verificando estado de cierre:', error);
+    }
+}
+
+// =============================================
+// 12. INICIALIZACIÓN FINAL
 // =============================================
 console.log('🎯 POS Moderno cargado. Funciones disponibles:');
 console.log('- F1-F8: Navegación rápida por categorías');

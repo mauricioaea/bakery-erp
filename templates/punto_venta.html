@@ -7,6 +7,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/pos-moderno.css') }}" rel="stylesheet">
+    <!-- ✅ CSS RESPONSIVE INTEGRADO EN pos-moderno.css -->
 </head>
 <body>
     <!-- Navbar Superior -->
@@ -51,7 +52,7 @@
             <!-- ============================================= -->
             <!-- COLUMNA IZQUIERDA: CATEGORÍAS Y PRODUCTOS -->
             <!-- ============================================= -->
-            <div class="col-md-9">
+            <div class="col-md-9 main-content">
                 <div class="row h-100">
                     <!-- Sidebar Categorías -->
                     <div class="col-md-3 categorias-sidebar">
@@ -85,7 +86,7 @@
                     <div class="col-md-9">
                         <!-- Barra de Búsqueda Mejorada -->
                         <div class="search-header sticky-top bg-white p-3 border-bottom">
-                            <div class="row g-2">
+                            <div class="row g-2 search-controls">
                                 <div class="col-md-8">
                                     <div class="input-group input-group-lg">
                                         <span class="input-group-text bg-light">
@@ -171,7 +172,7 @@
                                 <i class="fas fa-credit-card me-1"></i>
                                 Métodos de Pago:
                             </label>
-                            <div class="btn-group w-100" role="group">
+                            <div class="btn-group w-100 metodo-pago-container" role="group">
                                 <input type="radio" class="btn-check" name="metodoPago" id="efectivo" value="efectivo" checked>
                                 <label class="btn btn-outline-success btn-sm" for="efectivo">
                                     <i class="fas fa-money-bill-wave"></i>
@@ -197,6 +198,19 @@
                                     disabled>
                                 <i class="fas fa-cash-register me-2"></i>
                                 PROCESAR VENTA
+                            </button>
+                            
+                            <!-- Botón de Cierre Diario -->
+                            <button class="btn btn-warning btn-lg w-100 mb-2" 
+                                    onclick="procesarCierreDiario()" 
+                                    id="btnCierreDiario">
+                                <i class="fas fa-lock me-2"></i>
+                                CIERRE DIARIO
+                            </button>
+
+                            <button class="btn btn-outline-info btn-sm" onclick="mostrarConfiguracionTickets()">
+                                <i class="fas fa-receipt me-1"></i>
+                                Configurar Ticket
                             </button>
                             
                             <div class="btn-group w-100">
@@ -236,6 +250,12 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- ✅ BOTÓN FLOTANTE PARA CARRITO EN MÓVILES -->
+    <div class="carrito-flotante-mobile d-md-none" onclick="toggleCarritoMobile()">
+        <i class="fas fa-shopping-cart"></i>
+        <span class="carrito-contador-badge" id="carritoContadorMobile">0</span>
     </div>
 
     <!-- Modal de Confirmación de Venta -->
@@ -295,5 +315,93 @@
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ url_for('static', filename='js/pos-moderno.js') }}"></script>
+
+    <!-- ✅ SCRIPT PARA FUNCIONALIDADES MÓVILES -->
+    <script>
+        // Funcionalidad para carrito móvil
+        function toggleCarritoMobile() {
+            const carritoSidebar = document.querySelector('.carrito-sidebar');
+            if (carritoSidebar) {
+                carritoSidebar.classList.toggle('mobile-open');
+                
+                // Opcional: Cerrar automáticamente después de procesar venta
+                if (carritoSidebar.classList.contains('mobile-open') && carrito.length === 0) {
+                    setTimeout(() => {
+                        carritoSidebar.classList.remove('mobile-open');
+                    }, 2000);
+                }
+            }
+        }
+
+        function actualizarCarritoMobile() {
+            const contador = document.getElementById('carritoContadorMobile');
+            if (contador) {
+                contador.textContent = carrito.length;
+                if (carrito.length === 0) {
+                    contador.style.display = 'none';
+                } else {
+                    contador.style.display = 'flex';
+                }
+            }
+        }
+
+        // Gestos táctiles para el carrito
+        function configurarGestosTactiles() {
+            let startX = 0;
+            const carritoItems = document.getElementById('carritoItems');
+            
+            if (carritoItems) {
+                carritoItems.addEventListener('touchstart', function(e) {
+                    startX = e.touches[0].clientX;
+                });
+                
+                carritoItems.addEventListener('touchend', function(e) {
+                    if (!startX) return;
+                    
+                    const endX = e.changedTouches[0].clientX;
+                    const diffX = startX - endX;
+                    
+                    // Swipe izquierda (eliminar)
+                    if (diffX > 50) {
+                        const item = e.target.closest('.carrito-item-moderno');
+                        if (item) {
+                            const index = Array.from(item.parentNode.children).indexOf(item);
+                            eliminarDelCarrito(index);
+                        }
+                    }
+                    // Swipe derecha (agregar)
+                    else if (diffX < -50) {
+                        const item = e.target.closest('.carrito-item-moderno');
+                        if (item) {
+                            const index = Array.from(item.parentNode.children).indexOf(item);
+                            modificarCantidad(index, 1);
+                        }
+                    }
+                    
+                    startX = 0;
+                });
+            }
+        }
+
+        // Inicializar cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', function() {
+            configurarGestosTactiles();
+        });
+
+        // Sistema de roles de usuario (ejemplo básico)
+        const roles = {
+            'cajero': ['ventas', 'carrito'],
+            'supervisor': ['ventas', 'reportes', 'cierres'],
+            'admin': ['todo']
+        };
+
+        // Verificar permisos (ejemplo)
+        function verificarPermiso(accion) {
+            // Aquí integrarías con tu sistema de usuarios
+            const usuarioActual = 'cajero'; // Esto vendría de tu backend
+            return roles[usuarioActual]?.includes('todo') || 
+                   roles[usuarioActual]?.includes(accion);
+        }
+    </script>
 </body>
 </html>

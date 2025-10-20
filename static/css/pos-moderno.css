@@ -569,3 +569,357 @@ body {
 .reportes-flotantes .btn:hover i {
     margin-right: 8px;
 }
+
+/* ============================================= */
+/* OPTIMIZACIÓN PARA TABLETAS Y TÁCTIL */
+/* ============================================= */
+
+@media (max-width: 768px) {
+    /* Layout principal - stack vertical */
+    .container-fluid {
+        flex-direction: column !important;
+        height: auto !important;
+        overflow-x: hidden !important;
+    }
+    
+    .row.h-100 {
+        height: auto !important;
+        flex-direction: column !important;
+    }
+    
+    /* Sidebar de categorías se convierte en horizontal */
+    .categorias-sidebar {
+        width: 100% !important;
+        height: auto !important;
+        margin-bottom: 10px !important;
+    }
+    
+    #listaCategorias {
+        display: flex !important;
+        flex-direction: row !important;
+        overflow-x: auto !important;
+        white-space: nowrap !important;
+        flex-wrap: nowrap !important;
+    }
+    
+    #listaCategorias .list-group-item {
+        min-width: 120px !important;
+        text-align: center !important;
+        flex: 0 0 auto !important;
+        white-space: nowrap !important;
+    }
+    
+    #listaCategorias .categoria-icon {
+        margin-right: 0 !important;
+        margin-bottom: 5px !important;
+    }
+    
+    /* Contenedor principal ocupa toda la pantalla */
+    .main-content {
+        width: 100% !important;
+        margin-left: 0 !important;
+        height: 60vh !important;
+        overflow-y: auto !important;
+    }
+    
+    /* Header más compacto */
+    .pos-header {
+        padding: 10px 5px !important;
+    }
+    
+    .navbar-brand {
+        font-size: 1rem !important;
+    }
+    
+    /* Controles de búsqueda en columna */
+    .search-controls {
+        flex-direction: column !important;
+        gap: 8px !important;
+    }
+    
+    .search-controls .input-group {
+        width: 100% !important;
+    }
+    
+    /* Grid de productos - 2 columnas en móviles */
+    .products-grid-container {
+        height: 50vh !important;
+        overflow-y: auto !important;
+    }
+    
+    .products-grid-container .row {
+        margin: 0 -5px !important;
+    }
+    
+    .col-xl-3, .col-lg-4, .col-md-6 {
+        flex: 0 0 50% !important;
+        max-width: 50% !important;
+        padding: 5px !important;
+    }
+    
+    /* Cards de productos más compactas */
+    .producto-card-moderno {
+        padding: 10px !important;
+        margin-bottom: 8px !important;
+        height: auto !important;
+    }
+    
+    .producto-imagen {
+        height: 50px !important;
+        margin-bottom: 8px !important;
+    }
+    
+    .producto-imagen i {
+        font-size: 20px !important;
+    }
+    
+    .producto-nombre {
+        font-size: 12px !important;
+        line-height: 1.2 !important;
+        height: 2.4em !important;
+        overflow: hidden !important;
+    }
+    
+    .producto-precio {
+        font-size: 14px !important;
+    }
+    
+    /* Carrito lateral se convierte en drawer móvil */
+    .carrito-sidebar {
+        position: fixed !important;
+        bottom: -100% !important;
+        left: 0 !important;
+        right: 0 !important;
+        height: 70vh !important;
+        z-index: 1050 !important;
+        border-radius: 15px 15px 0 0 !important;
+        box-shadow: 0 -2px 20px rgba(0,0,0,0.3) !important;
+        transition: bottom 0.3s ease !important;
+        background: white !important;
+    }
+    
+    .carrito-sidebar.mobile-open {
+        bottom: 0 !important;
+    }
+    
+    .carrito-sidebar .card-body {
+        padding: 15px !important;
+        max-height: 50vh !important;
+        overflow-y: auto !important;
+    }
+    
+    /* Botón flotante para abrir carrito */
+    .carrito-flotante-mobile {
+        position: fixed !important;
+        bottom: 20px !important;
+        right: 20px !important;
+        z-index: 1060 !important;
+        background: #28a745 !important;
+        color: white !important;
+        border-radius: 50% !important;
+        width: 60px !important;
+        height: 60px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-shadow: 0 4px 15px rgba(40,167,69,0.4) !important;
+        font-size: 20px !important;
+    }
+    
+    .carrito-contador-badge {
+        position: absolute !important;
+        top: -5px !important;
+        right: -5px !important;
+        background: #dc3545 !important;
+        color: white !important;
+        border-radius: 50% !important;
+        width: 24px !important;
+        height: 24px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 12px !important;
+        font-weight: bold !important;
+    }
+    
+    /* Ajustar items del carrito */
+    .carrito-item-moderno {
+        padding: 10px !important;
+        margin-bottom: 8px !important;
+    }
+    
+    .carrito-item-nombre {
+        font-size: 14px !important;
+    }
+    
+    .carrito-item-precio {
+        font-size: 14px !important;
+    }
+    
+    /* Botones de acción más pequeños pero táctiles */
+    .carrito-item-actions .btn {
+        min-width: 36px !important;
+        min-height: 36px !important;
+        padding: 5px !important;
+    }
+    
+    /* Botón procesar venta fijo en bottom */
+    #btnPagar {
+        position: sticky !important;
+        bottom: 0 !important;
+        border-radius: 0 !important;
+        height: 50px !important;
+        font-size: 16px !important;
+        z-index: 10 !important;
+    }
+    
+    /* Ocultar dashboard en móviles para ahorrar espacio */
+    .mini-dashboard {
+        display: none !important;
+    }
+    
+    /* Reportes flotantes en móvil */
+    .reportes-flotantes {
+        bottom: 90px !important;
+        right: 10px !important;
+    }
+}
+
+/* ============================================= */
+/* MEJORAS ESPECÍFICAS PARA MÓVILES PEQUEÑOS */
+/* ============================================= */
+
+@media (max-width: 480px) {
+    .col-xl-3, .col-lg-4, .col-md-6 {
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+    }
+    
+    .producto-card-moderno {
+        padding: 8px !important;
+    }
+    
+    #listaCategorias .list-group-item {
+        min-width: 100px !important;
+        font-size: 12px !important;
+        padding: 8px 10px !important;
+    }
+    
+    .carrito-sidebar {
+        height: 80vh !important;
+    }
+}
+
+/* ============================================= */
+/* MEJORAS DE ACCESIBILIDAD TÁCTIL */
+/* ============================================= */
+
+/* Elementos interactivos más grandes para dedos */
+@media (max-width: 768px) {
+    .btn, 
+    .cantidad-input,
+    .producto-card-moderno,
+    .list-group-item {
+        min-height: 44px !important;
+    }
+    
+    .cantidad-input {
+        font-size: 16px !important;
+        height: 44px !important;
+    }
+    
+    /* Mejorar feedback táctil */
+    .btn:active,
+    .producto-card-moderno:active {
+        background-color: #e9ecef !important;
+        transform: scale(0.98) !important;
+        transition: all 0.1s ease !important;
+    }
+    
+    /* Scroll suave */
+    .products-grid-container,
+    .carrito-items {
+        -webkit-overflow-scrolling: touch !important;
+        scroll-behavior: smooth !important;
+    }
+}
+
+/* Prevenir zoom en inputs en iOS */
+@media (max-width: 768px) {
+    input, select, textarea {
+        font-size: 16px !important;
+    }
+}
+
+/* Clase para ocultar elementos en móviles */
+.d-md-inline {
+    display: inline !important;
+}
+
+@media (max-width: 768px) {
+    .d-md-inline {
+        display: none !important;
+    }
+    
+    .d-md-none {
+        display: block !important;
+    }
+}
+
+/* ============================================= */
+/* MEJORAS ESPECÍFICAS PARA MÓVILES MUY PEQUEÑOS */
+/* ============================================= */
+
+@media (max-width: 360px) {
+    .col-xl-3, .col-lg-4, .col-md-6 {
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+    }
+    
+    .producto-card-moderno {
+        padding: 8px !important;
+    }
+    
+    #listaCategorias .list-group-item {
+        min-width: 100px !important;
+        font-size: 12px !important;
+        padding: 8px 10px !important;
+    }
+}
+
+/* ============================================= */
+/* MEJORAS DE ACCESIBILIDAD TÁCTIL */
+/* ============================================= */
+
+/* Elementos interactivos más grandes para dedos */
+@media (max-width: 768px) {
+    .btn, 
+    .cantidad-input,
+    .producto-card-moderno,
+    .list-group-item {
+        min-height: 44px !important; /* Tamaño mínimo recomendado para touch */
+    }
+    
+    /* Mejorar feedback táctil */
+    .btn:active,
+    .producto-card-moderno:active {
+        background-color: #e9ecef !important;
+        transform: scale(0.98) !important;
+        transition: all 0.1s ease !important;
+    }
+    
+    /* Remover hover en dispositivos táctiles */
+    @media (hover: none) {
+        .producto-card-moderno:hover {
+            transform: none !important;
+            box-shadow: none !important;
+        }
+    }
+}
+
+/* Prevenir zoom en inputs en iOS */
+@media (max-width: 768px) {
+    input, select, textarea {
+        font-size: 16px !important; /* Previene zoom automático en iOS */
+    }
+}
