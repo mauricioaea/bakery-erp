@@ -432,7 +432,111 @@ class HistorialCompra(db.Model):
             return self.costo_total / self.unidades_obtenidas
         return 0
 
-# 🔄 REEMPLAZA tu clase Venta actual con esta versión modificada:
+# =============================================
+# 🆕 NUEVO MODELO CLIENTE PARA FACTURACIÓN ELECTRÓNICA
+# =============================================
+
+class Cliente(db.Model):
+    __tablename__ = 'clientes'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # ✅ INFORMACIÓN BÁSICA DEL CLIENTE
+    documento = db.Column(db.String(20), nullable=False)
+    nombre = db.Column(db.String(200), nullable=False)  # Nombre o Razón Social
+    tipo_documento = db.Column(db.String(2), default='31')  # 31=NIT, 13=CC, 22=CE, 41=Pasaporte
+    tipo_persona = db.Column(db.String(1), default='J')  # J=Jurídica, N=Natural
+    
+    # ✅ INFORMACIÓN DE CONTACTO Y UBICACIÓN
+    direccion = db.Column(db.Text)
+    telefono = db.Column(db.String(20))
+    email = db.Column(db.String(100))
+    ciudad = db.Column(db.String(100))
+    departamento = db.Column(db.String(100))
+    
+    # ✅ INFORMACIÓN TRIBUTARIA
+    regimen = db.Column(db.String(50))  # Simplificado, Común, Especial
+    responsabilidades = db.Column(db.Text)  # Responsabilidades fiscales separadas por coma
+    
+    # ✅ CONTROL DEL REGISTRO
+    activo = db.Column(db.Boolean, default=True)
+    fecha_registro = db.Column(db.DateTime, default=datetime.utcnow)
+    fecha_actualizacion = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # ✅ RELACIÓN CON VENTAS (una venta puede tener un cliente)
+    ventas = db.relationship('Venta', back_populates='cliente', lazy=True)
+    
+    def __repr__(self):
+        return f'<Cliente {self.documento} - {self.nombre}>'
+    
+    # ✅ PROPIEDADES PARA FACILITAR EL USO
+    @property
+    def es_persona_juridica(self):
+        """Retorna True si es persona jurídica"""
+        return self.tipo_persona == 'J'
+    
+    @property
+    def es_persona_natural(self):
+        """Retorna True si es persona natural"""
+        return self.tipo_persona == 'N'
+    
+    @property
+    def codigo_tipo_documento_dian(self):
+        """Retorna el código DIAN para el tipo de documento"""
+        codigos = {
+            '31': '31',  # NIT
+            '13': '13',  # Cédula de ciudadanía
+            '22': '22',  # Cédula de extranjería
+            '41': '41',  # Pasaporte
+            '11': '11'   # Registro civil
+        }
+        return codigos.get(self.tipo_documento, '13')
+    
+    @property
+    def nombre_tipo_documento(self):
+        """Retorna el nombre del tipo de documento"""
+        nombres = {
+            '31': 'NIT',
+            '13': 'Cédula de Ciudadanía', 
+            '22': 'Cédula de Extranjería',
+            '41': 'Pasaporte',
+            '11': 'Registro Civil'
+        }
+        return nombres.get(self.tipo_documento, 'Cédula')
+    
+    @property
+    def nombre_tipo_persona(self):
+        """Retorna el nombre del tipo de persona"""
+        return 'Persona Jurídica' if self.es_persona_juridica else 'Persona Natural'
+    
+    def obtener_responsabilidades_lista(self):
+        """Convierte las responsabilidades de string a lista"""
+        if self.responsabilidades:
+            return [r.strip() for r in self.responsabilidades.split(',')]
+        return []
+    
+    def to_dict(self):
+        """Convierte el cliente a diccionario para JSON"""
+        return {
+            'id': self.id,
+            'documento': self.documento,
+            'nombre': self.nombre,
+            'tipo_documento': self.tipo_documento,
+            'tipo_persona': self.tipo_persona,
+            'direccion': self.direccion,
+            'telefono': self.telefono,
+            'email': self.email,
+            'ciudad': self.ciudad,
+            'departamento': self.departamento,
+            'regimen': self.regimen,
+            'responsabilidades': self.responsabilidades,
+            'nombre_tipo_documento': self.nombre_tipo_documento,
+            'nombre_tipo_persona': self.nombre_tipo_persona
+        }
+
+# =============================================
+# FIN NUEVO MODELO CLIENTE
+# =============================================
 
 class Venta(db.Model):
     __tablename__ = 'ventas'
@@ -441,6 +545,7 @@ class Venta(db.Model):
     total = db.Column(db.Float, nullable=False)
     metodo_pago = db.Column(db.String(20), nullable=False)  # 'efectivo', 'tarjeta', 'transferencia'
     usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
+    cliente_id = db.Column(db.Integer, db.ForeignKey('clientes.id'), nullable=True) 
     
     # === 🆕 NUEVOS CAMPOS PARA MODULARIDAD ===
     tipo_documento = db.Column(db.String(20), default='POS')  # 'POS' o 'ELECTRONICA'
@@ -452,7 +557,8 @@ class Venta(db.Model):
     texto_legal = db.Column(db.Text, default='Documento equivalente POS – No válido como factura electrónica de venta')
     # 🎯 NOTA: Los campos nuevos son NULLABLE por defecto, así que no rompen ventas existentes
     
-    usuario = db.relationship('Usuario', backref='ventas')  
+    usuario = db.relationship('Usuario', backref='ventas')
+    cliente = db.relationship('Cliente', back_populates='ventas')  
 
     def __repr__(self):
         return f'<Venta {self.id} - ${self.total} - {self.tipo_documento}>'

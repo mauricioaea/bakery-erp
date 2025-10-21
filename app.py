@@ -13,7 +13,7 @@ import matplotlib
 matplotlib.use('Agg')
 from models import JornadaVentas, CierreDiario, obtener_jornada_activa, cerrar_jornada_actual, obtener_ventas_dia, obtener_historial_cierres
 from facturacion.generador_xml import generar_xml_ubl_21
-from models import ConsecutivoPOS, ConfiguracionSistema 
+from models import ConsecutivoPOS, ConfiguracionSistema, Cliente
 # Obtener la ruta base del proyecto
 basedir = os.path.abspath(os.path.dirname(__file__))
 
@@ -344,7 +344,7 @@ def debug_productos_punto_venta():
     
     
     # === 🆕 FUNCIONES PARA MANEJO DE CONSECUTIVOS POS ===
-# 📍 Pega este código JUSTO AQUÍ, antes de @app.route('/registrar_venta')
+
 
 def obtener_consecutivo_pos():
     """
@@ -371,7 +371,10 @@ def obtener_consecutivo_pos():
     except Exception as e:
         print(f"❌ Error en obtener_consecutivo_pos: {e}")
         db.session.rollback()
-        return 1  # Fallback a 1 si hay error
+        # 🆕 MEJORA: Usar timestamp como fallback más único
+        fallback = int(datetime.utcnow().timestamp() % 1000000)
+        print(f"🔄 Usando consecutivo fallback: {fallback}")
+        return fallback
 
 def obtener_configuracion_sistema():
     """
@@ -426,7 +429,7 @@ def reiniciar_consecutivo_pos():
     
 @app.route('/registrar_venta', methods=['POST'])
 def registrar_venta():
-    """Registrar venta con productos mixtos (panadería + externos) - VERSIÓN MEJORADA"""
+    """Registrar venta con productos mixtos (panadería + externos) - VERSIÓN MEJORADA CON CLIENTES"""
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'No autorizado'})
     
@@ -434,15 +437,33 @@ def registrar_venta():
         data = request.get_json()
         carrito = data.get('carrito', [])
         metodo_pago = data.get('metodo_pago', 'efectivo')
+        cliente_id = data.get('cliente_id')  # 👈 NUEVO: Obtener cliente_id
+        tipo_documento_solicitado = data.get('tipo_documento')  # 👈 NUEVO: Tipo solicitado desde frontend
+        
+        print(f'🛒 Datos de venta recibidos - Cliente: {cliente_id}, Tipo: {tipo_documento_solicitado}')
         
         # 🆕 OBTENER CONFIGURACIÓN DEL SISTEMA
         config = obtener_configuracion_sistema()
         
-        # 🆕 DETERMINAR TIPO DE DOCUMENTO
-        if config and config.tipo_facturacion == 'ELECTRONICA':
+        # 🆕 VALIDACIÓN PARA FACTURA ELECTRÓNICA
+        if tipo_documento_solicitado == 'ELECTRONICA':
+            if not cliente_id:
+                return jsonify({
+                    'success': False, 
+                    'error': 'Para factura electrónica se requiere seleccionar un cliente'
+                })
+            
+            if config.tipo_facturacion != 'ELECTRONICA':
+                return jsonify({
+                    'success': False,
+                    'error': 'El sistema no está configurado para facturación electrónica'
+                })
+        
+        # 🆕 DETERMINAR TIPO DE DOCUMENTO FINAL
+        if tipo_documento_solicitado == 'ELECTRONICA' and config.tipo_facturacion == 'ELECTRONICA':
             tipo_documento = 'ELECTRONICA'
             consecutivo_pos = None
-            texto_legal = "Factura electrónica de venta"
+            texto_legal = "Factura electrónica de venta - Régimen simplificado"
         else:
             tipo_documento = 'POS'
             consecutivo_pos = obtener_consecutivo_pos()  # 🆕 OBTENER CONSECUTIVO
@@ -453,6 +474,7 @@ def registrar_venta():
             usuario_id=session['user_id'],
             total=0,  # Se calculará después
             metodo_pago=metodo_pago,
+            cliente_id=cliente_id,  # 👈 NUEVO: Asignar cliente
             # 🆕 NUEVOS CAMPOS
             tipo_documento=tipo_documento,
             consecutivo_pos=consecutivo_pos,
@@ -464,7 +486,7 @@ def registrar_venta():
         total_venta = 0
         detalles_venta = []
         
-        # PROCESAR CADA PRODUCTO DEL CARRITO (TU CÓDIGO EXISTENTE)
+        # PROCESAR CADA PRODUCTO DEL CARRITO (TU CÓDIGO EXISTENTE CON APRENDIZAJE AUTOMÁTICO)
         for item in carrito:
             producto_id = item['id']
             cantidad = item['cantidad']
@@ -538,7 +560,7 @@ def registrar_venta():
         
         # 🆕 MODIFICAR: CREAR FACTURA O RECIBO SEGÚN CONFIGURACIÓN
         if tipo_documento == 'ELECTRONICA':
-            # Para factura electrónica (futura implementación)
+            # Para factura electrónica
             factura = Factura(
                 venta_id=nueva_venta.id,
                 numero_factura=f"FE{datetime.now().strftime('%Y%m%d')}{nueva_venta.id:04d}",
@@ -561,28 +583,203 @@ def registrar_venta():
         db.session.add(factura)
         db.session.commit()
         
+        # 🆕 PREPARAR RESPUESTA CON INFORMACIÓN COMPLETA
+        respuesta = {
+            'success': True,
+            'venta_id': nueva_venta.id,
+            'factura_id': factura.id,
+            'numero_factura': factura.numero_factura,
+            'consecutivo_pos': consecutivo_pos,
+            'tipo_documento': tipo_documento,
+            'total': total_venta,
+            'mensaje': mensaje_exito
+        }
+        
+        # 🆕 AGREGAR INFORMACIÓN DEL CLIENTE SI EXISTE
+        if cliente_id:
+            cliente = Cliente.query.get(cliente_id)
+            if cliente:
+                respuesta['cliente'] = cliente.to_dict()
+                print(f'✅ Cliente incluido en respuesta: {cliente.nombre}')
+        
         # 🆕 LIMPIAR CARRITO DESPUÉS DE VENTA EXITOSA
         if 'carrito' in session:
             session.pop('carrito')
             session.modified = True
         
+        print(f'✅ Venta registrada exitosamente - ID: {nueva_venta.id}, Tipo: {tipo_documento}, Cliente: {cliente_id}')
+        
+        return jsonify(respuesta)
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Error al registrar venta: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+    
+# =============================================
+# 🆕 RUTAS API PARA GESTIÓN DE CLIENTES
+# =============================================
+
+@app.route('/api/guardar-cliente', methods=['POST'])
+@login_required
+def guardar_cliente():
+    """
+    Guarda o actualiza un cliente para facturación electrónica
+    """
+    try:
+        data = request.get_json()
+        print('📝 Datos del cliente recibidos:', data)
+        
+        # ✅ VALIDAR DATOS OBLIGATORIOS
+        if not data.get('documento') or not data.get('nombre'):
+            return jsonify({
+                'success': False,
+                'error': 'Documento y nombre son obligatorios'
+            }), 400
+        
+        # ✅ BUSCAR CLIENTE EXISTENTE POR DOCUMENTO
+        cliente_existente = Cliente.query.filter_by(documento=data['documento']).first()
+        
+        if cliente_existente:
+            # ✅ ACTUALIZAR CLIENTE EXISTENTE
+            cliente_existente.nombre = data['nombre']
+            cliente_existente.tipo_documento = data.get('tipo_documento', '31')
+            cliente_existente.tipo_persona = data.get('tipo_persona', 'J')
+            cliente_existente.direccion = data.get('direccion', '')
+            cliente_existente.telefono = data.get('telefono', '')
+            cliente_existente.email = data.get('email', '')
+            cliente_existente.ciudad = data.get('ciudad', '')
+            cliente_existente.departamento = data.get('departamento', '')
+            cliente_existente.regimen = data.get('regimen', '')
+            cliente_existente.responsabilidades = data.get('responsabilidades', '')
+            cliente_existente.fecha_actualizacion = datetime.utcnow()
+            
+            cliente = cliente_existente
+            accion = 'actualizado'
+            
+        else:
+            # ✅ CREAR NUEVO CLIENTE
+            cliente = Cliente(
+                documento=data['documento'],
+                nombre=data['nombre'],
+                tipo_documento=data.get('tipo_documento', '31'),
+                tipo_persona=data.get('tipo_persona', 'J'),
+                direccion=data.get('direccion', ''),
+                telefono=data.get('telefono', ''),
+                email=data.get('email', ''),
+                ciudad=data.get('ciudad', ''),
+                departamento=data.get('departamento', ''),
+                regimen=data.get('regimen', ''),
+                responsabilidades=data.get('responsabilidades', ''),
+                activo=True
+            )
+            db.session.add(cliente)
+            accion = 'creado'
+        
+        db.session.commit()
+        
+        print(f'✅ Cliente {accion} exitosamente:', cliente.id)
+        
         return jsonify({
             'success': True,
-            'venta_id': nueva_venta.id,
-            'factura_id': factura.id,
-            'numero_factura': factura.numero_factura,
-            'consecutivo_pos': consecutivo_pos,  # 🆕 NUEVO
-            'tipo_documento': tipo_documento,    # 🆕 NUEVO
-            'total': total_venta,
-            'mensaje': mensaje_exito
+            'cliente': cliente.to_dict(),
+            'mensaje': f'Cliente {accion} correctamente'
         })
         
     except Exception as e:
         db.session.rollback()
-        print(f"Error al registrar venta: {e}")
-        return jsonify({'success': False, 'error': str(e)})  # ❌ También corregí esta línea
-    
-# 🆕 AGREGAR ESTA RUTA COMPLETA EN app.py
+        print(f'❌ Error guardando cliente: {str(e)}')
+        return jsonify({
+            'success': False,
+            'error': f'Error al guardar cliente: {str(e)}'
+        }), 500
+
+@app.route('/api/clientes-recientes', methods=['GET'])
+@login_required
+def obtener_clientes_recientes():
+    """
+    Obtiene la lista de clientes recientes para selección rápida
+    """
+    try:
+        # ✅ OBTENER LOS ÚLTIMOS 10 CLIENTES ACTIVOS
+        clientes = Cliente.query.filter_by(activo=True)\
+                               .order_by(Cliente.fecha_actualizacion.desc())\
+                               .limit(10)\
+                               .all()
+        
+        clientes_data = [cliente.to_dict() for cliente in clientes]
+        
+        print(f'✅ Clientes recientes encontrados: {len(clientes_data)}')
+        
+        return jsonify(clientes_data)
+        
+    except Exception as e:
+        print(f'❌ Error obteniendo clientes recientes: {str(e)}')
+        return jsonify([])
+
+@app.route('/api/buscar-cliente/<string:documento>', methods=['GET'])
+@login_required
+def buscar_cliente(documento):
+    """
+    Busca un cliente por número de documento
+    """
+    try:
+        cliente = Cliente.query.filter_by(documento=documento, activo=True).first()
+        
+        if cliente:
+            return jsonify({
+                'success': True,
+                'cliente': cliente.to_dict()
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'mensaje': 'Cliente no encontrado'
+            })
+            
+    except Exception as e:
+        print(f'❌ Error buscando cliente: {str(e)}')
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/configuracion-sistema', methods=['GET'])
+@login_required
+def obtener_configuracion_sistema_api():
+    """
+    API para obtener la configuración del sistema (usada por JavaScript)
+    """
+    try:
+        config = obtener_configuracion_sistema()
+        
+        return jsonify({
+            'tipo_facturacion': config.tipo_facturacion,
+            'nombre_empresa': config.nombre_empresa,
+            'nit_empresa': config.nit_empresa
+        })
+        
+    except Exception as e:
+        print(f'❌ Error obteniendo configuración: {str(e)}')
+        return jsonify({
+            'tipo_facturacion': 'POS',
+            'nombre_empresa': 'Mi Empresa',
+            'nit_empresa': '000000000'
+        })
+
+# ✅ FUNCIÓN AUXILIAR INDEPENDIENTE
+def obtener_texto_legal(tipo_documento):
+    """
+    Retorna el texto legal apropiado según el tipo de documento
+    """
+    if tipo_documento == 'ELECTRONICA':
+        return "Factura electrónica de venta - Régimen simplificado"
+    else:
+        return "Documento equivalente POS – No válido como factura electrónica de venta"
+
+# =============================================
+# FIN RUTAS API CLIENTES
+# =============================================
 
 @app.route('/configuracion/facturacion', methods=['GET', 'POST'])
 @login_required
@@ -693,13 +890,21 @@ def imprimir_factura_electronica(venta_id):
         detalles = DetalleVenta.query.filter_by(venta_id=venta_id).all()
         config = obtener_configuracion_sistema()
         
+        # 🆕 DEBUG: Verificar datos del cliente
+        print(f"🔍 DEBUG Factura Electrónica - Venta ID: {venta_id}")
+        print(f"🔍 DEBUG Cliente ID: {venta.cliente_id}")
+        if venta.cliente:
+            print(f"🔍 DEBUG Datos Cliente: {venta.cliente.nombre}, {venta.cliente.documento}")
+        else:
+            print("🔍 DEBUG: No hay cliente asociado a esta venta")
+        
         # Verificar si es factura electrónica
         if venta.tipo_documento != 'ELECTRONICA':
             flash('⚠️ Esta venta no es una factura electrónica', 'warning')
             return redirect(request.referrer or url_for('ventas'))
         
         return render_template(
-            'factura_electronica.html',  # 👈 Nuevo template
+            'factura_electronica.html',
             venta=venta,
             detalles=detalles,
             config=config,

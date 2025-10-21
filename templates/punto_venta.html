@@ -335,98 +335,349 @@
         </div>
     </div>
 
+    <!-- 🆕 MODAL PARA DATOS DEL CLIENTE - FACTURA ELECTRÓNICA -->
+    <div class="modal fade" id="clienteModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-user me-2"></i>
+                        Datos del Cliente - Facturación Electrónica
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formCliente">
+                        <!-- Tipo de Persona -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Tipo de Persona *</label>
+                                <div class="btn-group w-100" role="group">
+                                    <input type="radio" class="btn-check" name="tipo_persona" id="persona_juridica" value="J" checked>
+                                    <label class="btn btn-outline-primary" for="persona_juridica">
+                                        <i class="fas fa-building me-1"></i> Persona Jurídica
+                                    </label>
+                                    <input type="radio" class="btn-check" name="tipo_persona" id="persona_natural" value="N">
+                                    <label class="btn btn-outline-primary" for="persona_natural">
+                                        <i class="fas fa-user me-1"></i> Persona Natural
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Tipo de Documento *</label>
+                                <select class="form-select" id="tipo_documento" name="tipo_documento" required>
+                                    <option value="31">NIT</option>
+                                    <option value="13">Cédula de Ciudadanía</option>
+                                    <option value="22">Cédula de Extranjería</option>
+                                    <option value="41">Pasaporte</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Documento y Nombre -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Número de Documento *</label>
+                                <input type="text" class="form-control" id="documento" name="documento" 
+                                    placeholder="Ej: 9001234567" required maxlength="20">
+                                <div class="form-text" id="documentoHelp">
+                                    Para NIT: agregar dígito de verificación
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Nombre o Razón Social *</label>
+                                <input type="text" class="form-control" id="nombre" name="nombre" 
+                                    placeholder="Nombre completo o razón social" required maxlength="200">
+                            </div>
+                        </div>
+
+                        <!-- Información de Contacto -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Dirección</label>
+                                <input type="text" class="form-control" id="direccion" name="direccion" 
+                                    placeholder="Dirección completa" maxlength="200">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Teléfono</label>
+                                <input type="tel" class="form-control" id="telefono" name="telefono" 
+                                    placeholder="Número de contacto" maxlength="20">
+                            </div>
+                        </div>
+
+                        <!-- Ubicación -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Ciudad</label>
+                                <input type="text" class="form-control" id="ciudad" name="ciudad" 
+                                    placeholder="Ciudad" maxlength="100">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Departamento</label>
+                                <input type="text" class="form-control" id="departamento" name="departamento" 
+                                    placeholder="Departamento" maxlength="100">
+                            </div>
+                        </div>
+
+                        <!-- Información Adicional -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                    placeholder="correo@ejemplo.com" maxlength="100">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Régimen</label>
+                                <select class="form-select" id="regimen" name="regimen">
+                                    <option value="">Seleccionar régimen</option>
+                                    <option value="Simplificado">Régimen Simplificado</option>
+                                    <option value="Comun">Régimen Común</option>
+                                    <option value="Especial">Régimen Especial</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Responsabilidades Fiscales -->
+                        <div class="mb-3">
+                            <label class="form-label">Responsabilidades Fiscales</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="IVA" id="resp_iva">
+                                <label class="form-check-label" for="resp_iva">Responsable de IVA</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="ICA" id="resp_ica">
+                                <label class="form-check-label" for="resp_ica">Responsable de ICA</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="RETEIVA" id="resp_reteiva">
+                                <label class="form-check-label" for="resp_reteiva">Agente de Retención IVA</label>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- 🆕 CLIENTES RECIENTES -->
+                    <div class="mt-4" id="clientesRecientesSection" style="display: none;">
+                        <h6 class="border-bottom pb-2">
+                            <i class="fas fa-history me-1"></i>Clientes Recientes
+                        </h6>
+                        <div id="listaClientesRecientes" class="list-group list-group-flush">
+                            <!-- Se llena dinámicamente -->
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="guardarCliente()">
+                        <i class="fas fa-save me-1"></i>Guardar y Continuar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+
+
        <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ url_for('static', filename='js/pos-moderno.js') }}"></script>
 
+
     <!-- ✅ SCRIPT CORREGIDO PARA FUNCIONALIDADES MÓVILES Y FACTURACIÓN -->
     <script>
-        // Variables globales para control de ventas
+                // 🆕 VARIABLES GLOBALES PARA CLIENTE Y FACTURACIÓN
         window.ultimaVentaId = null;
         window.tipoDocumento = 'POS';
         window.ultimoTotal = 0;
+        window.clienteActual = null;
+        window.modoFacturacionActual = 'POS';
 
-        // Funcionalidad para carrito móvil
-        function toggleCarritoMobile() {
-            const carritoSidebar = document.querySelector('.carrito-sidebar');
-            if (carritoSidebar) {
-                carritoSidebar.classList.toggle('mobile-open');
-                
-                // Opcional: Cerrar automáticamente después de procesar venta
-                if (carritoSidebar.classList.contains('mobile-open') && carrito.length === 0) {
-                    setTimeout(() => {
-                        carritoSidebar.classList.remove('mobile-open');
-                    }, 2000);
-                }
-            }
-        }
-
-        function actualizarCarritoMobile() {
-            const contador = document.getElementById('carritoContadorMobile');
-            if (contador) {
-                contador.textContent = carrito.length;
-                if (carrito.length === 0) {
-                    contador.style.display = 'none';
-                } else {
-                    contador.style.display = 'flex';
-                }
-            }
-        }
-
-        // Gestos táctiles para el carrito
-        function configurarGestosTactiles() {
-            let startX = 0;
-            const carritoItems = document.getElementById('carritoItems');
+        // 🆕 FUNCIONES PARA GESTIÓN DE CLIENTES
+        function solicitarDatosCliente() {
+            console.log('📝 Solicitando datos del cliente...');
             
-            if (carritoItems) {
-                carritoItems.addEventListener('touchstart', function(e) {
-                    startX = e.touches[0].clientX;
-                });
-                
-                carritoItems.addEventListener('touchend', function(e) {
-                    if (!startX) return;
-                    
-                    const endX = e.changedTouches[0].clientX;
-                    const diffX = startX - endX;
-                    
-                    // Swipe izquierda (eliminar)
-                    if (diffX > 50) {
-                        const item = e.target.closest('.carrito-item-moderno');
-                        if (item) {
-                            const index = Array.from(item.parentNode.children).indexOf(item);
-                            eliminarDelCarrito(index);
-                        }
+            // Mostrar modal
+            const clienteModal = new bootstrap.Modal(document.getElementById('clienteModal'));
+            clienteModal.show();
+            
+            // Cargar clientes recientes
+            cargarClientesRecientes();
+            
+            // Configurar eventos
+            configurarEventosCliente();
+        }
+
+        function configurarEventosCliente() {
+            // Cambiar tipo de documento según tipo de persona
+            document.querySelectorAll('input[name="tipo_persona"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    const tipoDocSelect = document.getElementById('tipo_documento');
+                    if (this.value === 'J') {
+                        // Persona jurídica - principalmente NIT
+                        tipoDocSelect.innerHTML = `
+                            <option value="31" selected>NIT</option>
+                            <option value="41">Pasaporte</option>
+                        `;
+                        document.getElementById('documentoHelp').textContent = 'Para NIT: agregar dígito de verificación';
+                    } else {
+                        // Persona natural - varios documentos
+                        tipoDocSelect.innerHTML = `
+                            <option value="13">Cédula de Ciudadanía</option>
+                            <option value="22">Cédula de Extranjería</option>
+                            <option value="41">Pasaporte</option>
+                            <option value="11">Registro Civil</option>
+                        `;
+                        document.getElementById('documentoHelp').textContent = 'Número completo del documento';
                     }
-                    // Swipe derecha (agregar)
-                    else if (diffX < -50) {
-                        const item = e.target.closest('.carrito-item-moderno');
-                        if (item) {
-                            const index = Array.from(item.parentNode.children).indexOf(item);
-                            modificarCantidad(index, 1);
-                        }
-                    }
-                    
-                    startX = 0;
                 });
+            });
+            
+            // Validar documento en tiempo real
+            document.getElementById('documento').addEventListener('input', function(e) {
+                validarDocumento(this.value);
+            });
+        }
+
+        function validarDocumento(documento) {
+            const tipoDoc = document.getElementById('tipo_documento').value;
+            const feedback = document.getElementById('documentoHelp');
+            
+            if (tipoDoc === '31') { // NIT
+                if (documento.length >= 9 && !documento.includes('-')) {
+                    feedback.innerHTML = '<span class="text-warning">💡 Sugerencia: Formato NIT: 900123456-7</span>';
+                } else if (documento.includes('-')) {
+                    feedback.innerHTML = '<span class="text-success">✅ Formato NIT válido</span>';
+                }
             }
         }
 
-        // Sistema de roles de usuario (ejemplo básico)
-        const roles = {
-            'cajero': ['ventas', 'carrito'],
-            'supervisor': ['ventas', 'reportes', 'cierres'],
-            'admin': ['todo']
-        };
-
-        // Verificar permisos (ejemplo)
-        function verificarPermiso(accion) {
-            // Aquí integrarías con tu sistema de usuarios
-            const usuarioActual = 'cajero'; // Esto vendría de tu backend
-            return roles[usuarioActual]?.includes('todo') || 
-                   roles[usuarioActual]?.includes(accion);
+        async function guardarCliente() {
+            const form = document.getElementById('formCliente');
+            
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            
+            // Obtener datos del formulario
+            const formData = new FormData(form);
+            const clienteData = {
+                tipo_persona: formData.get('tipo_persona'),
+                tipo_documento: formData.get('tipo_documento'),
+                documento: formData.get('documento'),
+                nombre: formData.get('nombre'),
+                direccion: formData.get('direccion'),
+                telefono: formData.get('telefono'),
+                ciudad: formData.get('ciudad'),
+                departamento: formData.get('departamento'),
+                email: formData.get('email'),
+                regimen: formData.get('regimen'),
+                responsabilidades: obtenerResponsabilidades()
+            };
+            
+            console.log('📝 Datos del cliente a guardar:', clienteData); // 🆕 DEBUG
+            
+            try {
+                // Guardar cliente en el servidor
+                const response = await fetch('/api/guardar-cliente', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(clienteData)
+                });
+                
+                const resultado = await response.json();
+                console.log('📡 Respuesta del servidor:', resultado); // 🆕 DEBUG
+                
+                if (resultado.success) {
+                    window.clienteActual = resultado.cliente;
+                    console.log('✅ Cliente guardado en frontend:', window.clienteActual);
+                    
+                    // Cerrar modal
+                    bootstrap.Modal.getInstance(document.getElementById('clienteModal')).hide();
+                    
+                    // 🆕 CONTINUAR CON LA VENTA EN MODO ELECTRÓNICO
+                    procesarVentaElectronica();
+                    
+                } else {
+                    mostrarNotificacion('❌ Error guardando cliente: ' + resultado.error, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                mostrarNotificacion('❌ Error de conexión', 'error');
+            }
         }
 
-        // 🆕 FUNCIÓN MEJORADA - Configurar modal según tipo de documento
+        function obtenerResponsabilidades() {
+            const responsabilidades = [];
+            if (document.getElementById('resp_iva').checked) responsabilidades.push('IVA');
+            if (document.getElementById('resp_ica').checked) responsabilidades.push('ICA');
+            if (document.getElementById('resp_reteiva').checked) responsabilidades.push('RETEIVA');
+            return responsabilidades.join(',');
+        }
+
+        async function cargarClientesRecientes() {
+            try {
+                const response = await fetch('/api/clientes-recientes');
+                const clientes = await response.json();
+                
+                const lista = document.getElementById('listaClientesRecientes');
+                const section = document.getElementById('clientesRecientesSection');
+                
+                if (clientes.length > 0) {
+                    section.style.display = 'block';
+                    lista.innerHTML = '';
+                    
+                    clientes.forEach(cliente => {
+                        const item = document.createElement('button');
+                        item.type = 'button';
+                        item.className = 'list-group-item list-group-item-action';
+                        item.innerHTML = `
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">${cliente.nombre}</h6>
+                                <small>${cliente.tipo_documento === '31' ? 'NIT' : 'CC'}</small>
+                            </div>
+                            <p class="mb-1">${cliente.documento}</p>
+                            <small>${cliente.ciudad || 'Sin ciudad'}</small>
+                        `;
+                        item.onclick = () => seleccionarClienteExistente(cliente);
+                        lista.appendChild(item);
+                    });
+                } else {
+                    section.style.display = 'none';
+                }
+            } catch (error) {
+                console.log('No se pudieron cargar clientes recientes');
+            }
+        }
+
+        function seleccionarClienteExistente(cliente) {
+            window.clienteActual = cliente;
+            console.log('✅ Cliente seleccionado:', cliente);
+            
+            // Cerrar modal
+            bootstrap.Modal.getInstance(document.getElementById('clienteModal')).hide();
+            
+            // Continuar con la venta
+            procesarVentaElectronica();
+        }
+                function seleccionarClienteExistente(cliente) {
+            window.clienteActual = cliente;
+            console.log('✅ Cliente seleccionado:', cliente);
+            
+            // Cerrar modal
+            bootstrap.Modal.getInstance(document.getElementById('clienteModal')).hide();
+            
+            // Continuar con la venta
+            procesarVentaElectronica();
+        }
+
+        // 🆕 FUNCIÓN FALTANTE - Configurar modal según tipo de documento
         function configurarModalVenta(respuesta) {
             console.log('🔍 Configurando modal con respuesta:', respuesta);
             
@@ -464,54 +715,49 @@
             });
         }
 
-        // 🆕 FUNCIÓN MEJORADA - Imprimir factura/recibo
-        function imprimirFactura() {
-            console.log('🔍 imprimirFactura llamado - Variables:', {
-                ultimaVentaId: window.ultimaVentaId,
-                tipoDocumento: window.tipoDocumento
-            });
-            
-            if (!window.ultimaVentaId) {
-                mostrarNotificacion('❌ No hay factura para imprimir. Realice una venta primero.', 'error');
-                return;
-            }
-
-            if (window.tipoDocumento === 'ELECTRONICA') {
-                // Imprimir factura electrónica
-                const url = `/api/imprimir-factura/${window.ultimaVentaId}`;
-                console.log('📄 Abriendo factura electrónica:', url);
-                const printWindow = window.open(url, '_blank', 'width=400,height=600');
-            } else {
-                // Imprimir recibo POS tradicional
-                const url = `/imprimir_factura/${window.ultimaVentaId}`;
-                console.log('🧾 Abriendo recibo POS:', url);
-                const printWindow = window.open(url, '_blank');
-            }
-        }
-
-        // 🆕 FUNCIÓN MEJORADA - Exportar XML
-        function exportarXML() {
-            if (!window.ultimaVentaId) {
-                mostrarNotificacion('❌ No hay venta para exportar', 'error');
-                return;
-            }
-            
-            console.log('📥 Descargando XML para venta:', window.ultimaVentaId);
-            const link = document.createElement('a');
-            link.href = `/api/exportar-xml/${window.ultimaVentaId}`;
-            link.download = `factura_${window.ultimaVentaId}.xml`;
-            link.target = '_blank';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        // 🆕 FUNCIÓN MEJORADA - Procesar venta
+                // 🆕 FUNCIÓN MEJORADA PARA PROCESAR VENTA
         async function procesarVenta() {
             if (carrito.length === 0) {
                 mostrarNotificacion('❌ El carrito está vacío', 'error');
                 return;
             }
+
+            // 🆕 DETECTAR MODO DE FACTURACIÓN
+            try {
+                const configResponse = await fetch('/api/configuracion-sistema');
+                const config = await configResponse.json();
+                window.modoFacturacionActual = config.tipo_facturacion;
+                
+                console.log('🔍 Modo facturación detectado:', window.modoFacturacionActual);
+                
+                if (window.modoFacturacionActual === 'ELECTRONICA') {
+                    // 🆕 MODO ELECTRÓNICO: SOLICITAR DATOS DEL CLIENTE
+                    if (!window.clienteActual) {
+                        solicitarDatosCliente();
+                        return;
+                    } else {
+                        procesarVentaElectronica();
+                    }
+                } else {
+                    // MODO POS: PROCESAR DIRECTAMENTE
+                    procesarVentaPOS();
+                }
+            } catch (error) {
+                console.error('Error detectando configuración:', error);
+                // Fallback a modo POS
+                procesarVentaPOS();
+            }
+        }
+
+        // 🆕 PROCESAR VENTA ELECTRÓNICA
+        // 🆕 PROCESAR VENTA ELECTRÓNICA
+        async function procesarVentaElectronica() {
+            if (!window.clienteActual) {
+                mostrarNotificacion('❌ No hay cliente seleccionado', 'error');
+                return;
+            }
+
+            console.log('🔍 Cliente actual para venta electrónica:', window.clienteActual); // 🆕 DEBUG
 
             const metodoPago = document.querySelector('input[name="metodoPago"]:checked').value;
             
@@ -523,23 +769,66 @@
                     },
                     body: JSON.stringify({
                         carrito: carrito,
-                        metodo_pago: metodoPago
+                        metodo_pago: metodoPago,
+                        cliente_id: window.clienteActual.id,  // 🆕 INCLUIR CLIENTE
+                        tipo_documento: 'ELECTRONICA'  // 🆕 FORZAR MODO ELECTRÓNICO
                     })
                 });
 
                 const resultado = await response.json();
-                console.log('📦 Respuesta del servidor:', resultado);
+                console.log('📡 Respuesta de venta electrónica:', resultado); // 🆕 DEBUG
 
                 if (resultado.success) {
-                    // 🆕 CONFIGURAR MODAL CON INFORMACIÓN ESPECÍFICA
                     configurarModalVenta(resultado);
                     
-                    // Actualizar información del modal
-                    document.getElementById('modalTotal').textContent = `$${(resultado.total || 0).toLocaleString()}`;
-                    document.getElementById('modalMetodo').textContent = 
-                        metodoPago.charAt(0).toUpperCase() + metodoPago.slice(1);
+                    document.getElementById('modalTotal').textContent = `$${resultado.total.toLocaleString()}`;
+                    document.getElementById('modalMetodo').textContent = metodoPago.charAt(0).toUpperCase() + metodoPago.slice(1);
                     
-                    // Mostrar modal
+                    const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+                    modal.show();
+                    
+                    // Limpiar carrito y cliente
+                    carrito = [];
+                    window.clienteActual = null;
+                    actualizarCarrito();
+                    if (typeof actualizarCarritoMobile === 'function') {
+                        actualizarCarritoMobile();
+                    }
+                    
+                } else {
+                    mostrarNotificacion('❌ Error: ' + resultado.error, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                mostrarNotificacion('❌ Error al procesar la venta: ' + error.message, 'error');
+            }
+        }
+
+        // 🆕 PROCESAR VENTA POS (CONSUMIDOR FINAL)
+        async function procesarVentaPOS() {
+            const metodoPago = document.querySelector('input[name="metodoPago"]:checked').value;
+            
+            try {
+                const response = await fetch('/registrar_venta', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        carrito: carrito,
+                        metodo_pago: metodoPago,
+                        tipo_documento: 'POS'  // 🆕 FORZAR MODO POS
+                    })
+                });
+
+                const resultado = await response.json();
+
+                if (resultado.success) {
+                    configurarModalVenta(resultado);
+                    
+                    document.getElementById('modalTotal').textContent = `$${resultado.total.toLocaleString()}`;
+                    document.getElementById('modalMetodo').textContent = metodoPago.charAt(0).toUpperCase() + metodoPago.slice(1);
+                    
                     const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
                     modal.show();
                     
@@ -548,11 +837,8 @@
                     actualizarCarrito();
                     actualizarCarritoMobile();
                     
-                    // 🆕 ACTUALIZAR DASHBOARD EN TIEMPO REAL
-                    actualizarDashboardTiempoReal();
-                    
                 } else {
-                    mostrarNotificacion('❌ Error: ' + (resultado.error || 'Error desconocido'), 'error');
+                    mostrarNotificacion('❌ Error: ' + resultado.error, 'error');
                 }
             } catch (error) {
                 console.error('Error:', error);
@@ -641,6 +927,90 @@
             });
         }
 
+        // 🆕 FUNCIONES DE IMPRESIÓN Y EXPORTACIÓN MEJORADAS
+        function imprimirFactura() {
+            console.log('🖨️ Intentando imprimir factura...');
+            console.log('🔍 Variables globales:', {
+                ultimaVentaId: window.ultimaVentaId,
+                tipoDocumento: window.tipoDocumento,
+                ultimoTotal: window.ultimoTotal
+            });
+            
+            if (!window.ultimaVentaId) {
+                mostrarNotificacion('❌ No hay venta reciente para imprimir', 'error');
+                return;
+            }
+            
+            // Determinar la URL correcta según el tipo de documento
+            const url = window.tipoDocumento === 'ELECTRONICA' 
+                ? `/api/imprimir-factura/${window.ultimaVentaId}`
+                : `/recibo-pos/${window.ultimaVentaId}`;
+            
+            console.log('📄 Abriendo:', url);
+            
+            // Abrir en nueva pestaña para impresión
+            const ventanaImpresion = window.open(url, '_blank');
+            
+            if (!ventanaImpresion) {
+                mostrarNotificacion('❌ Permitir ventanas emergentes para imprimir', 'error');
+                return;
+            }
+            
+            // Cerrar el modal de confirmación
+            const modal = bootstrap.Modal.getInstance(document.getElementById('confirmModal'));
+            if (modal) {
+                modal.hide();
+            }
+            
+            mostrarNotificacion('📄 Abriendo documento para impresión...', 'info');
+        }
+
+        function exportarXML() {
+            if (!window.ultimaVentaId) {
+                mostrarNotificacion('❌ No hay venta para exportar', 'error');
+                return;
+            }
+            
+            if (window.tipoDocumento !== 'ELECTRONICA') {
+                mostrarNotificacion('❌ Solo se puede exportar XML de facturas electrónicas', 'error');
+                return;
+            }
+            
+            console.log('📤 Exportando XML para venta:', window.ultimaVentaId);
+            
+            // Descargar el XML
+            window.open(`/api/exportar-xml/${window.ultimaVentaId}`, '_blank');
+            
+            mostrarNotificacion('📄 Descargando XML DIAN...', 'success');
+        }
+
+        // 🆕 FUNCIÓN PARA GESTOS TÁCTILES (si no existe)
+        function configurarGestosTactiles() {
+            // Solo aplicar en dispositivos táctiles
+            if ('ontouchstart' in window) {
+                console.log('📱 Configurando gestos táctiles para móviles');
+                
+                const carritoMobile = document.querySelector('.carrito-flotante-mobile');
+                if (carritoMobile) {
+                    carritoMobile.style.display = 'flex';
+                }
+            }
+        }
+
+        // 🆕 FUNCIÓN PARA TOGGLE CARRITO MÓVIL
+        function toggleCarritoMobile() {
+            const carritoSidebar = document.querySelector('.carrito-sidebar');
+            if (carritoSidebar) {
+                const estaVisible = carritoSidebar.style.display !== 'none';
+                carritoSidebar.style.display = estaVisible ? 'none' : 'block';
+                
+                // Asegurar que el carrito se actualice
+                if (!estaVisible && typeof actualizarCarrito === 'function') {
+                    actualizarCarrito();
+                }
+            }
+        }
+
         // 🆕 Crear contenedor de notificaciones si no existe
         function crearToastContainer() {
             const container = document.createElement('div');
@@ -654,6 +1024,36 @@
         // Inicializar cuando el DOM esté listo
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Inicializando sistema POS...');
+            
+            // 🆕 VERIFICAR COMPATIBILIDAD
+            setTimeout(() => {
+                console.log('🔍 Verificando integración POS + Facturación...');
+                
+                const funcionesEsenciales = [
+                    'actualizarCarrito', 'actualizarCarritoMobile', 'limpiarCarrito',
+                    'cargarProductos', 'procesarCierreDiario'
+                ];
+                
+                let todasDisponibles = true;
+                funcionesEsenciales.forEach(func => {
+                    if (typeof window[func] !== 'function') {
+                        console.error(`❌ Función faltante: ${func}`);
+                        todasDisponibles = false;
+                    }
+                });
+                
+                if (todasDisponibles) {
+                    console.log('✅ Todas las funciones esenciales están disponibles');
+                    // Inicializar carrito
+                    if (typeof cargarProductos === 'function') {
+                        cargarProductos();
+                    }
+                } else {
+                    console.error('❌ Algunas funciones esenciales no están disponibles');
+                    mostrarNotificacion('⚠️ Error de integración - Recargue la página', 'error');
+                }
+            }, 1000);
+            
             verificarEstadoConsecutivo();
             configurarGestosTactiles();
             crearToastContainer();
@@ -682,6 +1082,8 @@
         function abrirAnalisisPredictivo() {
             window.open('/analisis_predictivo', '_blank');
         }
+
+        
     </script>
 </body>
 </html>

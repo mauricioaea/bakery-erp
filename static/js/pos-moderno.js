@@ -368,6 +368,29 @@ function filtrarPorCategoria(categoria) {
     document.querySelector('.products-grid-container').scrollTop = 0;
 }
 
+// 🆕 FUNCIÓN PARA ACTUALIZAR CARRITO EN MÓVILES (NO EXISTÍA)
+function actualizarCarritoMobile() {
+    console.log('📱 Actualizando carrito móvil...');
+    
+    try {
+        const contadorMobile = document.getElementById('carritoContadorMobile');
+        const contadorCarrito = document.getElementById('contadorCarrito');
+        
+        if (contadorMobile && window.carrito) {
+            const totalItems = window.carrito.reduce((total, item) => total + item.cantidad, 0);
+            contadorMobile.textContent = totalItems;
+            console.log('✅ Carrito móvil actualizado:', totalItems, 'items');
+        }
+        
+        if (contadorCarrito && window.carrito) {
+            const totalItems = window.carrito.reduce((total, item) => total + item.cantidad, 0);
+            contadorCarrito.textContent = totalItems;
+        }
+    } catch (error) {
+        console.warn('⚠️ Error en actualizarCarritoMobile:', error);
+    }
+}
+
 function limpiarBusqueda() {
     document.getElementById('searchInput').value = '';
     document.getElementById('categoriaFilter').value = '';
@@ -1466,6 +1489,7 @@ function toggleLogoUrl() {
 }
 
 
+
 function irAConfiguracionFacturacion() {
     window.location.href = '/configuracion/facturacion';
 }
@@ -1481,3 +1505,44 @@ console.log('- F9: Actualizar productos');
 console.log('- F12: Procesar venta');
 console.log('- ENTER: Agregar producto al carrito');
 console.log('- ESC: Salir de campo de cantidad');
+
+// 🆕 EXPORTAR FUNCIONES AL ÁMBITO GLOBAL PARA INTEGRACIÓN CON FACTURACIÓN
+// Esto permite que las funciones sean accesibles desde punto_venta.html
+
+// Asignar funciones al objeto window para que sean globales
+window.actualizarCarritoMobile = actualizarCarritoMobile;
+window.actualizarCarrito = actualizarCarrito;
+window.limpiarCarrito = limpiarCarrito;
+window.cargarProductos = cargarProductos;
+window.limpiarBusqueda = limpiarBusqueda;
+window.procesarCierreDiario = procesarCierreDiario;
+
+// 🆕 Hacer variables globales accesibles
+window.carrito = carrito;
+
+console.log('✅ Funciones del carrito exportadas al ámbito global');
+
+// 🆕 INICIALIZACIÓN COMPATIBILIDAD
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔄 Inicializando compatibilidad POS + Facturación electrónica');
+    
+    // Verificar que todas las funciones estén disponibles
+    const funcionesRequeridas = [
+        'actualizarCarritoMobile', 'actualizarCarrito', 'limpiarCarrito',
+        'cargarProductos', 'limpiarBusqueda', 'procesarCierreDiario'
+    ];
+    
+    funcionesRequeridas.forEach(funcion => {
+        if (typeof window[funcion] === 'function') {
+            console.log(`✅ ${funcion} disponible`);
+        } else {
+            console.warn(`⚠️ ${funcion} NO disponible`);
+        }
+    });
+    
+    // Inicializar carrito si no existe
+    if (typeof window.carrito === 'undefined') {
+        window.carrito = [];
+        console.log('🔄 Carrito inicializado');
+    }
+});

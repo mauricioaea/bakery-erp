@@ -7,7 +7,7 @@ import uuid
 def generar_xml_ubl_21(venta, config_empresa, detalles_venta):
     """
     Genera XML en formato UBL 2.1 para la DIAN
-    Adaptado a la estructura real de tus modelos
+    Versión mejorada con datos reales del cliente
     """
     try:
         # Namespaces UBL 2.1 requeridos por DIAN
@@ -79,19 +79,73 @@ def generar_xml_ubl_21(venta, config_empresa, detalles_venta):
         country_code = ET.SubElement(country, f'{{{namespaces["cbc"]}}}IdentificationCode')
         country_code.text = 'CO'
         
-        # === CLIENTE (CONSUMIDOR FINAL) ===
+        # === CLIENTE (DATOS REALES O CONSUMIDOR FINAL) ===
         customer_party = ET.SubElement(root, f'{{{namespaces["cac"]}}}AccountingCustomerParty')
         customer = ET.SubElement(customer_party, f'{{{namespaces["cac"]}}}Party')
         
-        # Cliente genérico (consumidor final)
-        customer_id = ET.SubElement(customer, f'{{{namespaces["cac"]}}}PartyIdentification')
-        customer_id_scheme = ET.SubElement(customer_id, f'{{{namespaces["cbc"]}}}ID')
-        customer_id_scheme.text = '222222222222'
-        customer_id_scheme.set('schemeID', '13')  # 13 = Cédula de ciudadanía
-        
-        customer_name = ET.SubElement(customer, f'{{{namespaces["cac"]}}}PartyLegalEntity')
-        customer_name_elem = ET.SubElement(customer_name, f'{{{namespaces["cbc"]}}}RegistrationName')
-        customer_name_elem.text = 'CONSUMIDOR FINAL'
+        # 🆕 VERIFICAR SI HAY CLIENTE ASOCIADO
+        if venta.cliente and venta.cliente.documento:
+            # ✅ USAR DATOS REALES DEL CLIENTE
+            cliente = venta.cliente
+            print(f'✅ Generando XML con cliente real: {cliente.nombre} - {cliente.documento}')
+            
+            # Identificación del cliente
+            customer_id = ET.SubElement(customer, f'{{{namespaces["cac"]}}}PartyIdentification')
+            customer_id_scheme = ET.SubElement(customer_id, f'{{{namespaces["cbc"]}}}ID')
+            customer_id_scheme.text = cliente.documento
+            customer_id_scheme.set('schemeID', cliente.codigo_tipo_documento_dian)
+            customer_id_scheme.set('schemeName', cliente.codigo_tipo_documento_dian)
+            
+            # Nombre/Razón social del cliente
+            customer_name = ET.SubElement(customer, f'{{{namespaces["cac"]}}}PartyLegalEntity')
+            customer_name_elem = ET.SubElement(customer_name, f'{{{namespaces["cbc"]}}}RegistrationName')
+            customer_name_elem.text = cliente.nombre
+            
+            # 🆕 INFORMACIÓN ADICIONAL DEL CLIENTE (si está disponible)
+            if cliente.direccion or cliente.ciudad:
+                customer_address = ET.SubElement(customer_name, f'{{{namespaces["cac"]}}}RegistrationAddress')
+                
+                if cliente.direccion:
+                    address_line = ET.SubElement(customer_address, f'{{{namespaces["cbc"]}}}Line')
+                    address_line.text = cliente.direccion[:100]  # Limitar longitud
+                
+                if cliente.ciudad:
+                    city_elem = ET.SubElement(customer_address, f'{{{namespaces["cbc"]}}}CityName')
+                    city_elem.text = cliente.ciudad
+                
+                if cliente.departamento:
+                    department_elem = ET.SubElement(customer_address, f'{{{namespaces["cbc"]}}}CountrySubentity')
+                    department_elem.text = cliente.departamento
+                
+                country_elem = ET.SubElement(customer_address, f'{{{namespaces["cbc"]}}}Country')
+                country_code_elem = ET.SubElement(country_elem, f'{{{namespaces["cbc"]}}}IdentificationCode')
+                country_code_elem.text = 'CO'
+            
+            # 🆕 INFORMACIÓN DE CONTACTO (si está disponible)
+            if cliente.telefono or cliente.email:
+                contact = ET.SubElement(customer, f'{{{namespaces["cac"]}}}Contact')
+                
+                if cliente.telefono:
+                    phone_elem = ET.SubElement(contact, f'{{{namespaces["cbc"]}}}Telephone')
+                    phone_elem.text = cliente.telefono
+                
+                if cliente.email:
+                    email_elem = ET.SubElement(contact, f'{{{namespaces["cbc"]}}}ElectronicMail')
+                    email_elem.text = cliente.email
+                    
+        else:
+            # ❌ CLIENTE GENÉRICO (CONSUMIDOR FINAL)
+            print('⚠️  Generando XML con consumidor final')
+            
+            # Cliente genérico (consumidor final)
+            customer_id = ET.SubElement(customer, f'{{{namespaces["cac"]}}}PartyIdentification')
+            customer_id_scheme = ET.SubElement(customer_id, f'{{{namespaces["cbc"]}}}ID')
+            customer_id_scheme.text = '222222222222'
+            customer_id_scheme.set('schemeID', '13')  # 13 = Cédula de ciudadanía
+            
+            customer_name = ET.SubElement(customer, f'{{{namespaces["cac"]}}}PartyLegalEntity')
+            customer_name_elem = ET.SubElement(customer_name, f'{{{namespaces["cbc"]}}}RegistrationName')
+            customer_name_elem.text = 'CONSUMIDOR FINAL'
         
         # === LÍNEAS DE DETALLE (PRODUCTOS) ===
         line_count = 1
@@ -165,10 +219,11 @@ def generar_xml_ubl_21(venta, config_empresa, detalles_venta):
         reparsed = minidom.parseString(rough_string)
         xml_pretty = reparsed.toprettyxml(indent="  ", encoding='utf-8')
         
+        print('✅ XML generado exitosamente con datos del cliente')
         return xml_pretty.decode('utf-8')
         
     except Exception as e:
-        print(f"Error generando XML UBL 2.1: {str(e)}")
+        print(f"❌ Error generando XML UBL 2.1: {str(e)}")
         # XML de error mínimo
         error_root = ET.Element('Error')
         error_msg = ET.SubElement(error_root, 'Mensaje')

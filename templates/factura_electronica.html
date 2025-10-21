@@ -120,10 +120,24 @@
         {% endif %}
     </div>
     
+    <!-- Busca la sección del cliente en factura_electronica.html -->
     <div class="cliente-info">
-        <strong>CLIENTE:</strong> CONSUMIDOR FINAL<br>
-        <strong>DOCUMENTO:</strong> 222222222222<br>
-        <strong>TIPO:</strong> Persona Natural
+        <h4>INFORMACIÓN DEL CLIENTE</h4>
+        {% if venta.cliente %}
+            <p><strong>Nombre/Razón Social:</strong> {{ venta.cliente.nombre }}</p>
+            <p><strong>Documento:</strong> {{ venta.cliente.documento }}</p>
+            <p><strong>Tipo:</strong> 
+                {% if venta.cliente.tipo_persona == 'J' %}Persona Jurídica
+                {% else %}Persona Natural{% endif %}
+            </p>
+            {% if venta.cliente.direccion %}<p><strong>Dirección:</strong> {{ venta.cliente.direccion }}</p>{% endif %}
+            {% if venta.cliente.telefono %}<p><strong>Teléfono:</strong> {{ venta.cliente.telefono }}</p>{% endif %}
+            {% if venta.cliente.email %}<p><strong>Email:</strong> {{ venta.cliente.email }}</p>{% endif %}
+        {% else %}
+            <p><strong>Cliente:</strong> CONSUMIDOR FINAL</p>
+            <p><strong>Documento:</strong> 222222222222</p>
+            <p><strong>Tipo:</strong> Persona Natural</p>
+        {% endif %}
     </div>
     
     <table class="detalles">
