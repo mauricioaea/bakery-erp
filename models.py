@@ -432,6 +432,8 @@ class HistorialCompra(db.Model):
             return self.costo_total / self.unidades_obtenidas
         return 0
 
+# 🔄 REEMPLAZA tu clase Venta actual con esta versión modificada:
+
 class Venta(db.Model):
     __tablename__ = 'ventas'
     id = db.Column(db.Integer, primary_key=True)
@@ -440,7 +442,20 @@ class Venta(db.Model):
     metodo_pago = db.Column(db.String(20), nullable=False)  # 'efectivo', 'tarjeta', 'transferencia'
     usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
     
-    usuario = db.relationship('Usuario', backref='ventas') 
+    # === 🆕 NUEVOS CAMPOS PARA MODULARIDAD ===
+    tipo_documento = db.Column(db.String(20), default='POS')  # 'POS' o 'ELECTRONICA'
+    consecutivo_pos = db.Column(db.Integer)  # Número de recibo POS
+    cufe = db.Column(db.String(100))  # Para factura electrónica (UUID DIAN)
+    estado_dian = db.Column(db.String(50), default='NO_APLICA')  # 'ACEPTADA', 'RECHAZADA', 'PENDIENTE', 'NO_APLICA'
+    qr_factura = db.Column(db.Text)  # QR para factura electrónica
+    respuesta_dian = db.Column(db.Text)  # JSON respuesta DIAN/proveedor
+    texto_legal = db.Column(db.Text, default='Documento equivalente POS – No válido como factura electrónica de venta')
+    # 🎯 NOTA: Los campos nuevos son NULLABLE por defecto, así que no rompen ventas existentes
+    
+    usuario = db.relationship('Usuario', backref='ventas')  
+
+    def __repr__(self):
+        return f'<Venta {self.id} - ${self.total} - {self.tipo_documento}>'
 
 class DetalleVenta(db.Model):
     __tablename__ = 'detalle_venta'
@@ -1450,3 +1465,33 @@ CATEGORIAS_ACTIVOS = {
     "SEÑALETICA": "Señalética y Publicidad",
     "SEGURIDAD": "Equipos de Seguridad"
 }
+
+# ====================================== 🆕 NUEVOS MODELOS PARA SISTEMA POS/FACTURACIÓN =====================================
+
+class ConsecutivoPOS(db.Model):
+    """Maneja el consecutivo persistente para recibos POS"""
+    __tablename__ = 'consecutivos_pos'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    numero_actual = db.Column(db.Integer, default=0)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<ConsecutivoPOS: {self.numero_actual}>'
+
+class ConfiguracionSistema(db.Model):
+    """Configuración global del sistema"""
+    __tablename__ = 'configuracion_sistema'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    tipo_facturacion = db.Column(db.String(20), default='POS')  # 'POS' o 'ELECTRONICA'
+    nombre_empresa = db.Column(db.String(200), default='Mi Panadería')
+    nit_empresa = db.Column(db.String(20), default='')
+    direccion_empresa = db.Column(db.String(300), default='')
+    telefono_empresa = db.Column(db.String(20), default='')
+    ciudad_empresa = db.Column(db.String(100), default='')
+    regimen_empresa = db.Column(db.String(100), default='Simplificado')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<ConfiguracionSistema: {self.tipo_facturacion}>'

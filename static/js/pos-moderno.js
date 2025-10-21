@@ -824,6 +824,8 @@ function generarTicketHTML(ventaData) {
         </html>
     `;
 }
+
+
 // =============================================
 // 7. PROCESAMIENTO DE VENTA
 // =============================================
@@ -863,7 +865,8 @@ async function procesarVenta() {
                 metodoPago.charAt(0).toUpperCase() + metodoPago.slice(1);
             
             // Guardar datos para impresión
-            window.ultimaFacturaId = resultado.factura_id;
+            window.ultimaFacturaId = resultado.venta_id;
+             window.tipoDocumento = resultado.tipo_documento || 'POS';
             window.ultimoTotal = resultado.total;
             
             // Mostrar modal
@@ -895,39 +898,66 @@ async function procesarVenta() {
 // IMPRESIÓN MEJORADA DE TICKETS
 // =============================================
 
-function imprimirFactura() {
-    if (!window.ultimaFacturaId) {
+/**
+ * FUNCIÓN UNIFICADA - Maneja ambos casos: POS y Facturación Electrónica
+ */
+function imprimirFactura(ventaId = null, tipoDocumento = null) {
+    // Determinar el ID de la venta y tipo de documento
+    const idVenta = ventaId || window.ultimaFacturaId;
+    const tipoDoc = tipoDocumento || window.tipoDocumento || 'POS';
+    
+    console.log('🔍 Debug imprimirFactura:', { idVenta, tipoDoc, ventaId, tipoDocumento });
+    
+    if (!idVenta) {
         mostrarNotificacion('❌ No hay factura para imprimir', 'error');
         return;
     }
 
-    try {
-        // Datos de ejemplo para el ticket (en un sistema real vendrían del backend)
-        const ticketData = {
-            numero_factura: `FAC-${Date.now().toString().slice(-6)}`,
-            fecha: new Date().toISOString(),
-            carrito: carrito,
-            total: window.ultimoTotal || calcularTotalCarrito(),
-            metodo_pago: document.querySelector('input[name="metodoPago"]:checked').value
-        };
+    console.log('🖨️ Imprimiendo:', tipoDoc, 'ID:', idVenta);
 
-        // Generar ventana de ticket personalizado
-        const ticketWindow = window.open('', '_blank', 'width=400,height=600');
-        ticketWindow.document.write(generarTicketHTML(ticketData));
-        ticketWindow.document.close();
-
-        // Auto-imprimir después de cargar (opcional)
-        setTimeout(() => {
-            ticketWindow.print();
-        }, 500);
-
-    } catch (error) {
-        console.error('Error generando ticket:', error);
-        // Fallback a la impresión original
-        if (window.ultimaFacturaId) {
-            window.open(`/imprimir_factura/${window.ultimaFacturaId}`, '_blank');
-        }
+    if (tipoDoc === 'ELECTRONICA') {
+        // Imprimir factura electrónica
+        const url = `/api/imprimir-factura/${idVenta}`;
+        console.log('📄 Abriendo factura electrónica:', url);
+        const printWindow = window.open(url, '_blank', 'width=400,height=600');
+    } else {
+        // Para POS, usar el sistema de recibo tradicional
+        console.log('🧾 Abriendo recibo POS');
+        const url = `/imprimir_factura/${idVenta}`;
+        const printWindow = window.open(url, '_blank');
     }
+}
+
+/**
+ * Función para descargar XML de factura electrónica
+ */
+function descargarXMLFactura(ventaId) {
+    if (!ventaId) {
+        mostrarNotificacion('❌ No hay venta para exportar', 'error');
+        return;
+    }
+    
+    console.log('📥 Descargando XML para venta:', ventaId);
+    const link = document.createElement('a');
+    link.href = `/api/exportar-xml/${ventaId}`;
+    link.download = `factura_${ventaId}.xml`;
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+/**
+ * Función para descargar XML de factura electrónica
+ */
+function descargarXMLFactura(ventaId) {
+    const link = document.createElement('a');
+    link.href = `/api/exportar-xml/${ventaId}`;
+    link.download = `factura_${ventaId}.xml`;
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }
 
 // Función auxiliar para calcular total
@@ -983,24 +1013,35 @@ function mostrarConfiguracionTickets() {
                                           id="ticketMensaje">${configTicket.ticket.mensajePersonalizado}</textarea>
                             </div>
 
-                            <!-- Opciones de Ticket -->
-                            <div class="row">
+                                <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-check form-switch">
                                         <input class="form-check-input" type="checkbox" 
-                                               ${configTicket.ticket.mostrarLogo ? 'checked' : ''}
-                                               id="mostrarLogo">
+                                            ${configTicket.ticket.mostrarLogo ? 'checked' : ''}
+                                            id="mostrarLogo" onchange="toggleLogoUrl()">
                                         <label class="form-check-label">Mostrar Logo</label>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-check form-switch">
                                         <input class="form-check-input" type="checkbox" 
-                                               ${configTicket.ticket.mostrarQR ? 'checked' : ''}
-                                               id="mostrarQR">
+                                            ${configTicket.ticket.mostrarQR ? 'checked' : ''}
+                                            id="mostrarQR">
                                         <label class="form-check-label">Mostrar QR</label>
                                     </div>
                                 </div>
+                            </div>
+
+                            <!-- 🆕 AGREGAR ESTO INMEDIATAMENTE DESPUÉS -->
+                            <div class="mb-3" id="logoUrlContainer" style="${configTicket.ticket.mostrarLogo ? '' : 'display: none;'}">
+                                <label class="form-label">URL del Logo</label>
+                                <input type="text" class="form-control" 
+                                    value="${configTicket.ticket.logoUrl || ''}" 
+                                    id="logoUrl" 
+                                    placeholder="ruta/logo.png o https://ejemplo.com/logo.png">
+                                <small class="text-muted">
+                                    Ejemplo: "static/img/logo.png" o URL completa
+                                </small>
                             </div>
 
                             <!-- Vista Previa -->
@@ -1036,23 +1077,63 @@ function mostrarConfiguracionTickets() {
     });
 }
 
-function guardarConfigTicket() {
-    // Actualizar configuración (en un sistema real, guardarías en base de datos)
-    configTicket.empresa.nombre = document.getElementById('empresaNombre').value;
-    configTicket.empresa.direccion = document.getElementById('empresaDireccion').value;
-    configTicket.empresa.telefono = document.getElementById('empresaTelefono').value;
-    configTicket.ticket.mensajePersonalizado = document.getElementById('ticketMensaje').value;
-    configTicket.ticket.mostrarLogo = document.getElementById('mostrarLogo').checked;
-    configTicket.ticket.mostrarQR = document.getElementById('mostrarQR').checked;
 
-    // Guardar en localStorage
-    localStorage.setItem('config_ticket_panaderia', JSON.stringify(configTicket));
+function guardarConfigTicket() {
+    // 1. Recoger datos del formulario (igual que antes)
+    const configActualizada = {
+        empresa: {
+            nombre: document.getElementById('empresaNombre').value,
+            direccion: document.getElementById('empresaDireccion').value,
+            telefono: document.getElementById('empresaTelefono').value,
+            nit: document.getElementById('empresaNIT')?.value || "900000000-1", // 🆕 Agregar si no existe
+            ciudad: document.getElementById('empresaCiudad')?.value || "Pasto" // 🆕 Agregar si no existe
+        },
+        ticket: {
+            mostrarLogo: document.getElementById('mostrarLogo').checked,
+            logoUrl: document.getElementById('logoUrl')?.value || "", // 🆕 Agregar si no existe
+            mensajePersonalizado: document.getElementById('ticketMensaje').value,
+            mostrarQR: document.getElementById('mostrarQR').checked,
+            qrMensaje: "Escanea para dejar tu reseña", // 🆕 Valor por defecto
+            mostrarPromociones: true // 🆕 Valor por defecto
+        },
+        diseño: {
+            encabezadoColor: "#2c3e50",
+            textoColor: "#2c3e50",
+            enfasisColor: "#e74c3c"
+        }
+    };
+
+    // 2. 🆕 GUARDAR EN LOCALSTORAGE (para el recibo POS)
+    localStorage.setItem('configTicketPersonalizada', JSON.stringify(configActualizada));
+
+    // 3. 🆕 OPCIONAL: Guardar también en la variable global para compatibilidad
+    if (typeof configTicket !== 'undefined') {
+        Object.assign(configTicket, configActualizada);
+    }
+
+    // 4. Cerrar modal y mostrar mensaje
+    bootstrap.Modal.getInstance(document.getElementById('configTicketModal')).hide();
     
-    mostrarNotificacion('✅ Configuración de tickets guardada', 'success');
+    // 5. 🆕 ACTUALIZAR VISTA PREVIA INMEDIATA
+    actualizarVistaPreviaTicket(configActualizada);
     
-    // Cerrar modal
-    const modal = bootstrap.Modal.getInstance(document.getElementById('configTicketModal'));
-    modal.hide();
+    alert('✅ Configuración de tickets guardada correctamente');
+}
+
+// 🆕 AGREGAR ESTA FUNCIÓN AUXILIAR SI NO EXISTE:
+function actualizarVistaPreviaTicket(config) {
+    const vistaPrevia = document.querySelector('#configTicketModal .border.rounded');
+    if (vistaPrevia) {
+        vistaPrevia.innerHTML = `
+            <h6>Vista Previa del Ticket</h6>
+            <div style="font-size: 12px; font-family: 'Courier New';">
+                <strong>${config.empresa.nombre}</strong><br>
+                ${config.empresa.direccion}<br>
+                Tel: ${config.empresa.telefono}<br>
+                ${config.ticket.mensajePersonalizado}
+            </div>
+        `;
+    }
 }
 
 // Cargar configuración al iniciar
@@ -1373,6 +1454,20 @@ async function verificarEstadoCierreDiario() {
     } catch (error) {
         console.error('Error verificando estado de cierre:', error);
     }
+}
+
+function toggleLogoUrl() {
+    const mostrarLogo = document.getElementById('mostrarLogo').checked;
+    const logoUrlContainer = document.getElementById('logoUrlContainer');
+    
+    if (logoUrlContainer) {
+        logoUrlContainer.style.display = mostrarLogo ? 'block' : 'none';
+    }
+}
+
+
+function irAConfiguracionFacturacion() {
+    window.location.href = '/configuracion/facturacion';
 }
 
 // =============================================

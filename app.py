@@ -1,7 +1,7 @@
 import os
 import uuid
 import json
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, Response
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, Response, make_response
 from flask_login import LoginManager, login_required, current_user, login_user, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta, date
@@ -12,7 +12,8 @@ import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('Agg')
 from models import JornadaVentas, CierreDiario, obtener_jornada_activa, cerrar_jornada_actual, obtener_ventas_dia, obtener_historial_cierres
-
+from facturacion.generador_xml import generar_xml_ubl_21
+from models import ConsecutivoPOS, ConfiguracionSistema 
 # Obtener la ruta base del proyecto
 basedir = os.path.abspath(os.path.dirname(__file__))
 
@@ -59,6 +60,27 @@ with app.app_context():
         db.session.add(admin_user)
         db.session.commit()
         print("✅ Usuario admin creado: usuario: admin, contraseña: admin123")
+    
+    # 🆕 VERIFICAR Y CREAR MODELOS NUEVOS DEL SISTEMA POS
+    consecutivo = ConsecutivoPOS.query.first()
+    if not consecutivo:
+        consecutivo_inicial = ConsecutivoPOS(numero_actual=0)
+        db.session.add(consecutivo_inicial)
+        print("✅ Consecutivo POS inicial creado")
+    
+    config_sistema = ConfiguracionSistema.query.first()
+    if not config_sistema:
+        config_inicial = ConfiguracionSistema(
+            tipo_facturacion='POS',
+            nombre_empresa='Panadería y Pasteleria Semillas',
+            nit_empresa='900000000-1',
+            direccion_empresa='Cra. 18 # 9-45 Atahualpa',
+            telefono_empresa='+57 3189098818',
+            ciudad_empresa='Pasto',
+            regimen_empresa='Simplificado'
+        )
+        db.session.add(config_inicial)
+        print("✅ Configuración del sistema inicial creada")
     
     # Crear categorías y productos de prueba si no existen
     if not Categoria.query.first():
@@ -123,6 +145,9 @@ with app.app_context():
         db.session.add_all(proveedores_ejemplo)
         db.session.commit()
         print("✅ Proveedores de ejemplo creados automáticamente")
+    
+    # 🆕 HACER COMMIT FINAL DE TODOS LOS CAMBIOS
+    db.session.commit()
     
     print("✅ Base de datos lista!")
     print(f"📁 Ubicación de la BD: {os.path.join(basedir, 'panaderia.db')}")
@@ -317,10 +342,91 @@ def debug_productos_punto_venta():
     
     return jsonify(resultado)
     
+    
+    # === 🆕 FUNCIONES PARA MANEJO DE CONSECUTIVOS POS ===
+# 📍 Pega este código JUSTO AQUÍ, antes de @app.route('/registrar_venta')
+
+def obtener_consecutivo_pos():
+    """
+    Obtiene y incrementa automáticamente el consecutivo POS
+    Si no existe, crea el registro inicial con valor 0
+    """
+    try:
+        consecutivo = ConsecutivoPOS.query.first()
+        if not consecutivo:
+            # 🆕 Crear registro inicial si no existe
+            consecutivo = ConsecutivoPOS(numero_actual=0)
+            db.session.add(consecutivo)
+            db.session.commit()
+            print("✅ Registro de consecutivo POS creado inicialmente")
+        
+        # Incrementar consecutivo
+        consecutivo.numero_actual += 1
+        consecutivo.updated_at = datetime.utcnow()
+        db.session.commit()
+        
+        print(f"✅ Consecutivo POS actualizado: {consecutivo.numero_actual}")
+        return consecutivo.numero_actual
+        
+    except Exception as e:
+        print(f"❌ Error en obtener_consecutivo_pos: {e}")
+        db.session.rollback()
+        return 1  # Fallback a 1 si hay error
+
+def obtener_configuracion_sistema():
+    """
+    Obtiene la configuración del sistema desde la base de datos
+    Si no existe, crea una configuración por defecto
+    """
+    try:
+        config = ConfiguracionSistema.query.first()
+        if not config:
+            # Crear configuración por defecto
+            config = ConfiguracionSistema(
+                tipo_facturacion='POS',
+                nombre_empresa='Panaderia Semillas',
+                nit_empresa='9000000001',
+                direccion_empresa='Cra 18 # 9-45, Atahualpa',
+                telefono_empresa='+57 3189098818',
+                ciudad_empresa='Pasto',
+                regimen_empresa='Simplificado'
+            )
+            db.session.add(config)
+            db.session.commit()
+        return config
+    except Exception as e:
+        print(f"Error obteniendo configuración: {e}")
+        # Retornar objeto por defecto en caso de error
+        return type('ConfigDefault', (), {
+            'nit_empresa': '9000000001',
+            'nombre_empresa': 'Panaderia Semillas',
+            'direccion_empresa': 'Cra 18 # 9-45, Atahualpa',
+            'telefono_empresa': '+57 3189098818',
+            'ciudad_empresa': 'Pasto'
+        })()
+
+def reiniciar_consecutivo_pos():
+    """
+    ⚠️ SOLO PARA PRUEBAS: Reinicia el consecutivo a 0
+    """
+    try:
+        consecutivo = ConsecutivoPOS.query.first()
+        if consecutivo:
+            consecutivo.numero_actual = 0
+            db.session.commit()
+            print("✅ Consecutivo POS reiniciado a 0")
+        return True
+    except Exception as e:
+        print(f"❌ Error reiniciando consecutivo: {e}")
+        return False
+    
+
+
 # ✅ RUTA ACTUALIZADA: /registrar_venta con aprendizaje automático
+    
 @app.route('/registrar_venta', methods=['POST'])
 def registrar_venta():
-    """Registrar venta con productos mixtos (panadería + externos)"""
+    """Registrar venta con productos mixtos (panadería + externos) - VERSIÓN MEJORADA"""
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'No autorizado'})
     
@@ -329,11 +435,28 @@ def registrar_venta():
         carrito = data.get('carrito', [])
         metodo_pago = data.get('metodo_pago', 'efectivo')
         
-        # Crear la venta
+        # 🆕 OBTENER CONFIGURACIÓN DEL SISTEMA
+        config = obtener_configuracion_sistema()
+        
+        # 🆕 DETERMINAR TIPO DE DOCUMENTO
+        if config and config.tipo_facturacion == 'ELECTRONICA':
+            tipo_documento = 'ELECTRONICA'
+            consecutivo_pos = None
+            texto_legal = "Factura electrónica de venta"
+        else:
+            tipo_documento = 'POS'
+            consecutivo_pos = obtener_consecutivo_pos()  # 🆕 OBTENER CONSECUTIVO
+            texto_legal = "Documento equivalente POS – No válido como factura electrónica de venta"
+        
+        # 🆕 CREAR VENTA CON NUEVOS CAMPOS
         nueva_venta = Venta(
             usuario_id=session['user_id'],
             total=0,  # Se calculará después
-            metodo_pago=metodo_pago
+            metodo_pago=metodo_pago,
+            # 🆕 NUEVOS CAMPOS
+            tipo_documento=tipo_documento,
+            consecutivo_pos=consecutivo_pos,
+            texto_legal=texto_legal
         )
         db.session.add(nueva_venta)
         db.session.flush()  # Para obtener el ID
@@ -341,7 +464,7 @@ def registrar_venta():
         total_venta = 0
         detalles_venta = []
         
-        # PROCESAR CADA PRODUCTO DEL CARRITO
+        # PROCESAR CADA PRODUCTO DEL CARRITO (TU CÓDIGO EXISTENTE)
         for item in carrito:
             producto_id = item['id']
             cantidad = item['cantidad']
@@ -413,30 +536,199 @@ def registrar_venta():
         for detalle in detalles_venta:
             db.session.add(detalle)
         
-        # Crear factura
-        factura = Factura(
-            venta_id=nueva_venta.id,
-            numero_factura=f"F{datetime.now().strftime('%Y%m%d')}{nueva_venta.id:04d}",
-            subtotal=total_venta,
-            iva=0,
-            total=total_venta
-        )
-        db.session.add(factura)
+        # 🆕 MODIFICAR: CREAR FACTURA O RECIBO SEGÚN CONFIGURACIÓN
+        if tipo_documento == 'ELECTRONICA':
+            # Para factura electrónica (futura implementación)
+            factura = Factura(
+                venta_id=nueva_venta.id,
+                numero_factura=f"FE{datetime.now().strftime('%Y%m%d')}{nueva_venta.id:04d}",
+                subtotal=total_venta,
+                iva=0,
+                total=total_venta
+            )
+            mensaje_exito = f'Factura electrónica #{factura.numero_factura} generada'
+        else:
+            # Para recibo POS
+            factura = Factura(
+                venta_id=nueva_venta.id,
+                numero_factura=f"POS{consecutivo_pos:06d}",  # 🆕 Formato POS000001
+                subtotal=total_venta,
+                iva=0,
+                total=total_venta
+            )
+            mensaje_exito = f'Recibo POS #{consecutivo_pos} generado correctamente'
         
+        db.session.add(factura)
         db.session.commit()
+        
+        # 🆕 LIMPIAR CARRITO DESPUÉS DE VENTA EXITOSA
+        if 'carrito' in session:
+            session.pop('carrito')
+            session.modified = True
         
         return jsonify({
             'success': True,
             'venta_id': nueva_venta.id,
             'factura_id': factura.id,
             'numero_factura': factura.numero_factura,
-            'total': total_venta
+            'consecutivo_pos': consecutivo_pos,  # 🆕 NUEVO
+            'tipo_documento': tipo_documento,    # 🆕 NUEVO
+            'total': total_venta,
+            'mensaje': mensaje_exito
         })
         
     except Exception as e:
         db.session.rollback()
         print(f"Error al registrar venta: {e}")
-        return jsonify({'success': False, 'error': str(e)})
+        return jsonify({'success': False, 'error': str(e)})  # ❌ También corregí esta línea
+    
+# 🆕 AGREGAR ESTA RUTA COMPLETA EN app.py
+
+@app.route('/configuracion/facturacion', methods=['GET', 'POST'])
+@login_required
+def configuracion_facturacion():
+    """
+    Configuración del tipo de facturación (POS vs Electrónica)
+    """
+    config = obtener_configuracion_sistema()
+    
+    if request.method == 'POST':
+        try:
+            # Actualizar configuración
+            config.tipo_facturacion = request.form.get('tipo_facturacion', 'POS')
+            config.nombre_empresa = request.form.get('nombre_empresa', '')
+            config.nit_empresa = request.form.get('nit_empresa', '')
+            config.direccion_empresa = request.form.get('direccion_empresa', '')
+            config.telefono_empresa = request.form.get('telefono_empresa', '')
+            config.ciudad_empresa = request.form.get('ciudad_empresa', '')
+            config.regimen_empresa = request.form.get('regimen_empresa', 'Simplificado')
+            
+            db.session.commit()
+            flash('✅ Configuración actualizada correctamente', 'success')
+            
+        except Exception as e:
+            flash(f'❌ Error actualizando configuración: {str(e)}', 'error')
+    
+    return render_template('configuracion_facturacion.html', config=config)
+
+@app.route('/api/exportar-xml/<int:venta_id>')
+@login_required
+def exportar_xml_venta(venta_id):
+    """
+    Exporta una venta a formato XML UBL 2.1 - VERSIÓN CORREGIDA
+    """
+    try:
+        venta = Venta.query.get_or_404(venta_id)
+        detalles = DetalleVenta.query.filter_by(venta_id=venta_id).all()
+        
+        # Verificar que existan detalles
+        if not detalles:
+            flash('❌ No hay detalles de venta para generar el XML', 'error')
+            return redirect(request.referrer or url_for('ventas'))
+        
+        # Obtener configuración del sistema
+        config = obtener_configuracion_sistema()
+        
+        # Generar XML
+        xml_content = generar_xml_ubl_21(venta, config, detalles)
+        
+        if not xml_content:
+            flash('❌ No se pudo generar el contenido XML', 'error')
+            return redirect(request.referrer or url_for('ventas'))
+        
+        # 🆕 CREAR RESPUESTA CON HEADERS CORRECTOS PARA XML
+        response = make_response(xml_content)
+        response.headers['Content-Type'] = 'application/xml; charset=utf-8'
+        response.headers['Content-Disposition'] = f'attachment; filename="Factura_{venta_id}_{venta.fecha_hora.strftime("%Y%m%d_%H%M%S")}.xml"'
+        
+        # 🆕 EVITAR QUE EL NAVEGADOR INTERPRETE COMO HTML
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        
+        return response
+        
+    except Exception as e:
+        flash(f'❌ Error generando XML: {str(e)}', 'error')
+        return redirect(request.referrer or url_for('ventas'))
+
+# Función temporal para debug del XML
+@app.route('/api/debug-xml/<int:venta_id>')
+@login_required
+def debug_xml(venta_id):
+    """Debug del XML generado"""
+    try:
+        venta = Venta.query.get_or_404(venta_id)
+        detalles = DetalleVenta.query.filter_by(venta_id=venta_id).all()
+        config = obtener_configuracion_sistema()
+        
+        xml_content = generar_xml_ubl_21(venta, config, detalles)
+        
+        # Verificar si el XML es válido
+        try:
+            import xml.etree.ElementTree as ET
+            ET.fromstring(xml_content)
+            xml_valid = "✅ XML VÁLIDO"
+        except Exception as e:
+            xml_valid = f"❌ XML INVÁLIDO: {str(e)}"
+        
+        return f"""
+        <h1>Debug XML - Venta {venta_id}</h1>
+        <p>{xml_valid}</p>
+        <h3>Contenido XML:</h3>
+        <pre>{xml_content}</pre>
+        <h3>Headers que debería tener:</h3>
+        <ul>
+            <li>Content-Type: application/xml; charset=utf-8</li>
+            <li>Content-Disposition: attachment; filename=...</li>
+        </ul>
+        """
+    except Exception as e:
+        return f"Error en debug: {str(e)}"
+    
+@app.route('/api/imprimir-factura/<int:venta_id>')
+@login_required
+def imprimir_factura_electronica(venta_id):
+    """Genera la representación impresa de la factura electrónica"""
+    try:
+        venta = Venta.query.get_or_404(venta_id)
+        detalles = DetalleVenta.query.filter_by(venta_id=venta_id).all()
+        config = obtener_configuracion_sistema()
+        
+        # Verificar si es factura electrónica
+        if venta.tipo_documento != 'ELECTRONICA':
+            flash('⚠️ Esta venta no es una factura electrónica', 'warning')
+            return redirect(request.referrer or url_for('ventas'))
+        
+        return render_template(
+            'factura_electronica.html',  # 👈 Nuevo template
+            venta=venta,
+            detalles=detalles,
+            config=config,
+            ahora=datetime.utcnow()
+        )
+        
+    except Exception as e:
+        flash(f'❌ Error generando factura: {str(e)}', 'error')
+        return redirect(request.referrer or url_for('ventas'))
+    
+@app.route('/recibo-pos/<int:venta_id>')
+@login_required
+def recibo_pos(venta_id):
+    """
+    🆕 Genera el recibo POS para impresión térmica
+    """
+    try:
+        venta = Venta.query.get_or_404(venta_id)
+        detalles = DetalleVenta.query.filter_by(venta_id=venta_id).all()
+        config = obtener_configuracion_sistema()
+        
+        return render_template('recibo_pos.html', 
+                             venta=venta, 
+                             detalles=detalles, 
+                             config=config)
+                             
+    except Exception as e:
+        flash(f'Error al generar recibo: {str(e)}', 'error')
+        return redirect(url_for('punto_venta'))
     
 @app.route('/agregar_al_carrito', methods=['POST'])
 def agregar_al_carrito():
@@ -2180,29 +2472,33 @@ def productos_sugeridos_venta():
     return jsonify(productos_alta_rotacion[:8])  # Top 8 productos
 
 @app.route('/imprimir_factura/<int:factura_id>')
+@login_required
 def imprimir_factura(factura_id):
-    """Generar vista imprimible de factura"""
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    
-    factura = Factura.query.get_or_404(factura_id)
-    detalles_venta = DetalleVenta.query.filter_by(venta_id=factura.venta_id).all()
-    
-    # Obtener información de productos para cada detalle
-    detalles_con_productos = []
-    for detalle in detalles_venta:
-        producto = Producto.query.get(detalle.producto_id)
-        detalles_con_productos.append({
-            'detalle': detalle,
-            'producto_nombre': producto.nombre if producto else f"Producto #{detalle.producto_id}",
-            'cantidad': detalle.cantidad,
-            'precio_unitario': detalle.precio_unitario
-        })
-    
-    return render_template('factura.html', 
-                         factura=factura, 
-                         detalles_con_productos=detalles_con_productos,
-                         venta=factura.venta)
+    """Generar vista imprimible - Versión mejorada que detecta tipo de documento"""
+    try:
+        venta = Venta.query.get_or_404(factura_id)
+        detalles = DetalleVenta.query.filter_by(venta_id=factura_id).all()
+        config = obtener_configuracion_sistema()
+        
+        # 🆕 DETECTAR TIPO DE DOCUMENTO Y USAR TEMPLATE APROPIADO
+        if venta.tipo_documento == 'ELECTRONICA':
+            # Usar template de factura electrónica
+            return render_template('factura_electronica.html',
+                                venta=venta,
+                                detalles=detalles,
+                                config=config,
+                                ahora=datetime.utcnow())
+        else:
+            # Usar template de recibo POS tradicional
+            return render_template('recibo_pos.html',
+                                venta=venta,
+                                detalles=detalles,
+                                config=config,
+                                ahora=datetime.utcnow())
+        
+    except Exception as e:
+        flash(f'❌ Error generando documento: {str(e)}', 'error')
+        return redirect(request.referrer or url_for('ventas'))
     
 # En app.py - NUEVAS RUTAS PARA PRODUCTOS EXTERNOS
 

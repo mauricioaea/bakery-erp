@@ -1,0 +1,275 @@
+<!-- 📍 Crear archivo: templates/configuracion_facturacion.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuración Facturación - Sistema Panadería</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .config-card {
+            border-left: 4px solid #0d6efd;
+            transition: all 0.3s ease;
+        }
+        .config-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .pos-option {
+            border: 2px solid #198754;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            cursor: pointer;
+        }
+        .electronica-option {
+            border: 2px solid #0d6efd;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            cursor: pointer;
+        }
+        .selected {
+            background-color: #e8f5e8;
+            border-color: #198754 !important;
+        }
+        .consecutivo-info {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- Header -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+            <div class="container">
+                <a class="navbar-brand" href="{{ url_for('dashboard') }}">
+                    <i class="fas fa-bread-slice"></i> Panadería POS
+                </a>
+                <div class="navbar-nav ms-auto">
+                    <a class="nav-link" href="{{ url_for('dashboard') }}">
+                        <i class="fas fa-home"></i> Dashboard
+                    </a>
+                    <a class="nav-link" href="{{ url_for('punto_venta') }}">
+                        <i class="fas fa-cash-register"></i> Punto de Venta
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card config-card">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">
+                            <i class="fas fa-cogs"></i> Configuración del Sistema de Facturación
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <!-- Mensajes Flash -->
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                {% for category, message in messages %}
+                                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show">
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+
+                        <form method="POST">
+                            <!-- Tipo de Facturación -->
+                            <div class="mb-4">
+                                <h5 class="mb-3">
+                                    <i class="fas fa-receipt"></i> Tipo de Documento de Venta
+                                </h5>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="pos-option {{ 'selected' if config.tipo_facturacion == 'POS' }}" 
+                                             onclick="selectOption('POS')">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="tipo_facturacion" 
+                                                       id="pos" value="POS" {{ 'checked' if config.tipo_facturacion == 'POS' }}>
+                                                <label class="form-check-label fw-bold" for="pos">
+                                                    <i class="fas fa-print text-success"></i> Recibo POS
+                                                </label>
+                                            </div>
+                                            <small class="text-muted">
+                                                Documento equivalente para ventas menores. No válido como factura electrónica.
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="electronica-option {{ 'selected' if config.tipo_facturacion == 'ELECTRONICA' }}" 
+                                             onclick="selectOption('ELECTRONICA')">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="tipo_facturacion" 
+                                                       id="electronica" value="ELECTRONICA" {{ 'checked' if config.tipo_facturacion == 'ELECTRONICA' }}>
+                                                <label class="form-check-label fw-bold" for="electronica">
+                                                    <i class="fas fa-file-invoice text-primary"></i> Factura Electrónica DIAN
+                                                </label>
+                                            </div>
+                                            <small class="text-muted">
+                                                Factura electrónica según normativa DIAN. Requiere certificado digital.
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Información de la Empresa -->
+                            <div class="mb-4">
+                                <h5 class="mb-3">
+                                    <i class="fas fa-building"></i> Información de la Empresa
+                                </h5>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="nombre_empresa" class="form-label">Nombre de la Empresa *</label>
+                                        <input type="text" class="form-control" id="nombre_empresa" name="nombre_empresa" 
+                                               value="{{ config.nombre_empresa }}" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="nit_empresa" class="form-label">NIT *</label>
+                                        <input type="text" class="form-control" id="nit_empresa" name="nit_empresa" 
+                                               value="{{ config.nit_empresa }}" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="direccion_empresa" class="form-label">Dirección</label>
+                                        <input type="text" class="form-control" id="direccion_empresa" name="direccion_empresa" 
+                                               value="{{ config.direccion_empresa }}">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="ciudad_empresa" class="form-label">Ciudad</label>
+                                        <input type="text" class="form-control" id="ciudad_empresa" name="ciudad_empresa" 
+                                               value="{{ config.ciudad_empresa }}">
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="telefono_empresa" class="form-label">Teléfono</label>
+                                        <input type="text" class="form-control" id="telefono_empresa" name="telefono_empresa" 
+                                               value="{{ config.telefono_empresa }}">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="regimen_empresa" class="form-label">Régimen</label>
+                                        <select class="form-select" id="regimen_empresa" name="regimen_empresa">
+                                            <option value="Simplificado" {{ 'selected' if config.regimen_empresa == 'Simplificado' }}>Simplificado</option>
+                                            <option value="Común" {{ 'selected' if config.regimen_empresa == 'Común' }}>Común</option>
+                                            <option value="Especial" {{ 'selected' if config.regimen_empresa == 'Especial' }}>Especial</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Información del Consecutivo POS -->
+                            <div class="consecutivo-info">
+                                <h6 class="mb-3">
+                                    <i class="fas fa-hashtag"></i> Información del Consecutivo POS
+                                </h6>
+                                <div id="consecutivo-data">
+                                    <p class="mb-1">
+                                        <strong>Estado actual:</strong> 
+                                        <span id="current-consecutivo">Cargando...</span>
+                                    </p>
+                                    <small class="text-muted">
+                                        El consecutivo se incrementa automáticamente con cada recibo POS generado.
+                                    </small>
+                                    <div class="mt-2">
+                                        <button type="button" class="btn btn-outline-warning btn-sm" 
+                                                onclick="reiniciarConsecutivo()">
+                                            <i class="fas fa-sync-alt"></i> Reiniciar Consecutivo (Solo pruebas)
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Botones de Acción -->
+                            <div class="d-flex justify-content-between mt-4">
+                                <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i> Volver al Dashboard
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Guardar Configuración
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Selección visual de opciones
+        function selectOption(tipo) {
+            document.querySelectorAll('.pos-option, .electronica-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            
+            if (tipo === 'POS') {
+                document.querySelector('.pos-option').classList.add('selected');
+                document.getElementById('pos').checked = true;
+            } else {
+                document.querySelector('.electronica-option').classList.add('selected');
+                document.getElementById('electronica').checked = true;
+            }
+        }
+
+        // Cargar información del consecutivo
+        async function cargarConsecutivo() {
+            try {
+                const response = await fetch('/api/consecutivo-pos/estado');
+                const data = await response.json();
+                
+                if (data.error) {
+                    document.getElementById('current-consecutivo').textContent = 'Error al cargar';
+                    return;
+                }
+                
+                const numero = data.numero_actual || 0;
+                const fecha = data.updated_at ? new Date(data.updated_at).toLocaleDateString() : 'Nunca';
+                
+                document.getElementById('current-consecutivo').textContent = 
+                    `#${numero} (Última actualización: ${fecha})`;
+                    
+            } catch (error) {
+                document.getElementById('current-consecutivo').textContent = 'Error al cargar';
+            }
+        }
+
+        // Reiniciar consecutivo (solo pruebas)
+        async function reiniciarConsecutivo() {
+            if (!confirm('⚠️ ¿Estás seguro de reiniciar el consecutivo a 0?\n\nSOLO PARA PRUEBAS - Esto afectará la numeración de recibos.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/consecutivo-pos/reiniciar');
+                if (response.ok) {
+                    alert('✅ Consecutivo reiniciado correctamente');
+                    location.reload();
+                } else {
+                    alert('❌ Error al reiniciar consecutivo');
+                }
+            } catch (error) {
+                alert('❌ Error al reiniciar consecutivo');
+            }
+        }
+
+        // Cargar datos al iniciar
+        document.addEventListener('DOMContentLoaded', cargarConsecutivo);
+    </script>
+</body>
+</html>

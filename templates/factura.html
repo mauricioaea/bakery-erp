@@ -69,17 +69,29 @@
         }
     </style>
 </head>
-<body>
-    <div class="factura-container">
-        <!-- Encabezado -->
-        <div class="header">
+        <body>
+            <div class="factura-container">
+                <!-- Encabezado -->
+                <div class="header">
             <h2 style="margin: 0;">{{ factura.nombre_panaderia }}</h2>
             <p style="margin: 2px 0;">NIT: {{ factura.nit_panaderia }}</p>
             <p style="margin: 2px 0;">{{ factura.direccion_panaderia }}</p>
             <p style="margin: 2px 0;">Tel: {{ factura.telefono_panaderia }}</p>
             <hr style="margin: 8px 0;">
-            <h3 style="margin: 5px 0;">FACTURA DE VENTA</h3>
-            <p style="margin: 2px 0;"><strong>No:</strong> {{ factura.numero_factura }}</p>
+            <h3 style="margin: 5px 0;">
+                {% if venta.tipo_documento == 'ELECTRONICA' %}
+                    FACTURA ELECTRÓNICA DE VENTA
+                {% else %}
+                    RECIBO POS
+                {% endif %}
+            </h3>
+            <p style="margin: 2px 0;"><strong>No:</strong> 
+                {% if venta.tipo_documento == 'ELECTRONICA' %}
+                    {{ factura.numero_factura }}
+                {% else %}
+                    POS{{ "%06d" % venta.consecutivo_pos }}
+                {% endif %}
+            </p>
             <p style="margin: 2px 0;"><strong>Fecha:</strong> {{ factura.fecha_emision.strftime('%d/%m/%Y %H:%M') }}</p>
         </div>
 
@@ -138,8 +150,23 @@
     </div>
 
     <!-- Botón de impresión (solo visible en navegador) -->
+    <!-- Botones de impresión y descarga (solo visible en navegador) -->
     <div class="no-print" style="text-align: center; margin-top: 20px;">
-        <button onclick="window.print()" class="btn btn-primary">🖨️ Imprimir Factura</button>
+        <button onclick="imprimirFactura({{ venta.id }}, '{{ venta.tipo_documento }}')" class="btn btn-primary">
+            🖨️ 
+            {% if venta.tipo_documento == 'ELECTRONICA' %}
+                Imprimir Factura Electrónica
+            {% else %}
+                Imprimir Recibo POS
+            {% endif %}
+        </button>
+        
+        {% if venta.tipo_documento == 'ELECTRONICA' %}
+        <button onclick="descargarXMLFactura({{ venta.id }})" class="btn btn-success">
+            📄 Descargar XML DIAN
+        </button>
+        {% endif %}
+        
         <a href="{{ url_for('punto_venta') }}" class="btn btn-secondary">← Volver al Punto de Venta</a>
     </div>
 
