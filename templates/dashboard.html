@@ -395,11 +395,24 @@
             </div>
 
             <!-- Gestión de Usuarios -->
-            <div class="card">
-                <div class="card-icon" style="background: #95a5a6;">👥</div>
-                <h3>Gestión de Usuarios</h3>
-                <p>Administrar empleados, permisos y roles del sistema</p>
-                <a href="#" class="card-btn disabled">Próximamente</a>
+            <div class="col-md-3 mb-4">
+                <div class="card border-primary">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-users fa-2x text-primary"></i>
+                        </div>
+                        <h5 class="card-title text-primary">👥 Gestión de Usuarios</h5>
+                        <p class="card-text text-muted">Administrar empleados, permisos y roles</p>
+                        
+                        {% if current_user.is_authenticated and current_user.tiene_permiso('usuarios', 'gestionar') %}
+                            <a href="{{ url_for('gestion_usuarios') }}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-cog"></i> Administrar
+                            </a>
+                        {% else %}
+                            <span class="badge bg-secondary">🔒 Solo administradores</span>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
         </div>
 

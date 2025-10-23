@@ -172,7 +172,7 @@
             <strong>No:</strong> POS{{ "%06d" % venta.consecutivo_pos }}<br>
             <strong>Fecha:</strong> {{ venta.fecha_hora.strftime('%d/%m/%Y') }}<br>
             <strong>Hora:</strong> {{ venta.fecha_hora.strftime('%H:%M:%S') }}<br>
-            <strong>Vendedor:</strong> {{ venta.usuario.username }}
+            <strong>Vendedor:</strong> {{ venta.usuario_asociado.username }}
         </div>
         
         <!-- Items -->

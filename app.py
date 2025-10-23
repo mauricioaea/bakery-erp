@@ -14,20 +14,111 @@ matplotlib.use('Agg')
 from models import JornadaVentas, CierreDiario, obtener_jornada_activa, cerrar_jornada_actual, obtener_ventas_dia, obtener_historial_cierres
 from facturacion.generador_xml import generar_xml_ubl_21
 from models import ConsecutivoPOS, ConfiguracionSistema, Cliente
-# Obtener la ruta base del proyecto
+
+
+# 🆕 DEFINICIÓN DE MÓDULOS DEL SISTEMA - AGREGAR ESTO PRIMERO
+MODULOS_SISTEMA = {
+    'dashboard': 'Panel Principal',
+    'punto_venta': 'Punto de Venta',
+    'productos': 'Gestión de Productos',
+    'categorias': 'Categorías',
+    'produccion': 'Producción y Recetas',
+    'inventario': 'Inventario y Materias Primas',
+    'clientes': 'Gestión de Clientes',
+    'proveedores': 'Proveedores',
+    'finanzas': 'Control Financiero',
+    'reportes': 'Reportes y Análisis',
+    'configuracion': 'Configuración',
+    'activos': 'Activos Fijos',
+    'usuarios': 'Gestión de Usuarios',
+    'sistema': 'Sistema y Diagnóstico'
+}
+
+# 🆕 OBTENER LA RUTA BASE DEL PROYECTO - ANTES DE CREAR LA APP
 basedir = os.path.abspath(os.path.dirname(__file__))
 
-# Crear aplicación Flask
+# 🆕 CREAR APLICACIÓN FLASK - AHORA SÍ PUEDE USAR basedir
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'panaderia.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = 'clave_secreta_muy_segura_panaderia_2025'
+
+# 🆕 DECORADORES PARA CONTROL DE ACCESO - DESPUÉS DE CREAR 'app'
+from functools import wraps
+
+
+def permisos_requeridos(modulo, accion):
+    """Decorador para verificar permisos en rutas"""
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if not current_user.is_authenticated:
+                return redirect(url_for('login'))
+            
+            if not current_user.tiene_permiso(modulo, accion):
+                flash('❌ No tienes permisos para realizar esta acción', 'error')
+                return redirect(url_for('dashboard'))
+            
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
+def modulo_requerido(modulo):
+    """Decorador para verificar acceso al módulo completo - VERSIÓN CORREGIDA"""
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if not current_user.is_authenticated:
+                return redirect(url_for('login'))
+            
+            # ✅ CORRECCIÓN: Redirigir a una ruta segura
+            if not current_user.puede_acceder_modulo(modulo):
+                flash(f'❌ No tienes acceso al módulo {MODULOS_SISTEMA.get(modulo, modulo)}', 'error')
+                # Redirigir al perfil del usuario (siempre accesible)
+                return redirect(url_for('mi_perfil'))
+            
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
+# 🆕 CONTEXT PROCESSOR PARA PERMISOS EN TEMPLATES
+@app.context_processor
+def inject_permisos():
+    """Inyectar funciones de permisos en todos los templates"""
+    def usuario_puede(modulo, accion):
+        if not current_user.is_authenticated:
+            return False
+        return current_user.tiene_permiso(modulo, accion)
+    
+    def usuario_tiene_acceso(modulo):
+        if not current_user.is_authenticated:
+            return False
+        return current_user.puede_acceder_modulo(modulo)
+    
+    def modulos_permitidos():
+        if not current_user.is_authenticated:
+            return []
+        return current_user.obtener_modulos_permitidos()
+    
+    return dict(
+        usuario_puede=usuario_puede,
+        usuario_tiene_acceso=usuario_tiene_acceso,
+        modulos_permitidos=modulos_permitidos,
+        MODULOS_SISTEMA=MODULOS_SISTEMA
+    )
+
+# Configurar Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
 
 # Importar db desde models - UNA sola instancia
 from models import db
 
 # Inicializar db con la app
 db.init_app(app)
+
+# ... EL RESTO DE TU CÓDIGO PERMANECE IGUAL ...
 
 # Configurar Flask-Login
 login_manager = LoginManager()
@@ -56,7 +147,12 @@ with app.app_context():
     admin = Usuario.query.filter_by(username='admin').first()
     if not admin:
         hashed_password = generate_password_hash('admin123')
-        admin_user = Usuario(username='admin', password_hash=hashed_password, rol='admin')
+        admin_user = Usuario(
+            username='admin', 
+            password_hash=hashed_password, 
+            nombre_completo='Administrador Principal',  # ← ¡AGREGA ESTE CAMPO!
+            rol='administrador'
+        )
         db.session.add(admin_user)
         db.session.commit()
         print("✅ Usuario admin creado: usuario: admin, contraseña: admin123")
@@ -175,9 +271,32 @@ def login():
     return render_template('login.html')
 
 #======COLOCA AQUÍ TODAS TUS RUTAS EXISTENTES=======
+# 🆕 RUTA DE FALLBACK SEGURA
+@app.route('/acceso_denegado')
+@login_required
+def acceso_denegado():
+    return render_template('acceso_denegado.html')
+
+# Luego modifica el decorador:
+def modulo_requerido(modulo):
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if not current_user.is_authenticated:
+                return redirect(url_for('login'))
+            
+            if not current_user.puede_acceder_modulo(modulo):
+                flash(f'❌ No tienes acceso al módulo {MODULOS_SISTEMA.get(modulo, modulo)}', 'error')
+                return redirect(url_for('acceso_denegado'))  # ← RUTA SEGURA
+            
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
 
 # Ruta para el dashboard
 @app.route('/dashboard')
+@login_required
+#@modulo_requerido('dashboard')
 def dashboard():
     if 'user_id' not in session:
         return redirect(url_for('login'))
@@ -185,6 +304,8 @@ def dashboard():
 
 # Ruta para el punto de venta
 @app.route('/punto_venta')
+@login_required
+@modulo_requerido('punto_venta')
 def punto_venta():
     if 'user_id' not in session:
         return redirect(url_for('login'))
@@ -192,6 +313,8 @@ def punto_venta():
 
 # EN app.py - AGREGAR ESTA RUTA DE DIAGNÓSTICO URGENTE
 @app.route('/debug_punto_venta')
+@login_required
+@modulo_requerido('punto_venta')
 def debug_punto_venta():
     """Diagnóstico urgente del punto de venta"""
     if 'user_id' not in session:
@@ -246,6 +369,8 @@ def debug_punto_venta():
 
 # Ruta para buscar productos (API)
 @app.route('/buscar_producto')
+@login_required
+@modulo_requerido('punto_venta')
 def buscar_producto():
     """Búsqueda unificada de productos (panadería + externos) - VERSIÓN FUNCIONAL"""
     query = request.args.get('q', '').lower()
@@ -316,6 +441,8 @@ def buscar_producto():
 
 
 @app.route('/debug_productos_punto_venta')
+@login_required
+@modulo_requerido('punto_venta')
 def debug_productos_punto_venta():
     """Debug: Verificar qué productos están disponibles para punto de venta"""
     if 'user_id' not in session:
@@ -428,6 +555,8 @@ def reiniciar_consecutivo_pos():
 # ✅ RUTA ACTUALIZADA: /registrar_venta con aprendizaje automático
     
 @app.route('/registrar_venta', methods=['POST'])
+@login_required
+@modulo_requerido('punto_venta')
 def registrar_venta():
     """Registrar venta con productos mixtos (panadería + externos) - VERSIÓN MEJORADA CON CLIENTES"""
     if 'user_id' not in session:
@@ -622,6 +751,7 @@ def registrar_venta():
 
 @app.route('/api/guardar-cliente', methods=['POST'])
 @login_required
+@modulo_requerido('clientes')
 def guardar_cliente():
     """
     Guarda o actualiza un cliente para facturación electrónica
@@ -696,6 +826,7 @@ def guardar_cliente():
 
 @app.route('/api/clientes-recientes', methods=['GET'])
 @login_required
+@modulo_requerido('clientes')
 def obtener_clientes_recientes():
     """
     Obtiene la lista de clientes recientes para selección rápida
@@ -719,6 +850,7 @@ def obtener_clientes_recientes():
 
 @app.route('/api/buscar-cliente/<string:documento>', methods=['GET'])
 @login_required
+@modulo_requerido('clientes')
 def buscar_cliente(documento):
     """
     Busca un cliente por número de documento
@@ -746,6 +878,7 @@ def buscar_cliente(documento):
 
 @app.route('/api/configuracion-sistema', methods=['GET'])
 @login_required
+@modulo_requerido('configuracion')
 def obtener_configuracion_sistema_api():
     """
     API para obtener la configuración del sistema (usada por JavaScript)
@@ -783,6 +916,7 @@ def obtener_texto_legal(tipo_documento):
 
 @app.route('/configuracion/facturacion', methods=['GET', 'POST'])
 @login_required
+@modulo_requerido('configuracion')
 def configuracion_facturacion():
     """
     Configuración del tipo de facturación (POS vs Electrónica)
@@ -810,6 +944,7 @@ def configuracion_facturacion():
 
 @app.route('/api/exportar-xml/<int:venta_id>')
 @login_required
+@modulo_requerido('punto_venta')
 def exportar_xml_venta(venta_id):
     """
     Exporta una venta a formato XML UBL 2.1 - VERSIÓN CORREGIDA
@@ -850,6 +985,7 @@ def exportar_xml_venta(venta_id):
 # Función temporal para debug del XML
 @app.route('/api/debug-xml/<int:venta_id>')
 @login_required
+@modulo_requerido('punto_venta')
 def debug_xml(venta_id):
     """Debug del XML generado"""
     try:
@@ -883,6 +1019,7 @@ def debug_xml(venta_id):
     
 @app.route('/api/imprimir-factura/<int:venta_id>')
 @login_required
+@modulo_requerido('punto_venta')
 def imprimir_factura_electronica(venta_id):
     """Genera la representación impresa de la factura electrónica"""
     try:
@@ -917,6 +1054,7 @@ def imprimir_factura_electronica(venta_id):
     
 @app.route('/recibo-pos/<int:venta_id>')
 @login_required
+@modulo_requerido('punto_venta')
 def recibo_pos(venta_id):
     """
     🆕 Genera el recibo POS para impresión térmica
@@ -936,6 +1074,8 @@ def recibo_pos(venta_id):
         return redirect(url_for('punto_venta'))
     
 @app.route('/agregar_al_carrito', methods=['POST'])
+@login_required
+@modulo_requerido('punto_venta')
 def agregar_al_carrito():
     try:
         data = request.get_json()
@@ -987,6 +1127,8 @@ def logout():
 # =============================================
 
 @app.route('/proveedores')
+@login_required
+@modulo_requerido('proveedores')
 def proveedores():
     if 'user_id' not in session:
         return redirect(url_for('login'))
@@ -995,6 +1137,8 @@ def proveedores():
     return render_template('proveedores.html', proveedores=todos_proveedores)
 
 @app.route('/agregar_proveedor', methods=['GET', 'POST'])
+@login_required
+@modulo_requerido('proveedores')
 def agregar_proveedor():
     if 'user_id' not in session:
         return redirect(url_for('login'))
@@ -1026,6 +1170,8 @@ def agregar_proveedor():
     return render_template('agregar_proveedor.html')
 
 @app.route('/editar_proveedor/<int:id>', methods=['GET', 'POST'])
+@login_required
+@modulo_requerido('proveedores')
 def editar_proveedor(id):
     if 'user_id' not in session:
         return redirect(url_for('login'))
@@ -1054,6 +1200,8 @@ def editar_proveedor(id):
     return render_template('editar_proveedor.html', proveedor=proveedor)
 
 @app.route('/toggle_proveedor/<int:id>')
+@login_required
+@modulo_requerido('proveedores')
 def toggle_proveedor(id):
     if 'user_id' not in session:
         return redirect(url_for('login'))
@@ -1072,6 +1220,8 @@ def toggle_proveedor(id):
 # =============================================
 
 @app.route('/productos_externos')
+@login_required
+@modulo_requerido('productos')
 def productos_externos():
     """Gestión de productos externos (bebidas, helados)"""
     if 'user_id' not in session:
@@ -1091,6 +1241,8 @@ def productos_externos():
 
 
 @app.route('/registrar_compra_externa', methods=['POST'])
+@login_required
+@modulo_requerido('productos')
 def registrar_compra_externa():
     """Registrar compra de productos externos y actualizar stock"""
     if 'user_id' not in session:
@@ -1135,6 +1287,8 @@ def registrar_compra_externa():
         return jsonify({'success': False, 'message': f'Error: {str(e)}'})
 
 @app.route('/editar_producto_externo/<int:producto_id>', methods=['POST'])
+@login_required
+@modulo_requerido('productos')
 def editar_producto_externo(producto_id):
     """Editar producto externo existente"""
     if 'user_id' not in session:
@@ -1166,6 +1320,8 @@ def editar_producto_externo(producto_id):
         return jsonify({'success': False, 'message': f'Error: {str(e)}'})
 
 @app.route('/eliminar_producto_externo/<int:producto_id>')
+@login_required
+@modulo_requerido('productos')
 def eliminar_producto_externo(producto_id):
     """Eliminar producto externo (soft delete)"""
     if 'user_id' not in session:
@@ -1184,6 +1340,8 @@ def eliminar_producto_externo(producto_id):
 # =============================================
 
 @app.route('/materias_primas')
+@login_required
+@modulo_requerido('inventario')
 def materias_primas():
     if 'user_id' not in session:
         return redirect(url_for('login'))
@@ -1201,6 +1359,8 @@ def materias_primas():
                          hoy_mas_15=hoy_mas_15)
 
 @app.route('/agregar_materia_prima', methods=['GET', 'POST'])
+@login_required
+@modulo_requerido('inventario')
 def agregar_materia_prima():
     if 'user_id' not in session:
         return redirect(url_for('login'))
@@ -1290,6 +1450,8 @@ def agregar_materia_prima():
     return render_template('agregar_materia_prima.html', proveedores=proveedores)
 
 @app.route('/editar_materia_prima/<int:id>', methods=['GET', 'POST'])
+@login_required
+@modulo_requerido('inventario')
 def editar_materia_prima(id):
     if 'user_id' not in session:
         return redirect(url_for('login'))
@@ -1385,6 +1547,8 @@ def editar_materia_prima(id):
                          historial_compras=historial_compras)
 
 @app.route('/desactivar_materia_prima/<int:id>')
+@login_required
+@modulo_requerido('inventario')
 def desactivar_materia_prima(id):
     if 'user_id' not in session:
         return redirect(url_for('login'))
@@ -1397,6 +1561,8 @@ def desactivar_materia_prima(id):
     return redirect(url_for('materias_primas'))
 
 @app.route('/activar_materia_prima/<int:id>')
+@login_required
+@modulo_requerido('inventario')
 def activar_materia_prima(id):
     if 'user_id' not in session:
         return redirect(url_for('login'))
@@ -1410,6 +1576,8 @@ def activar_materia_prima(id):
 
 # NUEVA RUTA PARA VER HISTORIAL DE COMPRAS
 @app.route('/historial_compras/<int:materia_prima_id>')
+@login_required
+@modulo_requerido('inventario')
 def historial_compras(materia_prima_id):
     if 'user_id' not in session:
         return redirect(url_for('login'))
@@ -1422,8 +1590,9 @@ def historial_compras(materia_prima_id):
 # =============================================
 # RUTAS DE PRODUCCIÓN Y RECETAS - COMPLETAMENTE ACTUALIZADAS CON PRECIOS REALES
 # =============================================
-
 @app.route('/recetas')
+@login_required
+@modulo_requerido('produccion')
 def recetas():
     if 'user_id' not in session:
         return redirect(url_for('login'))
@@ -1432,6 +1601,8 @@ def recetas():
     return render_template('recetas.html', recetas=todas_recetas)
 
 @app.route('/detalle_receta/<int:id>')
+@login_required
+@modulo_requerido('produccion')
 def detalle_receta(id):
     """Página de detalle de una receta específica"""
     if 'user_id' not in session:
@@ -1441,6 +1612,8 @@ def detalle_receta(id):
     return render_template('detalle_receta.html', receta=receta)
 
 @app.route('/producir_receta/<int:id>', methods=['GET', 'POST'])
+@login_required
+@modulo_requerido('produccion')
 def producir_receta(id):
     """Producción de una receta - cálculo de ingredientes"""
     if 'user_id' not in session:
@@ -1511,6 +1684,8 @@ def producir_receta(id):
     return render_template('produccion.html', receta=receta, cantidad=cantidad)
 
 @app.route('/api/calcular_ingredientes/<int:id>')
+@login_required
+@modulo_requerido('produccion')
 def calcular_ingredientes(id):
     """API para calcular ingredientes necesarios (AJAX)"""
     if 'user_id' not in session:
@@ -1538,6 +1713,8 @@ def calcular_ingredientes(id):
 
 # ✅ NUEVA API PARA ACTUALIZAR PRECIO REAL EN TIEMPO REAL
 @app.route('/api/actualizar_precio_real/<int:receta_id>', methods=['POST'])
+@login_required
+@modulo_requerido('produccion')
 def actualizar_precio_real(receta_id):
     """API para actualizar el precio real de una receta desde la lista"""
     if 'user_id' not in session:
@@ -1569,6 +1746,8 @@ def actualizar_precio_real(receta_id):
 
 # ✅ NUEVO ENDPOINT PARA CÁLCULOS EN TIEMPO REAL DE RECETAS
 @app.route('/api/calcular_precio_receta', methods=['POST'])
+@login_required
+@modulo_requerido('produccion')
 def calcular_precio_receta():
     """API para cálculos en tiempo real de costos y precios con 45% CIF + 45% Ganancia"""
     if 'user_id' not in session:
@@ -1666,6 +1845,8 @@ def calcular_precio_receta():
         }), 500
 
 @app.route('/crear_receta', methods=['GET', 'POST'])
+@login_required
+@modulo_requerido('produccion')
 def crear_receta():
     if 'user_id' not in session:
         return redirect(url_for('login'))
@@ -1817,6 +1998,8 @@ def obtener_categoria_id(nombre_categoria):
 
 # ✅ RUTA MEJORADA PARA EDITAR RECETAS EXISTENTES
 @app.route('/editar_receta/<int:id>', methods=['GET', 'POST'])
+@login_required
+@modulo_requerido('produccion')
 def editar_receta(id):
     """Editar una receta existente - AHORA CON PRECIO REAL"""
     if 'user_id' not in session:
@@ -1919,6 +2102,8 @@ def editar_receta(id):
 # =============================================
 
 @app.route('/diagnostico_productos')
+@login_required
+@modulo_requerido('sistema')
 def diagnostico_productos():
     """Página de diagnóstico para verificar productos y punto de venta"""
     if 'user_id' not in session:
@@ -2009,6 +2194,8 @@ def diagnostico_productos():
 # =============================================
 
 @app.route('/produccion_diaria')
+@login_required
+@modulo_requerido('produccion')
 def produccion_diaria():
     """Dashboard principal de producción diaria - ACTUALIZADO"""
     if 'user_id' not in session:
@@ -2101,6 +2288,8 @@ def produccion_diaria():
     
 # ✅ NUEVA RUTA: Configuración personalizada de stock por producto
 @app.route('/configurar_stock_producto/<int:receta_id>', methods=['GET', 'POST'])
+@login_required
+@modulo_requerido('produccion')
 def configurar_stock_producto(receta_id):
     """Configuración personalizada de stock por producto"""
     if 'user_id' not in session:
@@ -2168,6 +2357,8 @@ def calcular_ventas_ultima_semana(nombre_receta):
     
 # ✅ NUEVO: Ruta para configurar stock mínimo por receta
 @app.route('/configurar_stock/<int:receta_id>', methods=['GET', 'POST'])
+@login_required
+@modulo_requerido('produccion')
 def configurar_stock(receta_id):
     """Configurar stock objetivo y parámetros para una receta"""
     if 'user_id' not in session:
@@ -2201,6 +2392,8 @@ def configurar_stock(receta_id):
 
 # ✅ NUEVO: API para obtener configuración de stock
 @app.route('/api/configuracion_stock/<int:receta_id>')
+@login_required
+@modulo_requerido('produccion')
 def api_configuracion_stock(receta_id):
     """API para obtener configuración de stock de una receta"""
     if 'user_id' not in session:
@@ -2221,6 +2414,8 @@ def api_configuracion_stock(receta_id):
     })
 
 @app.route('/produccion/ordenar_produccion', methods=['POST'])
+@login_required
+@modulo_requerido('produccion')
 def ordenar_produccion():
     """Crear nueva orden de producción desde el dashboard"""
     if 'user_id' not in session:
@@ -2256,6 +2451,8 @@ def ordenar_produccion():
 
 
 @app.route('/debug_produccion')
+@login_required
+@modulo_requerido('produccion')
 def debug_produccion():
     """Página de debug para producción"""
     if 'user_id' not in session:
@@ -2463,6 +2660,8 @@ def calcular_ventas_hoy(nombre_receta, fecha):
 # =============================================
 
 @app.route('/produccion/iniciar_produccion/<int:orden_id>')
+@login_required
+@modulo_requerido('produccion')
 def iniciar_produccion(orden_id):
     """Iniciar una orden de producción - Cambia estado a EN_PRODUCCION"""
     if 'user_id' not in session:
@@ -2498,6 +2697,8 @@ def iniciar_produccion(orden_id):
         return jsonify({'error': str(e)}), 500
 
 @app.route('/produccion/confirmar_produccion/<int:orden_id>')
+@login_required
+@modulo_requerido('produccion')
 def confirmar_produccion(orden_id):
     """Confirmar producción completada - Actualiza stock y descuenta ingredientes"""
     if 'user_id' not in session:
@@ -2525,6 +2726,8 @@ def confirmar_produccion(orden_id):
         return jsonify({'error': str(e)}), 500
 
 @app.route('/produccion/cancelar_orden/<int:orden_id>')
+@login_required
+@modulo_requerido('produccion')
 def cancelar_orden_produccion(orden_id):
     """Cancelar una orden de producción"""
     if 'user_id' not in session:
@@ -2550,6 +2753,8 @@ def cancelar_orden_produccion(orden_id):
         return jsonify({'error': str(e)}), 500
 
 @app.route('/stock_vitrina')
+@login_required
+@modulo_requerido('produccion')
 def stock_vitrina():
     """Vista completa de stock en vitrina - Nueva pestaña"""
     if 'user_id' not in session:
@@ -2586,6 +2791,8 @@ def stock_vitrina():
     return render_template('stock_vitrina.html', stock_completo=stock_completo)
 
 @app.route('/reporte_produccion_diaria')
+@login_required
+@modulo_requerido('produccion')
 def reporte_produccion_diaria():
     """Reporte imprimible de producción diaria"""
     if 'user_id' not in session:
@@ -2626,6 +2833,8 @@ def reporte_produccion_diaria():
 # =============================================
 
 @app.route('/api/verificar_stock/<int:producto_id>')
+@login_required
+@modulo_requerido('punto_venta')
 def verificar_stock_tiempo_real(producto_id):
     """API para verificar stock en tiempo real durante venta"""
     if 'user_id' not in session:
@@ -2648,6 +2857,8 @@ def verificar_stock_tiempo_real(producto_id):
     })
 
 @app.route('/api/productos_sugeridos')
+@login_required
+@modulo_requerido('punto_venta')
 def productos_sugeridos_venta():
     """API para obtener productos sugeridos basados en rotación"""
     if 'user_id' not in session:
@@ -2678,6 +2889,7 @@ def productos_sugeridos_venta():
 
 @app.route('/imprimir_factura/<int:factura_id>')
 @login_required
+@modulo_requerido('punto_venta')
 def imprimir_factura(factura_id):
     """Generar vista imprimible - Versión mejorada que detecta tipo de documento"""
     try:
@@ -2708,6 +2920,8 @@ def imprimir_factura(factura_id):
 # En app.py - NUEVAS RUTAS PARA PRODUCTOS EXTERNOS
 
 @app.route('/agregar_producto_externo', methods=['POST'])
+@login_required
+@modulo_requerido('productos')
 def agregar_producto_externo():
     """Agregar nuevo producto externo al inventario"""
     if 'user_id' not in session:
@@ -2785,6 +2999,8 @@ def agregar_producto_externo():
     
 
 @app.route('/actualizar_stock_externo/<int:producto_id>', methods=['POST'])
+@login_required
+@modulo_requerido('productos')
 def actualizar_stock_externo(producto_id):
     """Actualizar stock de producto externo (compras)"""
     if 'user_id' not in session:
@@ -2814,6 +3030,8 @@ def actualizar_stock_externo(producto_id):
         return jsonify({'error': str(e)}), 500
     
 @app.route('/reporte_inventario_externo')
+@login_required
+@modulo_requerido('productos')
 def reporte_inventario_externo():
     """Reporte completo de inventario de productos externos"""
     if 'user_id' not in session:
@@ -2845,6 +3063,8 @@ def reporte_inventario_externo():
                          total_productos=len(productos))
 
 @app.route('/exportar_inventario_externo')
+@login_required
+@modulo_requerido('productos')
 def exportar_inventario_externo():
     """Exportar inventario a PDF"""
     if 'user_id' not in session:
@@ -2920,6 +3140,8 @@ def exportar_inventario_externo():
     
     
 @app.route('/reporte_ventas_externas')
+@login_required
+@modulo_requerido('reportes')
 def reporte_ventas_externas():
     """Reporte de ventas y rentabilidad de productos externos"""
     if 'user_id' not in session:
@@ -2985,6 +3207,8 @@ def reporte_ventas_externas():
                          fecha_fin=fecha_fin)
 
 @app.route('/exportar_ventas_externas')
+@login_required
+@modulo_requerido('reportes')
 def exportar_ventas_externas():
     """Exportar reporte de ventas a PDF"""
     if 'user_id' not in session:
@@ -3074,6 +3298,8 @@ def exportar_ventas_externas():
     )
     
 @app.route('/dashboard_externos')
+@login_required
+@modulo_requerido('productos')
 def dashboard_externos():
     """Dashboard ejecutivo de productos externos"""
     if 'user_id' not in session:
@@ -3124,8 +3350,6 @@ def dashboard_externos():
                          margen_promedio=margen_promedio)
 
     
-
-
 # Filtro para formatear moneda en pesos colombianos
 @app.template_filter('currency')
 def format_currency(value):
@@ -3151,6 +3375,8 @@ def round_filter(value, decimals=2):
 # RUTA DE DIAGNÓSTICO PARA PRODUCTOS - AGREGAR ESTO
 # =============================================
 @app.route('/debug_api_productos')
+@login_required
+@modulo_requerido('sistema')
 def debug_api_productos():
     """Diagnóstico de la API de productos"""
     if 'user_id' not in session:
@@ -3208,6 +3434,8 @@ def debug_api_productos():
 # RUTA DE EMERGENCIA - CREAR PRODUCTOS DE PRUEBA
 # =============================================
 @app.route('/crear_productos_prueba')
+@login_required
+@modulo_requerido('sistema')
 def crear_productos_prueba():
     """Crear productos de prueba si no existen"""
     if 'user_id' not in session:
@@ -3289,6 +3517,8 @@ def crear_productos_prueba():
 # =============================================
 
 @app.route('/api/cierre_diario/estado')
+@login_required
+@modulo_requerido('finanzas')
 def estado_cierre_diario():
     """API para obtener estado actual del día"""
     if 'user_id' not in session:
@@ -3314,6 +3544,8 @@ def estado_cierre_diario():
     })
 
 @app.route('/api/cierre_diario/procesar', methods=['POST'])
+@login_required
+@modulo_requerido('finanzas')
 def procesar_cierre_diario():
     """API para procesar el cierre diario"""
     if 'user_id' not in session:
@@ -3346,6 +3578,8 @@ def procesar_cierre_diario():
         }), 500
 
 @app.route('/api/cierre_diario/historial')
+@login_required
+@modulo_requerido('finanzas')
 def historial_cierres():
     """API para obtener historial de cierres"""
     if 'user_id' not in session:
@@ -3370,6 +3604,8 @@ def historial_cierres():
     return jsonify(resultado)
 
 @app.route('/cierre_diario')
+@login_required
+@modulo_requerido('finanzas')
 def pagina_cierre_diario():
     """Página de cierre diario"""
     if 'user_id' not in session:
@@ -3389,6 +3625,8 @@ def pagina_cierre_diario():
 # =============================================
 
 @app.route('/reporte/cierre_caja')
+@login_required
+@modulo_requerido('reportes')
 def reporte_cierre_caja():
     """Reporte de cierre de caja con análisis automático"""
     if 'user_id' not in session:
@@ -3465,6 +3703,8 @@ def reporte_cierre_caja():
         return redirect(url_for('punto_venta'))
 
 @app.route('/reporte/ventas')
+@login_required
+@modulo_requerido('reportes')
 def reporte_ventas():
     """Reporte de ventas por período con análisis predictivo"""
     if 'user_id' not in session:
@@ -3526,6 +3766,8 @@ def reporte_ventas():
                          datetime=datetime)  # Añadido para usar en templates
 
 @app.route('/reporte/productos_populares')
+@login_required
+@modulo_requerido('reportes')
 def reporte_productos_populares():
     """Reporte de productos más vendidos con análisis de rotación"""
     if 'user_id' not in session:
@@ -3598,6 +3840,8 @@ def reporte_productos_populares():
                          datetime=datetime)  # ← ¡ESTO ES LO QUE FALTA!
 
 @app.route('/reporte/analisis_predictivo')
+@login_required
+@modulo_requerido('reportes')
 def reporte_analisis_predictivo():
     """Reporte de análisis predictivo con recomendaciones ML"""
     if 'user_id' not in session:
@@ -3722,6 +3966,8 @@ def sanitizar_numero(valor, default=0.0):
 # === RUTAS MEJORADAS ===
 
 @app.route('/registrar_dia', methods=['POST'])
+@login_required
+@modulo_requerido('finanzas')
 def registrar_dia():
     """Registrar los ingresos y gastos del día"""
     try:
@@ -3785,6 +4031,8 @@ def registrar_dia():
     return redirect(url_for('control_diario'))
 
 @app.route('/control_diario')
+@login_required
+@modulo_requerido('finanzas')
 def control_diario():
     """Vista principal del control financiero diario"""
     from datetime import datetime, date
@@ -3813,6 +4061,8 @@ def control_diario():
                          hoy=hoy)
 
 @app.route('/registrar_pago_individual', methods=['POST'])
+@login_required
+@modulo_requerido('finanzas')
 def registrar_pago_individual():
     """Registrar un pago individual con actualización automática del saldo"""
     try:
@@ -3875,6 +4125,8 @@ def registrar_pago_individual():
     return redirect(url_for('control_diario'))
 
 @app.route('/registrar_cierre_caja', methods=['POST'])
+@login_required
+@modulo_requerido('finanzas')
 def registrar_cierre_caja():
     """Registrar el cierre de caja diario con validaciones de seguridad"""
     try:
@@ -3948,11 +4200,15 @@ from reportes import GeneradorReportes
 from io import BytesIO
 
 @app.route('/reportes')
+@login_required
+@modulo_requerido('reportes')
 def reportes():
     """Vista principal de reportes"""
     return render_template('reportes.html')
 
 @app.route('/generar_reporte_estado_resultados')
+@login_required
+@modulo_requerido('reportes')
 def generar_reporte_estado_resultados():
     """Genera reporte de Estado de Resultados en PDF"""
     try:
@@ -3991,6 +4247,8 @@ def generar_reporte_estado_resultados():
         return redirect(url_for('reportes'))
 
 @app.route('/generar_reporte_flujo_caja')
+@login_required
+@modulo_requerido('reportes')
 def generar_reporte_flujo_caja():
     """Genera reporte de Flujo de Caja en PDF"""
     try:
@@ -4031,6 +4289,8 @@ def generar_reporte_flujo_caja():
 #===============================================libro contable==========================================================
 
 @app.route('/generar_reporte_libro_diario')
+@login_required
+@modulo_requerido('reportes')
 def generar_reporte_libro_diario():
     """Genera reporte de Libro Diario Contable en PDF"""
     try:
@@ -4069,6 +4329,8 @@ def generar_reporte_libro_diario():
         return redirect(url_for('reportes'))
 #===========================================Conciliacion Babcaria===================================================
 @app.route('/generar_reporte_conciliacion')
+@login_required
+@modulo_requerido('reportes')
 def generar_reporte_conciliacion():
     """Genera reporte de Conciliación Bancaria en PDF"""
     try:
@@ -4123,6 +4385,8 @@ metodos = [method for method in dir(generador_test) if callable(getattr(generado
 print("📋 Métodos disponibles:", metodos)
 
 @app.route('/generar_reporte_analisis_gastos')
+@login_required
+@modulo_requerido('reportes')
 def generar_reporte_analisis_gastos():
     """Genera reporte de Análisis de Gastos por Categoría en PDF"""
     try:
@@ -4177,6 +4441,8 @@ verificar_metodos()
 #==========================================================Tendencia de Ventas==============================================
 
 @app.route('/generar_reporte_tendencia_ventas')
+@login_required
+@modulo_requerido('reportes')
 def generar_reporte_tendencia_ventas():
     """Genera reporte de Tendencia de Ventas en PDF"""
     try:
@@ -4218,6 +4484,8 @@ def generar_reporte_tendencia_ventas():
     # ========================================================== IA Predictivo ===============================================
 
 @app.route('/generar_reporte_ia_predictivo')
+@login_required
+@modulo_requerido('reportes')
 def generar_reporte_ia_predictivo():
     """Genera reporte de IA Predictivo en PDF"""
     try:
@@ -4260,6 +4528,8 @@ def generar_reporte_ia_predictivo():
 # ========================================================== Análisis de Inventarios ===============================================
 
 @app.route('/generar_reporte_analisis_inventarios')
+@login_required
+@modulo_requerido('reportes')
 def generar_reporte_analisis_inventarios():
     """Genera reporte de Análisis de Inventarios en PDF"""
     try:
@@ -4302,6 +4572,7 @@ def generar_reporte_analisis_inventarios():
 
 @app.route('/activos_fijos')
 @login_required
+@modulo_requerido('activos')
 def activos_fijos():
     activos = ActivoFijo.query.all()
     
@@ -4320,6 +4591,7 @@ def activos_fijos():
 
 @app.route('/registrar_activo', methods=['GET', 'POST'])
 @login_required
+@modulo_requerido('activos')
 def registrar_activo():
     if request.method == 'POST':
         try:
@@ -4368,12 +4640,14 @@ def registrar_activo():
 
 @app.route('/lista_activos')
 @login_required
+@modulo_requerido('activos')
 def lista_activos():
     activos = ActivoFijo.query.order_by(ActivoFijo.fecha_compra.desc()).all()
     return render_template('lista_activos.html', activos=activos, categorias=CATEGORIAS_ACTIVOS)
 
 @app.route('/reporte_activos')
 @login_required
+@modulo_requerido('activos')
 def reporte_activos():
     activos = ActivoFijo.query.all()
     
@@ -4449,6 +4723,7 @@ def reporte_activos():
 
 @app.route('/api/activos_metrics')
 @login_required
+@modulo_requerido('activos')
 def api_activos_metrics():
     activos = ActivoFijo.query.all()
     
@@ -4460,6 +4735,189 @@ def api_activos_metrics():
     }
     
     return jsonify(metrics)
+
+#========================================= 🆕 RUTAS PARA GESTIÓN DE USUARIOS==================================================
+@app.route('/gestion_usuarios')
+@login_required
+@permisos_requeridos('usuarios', 'gestionar')   
+def gestion_usuarios():
+    """Página principal de gestión de usuarios"""
+    usuarios = Usuario.query.all()
+    return render_template('gestion_usuarios.html', usuarios=usuarios)
+
+@app.route('/crear_usuario', methods=['GET', 'POST'])
+@login_required
+@permisos_requeridos('usuarios', 'gestionar')
+def crear_usuario():
+    """Crear nuevo usuario"""
+    if request.method == 'POST':
+        try:
+            username = request.form['username']
+            password = request.form['password']
+            nombre_completo = request.form['nombre_completo']
+            email = request.form.get('email', '')
+            telefono = request.form.get('telefono', '')
+            rol = request.form['rol']
+            
+            # Verificar si usuario ya existe
+            if Usuario.query.filter_by(username=username).first():
+                flash('❌ El nombre de usuario ya existe', 'error')
+                return redirect(url_for('crear_usuario'))
+            
+            # Crear nuevo usuario
+            nuevo_usuario = Usuario(
+                username=username,
+                nombre_completo=nombre_completo,
+                email=email,
+                telefono=telefono,
+                rol=rol
+            )
+            nuevo_usuario.set_password(password)
+            
+            db.session.add(nuevo_usuario)
+            db.session.commit()
+            
+            flash(f'✅ Usuario {username} creado exitosamente', 'success')
+            return redirect(url_for('gestion_usuarios'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'❌ Error al crear usuario: {str(e)}', 'error')
+    
+    return render_template('crear_usuario.html')
+
+@app.route('/editar_usuario/<int:usuario_id>', methods=['GET', 'POST'])
+@login_required
+@permisos_requeridos('usuarios', 'gestionar')
+def editar_usuario(usuario_id):
+    """Editar usuario existente"""
+    usuario = Usuario.query.get_or_404(usuario_id)
+    
+    if request.method == 'POST':
+        try:
+            usuario.nombre_completo = request.form['nombre_completo']
+            usuario.email = request.form.get('email', '')
+            usuario.telefono = request.form.get('telefono', '')
+            usuario.rol = request.form['rol']
+            usuario.activo = 'activo' in request.form
+            
+            # Si se proporcionó nueva contraseña
+            nueva_password = request.form.get('nueva_password', '')
+            if nueva_password:
+                usuario.set_password(nueva_password)
+            
+            db.session.commit()
+            flash(f'✅ Usuario {usuario.username} actualizado', 'success')
+            return redirect(url_for('gestion_usuarios'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'❌ Error al actualizar usuario: {str(e)}', 'error')
+    
+    return render_template('editar_usuario.html', usuario=usuario)
+
+@app.route('/toggle_usuario/<int:usuario_id>')
+@login_required
+@permisos_requeridos('usuarios', 'gestionar')
+def toggle_usuario(usuario_id):
+    """Activar/desactivar usuario"""
+    if usuario_id == current_user.id:
+        flash('❌ No puedes desactivar tu propio usuario', 'error')
+        return redirect(url_for('gestion_usuarios'))
+    
+    usuario = Usuario.query.get_or_404(usuario_id)
+    usuario.activo = not usuario.activo
+    
+    estado = "activado" if usuario.activo else "desactivado"
+    db.session.commit()
+    
+    flash(f'✅ Usuario {usuario.username} {estado}', 'success')
+    return redirect(url_for('gestion_usuarios'))
+
+# 🆕 RUTA PARA PERFIL DE USUARIO
+@app.route('/mi_perfil', methods=['GET', 'POST'])
+@login_required
+@modulo_requerido('usuarios')
+def mi_perfil():
+    """Perfil del usuario actual"""
+    if request.method == 'POST':
+        try:
+            current_user.nombre_completo = request.form['nombre_completo']
+            current_user.email = request.form.get('email', '')
+            current_user.telefono = request.form.get('telefono', '')
+            
+            # Cambio de contraseña
+            nueva_password = request.form.get('nueva_password', '')
+            if nueva_password:
+                current_user.set_password(nueva_password)
+                flash('✅ Contraseña actualizada correctamente', 'success')
+            
+            db.session.commit()
+            flash('✅ Perfil actualizado correctamente', 'success')
+            return redirect(url_for('mi_perfil'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'❌ Error al actualizar perfil: {str(e)}', 'error')
+    
+    return render_template('mi_perfil.html')
+
+# 🆕 RUTAS PARA GESTIÓN DE PERMISOS - AGREGAR DESPUÉS DE LAS RUTAS DE USUARIOS EXISTENTES
+
+@app.route('/gestionar_permisos/<int:usuario_id>')
+@login_required
+def gestionar_permisos(usuario_id):
+    """Interfaz para gestionar permisos de usuario"""
+    # Solo administradores pueden gestionar permisos
+    if not current_user.tiene_permiso('usuarios', 'gestionar'):
+        flash('❌ No tienes permisos para gestionar permisos', 'error')
+        return redirect(url_for('dashboard'))
+    
+    usuario = Usuario.query.get_or_404(usuario_id)
+    return render_template('gestionar_permisos.html', usuario=usuario)
+
+@app.route('/guardar_permisos/<int:usuario_id>', methods=['POST'])
+@login_required
+def guardar_permisos(usuario_id):
+    """Guardar permisos personalizados"""
+    try:
+        # Verificar permisos
+        if not current_user.tiene_permiso('usuarios', 'gestionar'):
+            flash('❌ No tienes permisos para gestionar permisos', 'error')
+            return redirect(url_for('dashboard'))
+        
+        usuario = Usuario.query.get_or_404(usuario_id)
+        
+        # Eliminar permisos existentes del usuario
+        from models import PermisoUsuario
+        PermisoUsuario.query.filter_by(usuario_id=usuario_id).delete()
+        
+        # Procesar nuevos permisos del formulario
+        for key, value in request.form.items():
+            if key.startswith('permiso_'):
+                # Formato: permiso_modulo_accion
+                partes = key.split('_')
+                if len(partes) >= 3:
+                    modulo = partes[1]
+                    accion = partes[2]
+                    
+                    permiso = PermisoUsuario(
+                        usuario_id=usuario_id,
+                        modulo=modulo,
+                        accion=accion,
+                        permitido=True
+                    )
+                    db.session.add(permiso)
+        
+        db.session.commit()
+        flash(f'✅ Permisos de {usuario.username} actualizados correctamente', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'❌ Error al guardar permisos: {str(e)}', 'error')
+        print(f"Error guardando permisos: {e}")
+    
+    return redirect(url_for('gestion_usuarios'))
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

@@ -10,17 +10,29 @@ from werkzeug.security import generate_password_hash, check_password_hash
 db = SQLAlchemy()
 
 
+# 🆕 SISTEMA DE ROLES Y PERMISOS - VERSIÓN CORREGIDA
 class Usuario(UserMixin, db.Model):
     __tablename__ = 'usuarios'
     
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(200), nullable=False)
-    rol = db.Column(db.String(20), default='usuario')
-    activo = db.Column(db.Boolean, default=True)
+    nombre_completo = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(120))
+    telefono = db.Column(db.String(20))
     
-    def get_id(self):
-        return str(self.id)
+    # 🆕 NUEVOS CAMPOS PARA ROLES
+    rol = db.Column(db.String(20), default='cajero')  # cajero, supervisor, administrador, gerente
+    activo = db.Column(db.Boolean, default=True)
+    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
+    fecha_ultimo_acceso = db.Column(db.DateTime)
+    sucursal_id = db.Column(db.Integer, db.ForeignKey('sucursales.id'), nullable=True)  # Para multi-sucursal futuro
+    
+    # 🆕 RELACIÓN CON PERMISOS PERSONALIZADOS
+    permisos_personalizados = db.relationship('PermisoUsuario', backref='usuario', lazy=True, cascade='all, delete-orphan')
+    
+    # 🆕 CORREGIDO: Cambiar nombre de relación para evitar conflicto
+    ventas_realizadas = db.relationship('Venta', backref='usuario_asociado', lazy=True)
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -28,18 +40,151 @@ class Usuario(UserMixin, db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
     
-    # Propiedades requeridas por Flask-Login
-    @property
-    def is_active(self):
-        return self.activo
+    # 🆕 MÉTODOS ACTUALIZADOS PARA GESTIÓN DE PERMISOS
+    def tiene_permiso(self, modulo, accion):
+        """Verificar si usuario tiene permiso para acción en módulo"""
+        # 1. Administrador tiene acceso completo
+        if self.rol == 'administrador':
+            return True
+            
+        # 2. Verificar permisos personalizados primero
+        permiso_personalizado = PermisoUsuario.query.filter_by(
+            usuario_id=self.id, 
+            modulo=modulo, 
+            accion=accion
+        ).first()
+        
+        if permiso_personalizado:
+            return permiso_personalizado.permitido
+        
+        # 3. Fallback a permisos del rol
+        permisos_rol = ROLES_PERMISOS.get(self.rol, {})
+        acciones_permitidas = permisos_rol.get(modulo, [])
+        
+        return accion in acciones_permitidas
     
-    @property
-    def is_authenticated(self):
-        return True
+    def puede_acceder_modulo(self, modulo):
+        """Verificar si usuario puede acceder a un módulo completo"""
+        if self.rol == 'administrador':
+            return True
+            
+        # Verificar permisos personalizados
+        tiene_permiso_personal = PermisoUsuario.query.filter_by(
+            usuario_id=self.id, 
+            modulo=modulo, 
+            permitido=True
+        ).first()
+        
+        if tiene_permiso_personal:
+            return True
+            
+        # Verificar permisos del rol
+        permisos_rol = ROLES_PERMISOS.get(self.rol, {})
+        return modulo in permisos_rol
     
-    @property
-    def is_anonymous(self):
-        return False
+    def obtener_modulos_permitidos(self):
+        """Obtener lista de módulos a los que tiene acceso"""
+        if self.rol == 'administrador':
+            return list(MODULOS_SISTEMA.keys())
+        
+        permisos_rol = ROLES_PERMISOS.get(self.rol, {})
+        return list(permisos_rol.keys())
+    
+    def __repr__(self):
+        return f'<Usuario {self.username} - {self.rol}>'
+
+# 🆕 DEFINICIÓN DE ROLES Y PERMISOS (MANTENER IGUAL)
+MODULOS_SISTEMA = {
+    'dashboard': 'Panel Principal',
+    'punto_venta': 'Punto de Venta',
+    'productos': 'Gestión de Productos',
+    'categorias': 'Categorías',
+    'produccion': 'Producción y Recetas',
+    'inventario': 'Inventario y Materias Primas',
+    'clientes': 'Gestión de Clientes',
+    'proveedores': 'Proveedores',
+    'finanzas': 'Control Financiero',
+    'reportes': 'Reportes y Análisis',
+    'configuracion': 'Configuración',
+    'activos': 'Activos Fijos',
+    'usuarios': 'Gestión de Usuarios',
+    'sistema': 'Sistema y Diagnóstico'
+}
+
+ROLES_PERMISOS = {
+    'cajero': {
+        'dashboard': ['ver'],
+        'punto_venta': ['vender', 'ver_ventas_propias', 'imprimir_ticket'],
+        # ❌ ELIMINAR acceso a productos y clientes - COMENTA ESTAS LÍNEAS:
+        # 'productos': ['ver'],  
+        # 'clientes': ['ver'],   
+        'usuarios': ['ver_perfil']  # Solo puede ver su propio perfil
+    },
+    
+    'supervisor': {
+        'dashboard': ['ver'],
+        'punto_venta': ['vender', 'ver_todas_ventas', 'anular_ventas', 'cierre_caja'],
+        'productos': ['ver', 'editar_stock'],
+        'produccion': ['ver', 'producir'],
+        'inventario': ['ver'],
+        'clientes': ['ver', 'gestionar'],
+        'proveedores': ['ver'],
+        'ventas': ['ver_todas', 'exportar'],
+        'reportes': ['ver_ventas', 'ver_produccion'],
+        'finanzas': ['ver_cierre_diario'],
+        'usuarios': ['ver_perfil']
+    },
+    
+    'gerente': {
+        'dashboard': ['ver'],
+        'punto_venta': ['vender', 'ver_todas_ventas', 'anular_ventas', 'cierre_caja'],
+        'productos': ['ver', 'crear', 'editar', 'eliminar'],
+        'categorias': ['ver', 'gestionar'],
+        'produccion': ['ver', 'producir', 'crear_recetas', 'editar_recetas'],
+        'inventario': ['ver', 'gestionar'],
+        'clientes': ['ver', 'gestionar'],
+        'proveedores': ['ver', 'gestionar'],
+        'ventas': ['ver_todas', 'exportar', 'analizar'],
+        'reportes': ['ver_todos', 'exportar', 'analizar'],
+        'finanzas': ['ver_todo', 'gestionar'],
+        'activos': ['ver', 'gestionar'],
+        'configuracion': ['ver', 'editar_parametros'],
+        'usuarios': ['ver_perfil']
+    },
+    
+    'administrador': {
+        # Acceso completo a todos los módulos
+        'dashboard': ['ver'],
+        'punto_venta': ['vender', 'ver_todas_ventas', 'anular_ventas', 'cierre_caja'],
+        'productos': ['ver', 'crear', 'editar', 'eliminar'],
+        'categorias': ['ver', 'gestionar'],
+        'produccion': ['ver', 'producir', 'crear_recetas', 'editar_recetas'],
+        'inventario': ['ver', 'gestionar'],
+        'clientes': ['ver', 'gestionar'],
+        'proveedores': ['ver', 'gestionar'],
+        'finanzas': ['ver_todo', 'gestionar'],
+        'reportes': ['ver_todos', 'exportar', 'analizar'],
+        'configuracion': ['ver', 'editar_parametros'],
+        'activos': ['ver', 'gestionar'],
+        'usuarios': ['gestionar', 'ver_perfil'],
+        'sistema': ['diagnosticar']
+    }
+}
+
+# 🆕 MODELO PARA SUCURSALES (Para expansión futura)
+class Sucursal(db.Model):
+    __tablename__ = 'sucursales'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False)
+    direccion = db.Column(db.Text)
+    telefono = db.Column(db.String(20))
+    activa = db.Column(db.Boolean, default=True)
+    
+    usuarios = db.relationship('Usuario', backref='sucursal', lazy=True)
+    
+    def __repr__(self):
+        return f'<Sucursal {self.nombre}>'
 
 class Categoria(db.Model):
     __tablename__ = 'categorias'
@@ -555,14 +700,14 @@ class Venta(db.Model):
     qr_factura = db.Column(db.Text)  # QR para factura electrónica
     respuesta_dian = db.Column(db.Text)  # JSON respuesta DIAN/proveedor
     texto_legal = db.Column(db.Text, default='Documento equivalente POS – No válido como factura electrónica de venta')
-    # 🎯 NOTA: Los campos nuevos son NULLABLE por defecto, así que no rompen ventas existentes
     
-    usuario = db.relationship('Usuario', backref='ventas')
-    cliente = db.relationship('Cliente', back_populates='ventas')  
+    # ✅✅✅ RELACIONES CORREGIDAS - SIN CONFLICTOS
+    # NO necesitas: usuario = db.relationship(...) - ya lo crea Usuario.ventas_realizadas
+    cliente = db.relationship('Cliente', back_populates='ventas')  # ← back_populates COINCIDE
 
     def __repr__(self):
         return f'<Venta {self.id} - ${self.total} - {self.tipo_documento}>'
-
+    
 class DetalleVenta(db.Model):
     __tablename__ = 'detalle_venta'
     id = db.Column(db.Integer, primary_key=True)
@@ -573,9 +718,14 @@ class DetalleVenta(db.Model):
     precio_unitario = db.Column(db.Float, nullable=False)
     
     # Relaciones
-    producto = db.relationship('Producto', backref='detalles_venta')
-    producto_externo = db.relationship('ProductoExterno', backref='detalles_venta')  # ✅ NUEVO
+    #producto = db.relationship('Producto', backref='detalles_venta')
+    #producto_externo = db.relationship('ProductoExterno', backref='detalles_venta')  #
+    #usuario = db.relationship('Usuario', backref='ventas_asociadas', lazy=True)
 
+    venta = db.relationship('Venta', backref='detalles')
+    producto = db.relationship('Producto', backref='detalles_venta')
+    producto_externo = db.relationship('ProductoExterno', backref='detalles_venta_externa')
+    
 class Compra(db.Model):
     __tablename__ = 'compras'
     id = db.Column(db.Integer, primary_key=True)
@@ -992,6 +1142,20 @@ class CierreDiario(db.Model):
     def __repr__(self):
         return f'<CierreDiario {self.fecha} - ${self.total_ventas:,.0f}>'
     
+    
+class PermisoUsuario(db.Model):
+    __tablename__ = 'permisos_usuario'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
+    modulo = db.Column(db.String(50), nullable=False)
+    accion = db.Column(db.String(50), nullable=False)
+    permitido = db.Column(db.Boolean, default=True)
+    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<Permiso {self.modulo}.{self.accion}: {self.permitido}>'
+
 # =============================================
 # FUNCIONES DE APOYO PARA ANÁLISIS ML (agregar al final de models.py)
 # =============================================
@@ -1287,6 +1451,8 @@ def obtener_productos_sin_ventas_recientes(dias=7):
         print(f"Error en obtener_productos_sin_ventas_recientes: {e}")
         # En caso de error, retornar lista vacía para no romper el sistema
         return []
+
+
 
 # =============================================
 # FUNCIONES PARA CIERRE DIARIO - AGREGAR DESPUÉS DE LAS FUNCIONES ML
@@ -1601,3 +1767,4 @@ class ConfiguracionSistema(db.Model):
     
     def __repr__(self):
         return f'<ConfiguracionSistema: {self.tipo_facturacion}>'
+    

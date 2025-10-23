@@ -477,6 +477,61 @@
         </div>
     </div>
 
+        <!-- 🆕 MODAL PARA CÁLCULO DE CAMBIO - EFECTIVO -->
+    <div class="modal fade" id="cambioModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title">
+                        <i class="fas fa-calculator me-2"></i>
+                        Calcular Cambio
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <!-- Total a Pagar -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Total a Pagar</label>
+                        <input type="text" class="form-control form-control-lg text-center fs-4 fw-bold text-success" 
+                               id="totalPagar" readonly style="border: none; background: #f8f9fa;">
+                    </div>
+                    
+                    <!-- Efectivo Recibido -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Efectivo Recibido</label>
+                        <input type="number" class="form-control form-control-lg text-center fs-4" 
+                               id="efectivoRecibido" min="0" step="100" placeholder="0"
+                               oninput="calcularCambio()" autofocus>
+                    </div>
+                    
+                    <!-- Denominaciones Rápidas -->
+                    <div class="mb-3">
+                        <small class="text-muted">Denominaciones comunes:</small>
+                        <div class="btn-group w-100 mt-1" role="group">
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="agregarDenominacion(20000)">20K</button>
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="agregarDenominacion(50000)">50K</button>
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="agregarDenominacion(100000)">100K</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Resultado del Cambio -->
+                    <div class="alert alert-success" id="cambioAlert">
+                        <h4 class="mb-0">Cambio:</h4>
+                        <h2 class="text-success fw-bold mt-2" id="cambioCalculado">$0</h2>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="confirmarPago()" id="btnConfirmarPago">
+                        <i class="fas fa-check me-1"></i>Procesar Pago
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -716,13 +771,31 @@
         }
 
                 // 🆕 FUNCIÓN MEJORADA PARA PROCESAR VENTA
+                // 🆕 FUNCIÓN MEJORADA PARA PROCESAR VENTA CON CÁLCULO DE CAMBIO
         async function procesarVenta() {
             if (carrito.length === 0) {
                 mostrarNotificacion('❌ El carrito está vacío', 'error');
                 return;
             }
 
-            // 🆕 DETECTAR MODO DE FACTURACIÓN
+            // 🆕 CALCULAR TOTAL ACTUAL DEL CARRITO
+            const totalVenta = carrito.reduce((total, item) => total + (item.precio * item.cantidad), 0);
+            const metodoPago = document.querySelector('input[name="metodoPago"]:checked').value;
+            
+            console.log('🛒 Iniciando procesamiento de venta:', {
+                total: totalVenta,
+                metodo: metodoPago,
+                items: carrito.length
+            });
+            
+            // 🆕 NUEVA FUNCIONALIDAD: Cálculo de cambio para efectivo
+            if (metodoPago === 'efectivo') {
+                console.log('💰 Método efectivo detectado, mostrando calculadora...');
+                mostrarCalculadoraCambio(totalVenta);
+                return; // Pausar flujo hasta confirmación de pago
+            }
+            
+            // 🆕 CONTINUAR CON FLUJO NORMAL PARA OTROS MÉTODOS DE PAGO
             try {
                 const configResponse = await fetch('/api/configuracion-sistema');
                 const config = await configResponse.json();
@@ -885,6 +958,150 @@
         // 🆕 Función para mostrar configuración de tickets
         function mostrarConfiguracionTickets() {
             window.location.href = '/configuracion/tickets';
+        }
+
+                // =============================================
+        // 🆕 FUNCIONES PARA CÁLCULO DE CAMBIO - EFECTIVO
+        // =============================================
+
+        // Variables globales para cálculo de cambio
+        window.totalVentaActual = 0;
+        window.efectivoRecibido = 0;
+        window.cambioCalculado = 0;
+
+        // 🆕 FUNCIÓN: Mostrar calculadora de cambio
+        function mostrarCalculadoraCambio(total) {
+            console.log('💰 Mostrando calculadora de cambio. Total:', total);
+            
+            window.totalVentaActual = total;
+            
+            // Actualizar campos del modal
+            document.getElementById('totalPagar').value = `$${total.toLocaleString()}`;
+            document.getElementById('efectivoRecibido').value = '';
+            document.getElementById('cambioCalculado').textContent = '$0';
+            
+            // Resetear alerta
+            const alerta = document.getElementById('cambioAlert');
+            alerta.classList.remove('alert-danger', 'alert-warning');
+            alerta.classList.add('alert-success');
+            
+            // Mostrar modal
+            const modal = new bootstrap.Modal(document.getElementById('cambioModal'));
+            modal.show();
+            
+            // Enfocar campo de efectivo después de que el modal se muestre
+            setTimeout(() => {
+                document.getElementById('efectivoRecibido').focus();
+            }, 500);
+        }
+
+        // 🆕 FUNCIÓN: Calcular cambio en tiempo real
+        function calcularCambio() {
+            const efectivoInput = document.getElementById('efectivoRecibido');
+            const efectivo = parseFloat(efectivoInput.value) || 0;
+            const alerta = document.getElementById('cambioAlert');
+            const btnConfirmar = document.getElementById('btnConfirmarPago');
+            
+            window.efectivoRecibido = efectivo;
+            window.cambioCalculado = Math.max(0, efectivo - window.totalVentaActual);
+            
+            // Actualizar display del cambio
+            document.getElementById('cambioCalculado').textContent = `$${window.cambioCalculado.toLocaleString()}`;
+            
+            // Validaciones y cambios visuales
+            if (efectivo === 0) {
+                // Sin entrada
+                alerta.classList.remove('alert-danger', 'alert-warning');
+                alerta.classList.add('alert-success');
+                btnConfirmar.disabled = true;
+            } else if (efectivo < window.totalVentaActual) {
+                // Efectivo insuficiente
+                alerta.classList.remove('alert-success', 'alert-warning');
+                alerta.classList.add('alert-danger');
+                btnConfirmar.disabled = true;
+            } else if (efectivo === window.totalVentaActual) {
+                // Pago exacto
+                alerta.classList.remove('alert-danger', 'alert-success');
+                alerta.classList.add('alert-warning');
+                btnConfirmar.disabled = false;
+            } else {
+                // Cambio a entregar
+                alerta.classList.remove('alert-danger', 'alert-warning');
+                alerta.classList.add('alert-success');
+                btnConfirmar.disabled = false;
+            }
+            
+            console.log('🔄 Cálculo cambio:', {
+                total: window.totalVentaActual,
+                recibido: efectivo,
+                cambio: window.cambioCalculado
+            });
+        }
+
+        // 🆕 FUNCIÓN: Denominaciones rápidas
+        function agregarDenominacion(monto) {
+            console.log('💰 Agregando denominación:', monto);
+            document.getElementById('efectivoRecibido').value = monto;
+            calcularCambio();
+        }
+
+        // 🆕 FUNCIÓN: Confirmar y procesar pago
+        function confirmarPago() {
+            console.log('✅ Confirmando pago...');
+            
+            if (window.efectivoRecibido < window.totalVentaActual) {
+                mostrarNotificacion('❌ El efectivo recibido es menor al total', 'error');
+                return;
+            }
+            
+            // Cerrar modal
+            bootstrap.Modal.getInstance(document.getElementById('cambioModal')).hide();
+            
+            // Mostrar resumen al usuario
+            if (window.cambioCalculado > 0) {
+                mostrarNotificacion(
+                    `💰 Cambio a entregar: $${window.cambioCalculado.toLocaleString()}`, 
+                    'success'
+                );
+            } else {
+                mostrarNotificacion('✅ Pago exacto - Sin cambio', 'info');
+            }
+            
+            console.log('📋 Resumen pago efectivo:', {
+                total: window.totalVentaActual,
+                recibido: window.efectivoRecibido,
+                cambio: window.cambioCalculado
+            });
+            
+            // 🆕 CONTINUAR CON EL FLUJO NORMAL DE VENTA
+            procesarVentaSegunModo();
+        }
+
+        // 🆕 FUNCIÓN: Procesar venta según modo (POS o Electrónico)
+        function procesarVentaSegunModo() {
+            console.log('🔄 Continuando con procesamiento de venta...');
+            
+            // Obtener configuración del sistema
+            fetch('/api/configuracion-sistema')
+                .then(response => response.json())
+                .then(config => {
+                    if (config.tipo_facturacion === 'ELECTRONICA') {
+                        // 🆕 MODO ELECTRÓNICO: Solicitar datos del cliente
+                        if (!window.clienteActual) {
+                            solicitarDatosCliente();
+                        } else {
+                            procesarVentaElectronica();
+                        }
+                    } else {
+                        // 🆕 MODO POS: Procesar directamente
+                        procesarVentaPOS();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error detectando configuración:', error);
+                    // Fallback a modo POS
+                    procesarVentaPOS();
+                });
         }
 
         // 🆕 Función para debug

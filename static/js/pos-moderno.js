@@ -1516,6 +1516,7 @@ window.limpiarCarrito = limpiarCarrito;
 window.cargarProductos = cargarProductos;
 window.limpiarBusqueda = limpiarBusqueda;
 window.procesarCierreDiario = procesarCierreDiario;
+window.calcularTotalCarrito = calcularTotalCarrito; 
 
 // 🆕 Hacer variables globales accesibles
 window.carrito = carrito;
