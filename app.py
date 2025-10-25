@@ -558,7 +558,7 @@ def reiniciar_consecutivo_pos():
 @login_required
 @modulo_requerido('punto_venta')
 def registrar_venta():
-    """Registrar venta con productos mixtos (panadería + externos) - VERSIÓN MEJORADA CON CLIENTES"""
+    """Registrar venta con productos mixtos (panadería + externos) - VERSIÓN MEJORADA CON CLIENTES Y DONACIONES"""
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'No autorizado'})
     
@@ -566,10 +566,14 @@ def registrar_venta():
         data = request.get_json()
         carrito = data.get('carrito', [])
         metodo_pago = data.get('metodo_pago', 'efectivo')
-        cliente_id = data.get('cliente_id')  # 👈 NUEVO: Obtener cliente_id
-        tipo_documento_solicitado = data.get('tipo_documento')  # 👈 NUEVO: Tipo solicitado desde frontend
+        cliente_id = data.get('cliente_id')  # 👈 Obtener cliente_id
+        tipo_documento_solicitado = data.get('tipo_documento')  # 👈 Tipo solicitado desde frontend
         
-        print(f'🛒 Datos de venta recibidos - Cliente: {cliente_id}, Tipo: {tipo_documento_solicitado}')
+        # 🎁 NUEVO: CAPTURAR DATOS DE DONACIÓN
+        es_donacion = data.get('es_donacion', False)
+        motivo_donacion = data.get('motivo_donacion', '')
+        
+        print(f'🛒 Datos de venta recibidos - Cliente: {cliente_id}, Tipo: {tipo_documento_solicitado}, Donación: {es_donacion}')
         
         # 🆕 OBTENER CONFIGURACIÓN DEL SISTEMA
         config = obtener_configuracion_sistema()
@@ -598,24 +602,50 @@ def registrar_venta():
             consecutivo_pos = obtener_consecutivo_pos()  # 🆕 OBTENER CONSECUTIVO
             texto_legal = "Documento equivalente POS – No válido como factura electrónica de venta"
         
-        # 🆕 CREAR VENTA CON NUEVOS CAMPOS
+        # 🎁 NUEVO: CALCULAR TOTAL (CERO SI ES DONACIÓN)
+        total_venta = 0
+        if not es_donacion:
+            # Calcular total normal sumando todos los productos
+            for item in carrito:
+                producto_id = item['id']
+                cantidad = item['cantidad']
+                
+                # DETERMINAR SI ES PRODUCTO EXTERNO (ID > 10000)
+                if producto_id > 10000:
+                    producto_externo_id = producto_id - 10000
+                    producto = ProductoExterno.query.get(producto_externo_id)
+                    if producto:
+                        total_venta += cantidad * producto.precio_venta
+                else:
+                    producto = Producto.query.get(producto_id)
+                    if producto:
+                        total_venta += cantidad * producto.precio_venta
+        else:
+            # 🎁 PARA DONACIONES: TOTAL = 0
+            total_venta = 0
+            print(f"🎁 REGISTRANDO DONACIÓN - Motivo: {motivo_donacion}")
+            print(f"🎁 Productos en donación: {[item.get('nombre', 'N/A') for item in carrito]}")
+        
+        # 🆕 CREAR VENTA CON NUEVOS CAMPOS (INCLUYENDO DONACIÓN)
         nueva_venta = Venta(
             usuario_id=session['user_id'],
-            total=0,  # Se calculará después
+            total=total_venta,  # 🎁 YA CALCULADO (0 si es donación)
             metodo_pago=metodo_pago,
-            cliente_id=cliente_id,  # 👈 NUEVO: Asignar cliente
-            # 🆕 NUEVOS CAMPOS
+            cliente_id=cliente_id,  # Asignar cliente
+            # 🆕 CAMPOS EXISTENTES
             tipo_documento=tipo_documento,
             consecutivo_pos=consecutivo_pos,
-            texto_legal=texto_legal
+            texto_legal=texto_legal,
+            # 🎁 NUEVOS CAMPOS PARA DONACIÓN
+            es_donacion=es_donacion,
+            motivo_donacion=motivo_donacion
         )
         db.session.add(nueva_venta)
         db.session.flush()  # Para obtener el ID
         
-        total_venta = 0
         detalles_venta = []
         
-        # PROCESAR CADA PRODUCTO DEL CARRITO (TU CÓDIGO EXISTENTE CON APRENDIZAJE AUTOMÁTICO)
+        # 🎁 PROCESAR CADA PRODUCTO DEL CARRITO (EL INVENTARIO SE DESCUENTA NORMALMENTE)
         for item in carrito:
             producto_id = item['id']
             cantidad = item['cantidad']
@@ -632,16 +662,18 @@ def registrar_venta():
                         'error': f'Stock insuficiente: {producto.nombre if producto else "Producto"}'
                     })
                 
-                # Actualizar stock externo
+                # 🎁 ACTUALIZAR STOCK EXTERNO (SE DESCUENTA NORMALMENTE TAMBIÉN EN DONACIONES)
                 producto.stock_actual -= cantidad
-                producto.total_ventas += cantidad
-                producto.total_ingresos += cantidad * producto.precio_venta
-                producto.utilidad_total += cantidad * (producto.precio_venta - producto.precio_compra)
-                producto.fecha_ultima_venta = datetime.utcnow()
                 
-                # Calcular total
-                subtotal = cantidad * producto.precio_venta
-                total_venta += subtotal
+                # 🎁 ACTUALIZAR MÉTRICAS SOLO SI NO ES DONACIÓN
+                if not es_donacion:
+                    producto.total_ventas += cantidad
+                    producto.total_ingresos += cantidad * producto.precio_venta
+                    producto.utilidad_total += cantidad * (producto.precio_venta - producto.precio_compra)
+                    producto.fecha_ultima_venta = datetime.utcnow()
+                
+                # 🎁 PRECIO UNITARIO: para donaciones registramos el precio real pero total=0
+                precio_unitario = producto.precio_venta
                 
                 # Crear detalle de venta
                 detalle = DetalleVenta(
@@ -649,7 +681,7 @@ def registrar_venta():
                     producto_id=None,  # No asociado a Producto tradicional
                     producto_externo_id=producto_externo_id,
                     cantidad=cantidad,
-                    precio_unitario=producto.precio_venta
+                    precio_unitario=precio_unitario  # 🎁 Registramos el precio real
                 )
                 detalles_venta.append(detalle)
                 
@@ -663,12 +695,11 @@ def registrar_venta():
                         'error': f'Stock insuficiente: {producto.nombre if producto else "Producto"}'
                     })
                 
-                # Actualizar stock panadería
+                # 🎁 ACTUALIZAR STOCK PANADERÍA (SE DESCUENTA NORMALMENTE TAMBIÉN EN DONACIONES)
                 producto.stock_actual -= cantidad
                 
-                # Calcular total
-                subtotal = cantidad * producto.precio_venta
-                total_venta += subtotal
+                # 🎁 PRECIO UNITARIO: para donaciones registramos el precio real pero total=0
+                precio_unitario = producto.precio_venta
                 
                 # Crear detalle de venta
                 detalle = DetalleVenta(
@@ -676,12 +707,9 @@ def registrar_venta():
                     producto_id=producto_id,
                     producto_externo_id=None,
                     cantidad=cantidad,
-                    precio_unitario=producto.precio_venta
+                    precio_unitario=precio_unitario  # 🎁 Registramos el precio real
                 )
                 detalles_venta.append(detalle)
-        
-        # Actualizar total de la venta
-        nueva_venta.total = total_venta
         
         # Agregar todos los detalles
         for detalle in detalles_venta:
@@ -690,24 +718,28 @@ def registrar_venta():
         # 🆕 MODIFICAR: CREAR FACTURA O RECIBO SEGÚN CONFIGURACIÓN
         if tipo_documento == 'ELECTRONICA':
             # Para factura electrónica
-            factura = Factura(
-                venta_id=nueva_venta.id,
-                numero_factura=f"FE{datetime.now().strftime('%Y%m%d')}{nueva_venta.id:04d}",
-                subtotal=total_venta,
-                iva=0,
-                total=total_venta
-            )
-            mensaje_exito = f'Factura electrónica #{factura.numero_factura} generada'
+            numero_factura = f"FE{datetime.now().strftime('%Y%m%d')}{nueva_venta.id:04d}"
+            mensaje_exito = f'Factura electrónica #{numero_factura} generada'
+            
+            # 🎁 MENSAJE ESPECIAL PARA DONACIONES ELECTRÓNICAS
+            if es_donacion:
+                mensaje_exito = f'Donación registrada - Factura electrónica #{numero_factura}'
         else:
             # Para recibo POS
-            factura = Factura(
-                venta_id=nueva_venta.id,
-                numero_factura=f"POS{consecutivo_pos:06d}",  # 🆕 Formato POS000001
-                subtotal=total_venta,
-                iva=0,
-                total=total_venta
-            )
+            numero_factura = f"POS{consecutivo_pos:06d}"  # Formato POS000001
             mensaje_exito = f'Recibo POS #{consecutivo_pos} generado correctamente'
+            
+            # 🎁 MENSAJE ESPECIAL PARA DONACIONES POS
+            if es_donacion:
+                mensaje_exito = f'Donación registrada - Comprobante POS #{consecutivo_pos}'
+        
+        factura = Factura(
+            venta_id=nueva_venta.id,
+            numero_factura=numero_factura,
+            subtotal=total_venta,  # 🎁 Será 0 para donaciones
+            iva=0,
+            total=total_venta  # 🎁 Será 0 para donaciones
+        )
         
         db.session.add(factura)
         db.session.commit()
@@ -721,7 +753,10 @@ def registrar_venta():
             'consecutivo_pos': consecutivo_pos,
             'tipo_documento': tipo_documento,
             'total': total_venta,
-            'mensaje': mensaje_exito
+            'mensaje': mensaje_exito,
+            # 🎁 NUEVO: INCLUIR INFORMACIÓN DE DONACIÓN EN LA RESPUESTA
+            'es_donacion': es_donacion,
+            'motivo_donacion': motivo_donacion
         }
         
         # 🆕 AGREGAR INFORMACIÓN DEL CLIENTE SI EXISTE
@@ -736,7 +771,11 @@ def registrar_venta():
             session.pop('carrito')
             session.modified = True
         
-        print(f'✅ Venta registrada exitosamente - ID: {nueva_venta.id}, Tipo: {tipo_documento}, Cliente: {cliente_id}')
+        # 🎁 LOG ESPECIAL PARA DONACIONES
+        if es_donacion:
+            print(f'🎁 DONACIÓN REGISTRADA EXITOSAMENTE - ID: {nueva_venta.id}, Productos: {len(carrito)}, Motivo: {motivo_donacion}')
+        else:
+            print(f'✅ Venta registrada exitosamente - ID: {nueva_venta.id}, Tipo: {tipo_documento}, Cliente: {cliente_id}, Total: ${total_venta}')
         
         return jsonify(respuesta)
         
@@ -3645,11 +3684,19 @@ def reporte_cierre_caja():
             Venta.fecha_hora <= fin_dia
         ).all()
         
+        # 🎁 SEPARAR VENTAS NORMALES VS DONACIONES
+        ventas_normales = [v for v in ventas_dia if not v.es_donacion]
+        donaciones = [v for v in ventas_dia if v.es_donacion]
+        
+        # 🎁 CALCULAR MÉTRICAS SEPARADAS
+        total_ventas_normales = sum(venta.total for venta in ventas_normales)
+        total_transacciones = len(ventas_dia)  # Incluye donaciones en conteo
+        
         # Calcular métricas
-        total_ventas = sum(venta.total for venta in ventas_dia)
+        total_ventas = total_ventas_normales  # Usar solo ventas normales para ingresos
         ventas_por_metodo = {}
         
-        for venta in ventas_dia:
+        for venta in ventas_normales:  # Solo ventas normales para ingresos por método
             if venta.metodo_pago not in ventas_por_metodo:
                 ventas_por_metodo[venta.metodo_pago] = 0
             ventas_por_metodo[venta.metodo_pago] += venta.total
@@ -3660,15 +3707,17 @@ def reporte_cierre_caja():
             db.func.date(Venta.fecha_hora) == dia_anterior
         ).all()
         
-        total_dia_anterior = sum(venta.total for venta in ventas_dia_anterior)
+        # 🎁 FILTRAR SOLO VENTAS NORMALES PARA COMPARACIÓN
+        ventas_dia_anterior_normales = [v for v in ventas_dia_anterior if not v.es_donacion]
+        total_dia_anterior = sum(venta.total for venta in ventas_dia_anterior_normales)
         
         # Calcular tendencia
         if total_dia_anterior > 0:
-            tendencia = ((total_ventas - total_dia_anterior) / total_dia_anterior) * 100
+            tendencia = ((total_ventas_normales - total_dia_anterior) / total_dia_anterior) * 100
         else:
-            tendencia = 100 if total_ventas > 0 else 0
+            tendencia = 100 if total_ventas_normales > 0 else 0
         
-        # Productos más vendidos del día
+        # Productos más vendidos del día (INCLUYENDO DONACIONES)
         detalles_dia = DetalleVenta.query.join(Venta).filter(
             Venta.fecha_hora >= inicio_dia,
             Venta.fecha_hora <= fin_dia
@@ -3689,14 +3738,21 @@ def reporte_cierre_caja():
         
         productos_top = sorted(productos_vendidos.items(), key=lambda x: x[1], reverse=True)[:5]
         
+        # 🎁 DATOS DE DONACIONES PARA EL TEMPLATE
+        total_donaciones = len(donaciones)
+        productos_donados = sum(len(v.detalles) for v in donaciones)
+        
         return render_template('cierre_caja.html',
                             fecha=fecha_obj,
-                            total_ventas=total_ventas,
+                            total_ventas=total_ventas_normales,  # Solo ventas normales
                             ventas_por_metodo=ventas_por_metodo,
                             tendencia=tendencia,
                             total_dia_anterior=total_dia_anterior,
                             productos_top=productos_top,
-                            total_transacciones=len(ventas_dia))
+                            total_transacciones=total_transacciones,
+                            # 🎁 NUEVOS DATOS
+                            total_donaciones=total_donaciones,
+                            productos_donados=productos_donados)
     
     except Exception as e:
         flash(f'Error generando reporte: {str(e)}', 'error')
@@ -3733,20 +3789,28 @@ def reporte_ventas():
         flash('La fecha de inicio no puede ser mayor que la fecha fin', 'error')
         fecha_inicio = fecha_fin - timedelta(days=7)
     
-    # Obtener ventas del período
+    # Obtener ventas del período (INCLUYENDO DONACIONES)
     ventas_periodo = Venta.query.filter(
         db.func.date(Venta.fecha_hora) >= fecha_inicio,
         db.func.date(Venta.fecha_hora) <= fecha_fin
     ).all()
     
-    # Calcular métricas avanzadas
-    total_ventas = sum(venta.total for venta in ventas_periodo)
-    promedio_venta = total_ventas / len(ventas_periodo) if ventas_periodo else 0
+    # 🎁 SEPARAR VENTAS NORMALES VS DONACIONES
+    ventas_normales = [v for v in ventas_periodo if not v.es_donacion]
+    donaciones = [v for v in ventas_periodo if v.es_donacion]
     
-    # Análisis de tendencia usando ML
+    # 🎁 CALCULAR MÉTRICAS SEPARADAS
+    total_ventas_normales = sum(venta.total for venta in ventas_normales)
+    total_transacciones = len(ventas_periodo)  # Incluye donaciones
+    
+    # Calcular métricas avanzadas (SOLO VENTAS NORMALES)
+    total_ventas = total_ventas_normales
+    promedio_venta = total_ventas_normales / len(ventas_normales) if ventas_normales else 0
+    
+    # Análisis de tendencia usando ML (SOLO VENTAS NORMALES)
     tendencia = calcular_tendencia_ventas(fecha_inicio, fecha_fin)
     
-    # Productos más vendidos del período
+    # Productos más vendidos del período (INCLUYENDO DONACIONES)
     detalles_periodo = DetalleVenta.query.join(Venta).filter(
         db.func.date(Venta.fecha_hora) >= fecha_inicio,
         db.func.date(Venta.fecha_hora) <= fecha_fin
@@ -3754,16 +3818,23 @@ def reporte_ventas():
     
     productos_analisis = analizar_productos_periodo(detalles_periodo)
     
+    # 🎁 DATOS DE DONACIONES PARA EL TEMPLATE
+    total_donaciones = len(donaciones)
+    productos_donados = sum(len(v.detalles) for v in donaciones)
+    
     return render_template('ventas_periodo.html',
                          periodo=periodo,
                          fecha_inicio=fecha_inicio,
                          fecha_fin=fecha_fin,
-                         total_ventas=total_ventas,
+                         total_ventas=total_ventas_normales,  # Solo ventas normales
                          promedio_venta=promedio_venta,
                          tendencia=tendencia,
                          productos_analisis=productos_analisis,
-                         total_transacciones=len(ventas_periodo),
-                         datetime=datetime)  # Añadido para usar en templates
+                         total_transacciones=total_transacciones,
+                         datetime=datetime,  # Añadido para usar en templates
+                         # 🎁 NUEVOS DATOS
+                         total_donaciones=total_donaciones,
+                         productos_donados=productos_donados)
 
 @app.route('/reporte/productos_populares')
 @login_required
@@ -3789,13 +3860,13 @@ def reporte_productos_populares():
     # Actualizar rotaciones automáticas antes de generar reporte
     actualizaciones = actualizar_rotaciones_automaticas()
     
-    # Obtener productos más vendidos del período
+    # Obtener productos más vendidos del período (INCLUYENDO DONACIONES)
     detalles = DetalleVenta.query.join(Venta).filter(
         Venta.fecha_hora >= fecha_inicio,
         Venta.fecha_hora <= fecha_fin
     ).all()
     
-    # Analizar productos
+    # Analizar productos (INCLUYENDO DONACIONES)
     analisis_productos = {}
     
     for detalle in detalles:
@@ -3820,6 +3891,7 @@ def reporte_productos_populares():
             }
         
         analisis_productos[producto_id]['cantidad_vendida'] += detalle.cantidad
+        # 🎁 LOS INGRESOS SE CALCULAN NORMALMENTE (las donaciones ya tienen total=0)
         analisis_productos[producto_id]['ingresos_totales'] += detalle.cantidad * detalle.precio_unitario
     
     # Ordenar por cantidad vendida
@@ -3832,12 +3904,25 @@ def reporte_productos_populares():
         rotacion = calcular_rotacion_automatica_por_nombre(producto['nombre'])
         producto['rotacion_promedio'] = rotacion
     
+    # 🎁 OBTENER DATOS DE DONACIONES PARA EL PERÍODO
+    ventas_periodo = Venta.query.filter(
+        Venta.fecha_hora >= fecha_inicio,
+        Venta.fecha_hora <= fecha_fin
+    ).all()
+    
+    donaciones = [v for v in ventas_periodo if v.es_donacion]
+    total_donaciones = len(donaciones)
+    productos_donados = sum(len(v.detalles) for v in donaciones)
+    
     return render_template('productos_populares.html',
                          productos=productos_ordenados[:20],
                          fecha_inicio=fecha_inicio,
                          fecha_fin=fecha_fin,
                          actualizaciones_ml=actualizaciones,
-                         datetime=datetime)  # ← ¡ESTO ES LO QUE FALTA!
+                         datetime=datetime,  # ← ¡ESTO ES LO QUE FALTA!
+                         # 🎁 NUEVOS DATOS
+                         total_donaciones=total_donaciones,
+                         productos_donados=productos_donados)
 
 @app.route('/reporte/analisis_predictivo')
 @login_required
@@ -3853,7 +3938,7 @@ def reporte_analisis_predictivo():
     
     for receta in recetas_activas:
         if receta.producto:
-            # Calcular proyecciones usando ML
+            # Calcular proyecciones usando ML (INCLUYENDO DONACIONES EN DATOS HISTÓRICOS)
             proyeccion = calcular_proyeccion_ventas(receta.producto.id)
             productos_analisis.append({
                 'producto': receta.producto.nombre,
@@ -3868,11 +3953,24 @@ def reporte_analisis_predictivo():
     # Alertas inteligentes
     alertas = generar_alertas_inteligentes()
     
+    # 🎁 OBTENER DATOS DE DONACIONES RECIENTES (ÚLTIMOS 30 DÍAS)
+    fecha_inicio = datetime.now().date() - timedelta(days=30)
+    donaciones_recientes = Venta.query.filter(
+        Venta.fecha_hora >= fecha_inicio,
+        Venta.es_donacion == True
+    ).all()
+    
+    total_donaciones_30dias = len(donaciones_recientes)
+    productos_donados_30dias = sum(len(v.detalles) for v in donaciones_recientes)
+    
     return render_template('analisis_predictivo.html',
                      productos_analisis=productos_analisis,
                      alertas=alertas,
                      fecha_analisis=datetime.now().date(),
-                     datetime=datetime)  # ¡Importante! Pasar datetime al template
+                     datetime=datetime,  # ¡Importante! Pasar datetime al template
+                     # 🎁 NUEVOS DATOS
+                     total_donaciones=total_donaciones_30dias,
+                     productos_donados=productos_donados_30dias)
     
 
 # Busca un lugar después de las otras rutas y agrega:

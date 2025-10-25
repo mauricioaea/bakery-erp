@@ -114,10 +114,8 @@ MODULOS_SISTEMA = {
 ROLES_PERMISOS = {
     'cajero': {
         'dashboard': ['ver'],
-        'punto_venta': ['vender', 'ver_ventas_propias', 'imprimir_ticket'],
-        # ❌ ELIMINAR acceso a productos y clientes - COMENTA ESTAS LÍNEAS:
-        # 'productos': ['ver'],  
-        # 'clientes': ['ver'],   
+        'punto_venta': ['vender', 'ver_ventas_propias', 'imprimir_ticket', 'cierre_caja'], 
+        'finanzas': ['ver_cierre_diario'],
         'usuarios': ['ver_perfil']  # Solo puede ver su propio perfil
     },
     
@@ -700,6 +698,8 @@ class Venta(db.Model):
     qr_factura = db.Column(db.Text)  # QR para factura electrónica
     respuesta_dian = db.Column(db.Text)  # JSON respuesta DIAN/proveedor
     texto_legal = db.Column(db.Text, default='Documento equivalente POS – No válido como factura electrónica de venta')
+    es_donacion = db.Column(db.Boolean, default=False)
+    motivo_donacion = db.Column(db.String(200), nullable=True)
     
     # ✅✅✅ RELACIONES CORREGIDAS - SIN CONFLICTOS
     # NO necesitas: usuario = db.relationship(...) - ya lo crea Usuario.ventas_realizadas

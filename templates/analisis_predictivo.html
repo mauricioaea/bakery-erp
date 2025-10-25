@@ -328,6 +328,45 @@
             </div>
             {% endif %}
 
+            <!-- 🎁 SECCIÓN DE DONACIONES  -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card border-warning">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="mb-0">
+                                <i class="fas fa-gift me-2"></i>Impacto de Donaciones en el Inventario
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-md-6">
+                                    <div class="border rounded p-3 bg-light">
+                                        <h3 class="text-warning mb-1">{{ total_donaciones }}</h3>
+                                        <p class="mb-1 fw-bold">Donaciones</p>
+                                        <small class="text-muted">Últimos 30 días</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="border rounded p-3 bg-light">
+                                        <h3 class="text-warning mb-1">{{ productos_donados }}</h3>
+                                        <p class="mb-1 fw-bold">Productos Donados</p>
+                                        <small class="text-muted">Unidades descargadas sin ingresos</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="alert alert-info mt-3 mb-0">
+                                <i class="fas fa-lightbulb me-2"></i>
+                                <strong>Nota para el análisis predictivo:</strong> Las donaciones están incluidas en los datos históricos 
+                                utilizados para las proyecciones, lo que garantiza un cálculo preciso del inventario necesario.
+                                <span class="badge bg-primary ms-2">
+                                    <i class="fas fa-robot"></i> IA CONSIDERA DONACIONES
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Análisis Predictivo por Producto -->
             <div class="row mb-4">
                 <div class="col-12">

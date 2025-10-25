@@ -246,17 +246,35 @@ class GeneradorReportes:
         return buffer
     
     def _obtener_ingresos_periodo(self, fecha_inicio, fecha_fin):
-        """Obtiene ingresos agrupados por concepto"""
+        """Obtiene ingresos separando ventas normales vs donaciones"""
         try:
-            registros = RegistroDiario.query.filter(
-                RegistroDiario.fecha.between(fecha_inicio, fecha_fin)
+            # Ventas normales (excluyendo donaciones)
+            ventas_normales = Venta.query.filter(
+                Venta.fecha_hora.between(fecha_inicio, fecha_fin),
+                Venta.es_donacion == False  # 🎁 EXCLUIR DONACIONES
             ).all()
             
+            # Donaciones (solo para información)
+            ventas_donaciones = Venta.query.filter(
+                Venta.fecha_hora.between(fecha_inicio, fecha_fin),
+                Venta.es_donacion == True  # 🎁 SOLO DONACIONES
+            ).all()
+            
+            total_ventas_normales = sum(v.total for v in ventas_normales)
+            total_donaciones = sum(v.total for v in ventas_donaciones)  # Será 0, pero informativo
+            
             ingresos = {
-                'Ventas en Efectivo': sum(r.efectivo or 0 for r in registros),
-                'Transferencias Recibidas': sum(r.transferencias or 0 for r in registros),
-                'Ventas con Tarjeta': sum(r.tarjetas or 0 for r in registros),
-                'Otros Ingresos': 0
+                'Ventas Normales': total_ventas_normales,
+                'Donaciones': total_donaciones,  # 🎁 CERO, pero visible
+                'Ventas con Tarjeta': sum(v.total for v in ventas_normales if v.metodo_pago == 'tarjeta'),
+                'Transferencias': sum(v.total for v in ventas_normales if v.metodo_pago == 'transferencia'),
+                'Efectivo': sum(v.total for v in ventas_normales if v.metodo_pago == 'efectivo')
+            }
+            
+            # 🎁 INFORMACIÓN ADICIONAL PARA ANÁLISIS
+            self.info_donaciones = {
+                'cantidad': len(ventas_donaciones),
+                'productos_donados': sum(len(v.detalles) for v in ventas_donaciones)
             }
             
             return ingresos

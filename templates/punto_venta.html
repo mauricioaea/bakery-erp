@@ -195,6 +195,22 @@
                             </div>
                         </div>
 
+                        <!-- 🎁 TOGGLE DE DONACIÓN - NUEVA SECCIÓN -->
+                        <div class="donacion-toggle mt-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="modoDonacion" 
+                                    onchange="toggleModoDonacion()">
+                                <label class="form-check-label text-warning" for="modoDonacion">
+                                    <i class="fas fa-gift me-1"></i> Modo Donación
+                                </label>
+                            </div>
+                            <div id="campoMotivoDonacion" class="mt-2" style="display: none;">
+                                <input type="text" class="form-control form-control-sm" 
+                                    id="motivoDonacion" placeholder="Motivo (opcional): Ej. Donación a institución...">
+                                <small class="text-muted">El total será $0 y los productos se descargarán del inventario</small>
+                            </div>
+                        </div>
+
                         <!-- Botones de Acción -->
                         <div class="acciones-venta mt-3">
                             <button class="btn btn-success btn-lg w-100 mb-2" 
@@ -255,6 +271,24 @@
                             <div class="col-6">
                                 <div class="metric-value text-success" id="totalItems">0</div>
                                 <div class="metric-label small">Items</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 🎁 MINI TARJETA DE DONACIONES - Agregar en el punto de venta -->
+                <div class="card mt-3 mini-dashboard border-warning">
+                    <div class="card-header bg-warning text-dark py-2">
+                        <h6 class="mb-0">
+                            <i class="fas fa-gift me-1"></i>
+                            Donaciones Hoy
+                        </h6>
+                    </div>
+                    <div class="card-body py-2">
+                        <div class="row text-center">
+                            <div class="col-12">
+                                <div class="metric-value text-warning" id="donacionesHoyPuntoVenta">0</div>
+                                <div class="metric-label small">Transacciones</div>
                             </div>
                         </div>
                     </div>
@@ -770,29 +804,31 @@
             });
         }
 
-                // 🆕 FUNCIÓN MEJORADA PARA PROCESAR VENTA
-                // 🆕 FUNCIÓN MEJORADA PARA PROCESAR VENTA CON CÁLCULO DE CAMBIO
+        // 🎁 ACTUALIZADA: FUNCIÓN procesarVenta CON DONACIÓN
         async function procesarVenta() {
             if (carrito.length === 0) {
                 mostrarNotificacion('❌ El carrito está vacío', 'error');
                 return;
             }
 
-            // 🆕 CALCULAR TOTAL ACTUAL DEL CARRITO
-            const totalVenta = carrito.reduce((total, item) => total + (item.precio * item.cantidad), 0);
+            const totalVenta = calcularTotalCarrito();
             const metodoPago = document.querySelector('input[name="metodoPago"]:checked').value;
+            const esDonacion = document.getElementById('modoDonacion').checked;
+            const motivoDonacion = document.getElementById('motivoDonacion').value;
             
             console.log('🛒 Iniciando procesamiento de venta:', {
                 total: totalVenta,
                 metodo: metodoPago,
-                items: carrito.length
+                items: carrito.length,
+                esDonacion: esDonacion,
+                motivoDonacion: motivoDonacion
             });
             
-            // 🆕 NUEVA FUNCIONALIDAD: Cálculo de cambio para efectivo
-            if (metodoPago === 'efectivo') {
-                console.log('💰 Método efectivo detectado, mostrando calculadora...');
-                mostrarCalculadoraCambio(totalVenta);
-                return; // Pausar flujo hasta confirmación de pago
+            // Validación especial para donaciones
+            if (esDonacion) {
+                if (!confirm('🎁 ¿Confirmar DONACIÓN?\n\nLos productos se descargarán del inventario pero el ingreso será $0.\n¿Continuar?')) {
+                    return;
+                }
             }
             
             // 🆕 CONTINUAR CON FLUJO NORMAL PARA OTROS MÉTODOS DE PAGO
@@ -803,8 +839,8 @@
                 
                 console.log('🔍 Modo facturación detectado:', window.modoFacturacionActual);
                 
-                if (window.modoFacturacionActual === 'ELECTRONICA') {
-                    // 🆕 MODO ELECTRÓNICO: SOLICITAR DATOS DEL CLIENTE
+                if (window.modoFacturacionActual === 'ELECTRONICA' && !esDonacion) {
+                    // 🆕 MODO ELECTRÓNICO: SOLO si NO es donación
                     if (!window.clienteActual) {
                         solicitarDatosCliente();
                         return;
@@ -812,7 +848,7 @@
                         procesarVentaElectronica();
                     }
                 } else {
-                    // MODO POS: PROCESAR DIRECTAMENTE
+                    // MODO POS o DONACIÓN: PROCESAR DIRECTAMENTE
                     procesarVentaPOS();
                 }
             } catch (error) {
@@ -822,17 +858,16 @@
             }
         }
 
-        // 🆕 PROCESAR VENTA ELECTRÓNICA
-        // 🆕 PROCESAR VENTA ELECTRÓNICA
+        // 🎁 ACTUALIZADA: FUNCIÓN procesarVentaElectronica CON DONACIÓN
         async function procesarVentaElectronica() {
             if (!window.clienteActual) {
                 mostrarNotificacion('❌ No hay cliente seleccionado', 'error');
                 return;
             }
 
-            console.log('🔍 Cliente actual para venta electrónica:', window.clienteActual); // 🆕 DEBUG
-
             const metodoPago = document.querySelector('input[name="metodoPago"]:checked').value;
+            const esDonacion = document.getElementById('modoDonacion').checked;
+            const motivoDonacion = document.getElementById('motivoDonacion').value;
             
             try {
                 const response = await fetch('/registrar_venta', {
@@ -843,30 +878,45 @@
                     body: JSON.stringify({
                         carrito: carrito,
                         metodo_pago: metodoPago,
-                        cliente_id: window.clienteActual.id,  // 🆕 INCLUIR CLIENTE
-                        tipo_documento: 'ELECTRONICA'  // 🆕 FORZAR MODO ELECTRÓNICO
+                        cliente_id: window.clienteActual.id,
+                        tipo_documento: 'ELECTRONICA',
+                        // 🎁 NUEVOS CAMPOS PARA DONACIÓN
+                        es_donacion: esDonacion,
+                        motivo_donacion: motivoDonacion
                     })
                 });
 
                 const resultado = await response.json();
-                console.log('📡 Respuesta de venta electrónica:', resultado); // 🆕 DEBUG
 
                 if (resultado.success) {
-                    configurarModalVenta(resultado);
+                    // 🎁 CONFIGURAR MODAL ESPECIAL PARA DONACIONES
+                    if (resultado.es_donacion) {
+                        document.getElementById('modalTitulo').textContent = 'Donación Registrada';
+                        document.getElementById('modalMessage').textContent = 'Donación procesada correctamente';
+                        document.getElementById('btnImprimirTexto').textContent = 'Imprimir Comprobante';
+                        document.getElementById('modalDocumento').textContent = 'COMPROBANTE DONACIÓN';
+                    } else {
+                        configurarModalVenta(resultado);
+                    }
                     
                     document.getElementById('modalTotal').textContent = `$${resultado.total.toLocaleString()}`;
-                    document.getElementById('modalMetodo').textContent = metodoPago.charAt(0).toUpperCase() + metodoPago.slice(1);
+                    document.getElementById('modalMetodo').textContent = resultado.es_donacion ? 'DONACIÓN' : metodoPago.charAt(0).toUpperCase() + metodoPago.slice(1);
                     
                     const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
                     modal.show();
                     
-                    // Limpiar carrito y cliente
+                    // Limpiar carrito y resetear donación
                     carrito = [];
                     window.clienteActual = null;
+                    document.getElementById('modoDonacion').checked = false;
+                    toggleModoDonacion(); // Esto reseteará la UI
                     actualizarCarrito();
                     if (typeof actualizarCarritoMobile === 'function') {
                         actualizarCarritoMobile();
                     }
+                    
+                    // 🎁 ACTUALIZAR CONTADOR DE DONACIONES
+                    actualizarDonacionesDespuesVenta();
                     
                 } else {
                     mostrarNotificacion('❌ Error: ' + resultado.error, 'error');
@@ -877,9 +927,11 @@
             }
         }
 
-        // 🆕 PROCESAR VENTA POS (CONSUMIDOR FINAL)
+        // 🎁 ACTUALIZADA: FUNCIÓN procesarVentaPOS CON DONACIÓN
         async function procesarVentaPOS() {
             const metodoPago = document.querySelector('input[name="metodoPago"]:checked').value;
+            const esDonacion = document.getElementById('modoDonacion').checked;
+            const motivoDonacion = document.getElementById('motivoDonacion').value;
             
             try {
                 const response = await fetch('/registrar_venta', {
@@ -890,25 +942,41 @@
                     body: JSON.stringify({
                         carrito: carrito,
                         metodo_pago: metodoPago,
-                        tipo_documento: 'POS'  // 🆕 FORZAR MODO POS
+                        tipo_documento: 'POS',
+                        // 🎁 NUEVOS CAMPOS PARA DONACIÓN
+                        es_donacion: esDonacion,
+                        motivo_donacion: motivoDonacion
                     })
                 });
 
                 const resultado = await response.json();
 
                 if (resultado.success) {
-                    configurarModalVenta(resultado);
+                    // 🎁 CONFIGURAR MODAL ESPECIAL PARA DONACIONES
+                    if (resultado.es_donacion) {
+                        document.getElementById('modalTitulo').textContent = 'Donación Registrada';
+                        document.getElementById('modalMessage').textContent = 'Donación procesada correctamente';
+                        document.getElementById('btnImprimirTexto').textContent = 'Imprimir Comprobante';
+                        document.getElementById('modalDocumento').textContent = 'COMPROBANTE DONACIÓN';
+                    } else {
+                        configurarModalVenta(resultado);
+                    }
                     
                     document.getElementById('modalTotal').textContent = `$${resultado.total.toLocaleString()}`;
-                    document.getElementById('modalMetodo').textContent = metodoPago.charAt(0).toUpperCase() + metodoPago.slice(1);
+                    document.getElementById('modalMetodo').textContent = resultado.es_donacion ? 'DONACIÓN' : metodoPago.charAt(0).toUpperCase() + metodoPago.slice(1);
                     
                     const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
                     modal.show();
                     
-                    // Limpiar carrito
+                    // Limpiar carrito y resetear donación
                     carrito = [];
+                    document.getElementById('modoDonacion').checked = false;
+                    toggleModoDonacion(); // Esto reseteará la UI
                     actualizarCarrito();
                     actualizarCarritoMobile();
+                    
+                    // 🎁 ACTUALIZAR CONTADOR DE DONACIONES
+                    actualizarDonacionesDespuesVenta();
                     
                 } else {
                     mostrarNotificacion('❌ Error: ' + resultado.error, 'error');
@@ -960,7 +1028,7 @@
             window.location.href = '/configuracion/tickets';
         }
 
-                // =============================================
+        // =============================================
         // 🆕 FUNCIONES PARA CÁLCULO DE CAMBIO - EFECTIVO
         // =============================================
 
@@ -1283,21 +1351,103 @@
             console.log('✅ Sistema POS inicializado correctamente');
         });
 
+        // =============================================
+        // 🎁 FUNCIONALIDAD DONACIÓN - NUEVO CÓDIGO
+        // =============================================
+
+        function toggleModoDonacion() {
+            const esDonacion = document.getElementById('modoDonacion').checked;
+            const campoMotivo = document.getElementById('campoMotivoDonacion');
+            const totalElement = document.getElementById('total');
+            const subtotalElement = document.getElementById('subtotal');
+            
+            if (esDonacion) {
+                campoMotivo.style.display = 'block';
+                // Guardar el total original antes de ponerlo en 0
+                window.totalOriginal = calcularTotalCarrito();
+                subtotalElement.textContent = '$0';
+                totalElement.textContent = '$0';
+                totalElement.classList.add('text-warning');
+                subtotalElement.classList.add('text-warning');
+                
+                mostrarNotificacion('🔶 Modo donación activado - Total: $0', 'warning');
+                
+                // Deshabilitar métodos de pago visualmente
+                document.querySelectorAll('.metodo-pago-container .btn').forEach(btn => {
+                    btn.classList.add('disabled');
+                });
+                
+            } else {
+                campoMotivo.style.display = 'none';
+                // Restaurar total original
+                const totalActual = window.totalOriginal || calcularTotalCarrito();
+                subtotalElement.textContent = `$${totalActual.toLocaleString()}`;
+                totalElement.textContent = `$${totalActual.toLocaleString()}`;
+                totalElement.classList.remove('text-warning');
+                subtotalElement.classList.remove('text-warning');
+                
+                // Reactivar métodos de pago
+                document.querySelectorAll('.metodo-pago-container .btn').forEach(btn => {
+                    btn.classList.remove('disabled');
+                });
+            }
+        }
+
+        function calcularTotalCarrito() {
+            return carrito.reduce((total, item) => total + (item.precio * item.cantidad), 0);
+        }
+
+        // =============================================
+        // 🎁 FUNCIONALIDAD PARA ACTUALIZAR DONACIONES EN PUNTO DE VENTA
+        // =============================================
+
+        // Función para actualizar el contador de donaciones
+        async function actualizarDonacionesPuntoVenta() {
+            try {
+                const response = await fetch('/api/donaciones/hoy');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        document.getElementById('donacionesHoyPuntoVenta').textContent = data.total_donaciones || '0';
+                    }
+                }
+            } catch (error) {
+                console.log('ℹ️ No se pudieron cargar las donaciones:', error);
+                // No mostrar error para no interrumpir el flujo
+            }
+        }
+
+        // 🎁 Actualizar donaciones después de cada venta/donación
+        function actualizarDonacionesDespuesVenta() {
+            setTimeout(actualizarDonacionesPuntoVenta, 1500);
+        }
+
+        // Actualizar donaciones cuando se carga la página
+        document.addEventListener('DOMContentLoaded', function() {
+            // 🎁 AGREGAR ESTA LÍNEA para cargar donaciones al inicio
+            setTimeout(actualizarDonacionesPuntoVenta, 1000);
+        });
+
         // Reportes flotantes
+        // ✅ FUNCIONES CORREGIDAS PARA REPORTES - RUTAS ACTUALIZADAS
         function abrirReporteCierreCaja() {
-            window.open('/cierre_caja', '_blank');
+            console.log('📊 Abriendo reporte de cierre de caja...');
+            window.open('/reporte/cierre_caja', '_blank');
         }
 
         function abrirReporteVentas() {
-            window.open('/ventas_periodo', '_blank');
+            console.log('📈 Abriendo reporte de ventas...');
+            window.open('/reporte/ventas', '_blank');
         }
 
         function abrirReporteProductos() {
-            window.open('/productos_populares', '_blank');
+            console.log('🏆 Abriendo reporte de productos populares...');
+            window.open('/reporte/productos_populares', '_blank');
         }
 
         function abrirAnalisisPredictivo() {
-            window.open('/analisis_predictivo', '_blank');
+            console.log('🤖 Abriendo análisis predictivo...');
+            window.open('/reporte/analisis_predictivo', '_blank');
         }
 
         

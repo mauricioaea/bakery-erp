@@ -270,6 +270,40 @@
         <!-- Cuerpo del Reporte -->
         <div class="reporte-body">
             <!-- Resumen de Actualizaciones ML -->
+            <!-- 🎁 SECCIÓN DE DONACIONES -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="alert alert-warning">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h5 class="mb-1">
+                                    <i class="fas fa-gift me-2"></i>Información de Donaciones en el Período
+                                </h5>
+                                <p class="mb-0">
+                                    Se registraron <strong>{{ total_donaciones }}</strong> transacciones de donación 
+                                    con <strong>{{ productos_donados }}</strong> productos donados.
+                                    <span class="badge bg-light text-dark ms-2">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Incluidas en el análisis de productos
+                                    </span>
+                                </p>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <h4 class="text-warning mb-0">{{ total_donaciones }}</h4>
+                                        <small class="text-muted">Donaciones</small>
+                                    </div>
+                                    <div class="col-6">
+                                        <h4 class="text-warning mb-0">{{ productos_donados }}</h4>
+                                        <small class="text-muted">Productos</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             {% if actualizaciones_ml %}
             <div class="alert alert-info mb-4 no-print">
                 <h5><i class="fas fa-robot"></i> Actualizaciones de IA Aplicadas</h5>
