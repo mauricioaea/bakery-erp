@@ -137,7 +137,7 @@ from models import obtener_productos_sin_ventas_recientes, ActivoFijo, CATEGORIA
 
 @login_manager.user_loader
 def load_user(user_id):
-    return Usuario.query.get(int(user_id))
+    return db.session.get(Usuario, int(user_id))
 
 # Crear tablas y datos iniciales
 with app.app_context():
@@ -4477,10 +4477,10 @@ def generar_reporte_conciliacion():
     
 #========================================== Análisis de Gastos por Categoría=================================================
 # DEBUG: Verificar métodos disponibles
-print("🔍 Verificando métodos de GeneradorReportes...")
+
 generador_test = GeneradorReportes()
 metodos = [method for method in dir(generador_test) if callable(getattr(generador_test, method)) and not method.startswith('_')]
-print("📋 Métodos disponibles:", metodos)
+
 
 @app.route('/generar_reporte_analisis_gastos')
 @login_required
@@ -4531,7 +4531,7 @@ def generar_reporte_analisis_gastos():
 def verificar_metodos():
     generador = GeneradorReportes()
     metodos = [method for method in dir(generador) if callable(getattr(generador, method)) and not method.startswith('_')]
-    print("🔍 Métodos disponibles en GeneradorReportes:", metodos)
+    
 
 # Ejecutar verificación (esto se mostrará en la terminal de Flask al iniciar)
 verificar_metodos()
@@ -5018,5 +5018,5 @@ def guardar_permisos(usuario_id):
     return redirect(url_for('gestion_usuarios'))
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=False)
 
