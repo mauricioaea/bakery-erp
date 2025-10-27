@@ -27,6 +27,7 @@ class Usuario(UserMixin, db.Model):
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
     fecha_ultimo_acceso = db.Column(db.DateTime)
     sucursal_id = db.Column(db.Integer, db.ForeignKey('sucursales.id'), nullable=True)  # Para multi-sucursal futuro
+    panaderia_id = db.Column(db.Integer, db.ForeignKey('configuracion_panaderia.id'), nullable=False, default=1)
     
     # 🆕 RELACIÓN CON PERMISOS PERSONALIZADOS
     permisos_personalizados = db.relationship('PermisoUsuario', backref='usuario', lazy=True, cascade='all, delete-orphan')
@@ -150,8 +151,8 @@ ROLES_PERMISOS = {
         'usuarios': ['ver_perfil']
     },
     
-    'administrador': {
-        # Acceso completo a todos los módulos
+    'admin_cliente': {
+        # Acceso completo pero SOLO a SU panadería
         'dashboard': ['ver'],
         'punto_venta': ['vender', 'ver_todas_ventas', 'anular_ventas', 'cierre_caja'],
         'productos': ['ver', 'crear', 'editar', 'eliminar'],
@@ -166,10 +167,27 @@ ROLES_PERMISOS = {
         'activos': ['ver', 'gestionar'],
         'usuarios': ['gestionar', 'ver_perfil'],
         'sistema': ['diagnosticar']
+        # ❌ NO incluye: 'gestion_clientes' (gestión de múltiples clientes)
+    },
+    
+    'super_admin': {
+        # 🎯 ACCESO COMPLETO A TODO EL SISTEMA
+        'dashboard': ['ver'],
+        'punto_venta': ['vender', 'ver_todas_ventas', 'anular_ventas', 'cierre_caja'],
+        'productos': ['ver', 'crear', 'editar', 'eliminar'],
+        'categorias': ['ver', 'gestionar'],
+        'produccion': ['ver', 'producir', 'crear_recetas', 'editar_recetas'],
+        'inventario': ['ver', 'gestionar'],
+        'clientes': ['ver', 'gestionar'],
+        'proveedores': ['ver', 'gestionar'],
+        'finanzas': ['ver_todo', 'gestionar'],
+        'reportes': ['ver_todos', 'exportar', 'analizar'],
+        'configuracion': ['ver', 'editar_parametros'],
+        'activos': ['ver', 'gestionar'],
+        'usuarios': ['gestionar', 'ver_perfil'],
+        'sistema': ['diagnosticar', 'gestion_clientes']  # ✅ Solo super_admin ve gestión de clientes
     }
 }
-
-# 🆕 MODELO PARA SUCURSALES (Para expansión futura)
 class Sucursal(db.Model):
     __tablename__ = 'sucursales'
     
@@ -183,11 +201,152 @@ class Sucursal(db.Model):
     
     def __repr__(self):
         return f'<Sucursal {self.nombre}>'
+    
+# =============================================
+# 🆕 CLASE CATEGORÍA (FALTANTE) - AGREGAR ANTES DE PRODUCTO
+# =============================================
 
 class Categoria(db.Model):
     __tablename__ = 'categorias'
+    
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
+    
+    # Relación con productos
+    productos = db.relationship('Producto', backref='categoria_rel', lazy=True)
+    
+    def __repr__(self):
+        return f'<Categoria {self.nombre}>'
+    
+# =============================================
+# 🆕 MODELO PARA CONFIGURACIÓN DE PANADERÍA Y LICENCIAS
+# =============================================
+
+class ConfiguracionPanaderia(db.Model):
+    __tablename__ = 'configuracion_panaderia'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # INFORMACIÓN BÁSICA DE LA PANADERÍA (YA EXISTENTE)
+    nombre_panaderia = db.Column(db.String(200), nullable=False, default='Mi Panadería')
+    telefono_contacto = db.Column(db.String(20))
+    direccion = db.Column(db.Text)
+    
+    # 🆕 SISTEMA DE LICENCIAS Y LÍMITES (YA EXISTENTE)
+    tipo_licencia = db.Column(db.String(20), default='local')  # 'local', 'nube_basica'
+    max_usuarios = db.Column(db.Integer, default=3)
+    ventas_ilimitadas = db.Column(db.Boolean, default=True)
+    
+    # 🆕 MEJORADO: CONTROL DE SUSCRIPCIÓN PARA NUBE
+    fecha_expiracion = db.Column(db.Date)  # Fecha de vencimiento
+    estado_suscripcion = db.Column(db.String(20), default='activa')  # 'activa', 'expirada', 'bloqueada'
+    dias_gracia = db.Column(db.Integer, default=7)  # Días de gracia después del vencimiento
+    
+    # 🆕 NUEVO: SISTEMA DE NOTIFICACIONES
+    ultima_notificacion = db.Column(db.DateTime)  # Cuándo se envió la última notificación
+    notificaciones_pendientes = db.Column(db.Integer, default=0)  # Número de notificaciones pendientes
+    
+    # 🆕 NUEVO: DATOS DE FACTURACIÓN CLIENTE NUBE
+    razon_social = db.Column(db.String(200))
+    nit = db.Column(db.String(20))
+    email_facturacion = db.Column(db.String(120))
+    telefono_facturacion = db.Column(db.String(20))
+    
+    # 🆕 NUEVO: DATOS DE PAGO
+    metodo_pago = db.Column(db.String(50), default='transferencia')  # 'transferencia', 'paypal', etc.
+    referencia_pago = db.Column(db.String(100))  # Número de referencia de pago
+    
+    # FECHAS DE CONTROL (YA EXISTENTE)
+    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
+    fecha_actualizacion = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<ConfiguracionPanaderia {self.nombre_panaderia} - {self.tipo_licencia}>'
+    
+    # 🆕 MÉTODOS MEJORADOS PARA SUSCRIPCIONES NUBE
+    @property
+    def usuarios_activos_count(self):
+        """Cuenta cuántos usuarios activos tiene la panadería"""
+        return Usuario.query.filter_by(activo=True).count()
+    
+    @property
+    def puede_crear_usuario(self):
+        """Verifica si se puede crear un nuevo usuario"""
+        return self.usuarios_activos_count < self.max_usuarios
+    
+    @property
+    def usuarios_restantes(self):
+        """Calcula cuántos usuarios más se pueden crear"""
+        return max(0, self.max_usuarios - self.usuarios_activos_count)
+    
+    # 🆕 NUEVO: MÉTODOS ESPECÍFICOS PARA SUSCRIPCIONES NUBE
+    @property
+    def suscripcion_activa(self):
+        """Verifica si la suscripción está activa (solo para nube)"""
+        if self.tipo_licencia == 'local':
+            return True  # Las licencias locales siempre están activas
+        
+        if self.estado_suscripcion == 'bloqueada':
+            return False
+        
+        if self.fecha_expiracion:
+            from datetime import datetime
+            dias_restantes = (self.fecha_expiracion - datetime.now().date()).days
+            return dias_restantes + self.dias_gracia > 0
+        
+        return True
+    
+    @property
+    def dias_para_expiracion(self):
+        """Calcula días restantes para expiración (solo nube)"""
+        if self.tipo_licencia == 'local' or not self.fecha_expiracion:
+            return 999  # Nunca expira
+        
+        from datetime import datetime
+        dias = (self.fecha_expiracion - datetime.now().date()).days
+        return dias
+    
+    @property
+    def estado_suscripcion_detallado(self):
+        """Estado detallado de la suscripción"""
+        if self.tipo_licencia == 'local':
+            return "Licencia Local - Permanente"
+        
+        if not self.suscripcion_activa:
+            return "SUSPENDIDA - Contactar soporte"
+        
+        dias = self.dias_para_expiracion
+        if dias > 30:
+            return f"ACTIVA - {dias} días restantes"
+        elif dias > 7:
+            return f"ACTIVA - {dias} días restantes ⚠️"
+        elif dias > 0:
+            return f"POR VENCER - {dias} días ⚠️⚠️"
+        else:
+            return f"EN GRACIA - {abs(dias)} días de gracia 🚨"
+    
+    # 🆕 NUEVO: MÉTODO PARA ACTUALIZAR ESTADO AUTOMÁTICAMENTE
+    def actualizar_estado_suscripcion(self):
+        """Actualiza el estado de suscripción basado en fechas"""
+        if self.tipo_licencia == 'local':
+            self.estado_suscripcion = 'activa'
+            return
+        
+        if not self.fecha_expiracion:
+            self.estado_suscripcion = 'activa'
+            return
+        
+        from datetime import datetime
+        dias_restantes = (self.fecha_expiracion - datetime.now().date()).days
+        
+        if dias_restantes + self.dias_gracia < 0:
+            self.estado_suscripcion = 'bloqueada'
+        elif dias_restantes < 0:
+            self.estado_suscripcion = 'expirada'
+        else:
+            self.estado_suscripcion = 'activa'
+            
+
 
 class Producto(db.Model):
     __tablename__ = 'productos'
@@ -1767,4 +1926,39 @@ class ConfiguracionSistema(db.Model):
     
     def __repr__(self):
         return f'<ConfiguracionSistema: {self.tipo_facturacion}>'
+    
+# =============================================
+# 🆕 FUNCIONES DE VERIFICACIÓN DE LÍMITES
+# =============================================
+
+def obtener_configuracion_panaderia(panaderia_id=1):
+    """Obtiene la configuración de la panadería (por defecto ID 1)"""
+    config = ConfiguracionPanaderia.query.get(panaderia_id)
+    if not config:
+        # Crear configuración por defecto si no existe
+        config = ConfiguracionPanaderia(
+            id=panaderia_id,
+            nombre_panaderia="Panadería Principal",
+            tipo_licencia="local"
+        )
+        db.session.add(config)
+        db.session.commit()
+    return config
+
+def verificar_limite_usuarios():
+    """Verifica si se ha alcanzado el límite de usuarios"""
+    config = obtener_configuracion_panaderia()
+    return not config.puede_crear_usuario
+
+def obtener_limites_panaderia():
+    """Obtiene información de límites actuales"""
+    config = obtener_configuracion_panaderia()
+    return {
+        'max_usuarios': config.max_usuarios,
+        'usuarios_actuales': config.usuarios_activos_count,
+        'usuarios_restantes': config.usuarios_restantes,
+        'puede_crear_usuario': config.puede_crear_usuario,
+        'tipo_licencia': config.tipo_licencia,
+        'suscripcion_activa': config.suscripcion_activa
+    }
     

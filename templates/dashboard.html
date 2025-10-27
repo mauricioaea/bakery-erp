@@ -414,12 +414,18 @@
                     </div>
                 </div>
             </div>
+
+
         </div>
 
         <!-- Información del Sistema -->
+       
         <div class="quick-nav">
             <h3>ℹ️ Información del Sistema</h3>
             <div class="nav-buttons">
+                {% if current_user.is_authenticated and current_user.rol == 'super_admin' %}
+                    <a href="{{ url_for('gestion_clientes') }}" class="nav-btn">👑 Gestión de Clientes</a>
+                {% endif %}
                 <a href="/debug_api_productos" class="nav-btn" target="_blank">📦 Ver Productos API</a>
                 <a href="/crear_productos_prueba" class="nav-btn" target="_blank">🧪 Crear Productos Prueba</a>
             </div>

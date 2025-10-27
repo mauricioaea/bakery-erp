@@ -15,7 +15,6 @@ from models import JornadaVentas, CierreDiario, obtener_jornada_activa, cerrar_j
 from facturacion.generador_xml import generar_xml_ubl_21
 from models import ConsecutivoPOS, ConfiguracionSistema, Cliente
 
-
 # 🆕 DEFINICIÓN DE MÓDULOS DEL SISTEMA - AGREGAR ESTO PRIMERO
 MODULOS_SISTEMA = {
     'dashboard': 'Panel Principal',
@@ -46,7 +45,6 @@ app.secret_key = 'clave_secreta_muy_segura_panaderia_2025'
 # 🆕 DECORADORES PARA CONTROL DE ACCESO - DESPUÉS DE CREAR 'app'
 from functools import wraps
 
-
 def permisos_requeridos(modulo, accion):
     """Decorador para verificar permisos en rutas"""
     def decorator(f):
@@ -64,18 +62,25 @@ def permisos_requeridos(modulo, accion):
     return decorator
 
 def modulo_requerido(modulo):
-    """Decorador para verificar acceso al módulo completo - VERSIÓN CORREGIDA"""
+    """Decorador para verificar acceso al módulo completo - VERSIÓN MEJORADA"""
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
             if not current_user.is_authenticated:
                 return redirect(url_for('login'))
             
-            # ✅ CORRECCIÓN: Redirigir a una ruta segura
+            # ✅ SUPER_ADMIN tiene acceso a TODO (incluyendo gestión de clientes)
+            if current_user.rol == 'super_admin':
+                return f(*args, **kwargs)
+            
+            # ✅ ADMIN_CLIENTE NO puede acceder a gestión de clientes de otros
+            if modulo == 'gestion_clientes' and current_user.rol == 'admin_cliente':
+                flash('❌ Solo el soporte técnico puede acceder a la gestión de clientes', 'error')
+                return redirect(url_for('dashboard'))
+            
             if not current_user.puede_acceder_modulo(modulo):
                 flash(f'❌ No tienes acceso al módulo {MODULOS_SISTEMA.get(modulo, modulo)}', 'error')
-                # Redirigir al perfil del usuario (siempre accesible)
-                return redirect(url_for('mi_perfil'))
+                return redirect(url_for('acceso_denegado'))
             
             return f(*args, **kwargs)
         return decorated_function
@@ -107,7 +112,7 @@ def inject_permisos():
         MODULOS_SISTEMA=MODULOS_SISTEMA
     )
 
-# Configurar Flask-Login
+# Configurar Flask-Lin - SOLO UNA VEZ
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
@@ -118,14 +123,7 @@ from models import db
 # Inicializar db con la app
 db.init_app(app)
 
-# ... EL RESTO DE TU CÓDIGO PERMANECE IGUAL ...
-
-# Configurar Flask-Login
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'
-
-# Importar modelos DESPUÉS de inicializar db
+# Importar modelos DESPUÉS de inicializar db - SOLO UNA VEZ
 from models import Usuario, Producto, Venta, DetalleVenta, MateriaPrima, Receta, RecetaIngrediente
 from models import OrdenProduccion, Categoria, Proveedor, HistorialCompra, HistorialInventario
 from models import ConfiguracionProduccion, HistorialRotacionProducto, ControlVidaUtil, Factura
@@ -139,7 +137,42 @@ from models import obtener_productos_sin_ventas_recientes, ActivoFijo, CATEGORIA
 def load_user(user_id):
     return db.session.get(Usuario, int(user_id))
 
-# Crear tablas y datos iniciales
+# =============================================
+# 🆕 MIDDLEWARE PARA VERIFICACIÓN DE SUSCRIPCIONES - ¡UBICACIÓN CORRECTA!
+# =============================================
+
+@app.before_request
+def verificar_suscripcion():
+    """Verifica el estado de suscripción antes de cada request"""
+    if current_user.is_authenticated and hasattr(current_user, 'panaderia_id'):
+        from models import obtener_configuracion_panaderia
+        
+        try:
+            config = obtener_configuracion_panaderia(current_user.panaderia_id)
+            
+            # ✅ NUEVO: Verificar que config no sea None
+            if config is None:
+                print("⚠️ Configuración de panadería no encontrada")
+                return  # Continuar sin bloquear
+                
+            config.actualizar_estado_suscripcion()
+            
+            # 🆕 Solo para clientes nube: verificar si está bloqueada
+            if config.tipo_licencia != 'local' and not config.suscripcion_activa:
+                # Permitir acceso solo a rutas esenciales
+                rutas_permitidas = ['logout', 'static', 'suscripcion_vencida']
+                if request.endpoint and not any(ruta in request.endpoint for ruta in rutas_permitidas):
+                    # Si no es una ruta permitida, redirigir a página de suscripción vencida
+                    return redirect(url_for('suscripcion_vencida'))
+                    
+        except Exception as e:
+            print(f"⚠️ Error verificando suscripción: {e}")
+            # ✅ NUEVO: Continuar sin bloquear en caso de error
+            return
+# =============================================
+# INICIALIZACIÓN DE BASE DE DATOS - ANTES DE LAS RUTAS
+# =============================================
+
 with app.app_context():
     db.create_all()
     
@@ -150,7 +183,7 @@ with app.app_context():
         admin_user = Usuario(
             username='admin', 
             password_hash=hashed_password, 
-            nombre_completo='Administrador Principal',  # ← ¡AGREGA ESTE CAMPO!
+            nombre_completo='Administrador Principal',
             rol='administrador'
         )
         db.session.add(admin_user)
@@ -248,8 +281,25 @@ with app.app_context():
     print("✅ Base de datos lista!")
     print(f"📁 Ubicación de la BD: {os.path.join(basedir, 'panaderia.db')}")
 
+# =============================================
+# 🆕 RUTA DE SUSCRIPCIÓN VENCIDA
+# =============================================
 
-# Ruta para el login
+@app.route('/suscripcion_vencida')
+@login_required
+def suscripcion_vencida():
+    """Página que se muestra cuando la suscripción está vencida"""
+    from models import obtener_configuracion_panaderia
+    config = obtener_configuracion_panaderia(current_user.panaderia_id)
+    return render_template('suscripcion_vencida.html', 
+                         config=config,
+                         dias_restantes=config.dias_para_expiracion)
+
+# =============================================
+# RUTAS PRINCIPALES DEL SISTEMA - SIN DUPLICADOS
+# =============================================
+
+# Ruta para el login - SOLO UNA VEZ
 @app.route('/', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -270,45 +320,23 @@ def login():
     
     return render_template('login.html')
 
-#======COLOCA AQUÍ TODAS TUS RUTAS EXISTENTES=======
-# 🆕 RUTA DE FALLBACK SEGURA
+# Ruta de fallback segura
 @app.route('/acceso_denegado')
 @login_required
 def acceso_denegado():
     return render_template('acceso_denegado.html')
 
-# Luego modifica el decorador:
-def modulo_requerido(modulo):
-    def decorator(f):
-        @wraps(f)
-        def decorated_function(*args, **kwargs):
-            if not current_user.is_authenticated:
-                return redirect(url_for('login'))
-            
-            if not current_user.puede_acceder_modulo(modulo):
-                flash(f'❌ No tienes acceso al módulo {MODULOS_SISTEMA.get(modulo, modulo)}', 'error')
-                return redirect(url_for('acceso_denegado'))  # ← RUTA SEGURA
-            
-            return f(*args, **kwargs)
-        return decorated_function
-    return decorator
-
-# Ruta para el dashboard
+# Ruta para el dashboard - SOLO UNA VEZ
 @app.route('/dashboard')
 @login_required
-#@modulo_requerido('dashboard')
 def dashboard():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    return render_template('dashboard.html', username=session['username'])
+    return render_template('dashboard.html', username=session.get('username', 'Usuario'))
 
 # Ruta para el punto de venta
 @app.route('/punto_venta')
 @login_required
 @modulo_requerido('punto_venta')
 def punto_venta():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
     return render_template('punto_venta.html')
 
 # EN app.py - AGREGAR ESTA RUTA DE DIAGNÓSTICO URGENTE
@@ -4840,14 +4868,27 @@ def api_activos_metrics():
 @permisos_requeridos('usuarios', 'gestionar')   
 def gestion_usuarios():
     """Página principal de gestión de usuarios"""
+    from models import obtener_limites_panaderia  # 🆕 IMPORTAR FUNCIÓN
+    
     usuarios = Usuario.query.all()
-    return render_template('gestion_usuarios.html', usuarios=usuarios)
+    limites = obtener_limites_panaderia()  # 🆕 OBTENER LÍMITES
+    
+    return render_template('gestion_usuarios.html', usuarios=usuarios, limites=limites)
 
 @app.route('/crear_usuario', methods=['GET', 'POST'])
 @login_required
 @permisos_requeridos('usuarios', 'gestionar')
 def crear_usuario():
-    """Crear nuevo usuario"""
+    """Crear nuevo usuario con verificación de límites"""
+    
+    # 🆕 VERIFICAR LÍMITES ANTES DE CONTINUAR
+    from models import obtener_limites_panaderia, verificar_limite_usuarios
+    
+    if verificar_limite_usuarios():
+        limites = obtener_limites_panaderia()
+        flash(f'❌ Límite de usuarios alcanzado. Tienes {limites["usuarios_actuales"]}/{limites["max_usuarios"]} usuarios.', 'error')
+        return redirect(url_for('gestion_usuarios'))
+    
     if request.method == 'POST':
         try:
             username = request.form['username']
@@ -4862,27 +4903,33 @@ def crear_usuario():
                 flash('❌ El nombre de usuario ya existe', 'error')
                 return redirect(url_for('crear_usuario'))
             
-            # Crear nuevo usuario
+            # 🆕 ASIGNAR PANADERÍA POR DEFECTO
             nuevo_usuario = Usuario(
                 username=username,
                 nombre_completo=nombre_completo,
                 email=email,
                 telefono=telefono,
-                rol=rol
+                rol=rol,
+                panaderia_id=1  # 🆕 ASIGNAR A PANADERÍA PRINCIPAL
             )
             nuevo_usuario.set_password(password)
             
             db.session.add(nuevo_usuario)
             db.session.commit()
             
-            flash(f'✅ Usuario {username} creado exitosamente', 'success')
+            # 🆕 ACTUALIZAR INFORMACIÓN DE LÍMITES
+            limites = obtener_limites_panaderia()
+            
+            flash(f'✅ Usuario {username} creado exitosamente. ({limites["usuarios_restantes"]} usuarios restantes)', 'success')
             return redirect(url_for('gestion_usuarios'))
             
         except Exception as e:
             db.session.rollback()
             flash(f'❌ Error al crear usuario: {str(e)}', 'error')
     
-    return render_template('crear_usuario.html')
+    # 🆕 PASAR INFORMACIÓN DE LÍMITES AL TEMPLATE
+    limites = obtener_limites_panaderia()
+    return render_template('crear_usuario.html', limites=limites)
 
 @app.route('/editar_usuario/<int:usuario_id>', methods=['GET', 'POST'])
 @login_required
@@ -5016,6 +5063,402 @@ def guardar_permisos(usuario_id):
         print(f"Error guardando permisos: {e}")
     
     return redirect(url_for('gestion_usuarios'))
+
+# =============================================
+# 🆕 RUTAS PARA GESTIÓN DE CLIENTES (SUSCRIPCIONES)
+# =============================================
+
+@app.route('/gestion_clientes')
+@login_required
+@modulo_requerido('sistema')
+def gestion_clientes():
+    """Panel de gestión de clientes/suscripciones"""
+    from models import ConfiguracionPanaderia
+    
+    # Obtener todas las configuraciones (clientes)
+    configuraciones = ConfiguracionPanaderia.query.all()
+    
+    # Calcular métricas
+    clientes_activos = sum(1 for c in configuraciones if c.suscripcion_activa)
+    clientes_por_vencer = sum(1 for c in configuraciones if c.tipo_licencia != 'local' and 0 < c.dias_para_expiracion <= 7)
+    clientes_vencidos = sum(1 for c in configuraciones if c.tipo_licencia != 'local' and not c.suscripcion_activa)
+    total_clientes = len(configuraciones)
+    
+    return render_template('gestion_clientes.html',
+                         configuraciones=configuraciones,
+                         clientes_activos=clientes_activos,
+                         clientes_por_vencer=clientes_por_vencer,
+                         clientes_vencidos=clientes_vencidos,
+                         total_clientes=total_clientes)
+
+@app.route('/crear_cliente', methods=['POST'])
+@login_required
+@modulo_requerido('sistema')
+def crear_cliente():
+    """Crear un nuevo cliente/panadería con usuarios automáticos"""
+    from models import ConfiguracionPanaderia, Usuario
+    from werkzeug.security import generate_password_hash
+    import secrets
+    import string
+    
+    try:
+        # Obtener datos del formulario
+        nombre_panaderia = request.form.get('nombre_panaderia')
+        telefono_contacto = request.form.get('telefono_contacto')
+        direccion = request.form.get('direccion')
+        tipo_licencia = request.form.get('tipo_licencia')
+        max_usuarios = int(request.form.get('max_usuarios', 3))
+        fecha_expiracion = request.form.get('fecha_expiracion')
+        dias_gracia = int(request.form.get('dias_gracia', 7))
+        razon_social = request.form.get('razon_social')
+        nit = request.form.get('nit')
+        
+        # 1. Crear configuración de panadería
+        nueva_config = ConfiguracionPanaderia(
+            nombre_panaderia=nombre_panaderia,
+            telefono_contacto=telefono_contacto,
+            direccion=direccion,
+            tipo_licencia=tipo_licencia,
+            max_usuarios=max_usuarios,
+            dias_gracia=dias_gracia,
+            razon_social=razon_social,
+            nit=nit
+        )
+        
+        # Solo agregar fecha de expiración para licencias en la nube
+        if tipo_licencia != 'local' and fecha_expiracion:
+            nueva_config.fecha_expiracion = datetime.strptime(fecha_expiracion, '%Y-%m-%d').date()
+        
+        db.session.add(nueva_config)
+        db.session.flush()  # Para obtener el ID
+        
+        # 2. 🆕 CREAR USUARIOS AUTOMÁTICAMENTE
+        panaderia_id = nueva_config.id
+        
+        # Generar contraseña temporal segura
+        def generar_contrasena_temporal():
+            caracteres = string.ascii_letters + string.digits + "!@#$%"
+            return ''.join(secrets.choice(caracteres) for _ in range(10))
+        
+        contrasena_temp = generar_contrasena_temporal()
+        
+        # Usuarios a crear
+        usuarios_base = [
+            {
+                'username': f'admin_{panaderia_id}',
+                'rol': 'admin_cliente',
+                'nombre': f'Administrador {nombre_panaderia}'
+            },
+            {
+                'username': f'super_{panaderia_id}',
+                'rol': 'supervisor', 
+                'nombre': f'Supervisor {nombre_panaderia}'
+            },
+            {
+                'username': f'cajero_{panaderia_id}',
+                'rol': 'cajero',
+                'nombre': f'Cajero Principal {nombre_panaderia}'
+            }
+        ]
+        
+        usuarios_creados = []
+        
+        for user_data in usuarios_base:
+            usuario = Usuario(
+                username=user_data['username'],
+                password_hash=generate_password_hash(contrasena_temp),
+                nombre_completo=user_data['nombre'],
+                rol=user_data['rol'],
+                panaderia_id=panaderia_id
+            )
+            db.session.add(usuario)
+            usuarios_creados.append(user_data['username'])
+        
+        db.session.commit()
+        
+ 
+        # 3. Mensaje de éxito con credenciales
+        flash(
+            f'✅ Cliente "{nombre_panaderia}" creado exitosamente | '
+            f'👥 Usuarios: {", ".join(usuarios_creados)} | '
+            f'🔑 Contraseña: {contrasena_temp} | '
+            f'💡 Cambiar contraseña al primer inicio',
+            'success'
+        )
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'❌ Error al crear cliente: {str(e)}', 'error')
+    
+    return redirect(url_for('gestion_clientes'))
+
+@app.route('/resetear_password/<int:usuario_id>', methods=['POST'])
+@login_required
+def resetear_password(usuario_id):
+    """Resetear contraseña de cualquier usuario (solo super_admin)"""
+    if current_user.rol != 'super_admin':
+        flash('❌ Solo super_admin puede resetear contraseñas', 'error')
+        return redirect(url_for('gestion_usuarios'))
+    
+    try:
+        usuario = Usuario.query.get_or_404(usuario_id)
+        
+        # Generar contraseña temporal segura
+        import secrets
+        import string
+        
+        def generar_contrasena_temporal():
+            caracteres = string.ascii_letters + string.digits + "!@#$%"
+            return ''.join(secrets.choice(caracteres) for _ in range(10))
+        
+        nueva_password = generar_contrasena_temporal()
+        usuario.set_password(nueva_password)
+        
+        db.session.commit()
+        
+        # Retornar la nueva contraseña
+        return {
+            'success': True,
+            'nueva_password': nueva_password,
+            'usuario': usuario.username
+        }
+        
+    except Exception as e:
+        db.session.rollback()
+        return {
+            'success': False,
+            'error': str(e)
+        }
+        
+@app.route('/obtener_usuarios_panaderia/<int:panaderia_id>')
+@login_required
+def obtener_usuarios_panaderia(panaderia_id):
+    """Obtener usuarios de una panadería específica (solo super_admin)"""
+    if current_user.rol != 'super_admin':
+        return jsonify([])
+    
+    try:
+        usuarios = Usuario.query.filter_by(panaderia_id=panaderia_id).all()
+        usuarios_data = []
+        
+        for usuario in usuarios:
+            usuarios_data.append({
+                'id': usuario.id,
+                'username': usuario.username,
+                'nombre_completo': usuario.nombre_completo,
+                'rol': usuario.rol,
+                'activo': usuario.activo
+            })
+        
+        return jsonify(usuarios_data)
+        
+    except Exception as e:
+        return jsonify([])
+    
+@app.route('/obtener_datos_cliente/<int:cliente_id>')
+@login_required
+def obtener_datos_cliente(cliente_id):
+    """Obtener datos de un cliente específico para edición"""
+    if current_user.rol != 'super_admin':
+        return jsonify({'success': False, 'error': 'No autorizado'})
+    
+    try:
+        from models import ConfiguracionPanaderia
+        cliente = ConfiguracionPanaderia.query.get_or_404(cliente_id)
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'id': cliente.id,
+                'nombre_panaderia': cliente.nombre_panaderia,
+                'telefono_contacto': cliente.telefono_contacto,
+                'direccion': cliente.direccion,
+                'tipo_licencia': cliente.tipo_licencia,
+                'max_usuarios': cliente.max_usuarios,
+                'fecha_expiracion': cliente.fecha_expiracion.strftime('%Y-%m-%d') if cliente.fecha_expiracion else None,
+                'dias_gracia': cliente.dias_gracia,
+                'razon_social': cliente.razon_social,
+                'nit': cliente.nit
+            }
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/editar_cliente', methods=['POST'])
+@login_required
+def editar_cliente():
+    """Editar datos de un cliente existente"""
+    if current_user.rol != 'super_admin':
+        return jsonify({'success': False, 'error': 'No autorizado'})
+    
+    try:
+        from models import ConfiguracionPanaderia
+        cliente_id = request.form.get('cliente_id')
+        cliente = ConfiguracionPanaderia.query.get_or_404(cliente_id)
+        
+        # Actualizar datos
+        cliente.nombre_panaderia = request.form.get('nombre_panaderia')
+        cliente.telefono_contacto = request.form.get('telefono_contacto')
+        cliente.direccion = request.form.get('direccion')
+        cliente.tipo_licencia = request.form.get('tipo_licencia')
+        cliente.max_usuarios = int(request.form.get('max_usuarios'))
+        cliente.dias_gracia = int(request.form.get('dias_gracia', 7))
+        cliente.razon_social = request.form.get('razon_social')
+        cliente.nit = request.form.get('nit')
+        
+        # Manejar fecha de expiración
+        fecha_expiracion = request.form.get('fecha_expiracion')
+        if cliente.tipo_licencia != 'local' and fecha_expiracion:
+            cliente.fecha_expiracion = datetime.strptime(fecha_expiracion, '%Y-%m-%d').date()
+        elif cliente.tipo_licencia == 'local':
+            cliente.fecha_expiracion = None
+        
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Cliente actualizado correctamente'})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+    
+# =============================================
+# 🆕 RUTAS PARA LOS 3 BOTONES DE GESTIÓN DE CLIENTES (VERSIÓN CORREGIDA)
+# =============================================
+
+@app.route('/obtener_datos_cliente_super/<int:cliente_id>')
+@login_required
+def obtener_datos_cliente_super(cliente_id):
+    """Obtener datos de un cliente específico para edición (SUPER ADMIN)"""
+    if current_user.rol != 'super_admin':
+        return jsonify({'success': False, 'error': 'No autorizado'})
+    
+    try:
+        from models import ConfiguracionPanaderia
+        cliente = ConfiguracionPanaderia.query.get_or_404(cliente_id)
+        
+        # Determinar estado de suscripción
+        estado_suscripcion = 'activa'
+        if cliente.tipo_licencia != 'local' and cliente.fecha_expiracion:
+            from datetime import datetime
+            if cliente.fecha_expiracion < datetime.now().date():
+                estado_suscripcion = 'expirada'
+            elif (cliente.fecha_expiracion - datetime.now().date()).days <= 7:
+                estado_suscripcion = 'por_vencer'
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'id': cliente.id,
+                'nombre_panaderia': cliente.nombre_panaderia,
+                'telefono_contacto': cliente.telefono_contacto,
+                'direccion': cliente.direccion,
+                'tipo_licencia': cliente.tipo_licencia,
+                'max_usuarios': cliente.max_usuarios,
+                'fecha_expiracion': cliente.fecha_expiracion.strftime('%Y-%m-%d') if cliente.fecha_expiracion else None,
+                'dias_gracia': cliente.dias_gracia,
+                'razon_social': cliente.razon_social,
+                'nit': cliente.nit,
+                'estado_suscripcion': estado_suscripcion
+            }
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/editar_cliente_super', methods=['POST'])
+@login_required
+def editar_cliente_super():
+    """Editar datos de un cliente existente (SUPER ADMIN)"""
+    if current_user.rol != 'super_admin':
+        return jsonify({'success': False, 'error': 'No autorizado'})
+    
+    try:
+        from models import ConfiguracionPanaderia
+        from datetime import datetime
+        
+        cliente_id = request.form.get('cliente_id')
+        cliente = ConfiguracionPanaderia.query.get_or_404(cliente_id)
+        
+        # Actualizar datos
+        cliente.nombre_panaderia = request.form.get('nombre_panaderia')
+        cliente.telefono_contacto = request.form.get('telefono_contacto')
+        cliente.direccion = request.form.get('direccion')
+        cliente.tipo_licencia = request.form.get('tipo_licencia')
+        cliente.max_usuarios = int(request.form.get('max_usuarios'))
+        cliente.dias_gracia = int(request.form.get('dias_gracia', 7))
+        cliente.razon_social = request.form.get('razon_social')
+        cliente.nit = request.form.get('nit')
+        
+        # Manejar fecha de expiración
+        fecha_expiracion = request.form.get('fecha_expiracion')
+        if cliente.tipo_licencia != 'local' and fecha_expiracion:
+            cliente.fecha_expiracion = datetime.strptime(fecha_expiracion, '%Y-%m-%d').date()
+        elif cliente.tipo_licencia == 'local':
+            cliente.fecha_expiracion = None
+        
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Cliente actualizado correctamente'})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/renovar_suscripcion_super', methods=['POST'])
+@login_required
+def renovar_suscripcion_super():
+    """Renovar suscripción de un cliente (SUPER ADMIN)"""
+    if current_user.rol != 'super_admin':
+        return jsonify({'success': False, 'error': 'No autorizado'})
+    
+    try:
+        from models import ConfiguracionPanaderia
+        from datetime import datetime
+        
+        cliente_id = request.form.get('cliente_id')
+        cliente = ConfiguracionPanaderia.query.get_or_404(cliente_id)
+        
+        # Actualizar datos
+        cliente.tipo_licencia = request.form.get('tipo_licencia')
+        cliente.max_usuarios = int(request.form.get('max_usuarios'))
+        
+        # Manejar fecha de expiración para licencias en la nube
+        if cliente.tipo_licencia != 'local':
+            nueva_fecha = request.form.get('nueva_fecha_expiracion')
+            if nueva_fecha:
+                cliente.fecha_expiracion = datetime.strptime(nueva_fecha, '%Y-%m-%d').date()
+        else:
+            cliente.fecha_expiracion = None
+        
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Suscripción renovada correctamente'})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/acceder_panaderia_super/<int:panaderia_id>/<int:usuario_id>')
+@login_required
+def acceder_panaderia_super(panaderia_id, usuario_id):
+    """Acceder a una panadería como super admin - VERSIÓN SIMPLIFICADA"""
+    if current_user.rol != 'super_admin':
+        return jsonify({'success': False, 'error': 'No autorizado'})
+    
+    try:
+        from models import Usuario
+        usuario_target = Usuario.query.filter_by(id=usuario_id, panaderia_id=panaderia_id).first()
+        
+        if not usuario_target:
+            return jsonify({'success': False, 'error': 'Usuario no encontrado en esta panadería'})
+        
+        # 🆕 VERSIÓN SIMPLIFICADA - Solo muestra mensaje de éxito
+        return jsonify({
+            'success': True, 
+            'message': f'Acceso simulado a {usuario_target.username} de {usuario_target.panaderia_id}'
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)
