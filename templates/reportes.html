@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reportes - Panadería Semillas</title>
+    <style>
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        body { 
+            font-family: 'Arial', sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh; 
+            padding: 20px; 
+        }
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+        }
+        
+        /* Header */
+        .header {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.2em;
+        }
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+            margin-bottom: 20px;
+        }
+        
+        /* Cards */
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+        }
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+        
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border 0.3s ease;
+        }
+        
+        /* Report Grid */
+        .reporte-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .reporte-card {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 12px;
+            border-left: 5px solid #3498db;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .reporte-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        .reporte-card.contable {
+            border-left-color: #e74c3c;
+        }
+        .reporte-card.gerencial {
+            border-left-color: #27ae60;
+        }
+        .reporte-card h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 1.3em;
+        }
+        .reporte-card p {
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        
+        /* Botones */
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 0.9em;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+            color: white;
+        }
+        .btn-warning {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+            color: white;
+        }
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* Navigation */
+        .nav-buttons {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        /* Flash Messages */
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        /* Date Grid */
+        .date-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .date-grid {
+                grid-template-columns: 1fr;
+            }
+            .reporte-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Mensajes Flash -->
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <!-- Header -->
+        <div class="header">
+            <h1>📊 Sistema de Reportes Profesionales</h1>
+            <p class="subtitle">Reportes contables y gerenciales para toma de decisiones</p>
+            
+            <div class="nav-buttons">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-primary">🏠 Volver al Dashboard</a>
+                <a href="{{ url_for('control_diario') }}" class="btn btn-warning">💰 Gestión Financiera</a>
+            </div>
+        </div>
+
+        <!-- Selector de Fechas -->
+        <div class="card">
+            <h2>📅 Seleccionar Período del Reporte</h2>
+            <form id="formFechas">
+                <div class="date-grid">
+                    <div class="form-group">
+                        <label>Fecha de Inicio:</label>
+                        <input type="date" id="fecha_inicio" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Fecha de Fin:</label>
+                        <input type="date" id="fecha_fin" class="form-control" required>
+                    </div>
+                </div>
+                <div style="text-align: center; margin-top: 15px;">
+                    <button type="button" class="btn btn-primary" onclick="establecerPeriodo('semana')">Última Semana</button>
+                    <button type="button" class="btn btn-primary" onclick="establecerPeriodo('mes')">Último Mes</button>
+                    <button type="button" class="btn btn-primary" onclick="establecerPeriodo('trimestre')">Último Trimestre</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Reportes Contables -->
+        <div class="card">
+            <h2>🧮 Reportes Contables Profesionales</h2>
+            <p>Documentos formales para presentación ante contador y autoridades fiscales</p>
+            
+            <div class="reporte-grid">
+                <div class="reporte-card contable">
+                    <h3>📈 Estado de Resultados</h3>
+                    <p><strong>Pérdidas y Ganancias</strong><br/>
+                    Muestra ingresos, gastos y resultado neto del período. Esencial para declaraciones de impuestos y análisis de rentabilidad.</p>
+                    <button class="btn btn-primary" onclick="generarReporte('estado_resultados')">
+                        📥 Descargar PDF
+                    </button>
+                </div>
+                
+                <div class="reporte-card contable">
+                    <h3>💸 Flujo de Caja</h3>
+                    <p><strong>Estado de Flujos de Efectivo</strong><br/>
+                    Detalla entradas y salidas de efectivo diarias. Crucial para gestión de liquidez y planeación financiera.</p>
+                    <button class="btn btn-primary" onclick="generarReporte('flujo_caja')">
+                        📥 Descargar PDF
+                    </button>
+                </div>
+                
+                <div class="reporte-card contable">
+                    <h3>📋 Libro Diario Contable</h3>
+                    <p><strong>Registro Cronológico</strong><br/>
+                    Todos los movimientos financieros ordenados por fecha. Base para la contabilidad formal y auditorías.</p>
+                    <button class="btn btn-primary" onclick="generarReporte('libro_diario')">
+                        📥 Descargar PDF
+                    </button>
+                </div>
+                
+                <!-- Reemplaza la tarjeta de Conciliación Bancaria: -->
+                <div class="reporte-card contable">
+                    <h3>🏦 Conciliación Bancaria</h3>
+                    <p><strong>Conciliación de Saldos</strong><br/>
+                    Compara saldos del sistema con extractos bancarios. Esencial para auditorías.</p>
+                    <button class="btn btn-primary" onclick="abrirModalConciliacion()">
+                        📥 Generar Conciliación
+                    </button>
+                </div>
+
+                <!-- Agrega este modal al final del body (antes del script): -->
+                <div id="modalConciliacion" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 15px; width: 90%; max-width: 500px;">
+                        <h3 style="margin-bottom: 20px;">🏦 Conciliación Bancaria</h3>
+                        
+                        <div class="form-group">
+                            <label>Fecha de Corte:</label>
+                            <input type="date" id="fecha_corte" class="form-control" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Saldo según Extracto Bancario:</label>
+                            <input type="number" step="0.01" id="saldo_extracto" class="form-control" placeholder="Ej: 1,500,000" required>
+                            <small>Ingresa el saldo que aparece en tu extracto bancario</small>
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px; margin-top: 20px;">
+                            <button type="button" class="btn btn-primary" onclick="generarConciliacion()" style="flex: 1;">
+                                📊 Generar Conciliación
+                            </button>
+                            <button type="button" class="btn" onclick="cerrarModalConciliacion()" style="flex: 1; background: #95a5a6; color: white;">
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!--------------------------------------- Reportes Gerenciales ------------------------------------------------------->
+        <div class="card">
+            <h2>📊 Reportes Gerenciales y Analíticos</h2>
+            <p>Análisis avanzados para toma de decisiones estratégicas y optimización del negocio</p>
+            
+            <div class="reporte-grid">
+                <div class="reporte-card gerencial">
+                    <h3>📊 Análisis de Gastos por Categoría</h3>
+                    <p><strong>Distribución de Costos</strong><br/>
+                    Gráficos y análisis de gastos por categoría. Identifica áreas de optimización.</p>
+                    <button class="btn btn-success" onclick="generarReporte('analisis_gastos')">
+                        📥 Descargar PDF
+                    </button>
+                </div>
+                
+                <div class="reporte-card gerencial">
+                    <h3>📈 Tendencia de Ventas</h3>
+                    <p><strong>Análisis de Comportamiento</strong><br/>
+                    Evolución de ventas en el tiempo. Detecta patrones y estacionalidad.</p>
+                    <button class="btn btn-success" onclick="generarReporte('tendencia_ventas')">
+                        📥 Descargar PDF
+                    </button>
+                </div>
+                
+                <div class="reporte-card gerencial">
+                    <h3>🤖 Recomendaciones con IA</h3>
+                    <p><strong>Análisis Predictivo</strong><br/>
+                    Recomendaciones inteligentes basadas en datos históricos y tendencias.</p>
+                    <button class="btn btn-success" onclick="generarReporte('ia_predictivo')">
+                        📥 Descargar PDF
+                    </button>
+                </div>
+                
+                <div class="reporte-card gerencial">
+                    <h3>📦 Análisis de Inventarios</h3>
+                    <p><strong>Gestión de Stock</strong><br/>
+                    Rotación, puntos de reorden y optimización de inventarios.</p>
+                    <button class="btn btn-success" onclick="generarReporte('analisis_inventarios')">
+                        📥 Descargar PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Establecer fechas por defecto (últimos 30 días)
+    function inicializarFechas() {
+        const hoy = new Date();
+        const hace30Dias = new Date();
+        hace30Dias.setDate(hoy.getDate() - 30);
+        
+        document.getElementById('fecha_inicio').value = formatearFecha(hace30Dias);
+        document.getElementById('fecha_fin').value = formatearFecha(hoy);
+    }
+    
+    function formatearFecha(fecha) {
+        return fecha.toISOString().split('T')[0];
+    }
+    
+    function establecerPeriodo(periodo) {
+        const hoy = new Date();
+        const fechaInicio = new Date();
+        
+        switch(periodo) {
+            case 'semana':
+                fechaInicio.setDate(hoy.getDate() - 7);
+                break;
+            case 'mes':
+                fechaInicio.setDate(hoy.getDate() - 30);
+                break;
+            case 'trimestre':
+                fechaInicio.setDate(hoy.getDate() - 90);
+                break;
+        }
+        
+        document.getElementById('fecha_inicio').value = formatearFecha(fechaInicio);
+        document.getElementById('fecha_fin').value = formatearFecha(hoy);
+    }
+
+    // ========== FUNCIONES DE CONCILIACIÓN BANCARIA (EN ÁMBITO GLOBAL) ==========
+    
+    function abrirModalConciliacion() {
+        // Establecer fecha actual como fecha de corte por defecto
+        document.getElementById('fecha_corte').value = new Date().toISOString().split('T')[0];
+        document.getElementById('modalConciliacion').style.display = 'block';
+    }
+
+    function cerrarModalConciliacion() {
+        document.getElementById('modalConciliacion').style.display = 'none';
+    }
+
+    function generarConciliacion() {
+    const fechaCorte = document.getElementById('fecha_corte').value;
+    const saldoExtracto = document.getElementById('saldo_extracto').value;
+    
+    if (!fechaCorte || !saldoExtracto) {
+        alert('❌ Por favor completa todos los campos');
+        return;
+    }
+    
+    if (saldoExtracto <= 0) {
+        alert('❌ El saldo del extracto debe ser mayor a 0');
+        return;
+    }
+    
+    console.log('📤 Enviando solicitud de conciliación:', { fechaCorte, saldoExtracto });
+    
+    // Mostrar mensaje de carga
+    const boton = event.target;
+    const textoOriginal = boton.textContent;
+    boton.textContent = '⏳ Generando...';
+    boton.disabled = true;
+    
+    const url = `/generar_reporte_conciliacion?fecha_corte=${fechaCorte}&saldo_extracto=${saldoExtracto}`;
+    
+    // Usar fetch para mejor control
+    fetch(url)
+        .then(response => {
+            console.log('📥 Respuesta recibida, status:', response.status);
+            
+            if (!response.ok) {
+                throw new Error(`Error HTTP: ${response.status}`);
+            }
+            return response.blob();
+        })
+        .then(blob => {
+            console.log('📄 Blob recibido:', {
+                size: blob.size,
+                type: blob.type
+            });
+            
+            if (blob.size === 0) {
+                throw new Error('El archivo PDF está vacío');
+            }
+            
+            if (blob.type !== 'application/pdf') {
+                console.warn('⚠️ El tipo MIME no es PDF:', blob.type);
+            }
+            
+            // Crear enlace para descargar el PDF
+            const urlBlob = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = urlBlob;
+            a.download = `conciliacion_bancaria_${fechaCorte}.pdf`;
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            // Limpiar después de 1 segundo
+            setTimeout(() => {
+                URL.revokeObjectURL(urlBlob);
+            }, 1000);
+            
+            // Cerrar modal
+            cerrarModalConciliacion();
+            
+            console.log('✅ PDF descargado exitosamente');
+        })
+        .catch(error => {
+            console.error('❌ Error al generar conciliación:', error);
+            alert('❌ Error al generar el reporte. Verifica la consola del navegador y del servidor.');
+            
+            // Redirigir a reportes para ver mensajes flash
+            window.location.href = '/reportes';
+        })
+        .finally(() => {
+            // Restaurar botón
+            boton.textContent = textoOriginal;
+            boton.disabled = false;
+        });
+}
+
+    // Cerrar modal al hacer clic fuera
+    document.addEventListener('click', function(event) {
+        const modal = document.getElementById('modalConciliacion');
+        if (event.target === modal) {
+            cerrarModalConciliacion();
+        }
+    });
+    
+    // ========== FUNCIÓN GENERAR REPORTE ==========
+    
+    function generarReporte(tipo) {
+    const fechaInicio = document.getElementById('fecha_inicio').value;
+    const fechaFin = document.getElementById('fecha_fin').value;
+    
+    if (!fechaInicio || !fechaFin) {
+        alert('❌ Por favor selecciona ambas fechas');
+        return;
+    }
+    
+    if (fechaInicio > fechaFin) {
+        alert('❌ La fecha de inicio no puede ser mayor a la fecha fin');
+        return;
+    }
+    
+    let url = '';
+    switch(tipo) {
+        case 'estado_resultados':
+            url = `/generar_reporte_estado_resultados?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+            break;
+        case 'flujo_caja':
+            url = `/generar_reporte_flujo_caja?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+            break;
+        case 'libro_diario':
+            url = `/generar_reporte_libro_diario?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+            break;
+        case 'analisis_gastos':  // ✅ NUEVO REPORTE
+            url = `/generar_reporte_analisis_gastos?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+            break;
+        case 'tendencia_ventas':
+            url = `/generar_reporte_tendencia_ventas?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+            break;
+        case 'ia_predictivo':
+            url = `/generar_reporte_ia_predictivo?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+            break;
+        case 'analisis_inventarios':
+            url = `/generar_reporte_analisis_inventarios?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+            break;
+        default:
+            alert('Reporte en desarrollo');
+            return;
+    }
+    
+    // Abrir en nueva pestaña
+    window.open(url, '_blank');
+}
+    
+    // Inicializar al cargar la página
+    document.addEventListener('DOMContentLoaded', inicializarFechas);
+</script>
+</body>
+</html>

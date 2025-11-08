@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proveedores - Panadería</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f8f9fa;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .container {
+            padding: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .table {
+            width: 100%;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+        .table th, .table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .table th {
+            background: #343a40;
+            color: white;
+        }
+        .status-active {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .status-inactive {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .evaluacion {
+            color: #ffc107;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏢 Gestión de Proveedores</h1>
+        <div>
+            <a href="{{ url_for('dashboard') }}" class="btn" style="background: #6c757d;">← Dashboard</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2>Lista de Proveedores</h2>
+            <a href="{{ url_for('agregar_proveedor') }}" class="btn">➕ Agregar Proveedor</a>
+        </div>
+
+        <!-- Tarjetas de resumen -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+            <div style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-align: center; border-left: 4px solid #28a745;">
+                <div>Total Proveedores</div>
+                <div style="font-size: 24px; font-weight: bold; margin: 5px 0;">{{ proveedores|length }}</div>
+                <small>Activos: {{ proveedores|selectattr('activo')|list|length }}</small>
+            </div>
+        </div>
+
+        <!-- Mensajes Flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div style="padding: 10px; margin-bottom: 20px; border-radius: 5px; 
+                               {% if category == 'success' %}background: #d4edda; color: #155724; border: 1px solid #c3e6cb;{% endif %}
+                               {% if category == 'error' %}background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="table">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Contacto</th>
+                        <th>Teléfono</th>
+                        <th>Email</th>
+                        <th>Productos</th>
+                        <th>Tiempo Entrega</th>
+                        <th>Evaluación</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for proveedor in proveedores %}
+                    <tr>
+                        <td><strong>{{ proveedor.nombre }}</strong></td>
+                        <td>{{ proveedor.contacto or 'No especificado' }}</td>
+                        <td>{{ proveedor.telefono or 'No especificado' }}</td>
+                        <td>{{ proveedor.email or 'No especificado' }}</td>
+                        <td>{{ proveedor.productos_que_suministra or 'No especificado' }}</td>
+                        <td>{{ proveedor.tiempo_entrega_dias }} día(s)</td>
+                        <td class="evaluacion">
+                            {% for i in range(proveedor.evaluacion) %}⭐{% endfor %}
+                            ({{ proveedor.evaluacion }}/5)
+                        </td>
+                        <td>
+                            {% if proveedor.activo %}
+                                <span class="status-active">● Activo</span>
+                            {% else %}
+                                <span class="status-inactive">● Inactivo</span>
+                            {% endif %}
+                        </td>
+                        <td style="display: flex; gap: 10px;">
+                            <a href="{{ url_for('editar_proveedor', id=proveedor.id) }}" class="btn" style="background: #007bff; padding: 5px 10px; font-size: 0.8em;">✏️ Editar</a>
+                            <a href="{{ url_for('toggle_proveedor', id=proveedor.id) }}" class="btn" 
+                               style="background: {% if proveedor.activo %}#ffc107{% else %}#28a745{% endif %}; padding: 5px 10px; font-size: 0.8em;"
+                               onclick="return confirm('¿Estás seguro de que quieres {% if proveedor.activo %}desactivar{% else %}activar{% endif %} este proveedor?')">
+                               {% if proveedor.activo %}🚫 Desactivar{% else %}✅ Activar{% endif %}
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="9" style="text-align: center; padding: 20px;">
+                            No hay proveedores registrados. 
+                            <a href="{{ url_for('agregar_proveedor') }}">Agregar el primer proveedor</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

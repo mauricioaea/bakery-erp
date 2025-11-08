@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Materias Primas - Panadería</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f8f9fa;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;                               
+        }
+        .container {
+            padding: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+        }
+        .btn:hover {
+            background: #218838;
+        }
+        .btn-edit {
+            background: #007bff;
+        }
+        .btn-edit:hover {
+            background: #0056b3;
+        }
+        .btn-deactivate {
+            background: #ffc107;
+            color: black;
+        }
+        .btn-deactivate:hover {
+            background: #e0a800;
+        }
+        .btn-delete {
+            background: #dc3545;
+        }
+        .btn-delete:hover {
+            background: #c82333;
+        }
+        .table {
+            width: 100%;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-top: 20px;
+            table-layout: fixed; /* Fijar el layout para control exacto */
+    
+        }
+
+        .table th, .table td {
+            padding: 10px 8px; /* Reducir padding horizontal */
+            word-wrap: break-word; /* Permitir que el texto se ajuste */
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .table th {
+            background: #343a40;
+            color: white;
+            font-size: 0.9em;
+            white-space: nowrap; /* Evitar que los headers se rompan */
+        }
+
+        /* MEJORAR LA VISUALIZACIÓN DE TEXTO EN CELDAS */
+        .table td {
+            font-size: 0.85em; /* Reducir ligeramente el tamaño de fuente */
+        }
+
+        .table th:nth-child(1), .table td:nth-child(1) { width: 12%; } /* Nombre */
+        .table th:nth-child(2), .table td:nth-child(2) { width: 10%; } /* Proveedor */
+        .table th:nth-child(3), .table td:nth-child(3) { width: 6%; }  /* Unidad */
+        .table th:nth-child(4), .table td:nth-child(4) { width: 8%; }  /* Costo Unitario */
+        .table th:nth-child(5), .table td:nth-child(5) { width: 9%; }  /* Costo por kg */
+        .table th:nth-child(6), .table td:nth-child(6) { width: 10%; } /* Stock Actual */
+        .table th:nth-child(7), .table td:nth-child(7) { width: 9%; }  /* Stock Mínimo */
+        .table th:nth-child(8), .table td:nth-child(8) { width: 12%; } /* Vencimiento - MÁS ANCHA */
+            white-space: normal; /* Permitir múltiples líneas */
+            line-height: 1.3; /* Mejor espaciado entre líneas */
+        .table th:nth-child(9), .table td:nth-child(9) { width: 8%; }  /* Estado */
+        .table th:nth-child(10), .table td:nth-child(10) { width: 16%; } /* Acciones */
+
+        .actions {
+            display: flex;
+            gap: 10px;
+        }
+        .back-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .back-btn:hover {
+            background: #5a6268;
+        }
+        .status-active {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .status-inactive {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .filter-buttons {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .filter-btn {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .filter-btn.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        .currency {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .cost-per-kg {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        
+        /* NUEVOS ESTILOS PARA INDICADORES DE STOCK */
+        .stock-critical {
+            background-color: #f8d7da !important;
+            color: #721c24;
+            font-weight: bold;
+        }
+        .stock-warning {
+            background-color: #fff3cd !important;
+            color: #856404;
+        }
+        .badge {
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 0.7em;
+            margin-left: 5px;
+            white-space: normal; /* Permitir que el texto se ajuste */
+            text-align: center;
+            display: inline-block;
+            max-width: 100%; /* No sobrepasar el ancho de la celda */
+            margin-top: 2px;
+        }
+        .badge-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .badge-warning {
+            background: #ffc107;
+            color: black;
+        }
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .summary-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .summary-card.critical {
+            border-left: 4px solid #dc3545;
+        }
+        .summary-card.warning {
+            border-left: 4px solid #ffc107;
+        }
+        .summary-card.success {
+            border-left: 4px solid #28a745;
+        }
+        .summary-card.info {
+            border-left: 4px solid #17a2b8;
+        }
+        .summary-number {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+
+        /* Estilos para vencimientos */
+        .vencido {
+            background-color: #f8d7da !important;
+            color: #721c24;
+            font-weight: bold;
+        }
+        .por-vencer {
+            background-color: #fff3cd !important;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📦 Gestión de Materias Primas</h1>
+        <div>
+            <a href="{{ url_for('dashboard') }}" class="back-btn">← Volver al Dashboard</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2>Lista de Materias Primas</h2>
+            <a href="{{ url_for('agregar_materia_prima') }}" class="btn">➕ Agregar Materia Prima</a>
+        </div>
+
+        <!-- TARJETAS DE RESUMEN -->
+        <div class="summary-cards">
+            <div class="summary-card success">
+                <div>Total Materias Primas</div>
+                <div class="summary-number">{{ materias_primas|length }}</div>
+                <small>Activas: {{ materias_primas|selectattr('activo')|list|length }}</small>
+            </div>
+            <div class="summary-card warning">
+                <div>Stock por Agotarse</div>
+                <div class="summary-number" id="count-warning">0</div>
+                <small>Próximas a stock mínimo</small>
+            </div>
+            <div class="summary-card critical">
+                <div>Stock Crítico</div>
+                <div class="summary-number" id="count-critical">0</div>
+                <small>Debajo del mínimo</small>
+            </div>
+            <div class="summary-card warning">
+                <div>Por Vencer</div>
+                <div class="summary-number" id="count-por-vencer">0</div>
+                <small>Vencen en 15 días</small>
+            </div>
+            <div class="summary-card info">
+                <div>Valor Total Inventario</div>
+                <div class="summary-number">${{
+                    "{:,.0f}".format(materias_primas|sum(attribute='valor_inventario')|float
+                    )|replace(",", ".")
+                    }}
+                </div>
+                <small>COP</small>
+            </div>
+        </div>
+
+        <!-- Filtros Mejorados -->
+        <div class="filter-buttons">
+            <button class="filter-btn active" onclick="filterMaterias('all')">Todas</button>
+            <button class="filter-btn" onclick="filterMaterias('active')">Activas</button>
+            <button class="filter-btn" onclick="filterMaterias('inactive')">Inactivas</button>
+            <button class="filter-btn" onclick="filterMaterias('critical')">Stock Crítico</button>
+            <button class="filter-btn" onclick="filterMaterias('warning')">Por Agotarse</button>
+            <!-- NUEVOS FILTROS PARA VENCIMIENTOS -->
+            <button class="filter-btn" onclick="filterMaterias('por_vencer')">⏳ Por Vencer</button>
+            <button class="filter-btn" onclick="filterMaterias('vencidos')">⚠️ Vencidos</button>
+        </div>
+
+        <!-- Mensajes Flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div style="padding: 10px; margin-bottom: 20px; border-radius: 5px; 
+                               {% if category == 'success' %}background: #d4edda; color: #155724; border: 1px solid #c3e6cb;{% endif %}
+                               {% if category == 'error' %}background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="table">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Proveedor</th>
+                        <th>Unidad</th>
+                        <th>Costo Unitario</th>
+                        <th>Costo por kg</th>
+                        <th>Stock Actual</th>
+                        <th>Stock Mínimo</th>
+                        <th>Vencimiento</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="materiasTable">
+                    {% for materia in materias_primas %}
+                    <tr class="materia-row" 
+                        data-status="{{ 'active' if materia.activo else 'inactive' }}"
+                        data-stock-status="{{ 'critical' if materia.stock_actual <= materia.stock_minimo else 'warning' if materia.stock_actual <= materia.stock_minimo * 1.5 else 'normal' }}"
+                        data-vencimiento-status="{% if materia.fecha_vencimiento %}{% if materia.fecha_vencimiento < hoy %}vencido{% elif materia.fecha_vencimiento <= hoy_mas_15 %}por-vencer{% else %}normal{% endif %}{% else %}no-registrado{% endif %}">
+                        <td>{{ materia.nombre }}</td>
+                        <td>{{ materia.proveedor_rel.nombre if materia.proveedor_rel else 'Sin proveedor' }}</td>
+                        <td>{{ materia.unidad_medida }}</td>
+                        <td class="currency">${{ "{:,.2f}".format(materia.costo_promedio).replace(",", "X").replace(".", ",").replace("X", ".") }}</td>
+                        <td class="currency cost-per-kg">
+                            {% if materia.unidad_medida == 'kg' %}
+                                ${{ "{:,.2f}".format(materia.costo_promedio).replace(",", "X").replace(".", ",").replace("X", ".") }}
+                            {% elif materia.unidad_medida == 'g' %}
+                                ${{ "{:,.2f}".format(materia.costo_promedio * 1000).replace(",", "X").replace(".", ",").replace("X", ".") }}
+                            {% elif materia.unidad_medida == 'L' %}
+                                ${{ "{:,.2f}".format(materia.costo_promedio).replace(",", "X").replace(".", ",").replace("X", ".") }}
+                            {% elif materia.unidad_medida == 'ml' %}
+                                ${{ "{:,.2f}".format(materia.costo_promedio * 1000).replace(",", "X").replace(".", ",").replace("X", ".") }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+
+
+                        <!-- COLUMNA STOCK ACTUAL CON INDICADORES -->
+                        <!-- MODIFICAR la columna Stock Actual para mostrar ambas unidades -->
+                        
+                        <td class="{% if materia.stock_actual <= materia.stock_minimo %}stock-critical{% elif materia.stock_actual <= materia.stock_minimo * 1.5 %}stock-warning{% endif %}">
+                            {{ "%.2f"|format(materia.stock_actual) }} {{ materia.unidad_medida }}
+                            <br>
+                            <small style="color: #666;">
+                                {% if materia.gramos_por_empaque and materia.gramos_por_empaque > 0 %}
+                                    ({{ "%.2f"|format(materia.stock_actual / materia.gramos_por_empaque) }} {{ materia.unidad_compra }})
+                                {% else %}
+                                    ({{ "%.2f"|format(materia.stock_actual) }} {{ materia.unidad_medida }})
+                                {% endif %}
+                            </small>
+                            {% if materia.stock_actual <= materia.stock_minimo %}
+                                <span class="badge badge-danger">¡CRÍTICO!</span>
+                            {% elif materia.stock_actual <= materia.stock_minimo * 1.5 %}
+                                <span class="badge badge-warning">Próximo a agotar</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- AGREGAR columna para Stock Mínimo en Empaques -->
+                        <td>
+                            {{ materia.stock_minimo_empaques }} {{ materia.unidad_compra }}
+                            <br>
+                            <small style="color: #666;">
+                                ({{ "%.2f"|format(materia.stock_minimo_empaques * materia.gramos_por_empaque) }} {{ materia.unidad_medida }})
+                            </small>
+                        </td>
+
+
+                        <!-- COLUMNA VENCIMIENTO -->
+                        <td class="{% if materia.fecha_vencimiento %}{% if materia.fecha_vencimiento < hoy %}vencido{% elif materia.fecha_vencimiento <= hoy_mas_15 %}por-vencer{% endif %}{% endif %}">
+                            {% if materia.fecha_vencimiento %}
+                                {{ materia.fecha_vencimiento.strftime('%d/%m/%Y') }}
+                                {% if materia.fecha_vencimiento < hoy %}
+                                    <span class="badge badge-danger">⚠️ VENCIDO</span>
+                                {% elif materia.fecha_vencimiento <= hoy_mas_15 %}
+                                    <span class="badge badge-warning">⏳ Por vencer</span>
+                                {% endif %}
+                            {% else %}
+                                <span style="color: #6c757d;">No registrada</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if materia.activo %}
+                                <span class="status-active">● Activa</span>
+                            {% else %}
+                                <span class="status-inactive">● Inactiva</span>
+                            {% endif %}
+                        </td>
+                        <td class="actions">
+                            <a href="{{ url_for('editar_materia_prima', id=materia.id) }}" class="btn btn-edit">✏️ Editar</a>
+                            {% if materia.activo %}
+                                <a href="{{ url_for('desactivar_materia_prima', id=materia.id) }}" class="btn btn-deactivate" 
+                                   onclick="return confirm('¿Estás seguro de que quieres desactivar esta materia prima?')">🚫 Desactivar</a>
+                            {% else %}
+                                <a href="{{ url_for('activar_materia_prima', id=materia.id) }}" class="btn">✅ Activar</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="10" style="text-align: center; padding: 20px;">
+                            No hay materias primas registradas. 
+                            <a href="{{ url_for('agregar_materia_prima') }}">Agregar la primera materia prima</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function filterMaterias(status) {
+            // Actualizar botones activos
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Filtrar filas
+            const rows = document.querySelectorAll('.materia-row');
+            let criticalCount = 0;
+            let warningCount = 0;
+            let porVencerCount = 0;
+            let vencidosCount = 0;
+            
+            rows.forEach(row => {
+                const rowStatus = row.dataset.status;
+                const stockStatus = row.dataset.stockStatus;
+                const vencimientoStatus = row.dataset.vencimientoStatus;
+                
+                // Contar stocks críticos y de advertencia
+                if (stockStatus === 'critical') criticalCount++;
+                if (stockStatus === 'warning') warningCount++;
+                // Contar vencimientos
+                if (vencimientoStatus === 'por-vencer') porVencerCount++;
+                if (vencimientoStatus === 'vencido') vencidosCount++;
+                
+                if (status === 'all') {
+                    row.style.display = '';
+                } else if (status === 'active') {
+                    row.style.display = rowStatus === 'active' ? '' : 'none';
+                } else if (status === 'inactive') {
+                    row.style.display = rowStatus === 'inactive' ? '' : 'none';
+                } else if (status === 'critical') {
+                    row.style.display = stockStatus === 'critical' ? '' : 'none';
+                } else if (status === 'warning') {
+                    row.style.display = stockStatus === 'warning' ? '' : 'none';
+                } else if (status === 'por_vencer') {
+                    row.style.display = vencimientoStatus === 'por-vencer' ? '' : 'none';
+                } else if (status === 'vencidos') {
+                    row.style.display = vencimientoStatus === 'vencido' ? '' : 'none';
+                }
+            });
+            
+            // Actualizar contadores en las tarjetas
+            document.getElementById('count-critical').textContent = criticalCount;
+            document.getElementById('count-warning').textContent = warningCount;
+            document.getElementById('count-por-vencer').textContent = porVencerCount;
+        }
+
+        // Inicializar contadores al cargar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            filterMaterias('all');
+        });
+    </script>
+</body>
+</html>

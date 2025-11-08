@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Productos Más Vendidos - Panadería</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* ===== ESTILOS NORMALES PARA PANTALLA ===== */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .reporte-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+            margin: 20px auto;
+            max-width: 1400px;
+        }
+        .reporte-header {
+            background: linear-gradient(135deg, #e67e22, #d35400);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .reporte-body {
+            padding: 30px;
+        }
+        .metric-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #e67e22;
+            transition: transform 0.3s ease;
+        }
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .producto-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 5px solid #e67e22;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .producto-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(230, 126, 34, 0.3);
+        }
+        .ranking-badge {
+            font-size: 1.2rem;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            color: white;
+            font-weight: bold;
+        }
+        .ranking-1 { background: linear-gradient(135deg, #FFD700, #FFA500); }
+        .ranking-2 { background: linear-gradient(135deg, #C0C0C0, #A9A9A9); }
+        .ranking-3 { background: linear-gradient(135deg, #CD7F32, #8B4513); }
+        .ranking-other { background: linear-gradient(135deg, #3498db, #2980b9); }
+        .rotacion-alta { color: #27ae60; font-weight: bold; }
+        .rotacion-media { color: #f39c12; font-weight: bold; }
+        .rotacion-baja { color: #e74c3c; font-weight: bold; }
+        .btn-pdf {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .btn-pdf:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+        }
+        .chart-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        .progress {
+            height: 10px;
+            margin-top: 5px;
+        }
+        .tipo-badge {
+            font-size: 0.8rem;
+            padding: 4px 8px;
+        }
+
+        /* ===== ESTILOS SOLO PARA PDF/IMPRESIÓN ===== */
+        @media print {
+            /* Ocultar elementos no necesarios en PDF */
+            .no-print, .btn-pdf, .selector-fechas {
+                display: none !important;
+            }
+            
+            /* Resetear estilos para PDF */
+            body {
+                background: white !important;
+                font-size: 10px !important;
+                line-height: 1.1 !important;
+                padding: 5px !important;
+                margin: 0 !important;
+            }
+            
+            .reporte-container {
+                box-shadow: none !important;
+                margin: 0 !important;
+                border-radius: 0 !important;
+                max-width: 100% !important;
+            }
+            
+            .reporte-header {
+                padding: 10px !important;
+                margin-bottom: 10px !important;
+                background: #e67e22 !important;
+            }
+            
+            .reporte-body {
+                padding: 10px !important;
+            }
+            
+            /* Compactar cards para PDF */
+            .metric-card {
+                padding: 8px !important;
+                margin-bottom: 8px !important;
+                border-left: 2px solid #e67e22 !important;
+            }
+            
+            .producto-card {
+                padding: 6px !important;
+                margin-bottom: 6px !important;
+                border-left: 3px solid #e67e22 !important;
+                font-size: 9px !important;
+            }
+            
+            /* Reducir fuentes para PDF */
+            h1 { font-size: 1.2rem !important; }
+            h2 { font-size: 1.1rem !important; }
+            h3 { font-size: 1rem !important; }
+            h4 { font-size: 0.9rem !important; }
+            h5 { font-size: 0.8rem !important; }
+            h6 { font-size: 0.7rem !important; }
+            
+            /* Control de paginación */
+            .page-break {
+                page-break-after: always;
+            }
+            .no-break {
+                page-break-inside: avoid;
+            }
+            
+            /* Tablas compactas para PDF */
+            .tabla-pdf {
+                font-size: 8px !important;
+            }
+            .tabla-pdf th, 
+            .tabla-pdf td {
+                padding: 3px 4px !important;
+            }
+            
+            /* Gráficos más pequeños en PDF */
+            .chart-container {
+                padding: 8px !important;
+                margin-bottom: 8px !important;
+                height: 150px !important;
+            }
+            
+            /* Ocultar canvas en PDF */
+            canvas {
+                display: none !important;
+            }
+            
+            /* Reducir márgenes en PDF */
+            .mb-1 { margin-bottom: 0.1rem !important; }
+            .mb-2 { margin-bottom: 0.2rem !important; }
+            .mb-3 { margin-bottom: 0.3rem !important; }
+            .mb-4 { margin-bottom: 0.4rem !important; }
+            
+            /* Ajustar badges para PDF */
+            .ranking-badge {
+                font-size: 0.9rem !important;
+                width: 25px !important;
+                height: 25px !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Selector de Fechas (OCULTO EN PDF) -->
+    <div class="row mb-4 no-print selector-fechas">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-calendar-alt"></i> Seleccionar Período</h5>
+                    <form id="formFechas" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="fecha_inicio" class="form-label">Fecha Inicio</label>
+                            <input type="date" class="form-control" id="fecha_inicio" 
+                                value="{{ fecha_inicio.strftime('%Y-%m-%d') if fecha_inicio else '' }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="fecha_fin" class="form-label">Fecha Fin</label>
+                            <input type="date" class="form-control" id="fecha_fin" 
+                                value="{{ fecha_fin.strftime('%Y-%m-%d') if fecha_fin else datetime.now().strftime('%Y-%m-%d') }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="periodo" class="form-label">Período Rápido</label>
+                            <select class="form-select" id="periodo">
+                                <option value="hoy">Hoy</option>
+                                <option value="ayer">Ayer</option>
+                                <option value="semana">Esta Semana</option>
+                                <option value="mes">Este Mes</option>
+                                <option value="mes_anterior">Mes Anterior</option>
+                                <option value="personalizado" selected>Personalizado</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="button" class="btn btn-primary w-100" onclick="actualizarReporte()">
+                                <i class="fas fa-sync-alt"></i> Actualizar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="reporte-container">
+        <!-- Encabezado del Reporte -->
+        <div class="reporte-header no-break">
+            <div class="row align-items-center">
+                <div class="col-md-10">
+                    <h1 class="fw-bold mb-1">PRODUCTOS MÁS VENDIDOS</h1>
+                    <h4 class="mb-1">Análisis de Rotación y Popularidad</h4>
+                    <p class="mb-0">
+                        <i class="fas fa-calendar-alt"></i>
+                        Período analizado: 
+                        <span class="badge bg-light text-dark ms-1">
+                            {{ fecha_inicio.strftime('%d/%m/%Y') }} - Actual
+                        </span>
+                    </p>
+                </div>
+                <div class="col-md-2 text-center no-print">
+                    <button class="btn btn-pdf" onclick="generarPDF()">
+                        <i class="fas fa-file-pdf"></i> Exportar PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cuerpo del Reporte -->
+        <div class="reporte-body">
+            <!-- Resumen de Actualizaciones ML -->
+            <!-- 🎁 SECCIÓN DE DONACIONES -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="alert alert-warning">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h5 class="mb-1">
+                                    <i class="fas fa-gift me-2"></i>Información de Donaciones en el Período
+                                </h5>
+                                <p class="mb-0">
+                                    Se registraron <strong>{{ total_donaciones }}</strong> transacciones de donación 
+                                    con <strong>{{ productos_donados }}</strong> productos donados.
+                                    <span class="badge bg-light text-dark ms-2">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Incluidas en el análisis de productos
+                                    </span>
+                                </p>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <h4 class="text-warning mb-0">{{ total_donaciones }}</h4>
+                                        <small class="text-muted">Donaciones</small>
+                                    </div>
+                                    <div class="col-6">
+                                        <h4 class="text-warning mb-0">{{ productos_donados }}</h4>
+                                        <small class="text-muted">Productos</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% if actualizaciones_ml %}
+            <div class="alert alert-info mb-4 no-print">
+                <h5><i class="fas fa-robot"></i> Actualizaciones de IA Aplicadas</h5>
+                <p class="mb-0">
+                    <i class="fas fa-sync-alt"></i>
+                    Se actualizaron automáticamente {{ actualizaciones_ml }} rotaciones de productos 
+                    usando aprendizaje automático.
+                </p>
+            </div>
+            {% endif %}
+
+            <!-- Top 10 Productos -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="metric-card">
+                        <h4><i class="fas fa-trophy"></i> Top 10 Productos Más Vendidos</h4>
+                        <p class="text-muted">Ranking basado en unidades vendidas</p>
+                        
+                        <!-- Versión normal para pantalla -->
+                        <div class="no-print">
+                            {% for producto in productos[:10] %}
+                            <div class="producto-card">
+                                <div class="row align-items-center">
+                                    <div class="col-md-1 text-center">
+                                        <div class="ranking-badge 
+                                            {% if loop.index == 1 %}ranking-1
+                                            {% elif loop.index == 2 %}ranking-2
+                                            {% elif loop.index == 3 %}ranking-3
+                                            {% else %}ranking-other{% endif %}">
+                                            {{ loop.index }}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <h5 class="mb-1">{{ producto.nombre }}</h5>
+                                        <span class="badge {% if producto.tipo == 'Producción' %}bg-primary{% else %}bg-secondary{% endif %} tipo-badge">
+                                            {{ producto.tipo }}
+                                        </span>
+                                    </div>
+                                    <div class="col-md-2 text-center">
+                                        <strong class="fs-5">{{ producto.cantidad_vendida }}</strong>
+                                        <br>
+                                        <small class="text-muted">unidades</small>
+                                    </div>
+                                    <div class="col-md-2 text-center">
+                                        <strong class="fs-5">${{ "{:,.2f}".format(producto.ingresos_totales) }}</strong>
+                                        <br>
+                                        <small class="text-muted">ingresos</small>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span>Rotación:</span>
+                                            <span class="
+                                                {% if producto.rotacion_promedio > 20 %}rotacion-alta
+                                                {% elif producto.rotacion_promedio > 10 %}rotacion-media
+                                                {% else %}rotacion-baja{% endif %}">
+                                                {{ "%.1f"|format(producto.rotacion_promedio) }}/día
+                                            </span>
+                                        </div>
+                                        <div class="progress">
+                                            <div class="progress-bar 
+                                                {% if producto.rotacion_promedio > 20 %}bg-success
+                                                {% elif producto.rotacion_promedio > 10 %}bg-warning
+                                                {% else %}bg-danger{% endif %}" 
+                                                style="width: {{ [producto.rotacion_promedio * 5, 100]|min }}%">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Versión tabla compacta para PDF -->
+                        <div class="d-none d-print-block">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered tabla-pdf">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Producto</th>
+                                            <th>Tipo</th>
+                                            <th class="text-center">Unidades</th>
+                                            <th class="text-end">Ingresos</th>
+                                            <th class="text-center">Rotación/día</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for producto in productos[:10] %}
+                                        <tr>
+                                            <td class="text-center">
+                                                <span class="badge 
+                                                    {% if loop.index == 1 %}bg-warning
+                                                    {% elif loop.index == 2 %}bg-secondary
+                                                    {% elif loop.index == 3 %}bg-dark
+                                                    {% else %}bg-primary{% endif %}">
+                                                    {{ loop.index }}
+                                                </span>
+                                            </td>
+                                            <td><strong>{{ producto.nombre[:25] }}{% if producto.nombre|length > 25 %}...{% endif %}</strong></td>
+                                            <td>
+                                                <span class="badge {% if producto.tipo == 'Producción' %}bg-primary{% else %}bg-secondary{% endif %}">
+                                                    {{ producto.tipo[:1] }}
+                                                </span>
+                                            </td>
+                                            <td class="text-center">{{ producto.cantidad_vendida }}</td>
+                                            <td class="text-end">${{ "{:,.0f}".format(producto.ingresos_totales) }}</td>
+                                            <td class="text-center">
+                                                <span class="badge {% if producto.rotacion_promedio > 20 %}bg-success
+                                                                {% elif producto.rotacion_promedio > 10 %}bg-warning
+                                                                {% else %}bg-danger{% endif %}">
+                                                    {{ "%.1f"|format(producto.rotacion_promedio) }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráficos de Análisis -->
+            <div class="row mb-4 no-break">
+                <div class="col-md-6">
+                    <div class="chart-container">
+                        <h4><i class="fas fa-chart-bar"></i> Top 5 por Ingresos</h4>
+                        
+                        <!-- Gráfico para pantalla -->
+                        <div class="no-print">
+                            <canvas id="ingresosChart" width="400" height="250"></canvas>
+                        </div>
+                        
+                        <!-- Tabla para PDF -->
+                        <div class="d-none d-print-block">
+                            <table class="table table-sm table-bordered tabla-pdf">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th class="text-end">Ingresos</th>
+                                        <th class="text-center">Ranking</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for producto in productos[:5] %}
+                                    <tr>
+                                        <td>{{ producto.nombre[:20] }}{% if producto.nombre|length > 20 %}...{% endif %}</td>
+                                        <td class="text-end">${{ "{:,.0f}".format(producto.ingresos_totales) }}</td>
+                                        <td class="text-center">
+                                            <span class="badge {% if loop.index == 1 %}bg-warning
+                                                            {% elif loop.index == 2 %}bg-secondary
+                                                            {% elif loop.index == 3 %}bg-dark
+                                                            {% else %}bg-primary{% endif %}">
+                                                {{ loop.index }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="chart-container">
+                        <h4><i class="fas fa-chart-pie"></i> Distribución por Tipo</h4>
+                        
+                        <!-- Gráfico para pantalla -->
+                        <div class="no-print">
+                            <canvas id="tipoChart" width="400" height="250"></canvas>
+                        </div>
+                        
+                        <!-- Tabla para PDF -->
+                        <div class="d-none d-print-block">
+                            <table class="table table-sm table-bordered tabla-pdf">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Tipo</th>
+                                        <th class="text-center">Cantidad</th>
+                                        <th class="text-center">Porcentaje</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% set total_productos = productos|length %}
+                                    {% set produccion_count = productos|selectattr('tipo', 'equalto', 'Producción')|list|length %}
+                                    {% set externo_count = productos|selectattr('tipo', 'equalto', 'Externo')|list|length %}
+                                    <tr>
+                                        <td>Producción</td>
+                                        <td class="text-center">{{ produccion_count }}</td>
+                                        <td class="text-center">{{ "%.1f"|format((produccion_count / total_productos * 100) if total_productos > 0 else 0) }}%</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Externo</td>
+                                        <td class="text-center">{{ externo_count }}</td>
+                                        <td class="text-center">{{ "%.1f"|format((externo_count / total_productos * 100) if total_productos > 0 else 0) }}%</td>
+                                    </tr>
+                                    <tr class="table-primary">
+                                        <td><strong>Total</strong></td>
+                                        <td class="text-center"><strong>{{ total_productos }}</strong></td>
+                                        <td class="text-center"><strong>100%</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Análisis de Rotación ML -->
+            <div class="row no-break">
+                <div class="col-12">
+                    <div class="metric-card">
+                        <h4><i class="fas fa-brain"></i> Análisis de Rotación Automática</h4>
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <h5><i class="fas fa-rocket"></i> Productos de Alta Rotación</h5>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered tabla-pdf">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Producto</th>
+                                                <th class="text-center">Rotación/día</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for producto in productos if producto.rotacion_promedio > 20 %}
+                                            <tr>
+                                                <td>{{ producto.nombre[:25] }}{% if producto.nombre|length > 25 %}...{% endif %}</td>
+                                                <td class="text-center">
+                                                    <span class="badge bg-success">{{ "%.1f"|format(producto.rotacion_promedio) }}</span>
+                                                </td>
+                                            </tr>
+                                            {% else %}
+                                            <tr>
+                                                <td colspan="2" class="text-muted text-center">No hay productos con rotación muy alta</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h5><i class="fas fa-exclamation-triangle"></i> Productos de Baja Rotación</h5>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered tabla-pdf">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Producto</th>
+                                                <th class="text-center">Rotación/día</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for producto in productos if producto.rotacion_promedio < 5 and producto.rotacion_promedio > 0 %}
+                                            <tr>
+                                                <td>{{ producto.nombre[:25] }}{% if producto.nombre|length > 25 %}...{% endif %}</td>
+                                                <td class="text-center">
+                                                    <span class="badge bg-danger">{{ "%.1f"|format(producto.rotacion_promedio) }}</span>
+                                                </td>
+                                            </tr>
+                                            {% else %}
+                                            <tr>
+                                                <td colspan="2" class="text-muted text-center">No hay productos con rotación crítica</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recomendaciones Inteligentes -->
+            <div class="row mt-4 no-break">
+                <div class="col-12">
+                    <div class="metric-card">
+                        <h4><i class="fas fa-lightbulb"></i> Recomendaciones Basadas en IA</h4>
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <div class="alert alert-success p-2">
+                                    <h6><i class="fas fa-thumbs-up"></i> Oportunidades</h6>
+                                    <small>
+                                        <ul class="mb-0 ps-3">
+                                            <li>Aumentar producción de productos top 3</li>
+                                            <li>Crear promociones con productos de media rotación</li>
+                                            <li>Destacar productos estrella en vitrina</li>
+                                        </ul>
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="alert alert-warning p-2">
+                                    <h6><i class="fas fa-exclamation-circle"></i> Acciones Recomendadas</h6>
+                                    <small>
+                                        <ul class="mb-0 ps-3">
+                                            <li>Revisar recetas de productos con baja rotación</li>
+                                            <li>Optimizar horarios de producción</li>
+                                            <li>Analizar estacionalidad de ventas</li>
+                                        </ul>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pie del Reporte -->
+        <div class="reporte-footer bg-light py-2 px-3 text-center mt-3">
+            <small class="text-muted">
+                <i class="fas fa-sync-alt"></i>
+                Reporte generado automáticamente - Sistema en tiempo real | 
+                Análisis de rotación automática aplicado
+            </small>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function generarPDF() {
+            window.print();
+        }
+
+        // Manejo de selección de fechas
+        document.getElementById('periodo').addEventListener('change', function() {
+            const hoy = new Date();
+            const fechaFin = document.getElementById('fecha_fin');
+            const fechaInicio = document.getElementById('fecha_inicio');
+            
+            switch(this.value) {
+                case 'hoy':
+                    fechaInicio.value = hoy.toISOString().split('T')[0];
+                    fechaFin.value = hoy.toISOString().split('T')[0];
+                    break;
+                case 'ayer':
+                    const ayer = new Date(hoy);
+                    ayer.setDate(hoy.getDate() - 1);
+                    fechaInicio.value = ayer.toISOString().split('T')[0];
+                    fechaFin.value = ayer.toISOString().split('T')[0];
+                    break;
+                case 'semana':
+                    const inicioSemana = new Date(hoy);
+                    inicioSemana.setDate(hoy.getDate() - hoy.getDay());
+                    fechaInicio.value = inicioSemana.toISOString().split('T')[0];
+                    fechaFin.value = hoy.toISOString().split('T')[0];
+                    break;
+                case 'mes':
+                    const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+                    fechaInicio.value = inicioMes.toISOString().split('T')[0];
+                    fechaFin.value = hoy.toISOString().split('T')[0];
+                    break;
+                case 'mes_anterior':
+                    const inicioMesAnterior = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
+                    const finMesAnterior = new Date(hoy.getFullYear(), hoy.getMonth(), 0);
+                    fechaInicio.value = inicioMesAnterior.toISOString().split('T')[0];
+                    fechaFin.value = finMesAnterior.toISOString().split('T')[0];
+                    break;
+            }
+        });
+
+        function actualizarReporte() {
+            const fechaInicio = document.getElementById('fecha_inicio').value;
+            const fechaFin = document.getElementById('fecha_fin').value;
+            const urlActual = window.location.href.split('?')[0];
+            
+            if (urlActual.includes('ventas')) {
+                window.location.href = `${urlActual}?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+            } else if (urlActual.includes('productos_populares')) {
+                window.location.href = `${urlActual}?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+            } else if (urlActual.includes('cierre_caja')) {
+                window.location.href = `${urlActual}?fecha=${fechaInicio}`;
+            } else {
+                window.location.href = `${urlActual}?fecha_inicio=${fecha_inicio}&fecha_fin=${fecha_fin}`;
+            }
+        }
+
+        // Gráfico de Ingresos
+        const ingresosCtx = document.getElementById('ingresosChart').getContext('2d');
+        const ingresosChart = new Chart(ingresosCtx, {
+            type: 'bar',
+            data: {
+                labels: [
+                    {% for producto in productos[:5] %}
+                        '{{ producto.nombre[:15] }}...'{% if not loop.last %},{% endif %}
+                    {% endfor %}
+                ],
+                datasets: [{
+                    label: 'Ingresos Totales',
+                    data: [
+                        {% for producto in productos[:5] %}
+                            {{ producto.ingresos_totales }}{% if not loop.last %},{% endif %}
+                        {% endfor %}
+                    ],
+                    backgroundColor: [
+                        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+
+        // Gráfico por Tipo
+        const tipoCtx = document.getElementById('tipoChart').getContext('2d');
+        const tipoChart = new Chart(tipoCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Producción', 'Externo'],
+                datasets: [{
+                    data: [
+                        {{ productos|selectattr('tipo', 'equalto', 'Producción')|list|length }},
+                        {{ productos|selectattr('tipo', 'equalto', 'Externo')|list|length }}
+                    ],
+                    backgroundColor: ['#FF6384', '#36A2EB']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        // Auto-cierre después de 2 minutos
+        setTimeout(() => {
+            if (confirm('¿Deseas cerrar el reporte?')) {
+                window.close();
+            }
+        }, 120000);
+    </script>
+</body>
+</html>

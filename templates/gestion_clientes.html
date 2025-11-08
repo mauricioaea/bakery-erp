@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Clientes - Sistema Panadería</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .status-active { border-left: 4px solid #28a745; }
+        .status-warning { border-left: 4px solid #ffc107; }
+        .status-expired { border-left: 4px solid #dc3545; }
+        .card-hover:hover { transform: translateY(-2px); transition: all 0.3s; }
+        .btn-warning {
+            background-color: #ffc107;
+            border-color: #ffc107;
+            color: #000;
+        }
+        .btn-warning:hover {
+            background-color: #e0a800;
+            border-color: #e0a800;
+        }
+        .table th {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+        .badge-expired { background-color: #dc3545; }
+        .badge-active { background-color: #28a745; }
+        .badge-warning { background-color: #ffc107; color: #000; }
+    </style>
+</head>
+
+<body class="bg-light">
+    <!-- Navbar -->
+    <nav class="navbar navbar-dark bg-primary">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">
+                <i class="fas fa-users me-2"></i>Gestión de Clientes
+            </span>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-light">
+                <i class="fas fa-arrow-left me-1"></i>Volver al Dashboard
+            </a>
+        </div>
+    </nav>
+
+    <div class="container-fluid py-4">
+        <!-- Mensajes Flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show mb-4" role="alert">
+                        <div class="d-flex align-items-center">
+                            <i class="fas 
+                                {% if category == 'success' %}fa-check-circle{% endif %}
+                                {% if category == 'danger' %}fa-exclamation-triangle{% endif %}
+                                {% if category == 'warning' %}fa-exclamation-circle{% endif %}
+                                me-2"></i>
+                            <div class="flex-grow-1">
+                                {{ message | safe }}
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Botón para agregar nuevo cliente -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCliente">
+                    <i class="fas fa-plus me-2"></i>Agregar Nuevo Cliente
+                </button>
+            </div>
+        </div>
+
+        <!-- Tarjetas de Resumen -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card status-active card-hover">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h3 class="text-success">{{ clientes_activos }}</h3>
+                                <p class="mb-0 text-muted">Activos</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-check-circle fa-2x text-success"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card status-warning card-hover">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h3 class="text-warning">{{ clientes_por_vencer }}</h3>
+                                <p class="mb-0 text-muted">Por Vencer</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card status-expired card-hover">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h3 class="text-danger">{{ clientes_vencidos }}</h3>
+                                <p class="mb-0 text-muted">Vencidos</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-times-circle fa-2x text-danger"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-primary text-white card-hover">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h3>{{ total_clientes }}</h3>
+                                <p class="mb-0">Total Clientes</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-crown fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de Clientes -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-list me-2"></i>
+                            Lista de Clientes
+                        </h5>
+                        <small class="text-muted">Solo super_admin puede gestionar usuarios</small>
+                    </div>
+                    <div class="card-body">
+                        {% if configuraciones %}
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Nombre Panadería</th>
+                                        <th>Licencia</th>
+                                        <th>Límite</th>
+                                        <th>Estado</th>
+                                        <th>Vencimiento</th>
+                                        <th>Usuarios</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for config in configuraciones %}
+                                    <tr>
+                                        <td><strong>#{{ config.id }}</strong></td>
+                                        <td>
+                                            <div class="fw-bold">{{ config.nombre_panaderia }}</div>
+                                            <small class="text-muted">{{ config.direccion or 'Sin dirección' }}</small>
+                                        </td>
+                                        <td>
+                                            {% if config.tipo_licencia == 'local' %}
+                                                <span class="badge bg-secondary">LOCAL</span>
+                                            {% elif config.tipo_licencia == 'nube_basica' %}
+                                                <span class="badge bg-info">NUBE BÁSICA</span>
+                                            {% else %}
+                                                <span class="badge bg-warning text-dark">NUBE PREMIUM</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-dark">{{ config.max_usuarios }} users</span>
+                                        </td>
+                                        <td>
+                                            {% if config.tipo_licencia == 'local' %}
+                                                <span class="badge bg-success">PERMANENTE</span>
+                                            {% else %}
+                                                <span class="badge bg-{% if config.estado_suscripcion == 'activa' %}success{% elif config.estado_suscripcion == 'por_vencer' %}warning{% else %}danger{% endif %}">
+                                                    {{ config.estado_suscripcion|upper }}
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if config.fecha_expiracion %}
+                                                {{ config.fecha_expiracion.strftime('%d/%m/%Y') }}
+                                                <br>
+                                                <small class="text-{% if config.dias_para_expiracion > 30 %}success{% elif config.dias_para_expiracion > 0 %}warning{% else %}danger{% endif %}">
+                                                    {{ config.dias_para_expiracion }} días
+                                                </small>
+                                            {% else %}
+                                                <em class="text-muted">No aplica</em>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <!-- 🆕 BOTÓN PARA VER USUARIOS - SOLO SUPER_ADMIN -->
+                                            {% if current_user.rol == 'super_admin' %}
+                                            <button class="btn btn-info btn-sm" 
+                                                    onclick="verUsuariosCliente({{ config.id }}, '{{ config.nombre_panaderia }}')"
+                                                    title="Ver usuarios de {{ config.nombre_panaderia }}">
+                                                <i class="fas fa-users me-1"></i>Ver
+                                            </button>
+                                            {% else %}
+                                            <span class="text-muted">Solo super</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                {% if current_user.rol == 'super_admin' %}
+                                                <button class="btn btn-outline-primary" 
+                                                        onclick="cargarDatosCliente({{ config.id }})"
+                                                        title="Editar Cliente">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-outline-success"
+                                                        onclick="cargarDatosRenovacion({{ config.id }})"
+                                                        title="Renovar Suscripción">
+                                                    <i class="fas fa-sync-alt"></i>
+                                                </button>
+                                                <button class="btn btn-outline-warning"
+                                                        onclick="prepararAccesoPanaderia({{ config.id }}, '{{ config.nombre_panaderia }}')"
+                                                        title="Acceder a esta panadería">
+                                                    <i class="fas fa-sign-in-alt"></i>
+                                                </button>
+                                                {% else %}
+                                                <span class="text-muted small">No disponible</span>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                            <h4 class="text-muted">No hay clientes registrados</h4>
+                            <p class="text-muted">Comienza agregando tu primer cliente.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================= -->
+    <!-- 🆕 MODALES PARA LOS 3 BOTONES DE ACCIONES -->
+    <!-- ============================================= -->
+
+    <!-- Modal 1: Agregar Nuevo Cliente (Existente) -->
+    <div class="modal fade" id="modalCliente" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-plus me-2"></i>Agregar Nuevo Cliente
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="{{ url_for('crear_cliente') }}">
+                    <div class="modal-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Nombre Panadería *</label>
+                                <input type="text" class="form-control" name="nombre_panaderia" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Teléfono</label>
+                                <input type="text" class="form-control" name="telefono_contacto">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label class="form-label">Dirección</label>
+                                <textarea class="form-control" name="direccion" rows="2"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Tipo Licencia *</label>
+                                <select class="form-select" name="tipo_licencia" id="tipoLicencia" required onchange="toggleFechaExpiracion()">
+                                    <option value="local">Local (Permanente)</option>
+                                    <option value="nube_basica">Nube Básica</option>
+                                    <option value="nube_premium">Nube Premium</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Límite Usuarios *</label>
+                                <input type="number" class="form-control" name="max_usuarios" value="3" min="1" max="50" required>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3" id="fechaExpiracionGroup" style="display: none;">
+                            <div class="col-md-6">
+                                <label class="form-label">Fecha Expiración *</label>
+                                <input type="date" class="form-control" name="fecha_expiracion" id="fechaExpiracion">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Días de Gracia</label>
+                                <input type="number" class="form-control" name="dias_gracia" value="7" min="0" max="30">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Razón Social</label>
+                                <input type="text" class="form-control" name="razon_social">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">NIT</label>
+                                <input type="text" class="form-control" name="nit">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Guardar Cliente
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 2: Editar Cliente -->
+    <div class="modal fade" id="editarClienteModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-edit me-2"></i>Editar Cliente
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="formEditarCliente" method="POST">
+                    <div class="modal-body">
+                        <input type="hidden" id="editarClienteId" name="cliente_id">
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Nombre de la Panadería *</label>
+                                <input type="text" class="form-control" id="editarNombre" name="nombre_panaderia" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Teléfono de Contacto</label>
+                                <input type="text" class="form-control" id="editarTelefono" name="telefono_contacto">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label class="form-label">Dirección</label>
+                                <textarea class="form-control" id="editarDireccion" name="direccion" rows="2"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Tipo de Licencia *</label>
+                                <select class="form-select" id="editarTipoLicencia" name="tipo_licencia" required onchange="toggleEditarFechaExpiracion()">
+                                    <option value="local">Local (Permanente)</option>
+                                    <option value="nube_basica">Nube Básica</option>
+                                    <option value="nube_premium">Nube Premium</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Límite de Usuarios *</label>
+                                <input type="number" class="form-control" id="editarMaxUsuarios" name="max_usuarios" min="1" max="50" required>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3" id="editarFechaExpiracionGroup" style="display: none;">
+                            <div class="col-md-6">
+                                <label class="form-label">Fecha de Expiración *</label>
+                                <input type="date" class="form-control" id="editarFechaExpiracion" name="fecha_expiracion">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Días de Gracia</label>
+                                <input type="number" class="form-control" id="editarDiasGracia" name="dias_gracia" min="0" max="30">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Razón Social</label>
+                                <input type="text" class="form-control" id="editarRazonSocial" name="razon_social">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">NIT</label>
+                                <input type="text" class="form-control" id="editarNit" name="nit">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Guardar Cambios
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 3: Renovar Suscripción -->
+    <div class="modal fade" id="renovarSuscripcionModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-sync-alt me-2"></i>Renovar Suscripción
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="formRenovarSuscripcion" method="POST">
+                    <div class="modal-body">
+                        <input type="hidden" id="renovarClienteId" name="cliente_id">
+                        
+                        <!-- Información Actual -->
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-info-circle me-2"></i>Información Actual</h6>
+                            <div class="row small">
+                                <div class="col-md-6">
+                                    <strong>Panadería:</strong> <span id="renovarNombreActual"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Licencia Actual:</strong> <span id="renovarLicenciaActual"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Vence:</strong> <span id="renovarVencimientoActual"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Estado:</strong> <span id="renovarEstadoActual"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Nuevo Tipo de Licencia *</label>
+                                <select class="form-select" id="renovarTipoLicencia" name="tipo_licencia" required onchange="toggleRenovarOpciones()">
+                                    <option value="local">Local (Permanente)</option>
+                                    <option value="nube_basica">Nube Básica</option>
+                                    <option value="nube_premium">Nube Premium</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Nuevo Límite de Usuarios *</label>
+                                <input type="number" class="form-control" id="renovarMaxUsuarios" name="max_usuarios" min="1" max="50" required>
+                            </div>
+                        </div>
+
+                        <!-- Opciones de Renovación -->
+                        <div class="row mb-3" id="renovarOpcionesGroup">
+                            <div class="col-md-6">
+                                <label class="form-label">Período de Renovación *</label>
+                                <select class="form-select" id="renovarPeriodo" name="periodo" onchange="calcularNuevaFecha()">
+                                    <option value="30">1 Mes (30 días)</option>
+                                    <option value="90">3 Meses (90 días)</option>
+                                    <option value="180">6 Meses (180 días)</option>
+                                    <option value="365">1 Año (365 días)</option>
+                                    <option value="custom">Personalizado</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Nueva Fecha de Vencimiento *</label>
+                                <input type="date" class="form-control" id="renovarNuevaFecha" name="nueva_fecha_expiracion" required>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3" id="renovarDiasPersonalizados" style="display: none;">
+                            <div class="col-md-12">
+                                <label class="form-label">Días Personalizados</label>
+                                <input type="number" class="form-control" id="renovarDiasCustom" name="dias_personalizados" min="1" max="730" placeholder="Ingresa número de días">
+                            </div>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Nota:</strong> Al renovar, la nueva fecha de vencimiento reemplazará la fecha actual.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-check me-2"></i>Confirmar Renovación
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 4: Acceder a Panadería -->
+    <div class="modal fade" id="accederPanaderiaModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title">
+                        <i class="fas fa-sign-in-alt me-2"></i>Acceder a Panadería
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Estás a punto de acceder a la panadería:
+                        <strong id="accederPanaderiaNombre"></strong>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Seleccionar Usuario:</label>
+                        <select class="form-select" id="accederUsuarioSelect">
+                            <option value="">Cargando usuarios...</option>
+                        </select>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        <strong>Modo Super Admin:</strong> Podrás ver y gestionar esta panadería como si fueras uno de sus usuarios.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-warning" onclick="confirmarAccesoPanaderia()">
+                        <i class="fas fa-play me-2"></i>Acceder
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 5: Ver Usuarios -->
+    <div class="modal fade" id="usuariosModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-users me-2"></i>Usuarios de: <span id="modalPanaderiaNombre"></span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="usuariosContent">
+                        <!-- Contenido dinámico -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // =============================================
+        // FUNCIONES GENERALES
+        // =============================================
+
+        function toggleFechaExpiracion() {
+            const tipoLicencia = document.getElementById('tipoLicencia').value;
+            const fechaGroup = document.getElementById('fechaExpiracionGroup');
+            
+            if (tipoLicencia === 'local') {
+                fechaGroup.style.display = 'none';
+            } else {
+                fechaGroup.style.display = 'flex';
+                const hoy = new Date();
+                const fechaFutura = new Date(hoy);
+                fechaFutura.setDate(hoy.getDate() + 30);
+                document.getElementById('fechaExpiracion').value = fechaFutura.toISOString().split('T')[0];
+            }
+        }
+
+        // =============================================
+        // BOTÓN 1: EDITAR CLIENTE
+        // =============================================
+
+        async function cargarDatosCliente(clienteId) {
+            try {
+                const response = await fetch(`/obtener_datos_cliente_super/${clienteId}`);
+                const cliente = await response.json();
+                
+                if (cliente.success) {
+                    document.getElementById('editarClienteId').value = cliente.data.id;
+                    document.getElementById('editarNombre').value = cliente.data.nombre_panaderia;
+                    document.getElementById('editarTelefono').value = cliente.data.telefono_contacto || '';
+                    document.getElementById('editarDireccion').value = cliente.data.direccion || '';
+                    document.getElementById('editarTipoLicencia').value = cliente.data.tipo_licencia;
+                    document.getElementById('editarMaxUsuarios').value = cliente.data.max_usuarios;
+                    document.getElementById('editarRazonSocial').value = cliente.data.razon_social || '';
+                    document.getElementById('editarNit').value = cliente.data.nit || '';
+                    document.getElementById('editarDiasGracia').value = cliente.data.dias_gracia || 7;
+                    
+                    if (cliente.data.fecha_expiracion) {
+                        document.getElementById('editarFechaExpiracion').value = cliente.data.fecha_expiracion;
+                    }
+                    
+                    toggleEditarFechaExpiracion();
+                    
+                    const modal = new bootstrap.Modal(document.getElementById('editarClienteModal'));
+                    modal.show();
+                } else {
+                    alert('Error al cargar datos del cliente: ' + cliente.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error);
+            }
+        }
+
+        function toggleEditarFechaExpiracion() {
+            const tipoLicencia = document.getElementById('editarTipoLicencia').value;
+            const fechaGroup = document.getElementById('editarFechaExpiracionGroup');
+            
+            if (tipoLicencia === 'local') {
+                fechaGroup.style.display = 'none';
+            } else {
+                fechaGroup.style.display = 'flex';
+                const fechaInput = document.getElementById('editarFechaExpiracion');
+                if (!fechaInput.value) {
+                    const hoy = new Date();
+                    const fechaFutura = new Date(hoy);
+                    fechaFutura.setDate(hoy.getDate() + 30);
+                    fechaInput.value = fechaFutura.toISOString().split('T')[0];
+                }
+            }
+        }
+
+        document.getElementById('formEditarCliente').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            try {
+                const response = await fetch('/editar_cliente_super', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ Cliente actualizado exitosamente');
+                    bootstrap.Modal.getInstance(document.getElementById('editarClienteModal')).hide();
+                    location.reload();
+                } else {
+                    alert('❌ Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error al enviar formulario: ' + error);
+            }
+        });
+
+        // =============================================
+        // BOTÓN 2: RENOVAR SUSCRIPCIÓN
+        // =============================================
+
+        async function cargarDatosRenovacion(clienteId) {
+            try {
+                const response = await fetch(`/obtener_datos_cliente/${clienteId}`);
+                const cliente = await response.json();
+                
+                if (cliente.success) {
+                    document.getElementById('renovarClienteId').value = cliente.data.id;
+                    document.getElementById('renovarNombreActual').textContent = cliente.data.nombre_panaderia;
+                    document.getElementById('renovarLicenciaActual').textContent = cliente.data.tipo_licencia.toUpperCase();
+                    document.getElementById('renovarVencimientoActual').textContent = cliente.data.fecha_expiracion || 'No aplica';
+                    document.getElementById('renovarEstadoActual').textContent = cliente.data.estado_suscripcion || 'Activa';
+                    
+                    document.getElementById('renovarTipoLicencia').value = cliente.data.tipo_licencia;
+                    document.getElementById('renovarMaxUsuarios').value = cliente.data.max_usuarios;
+                    
+                    // Calcular nueva fecha por defecto
+                    calcularNuevaFecha();
+                    toggleRenovarOpciones();
+                    
+                    const modal = new bootstrap.Modal(document.getElementById('renovarSuscripcionModal'));
+                    modal.show();
+                } else {
+                    alert('Error al cargar datos para renovación: ' + cliente.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error);
+            }
+        }
+
+        function toggleRenovarOpciones() {
+            const tipoLicencia = document.getElementById('renovarTipoLicencia').value;
+            const opcionesGroup = document.getElementById('renovarOpcionesGroup');
+            const diasPersonalizados = document.getElementById('renovarDiasPersonalizados');
+            
+            if (tipoLicencia === 'local') {
+                opcionesGroup.style.display = 'none';
+                diasPersonalizados.style.display = 'none';
+            } else {
+                opcionesGroup.style.display = 'flex';
+                const periodo = document.getElementById('renovarPeriodo').value;
+                if (periodo === 'custom') {
+                    diasPersonalizados.style.display = 'block';
+                } else {
+                    diasPersonalizados.style.display = 'none';
+                }
+            }
+        }
+
+        function calcularNuevaFecha() {
+            const periodo = document.getElementById('renovarPeriodo').value;
+            const fechaInput = document.getElementById('renovarNuevaFecha');
+            
+            if (periodo === 'custom') {
+                const diasCustom = document.getElementById('renovarDiasCustom').value;
+                if (diasCustom) {
+                    const hoy = new Date();
+                    const nuevaFecha = new Date(hoy);
+                    nuevaFecha.setDate(hoy.getDate() + parseInt(diasCustom));
+                    fechaInput.value = nuevaFecha.toISOString().split('T')[0];
+                }
+                return;
+            }
+            
+            const hoy = new Date();
+            const nuevaFecha = new Date(hoy);
+            
+            if (periodo !== 'custom') {
+                nuevaFecha.setDate(hoy.getDate() + parseInt(periodo));
+                fechaInput.value = nuevaFecha.toISOString().split('T')[0];
+            }
+        }
+
+        document.getElementById('renovarPeriodo').addEventListener('change', function() {
+            if (this.value === 'custom') {
+                document.getElementById('renovarDiasPersonalizados').style.display = 'block';
+            } else {
+                document.getElementById('renovarDiasPersonalizados').style.display = 'none';
+                calcularNuevaFecha();
+            }
+        });
+
+        document.getElementById('renovarDiasCustom').addEventListener('input', calcularNuevaFecha);
+
+        document.getElementById('formRenovarSuscripcion').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!confirm('¿Confirmar renovación de suscripción?')) {
+                return;
+            }
+            
+            const formData = new FormData(this);
+            
+            try {
+                const response = await fetch('/renovar_suscripcion_super', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ Suscripción renovada exitosamente');
+                    bootstrap.Modal.getInstance(document.getElementById('renovarSuscripcionModal')).hide();
+                    location.reload();
+                } else {
+                    alert('❌ Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error al renovar suscripción: ' + error);
+            }
+        });
+
+        // =============================================
+        // BOTÓN 3: ACCEDER A PANADERÍA
+        // =============================================
+
+        async function prepararAccesoPanaderia(panaderiaId, nombrePanaderia) {
+            try {
+                document.getElementById('accederPanaderiaNombre').textContent = nombrePanaderia;
+                document.getElementById('accederPanaderiaModal').dataset.panaderiaId = panaderiaId;
+                
+                // Cargar usuarios de la panadería
+                const response = await fetch(`/obtener_usuarios_panaderia/${panaderiaId}`);
+                const usuarios = await response.json();
+                
+                const select = document.getElementById('accederUsuarioSelect');
+                select.innerHTML = '';
+                
+                if (usuarios.length > 0) {
+                    usuarios.forEach(usuario => {
+                        if (usuario.activo) {
+                            const option = document.createElement('option');
+                            option.value = usuario.id;
+                            option.textContent = `${usuario.username} (${usuario.rol}) - ${usuario.nombre_completo}`;
+                            select.appendChild(option);
+                        }
+                    });
+                } else {
+                    select.innerHTML = '<option value="">No hay usuarios activos</option>';
+                }
+                
+                const modal = new bootstrap.Modal(document.getElementById('accederPanaderiaModal'));
+                modal.show();
+            } catch (error) {
+                alert('Error al preparar acceso: ' + error);
+            }
+        }
+
+        async function confirmarAccesoPanaderia() {
+            const panaderiaId = document.getElementById('accederPanaderiaModal').dataset.panaderiaId;
+            const usuarioId = document.getElementById('accederUsuarioSelect').value;
+            
+            if (!usuarioId) {
+                alert('Por favor selecciona un usuario');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/acceder_panaderia_super/${panaderiaId}/${usuarioId}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ Acceso concedido. Redirigiendo...');
+                    window.location.href = '/dashboard';
+                } else {
+                    alert('❌ Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error al acceder: ' + error);
+            }
+        }
+
+        // =============================================
+        // FUNCIONES EXISTENTES (Resetear Contraseñas)
+        // =============================================
+
+        async function verUsuariosCliente(panaderiaId, nombrePanaderia) {
+            try {
+                const response = await fetch(`/obtener_usuarios_panaderia/${panaderiaId}`);
+                const usuarios = await response.json();
+                
+                document.getElementById('modalPanaderiaNombre').textContent = nombrePanaderia;
+                
+                let html = '';
+                if (usuarios.length > 0) {
+                    html = `
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Usuario</th>
+                                    <th>Nombre</th>
+                                    <th>Rol</th>
+                                    <th>Estado</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    
+                    usuarios.forEach(usuario => {
+                        html += `
+                        <tr>
+                            <td><strong>${usuario.username}</strong></td>
+                            <td>${usuario.nombre_completo}</td>
+                            <td>
+                                <span class="badge ${usuario.rol === 'admin_cliente' ? 'bg-danger' : usuario.rol === 'supervisor' ? 'bg-info' : 'bg-secondary'}">
+                                    ${usuario.rol}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge ${usuario.activo ? 'bg-success' : 'bg-danger'}">
+                                    ${usuario.activo ? 'Activo' : 'Inactivo'}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-warning btn-sm" 
+                                        onclick="resetearPasswordUsuario(${usuario.id}, '${usuario.username}')">
+                                    <i class="fas fa-key me-1"></i>Resetear
+                                </button>
+                            </td>
+                        </tr>
+                        `;
+                    });
+                    
+                    html += `
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Puedes resetear la contraseña de cualquier usuario. Se generará una nueva contraseña temporal.
+                    </div>
+                    `;
+                } else {
+                    html = '<div class="alert alert-warning">No hay usuarios registrados para esta panadería.</div>';
+                }
+                
+                document.getElementById('usuariosContent').innerHTML = html;
+                new bootstrap.Modal(document.getElementById('usuariosModal')).show();
+                
+            } catch (error) {
+                alert('Error al cargar usuarios: ' + error);
+            }
+        }
+
+        async function resetearPasswordUsuario(usuarioId, usuarioNombre) {
+            if (!confirm(`¿Resetear contraseña de ${usuarioNombre}?\n\nSe generará una nueva contraseña temporal.`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/resetear_password/${usuarioId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(`✅ CONTRASEÑA RESETEADA\n\nUsuario: ${usuarioNombre}\nNueva Contraseña: ${result.nueva_password}\n\n⚠️ Copia esta contraseña ahora. No podrás verla nuevamente.`);
+                } else {
+                    alert('❌ Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error);
+            }
+        }
+
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', toggleFechaExpiracion);
+    </script>
+</body>
+</html>

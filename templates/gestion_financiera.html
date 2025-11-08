@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión Financiera - Panadería</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.2em;
+        }
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+        .dashboard-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        .card h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        .saldo-card {
+            text-align: center;
+            border-left: 5px solid #27ae60;
+        }
+        .saldo-monto {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #27ae60;
+            margin: 10px 0;
+        }
+        .alerta-card {
+            border-left: 5px solid #e74c3c;
+        }
+        .alerta-monto {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+            color: white;
+        }
+        .btn-warning {
+            background: linear-gradient(135deg, #f39c12 0%, #f1c40f 100%);
+            color: white;
+        }
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .transacciones-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+        .transaccion-item {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border-left: 4px solid;
+        }
+        .ingreso {
+            background: #d4edda;
+            border-left-color: #27ae60;
+        }
+        .egreso {
+            background: #f8d7da;
+            border-left-color: #e74c3c;
+        }
+        .transaccion-monto {
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        .ingreso .transaccion-monto {
+            color: #27ae60;
+        }
+        .egreso .transaccion-monto {
+            color: #e74c3c;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+        }
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .nav-buttons {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Mensajes Flash -->
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <div class="header">
+            <h1>💰 Gestión Financiera y Contabilidad</h1>
+            <p class="subtitle">Control completo de finanzas - Banco, Flujo de Caja y Costos</p>
+            
+            <div class="nav-buttons">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-primary">🏠 Volver al Dashboard</a>
+                <a href="#configuracion" class="btn btn-warning">⚙️ Configurar Saldo</a>
+                <a href="#transacciones" class="btn btn-success">💳 Nueva Transacción</a>
+                <a href="{{ url_for('conciliar_ventas_automatico') }}" class="btn btn-primary">🔄 Conciliar Ventas</a>
+            </div>
+        </div>
+
+        <!-- Tarjetas de Resumen -->
+        <div class="dashboard-cards">
+            <div class="card saldo-card">
+                <h3>💰 Saldo Actual</h3>
+                <div class="saldo-monto">${{ "{:,.0f}".format(saldo_actual) }}</div>
+                <p>Saldo en cuenta principal</p>
+            </div>
+            
+            <div class="card alerta-card">
+                <h3>⚠️ Alerta de Saldo</h3>
+                <div class="alerta-monto">${{ "{:,.0f}".format(config.alerta_saldo_minimo) if config else 100000 }}</div>
+                <p>Saldo mínimo configurado</p>
+                {% if saldo_actual < (config.alerta_saldo_minimo if config else 100000) %}
+                <div style="color: #e74c3c; font-weight: bold; margin-top: 10px;">
+                    ⚠️ ALERTA: Saldo por debajo del mínimo
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="card">
+                <h3>📊 Resumen del Mes</h3>
+                <p>Ingresos: <strong style="color: #27ae60;">${{ "{:,.0f}".format(total_ingresos_mes) }}</strong></p>
+                <p>Egresos: <strong style="color: #e74c3c;">${{ "{:,.0f}".format(total_egresos_mes) }}</strong></p>
+                <p>Flujo Neto: <strong style="color: {% if flujo_neto_mes >= 0 %}#27ae60{% else %}#e74c3c{% endif %}">
+                    ${{ "{:,.0f}".format(flujo_neto_mes) }}
+                </strong></p>
+            </div>
+        </div>
+
+        <!-- Configuración de Saldo Inicial -->
+        <div class="card" id="configuracion">
+            <h3>⚙️ Configuración Financiera</h3>
+            <form action="{{ url_for('configurar_saldo_inicial') }}" method="POST">
+                <div class="form-group">
+                    <label>Saldo Inicial en Cuenta:</label>
+                    <input type="number" step="0.01" name="saldo_inicial" 
+                           value="{{ config.saldo_inicial if config else 0 }}" 
+                           class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Alerta de Saldo Mínimo:</label>
+                    <input type="number" step="0.01" name="alerta_minimo" 
+                           value="{{ config.alerta_saldo_minimo if config else 100000 }}" 
+                           class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-success">💾 Guardar Configuración</button>
+            </form>
+        </div>
+
+        <!-- Registrar Transacción Manual -->
+        <div class="card" id="transacciones">
+            <h3>💳 Registrar Transacción Manual</h3>
+            <form action="{{ url_for('registrar_transaccion') }}" method="POST">
+                <div class="form-group">
+                    <label>Tipo de Transacción:</label>
+                    <select name="tipo" class="form-control" required>
+                        <option value="INGRESO">💰 Ingreso</option>
+                        <option value="EGRESO">💸 Egreso</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Categoría:</label>
+                    <select name="categoria" class="form-control" required>
+                        <option value="VENTAS_PANADERIA">Ventas Panadería</option>
+                        <option value="PRODUCTOS_EXTERNOS">Productos Externos</option>
+                        <option value="MATERIAS_PRIMAS">Compras Materias Primas</option>
+                        <option value="SERVICIOS">Servicios Públicos</option>
+                        <option value="NOMINAS">Nóminas</option>
+                        <option value="ALQUILER">Alquiler</option>
+                        <option value="OTROS">Otros Gastos</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Descripción:</label>
+                    <input type="text" name="descripcion" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Monto:</label>
+                    <input type="number" step="0.01" name="monto" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Método de Pago:</label>
+                    <select name="metodo_pago" class="form-control" required>
+                        <option value="EFECTIVO">Efectivo</option>
+                        <option value="TRANSFERENCIA">Transferencia</option>
+                        <option value="TARJETA">Tarjeta</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Referencia (opcional):</label>
+                    <input type="text" name="referencia" class="form-control">
+                </div>
+                <button type="submit" class="btn btn-success">💾 Registrar Transacción</button>
+            </form>
+        </div>
+
+        <!-- Últimas Transacciones -->
+        <div class="card">
+            <h3>📋 Últimas Transacciones</h3>
+            {% if transacciones %}
+                {% for trans in transacciones %}
+                <div class="transaccion-item {{ 'ingreso' if trans.tipo == 'INGRESO' else 'egreso' }}">
+                    <div style="display: flex; justify-content: between; align-items: center;">
+                        <div>
+                            <strong>{{ trans.descripcion }}</strong>
+                            <br>
+                            <small>{{ trans.fecha.strftime('%d/%m/%Y %H:%M') }} | {{ trans.categoria }}</small>
+                        </div>
+                        <div class="transaccion-monto">
+                            {{ '+' if trans.tipo == 'INGRESO' else '-' }}${{ "{:,.0f}".format(trans.monto) }}
+                        </div>
+                    </div>
+                    <div style="margin-top: 5px;">
+                        <small>Saldo: ${{ "{:,.0f}".format(trans.saldo_resultante) }} | {{ trans.metodo_pago }}</small>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p>No hay transacciones registradas aún.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        // Efectos visuales
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('💰 Módulo Financiero cargado - Saldo actual: ${{ saldo_actual }}');
+            
+            // Resaltar saldo bajo
+            const saldoActual = {{ saldo_actual }};
+            const saldoMinimo = {{ config.alerta_saldo_minimo if config else 100000 }};
+            
+            if (saldoActual < saldoMinimo) {
+                const saldoCard = document.querySelector('.saldo-card');
+                saldoCard.style.animation = 'pulse 1s infinite';
+                
+                // Crear animación de pulso
+                const style = document.createElement('style');
+                style.textContent = `
+                    @keyframes pulse {
+                        0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); }
+                        70% { box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); }
+                        100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        });
+    </script>
+</body>
+</html>

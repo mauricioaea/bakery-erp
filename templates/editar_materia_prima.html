@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Materia Prima - Panadería</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f8f9fa;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .container {
+            padding: 30px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .form-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .form-section {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .form-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        input:focus, select:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+        .btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .btn:hover {
+            background: #218838;
+        }
+        .btn-secondary {
+            background: #6c757d;
+        }
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        .back-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .back-btn:hover {
+            background: #5a6268;
+        }
+        small {
+            color: #666;
+            font-size: 0.875em;
+            display: block;
+            margin-top: 5px;
+        }
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+        .alert {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error-message {
+            color: #dc3545;
+            font-size: 0.875em;
+            margin-top: 5px;
+            display: none;
+        }
+        .info-box {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #007bff;
+        }
+        .compra-section {
+            background: #e8f5e8;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+            margin-bottom: 20px;
+        }
+        .historial-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .historial-table th, .historial-table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .historial-table th {
+            background: #343a40;
+            color: white;
+        }
+        .stock-info {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>✏️ Editar Materia Prima</h1>
+        <div>
+            <a href="{{ url_for('materias_primas') }}" class="back-btn">← Volver a Materias Primas</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="form-container">
+            <!-- Mensajes Flash -->
+            <div class="flash-messages">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+
+            <!-- INFORMACIÓN ACTUAL -->
+            <div class="info-box">
+                <h3>📊 Información Actual</h3>
+                <div><strong>Costo Unitario:</strong> ${{ "%.2f"|format(materia.costo_promedio) }}</div>
+                <div><strong>Stock Actual:</strong> {{ "%.2f"|format(materia.stock_actual) }} {{ materia.unidad_medida }} 
+                    ({{ "%.2f"|format(materia.stock_actual / materia.gramos_por_empaque) }} {{ materia.unidad_compra }})</div>
+                <div><strong>Valor en Inventario:</strong> ${{ "%.2f"|format(materia.stock_actual * materia.costo_promedio) }}</div>
+                <div><strong>Estado:</strong> {% if materia.activo %}✅ Activa{% else %}❌ Inactiva{% endif %}</div>
+            </div>
+
+            <form method="POST" id="materiaPrimaForm">
+                
+                <!-- SECCIÓN 1: INFORMACIÓN BÁSICA -->
+                <div class="form-section">
+                    <h3>📝 Información Básica</h3>
+                    
+                    <div class="form-group">
+                        <label for="nombre">Nombre de la Materia Prima:</label>
+                        <input type="text" id="nombre" name="nombre" value="{{ materia.nombre }}" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="proveedor_id">Proveedor:</label>
+                        <select id="proveedor_id" name="proveedor_id" required>
+                            <option value="">Seleccione un proveedor</option>
+                            {% for proveedor in proveedores %}
+                            <option value="{{ proveedor.id }}" {% if proveedor.id == materia.proveedor_id %}selected{% endif %}>
+                                {{ proveedor.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="unidad_medida">Unidad de Medida:</label>
+                        <select id="unidad_medida" name="unidad_medida" required>
+                            <option value="kg" {% if materia.unidad_medida == 'kg' %}selected{% endif %}>Kilogramos (kg)</option>
+                            <option value="g" {% if materia.unidad_medida == 'g' %}selected{% endif %}>Gramos (g)</option>
+                            <option value="L" {% if materia.unidad_medida == 'L' %}selected{% endif %}>Litros (L)</option>
+                            <option value="ml" {% if materia.unidad_medida == 'ml' %}selected{% endif %}>Mililitros (ml)</option>
+                            <option value="unidades" {% if materia.unidad_medida == 'unidades' %}selected{% endif %}>Unidades</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 2: CONFIGURACIÓN EMPAQUES -->
+                <div class="form-section">
+                    <h3>📦 Configuración de Empaques</h3>
+                    
+                    <div class="form-group">
+                        <label for="unidad_compra">Unidad de Compra:</label>
+                        <input type="text" id="unidad_compra" name="unidad_compra" 
+                               value="{{ materia.unidad_compra }}" required>
+                        <small>Nombre de la unidad en que compras (Ej: Caja, Panal, Bolsa)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="gramos_por_empaque">Gramos/Peso por Empaque:</label>
+                        <input type="number" id="gramos_por_empaque" name="gramos_por_empaque" 
+                               step="0.01" min="0.01" value="{{ materia.gramos_por_empaque }}" required>
+                        <small>Peso total contenido en cada empaque (en gramos)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="stock_minimo_empaques">Stock Mínimo (Empaques):</label>
+                        <input type="number" id="stock_minimo_empaques" name="stock_minimo_empaques" 
+                               step="1" min="1" value="{{ materia.stock_minimo_empaques }}" required>
+                        <small>Cantidad mínima de empaques antes de hacer nuevo pedido</small>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 3: AGREGAR NUEVA COMPRA -->
+                <div class="compra-section">
+                    <h3>🛒 Agregar Nueva Compra</h3>
+                    <p style="color: #666; margin-bottom: 15px;">Registra una compra adicional para aumentar el stock</p>
+                    
+                    <div class="form-group">
+                        <label for="nueva_compra_cantidad">Cantidad de {{ materia.unidad_compra }} Comprados:</label>
+                        <input type="number" id="nueva_compra_cantidad" name="nueva_compra_cantidad" 
+                               step="1" min="1" placeholder="Ej: 2">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="nueva_compra_precio">Precio Total de la Compra (COP):</label>
+                        <input type="number" id="nueva_compra_precio" name="nueva_compra_precio" 
+                               step="0.01" min="0.01" placeholder="Ej: 28000">
+                    </div>
+
+                    <div id="nueva-compra-calculado" style="background: #d1ecf1; padding: 10px; border-radius: 5px; display: none;">
+                        <strong>Stock a agregar:</strong> <span id="nuevo-stock-gramos">0</span> {{ materia.unidad_medida }}
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 4: CONFIGURACIÓN AVANZADA -->
+                <div class="form-section">
+                    <h3>⚙️ Configuración Avanzada</h3>
+                    
+                    <div class="form-group">
+                        <label for="stock_minimo">Stock Mínimo ({{ materia.unidad_medida }}):</label>
+                        <input type="number" id="stock_minimo" name="stock_minimo" 
+                               step="0.01" min="0" value="{{ materia.stock_minimo }}">
+                        <small>Cantidad mínima en {{ materia.unidad_medida }} antes de hacer un nuevo pedido</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="fecha_vencimiento">Fecha de Vencimiento (Opcional):</label>
+                        <input type="date" id="fecha_vencimiento" name="fecha_vencimiento" 
+                               value="{{ materia.fecha_vencimiento if materia.fecha_vencimiento else '' }}">
+                        <small>Fecha en la que este producto vence (opcional)</small>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn">💾 Actualizar Materia Prima</button>
+            </form>
+
+            <!-- HISTORIAL DE COMPRAS -->
+            {% if historial_compras %}
+            <div class="form-section">
+                <h3>📋 Historial de Compras</h3>
+                <table class="historial-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Cantidad</th>
+                            <th>Precio Total</th>
+                            <th>Precio/{{ materia.unidad_compra }}</th>
+                            <th>Stock Agregado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for compra in historial_compras %}
+                        <tr>
+                            <td>{{ compra.fecha_compra.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ compra.cantidad_empaques }} {{ materia.unidad_compra }}</td>
+                            <td>${{ "%.0f"|format(compra.precio_total) }}</td>
+                            <td>${{ "%.0f"|format(compra.precio_unitario_empaque) }}</td>
+                            <td>{{ "%.0f"|format(compra.cantidad_empaques * materia.gramos_por_empaque) }} {{ materia.unidad_medida }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        // Calcular stock de nueva compra en tiempo real
+        document.addEventListener('DOMContentLoaded', function() {
+            const cantidadInput = document.getElementById('nueva_compra_cantidad');
+            const precioInput = document.getElementById('nueva_compra_precio');
+            const resultadoDiv = document.getElementById('nueva-compra-calculado');
+            const gramosPorEmpaque = parseFloat(document.getElementById('gramos_por_empaque').value);
+
+            function calcularNuevaCompra() {
+                const cantidad = parseInt(cantidadInput.value) || 0;
+                if (cantidad > 0 && gramosPorEmpaque > 0) {
+                    const stockGramos = cantidad * gramosPorEmpaque;
+                    document.getElementById('nuevo-stock-gramos').textContent = stockGramos.toLocaleString('es-CO');
+                    resultadoDiv.style.display = 'block';
+                } else {
+                    resultadoDiv.style.display = 'none';
+                }
+            }
+
+            cantidadInput.addEventListener('input', calcularNuevaCompra);
+            precioInput.addEventListener('input', calcularNuevaCompra);
+        });
+    </script>
+</body>
+</html>

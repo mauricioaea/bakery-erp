@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agregar Materia Prima - Panadería</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f8f9fa;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .container {
+            padding: 30px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .form-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .form-section {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .form-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        input:focus, select:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+        .btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .btn:hover {
+            background: #218838;
+        }
+        .back-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .back-btn:hover {
+            background: #5a6268;
+        }
+        small {
+            color: #666;
+            font-size: 0.875em;
+            display: block;
+            margin-top: 5px;
+        }
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+        .alert {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error-message {
+            color: #dc3545;
+            font-size: 0.875em;
+            margin-top: 5px;
+            display: none;
+        }
+        input:invalid {
+            border-color: #dc3545;
+        }
+        .stock-calculado {
+            background: #d1ecf1;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            border-left: 4px solid #17a2b8;
+        }
+        .compra-inicial-section {
+            background: #e8f5e8;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>➕ Agregar Materia Prima</h1>
+        <div>
+            <a href="{{ url_for('materias_primas') }}" class="back-btn">← Volver a Materias Primas</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="form-container">
+            <!-- Mensajes Flash -->
+            <div class="flash-messages">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+
+            <form method="POST" id="materiaPrimaForm" onsubmit="return validarFormulario()">
+                
+                <!-- SECCIÓN 1: INFORMACIÓN BÁSICA -->
+                <div class="form-section">
+                    <h3>📝 Información Básica</h3>
+                    
+                    <div class="form-group">
+                        <label for="nombre">Nombre de la Materia Prima:</label>
+                        <input type="text" id="nombre" name="nombre" required 
+                               placeholder="Ej: Harina de Trigo, Azúcar, Mantequilla...">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="proveedor_id">Proveedor:</label>
+                        <select id="proveedor_id" name="proveedor_id" required>
+                            <option value="">Seleccione un proveedor</option>
+                            {% for proveedor in proveedores %}
+                            <option value="{{ proveedor.id }}">{{ proveedor.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                        <small>Seleccione un proveedor de la lista</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="unidad_medida">Unidad de Medida:</label>
+                        <select id="unidad_medida" name="unidad_medida" required>
+                            <option value="">Seleccionar unidad...</option>
+                            <option value="kg">Kilogramos (kg)</option>
+                            <option value="g">Gramos (g)</option>
+                            <option value="L">Litros (L)</option>
+                            <option value="ml">Mililitros (ml)</option>
+                            <option value="unidades">Unidades</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 2: CONFIGURACIÓN EMPAQUES -->
+                <div class="form-section">
+                    <h3>📦 Configuración de Empaques</h3>
+                    
+                    <div class="form-group">
+                        <label for="unidad_compra">Unidad de Compra:</label>
+                        <input type="text" id="unidad_compra" name="unidad_compra" 
+                               required placeholder="Ej: Caja, Panal, Bolsa, Lote..."
+                               value="Caja">
+                        <small>Nombre de la unidad en que compras (Ej: Caja, Panal, Bolsa)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="gramos_por_empaque">Gramos/Peso por Empaque:</label>
+                        <input type="number" id="gramos_por_empaque" name="gramos_por_empaque" 
+                               step="0.01" min="0.01" required 
+                               placeholder="Ej: 15000 (para una caja de 15kg)"
+                               oninput="validarNumeroPositivo(this)">
+                        <div class="error-message" id="error-gramos_por_empaque">El peso por empaque debe ser mayor a 0</div>
+                        <small>Peso total contenido en cada empaque (en gramos)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="stock_minimo_empaques">Stock Mínimo (Empaques):</label>
+                        <input type="number" id="stock_minimo_empaques" name="stock_minimo_empaques" 
+                               step="1" min="1" required 
+                               placeholder="Ej: 2"
+                               oninput="validarNumeroPositivo(this)">
+                        <div class="error-message" id="error-stock_minimo_empaques">El stock mínimo debe ser al menos 1</div>
+                        <small>Cantidad mínima de empaques antes de hacer nuevo pedido</small>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 3: COMPRA INICIAL -->
+                <div class="form-section compra-inicial-section">
+                    <h3>🛒 Compra Inicial (Obligatoria)</h3>
+                    <p style="color: #666; margin-bottom: 15px;">Registra la primera compra de esta materia prima</p>
+                    
+                    <div class="form-group">
+                        <label for="cantidad_empaques_comprados">Cantidad de <span id="unidad-compra-text">Cajas</span> Comprados:</label>
+                        <input type="number" id="cantidad_empaques_comprados" name="cantidad_empaques_comprados" 
+                               step="1" min="1" required 
+                               placeholder="Ej: 2"
+                               onchange="calcularStockInicial()">
+                        <div class="error-message" id="error-cantidad_empaques_comprados">Debe comprar al menos 1 empaque</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="precio_total_compra">Precio Total de la Compra (COP):</label>
+                        <input type="number" id="precio_total_compra" name="precio_total_compra" 
+                               step="0.01" min="0.01" required 
+                               placeholder="Ej: 28000"
+                               onchange="calcularStockInicial()">
+                        <div class="error-message" id="error-precio_total_compra">El precio debe ser mayor a 0</div>
+                    </div>
+
+                    <div id="stock-calculado" class="stock-calculado">
+                        <h4 style="margin-top: 0;">📊 Resumen de Stock Inicial</h4>
+                        <div><strong>Stock total:</strong> <span id="stock-gramos">0</span> <span id="unidad-medida-text">g</span></div>
+                        <div><strong>Equivalente:</strong> <span id="stock-empaques">0</span> <span id="unidad-compra-text2">Cajas</span></div>
+                        <div><strong>Costo por <span id="unidad-medida-text2">g</span>:</strong> $<span id="costo-unitario">0.00</span> COP</div>
+                        <div><strong>Costo por <span id="unidad-compra-text3">Caja</span>:</strong> $<span id="costo-empaque">0.00</span> COP</div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 4: CONFIGURACIÓN AVANZADA -->
+                <div class="form-section">
+                    <h3>⚙️ Configuración Avanzada</h3>
+                    
+                    <div class="form-group">
+                        <label for="stock_minimo">Stock Mínimo (Opcional):</label>
+                        <input type="number" id="stock_minimo" name="stock_minimo" 
+                               step="0.01" min="0" 
+                               placeholder="Ej: 5000"
+                               oninput="validarNumeroNoNegativo(this)">
+                        <div class="error-message" id="error-stock_minimo">El stock mínimo no puede ser negativo</div>
+                        <small>Cantidad mínima en gramos antes de hacer un nuevo pedido</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="fecha_vencimiento">Fecha de Vencimiento (Opcional):</label>
+                        <input type="date" id="fecha_vencimiento" name="fecha_vencimiento" 
+                            oninput="validarFechaVencimiento(this)">
+                        <div class="error-message" id="error-fecha_vencimiento">La fecha de vencimiento no puede ser anterior a hoy</div>
+                        <small>Fecha en la que este producto vence (opcional)</small>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn">💾 Guardar Materia Prima con Stock Inicial</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function validarNumeroPositivo(input) {
+            const errorElement = document.getElementById('error-' + input.name);
+            if (parseFloat(input.value) <= 0) {
+                errorElement.style.display = 'block';
+                input.style.borderColor = '#dc3545';
+                return false;
+            } else {
+                errorElement.style.display = 'none';
+                input.style.borderColor = '#ddd';
+                return true;
+            }
+        }
+
+        function validarNumeroNoNegativo(input) {
+            const errorElement = document.getElementById('error-' + input.name);
+            if (parseFloat(input.value) < 0) {
+                errorElement.style.display = 'block';
+                input.style.borderColor = '#dc3545';
+                return false;
+            } else {
+                errorElement.style.display = 'none';
+                input.style.borderColor = '#ddd';
+                return true;
+            }
+        }
+
+        function validarGramosPorEmpaque(input) {
+            const errorElement = document.getElementById('error-gramos_por_empaque');
+            if (parseFloat(input.value) <= 0) {
+                errorElement.style.display = 'block';
+                input.style.borderColor = '#dc3545';
+                return false;
+            } else {
+                errorElement.style.display = 'none';
+                input.style.borderColor = '#ddd';
+                return true;
+            }
+        }
+
+        function validarStockMinimoEmpaques(input) {
+            const errorElement = document.getElementById('error-stock_minimo_empaques');
+            if (parseInt(input.value) < 1) {
+                errorElement.style.display = 'block';
+                input.style.borderColor = '#dc3545';
+                return false;
+            } else {
+                errorElement.style.display = 'none';
+                input.style.borderColor = '#ddd';
+                return true;
+            }
+        }
+
+        function calcularStockInicial() {
+            const gramosPorEmpaque = parseFloat(document.getElementById('gramos_por_empaque').value) || 0;
+            const cantidadEmpaques = parseInt(document.getElementById('cantidad_empaques_comprados').value) || 0;
+            const precioTotal = parseFloat(document.getElementById('precio_total_compra').value) || 0;
+            const unidadMedida = document.getElementById('unidad_medida').value || 'g';
+            
+            if (gramosPorEmpaque > 0 && cantidadEmpaques > 0 && precioTotal > 0) {
+                const stockGramos = gramosPorEmpaque * cantidadEmpaques;
+                const costoUnitario = precioTotal / stockGramos;
+                const costoEmpaque = precioTotal / cantidadEmpaques;
+                
+                document.getElementById('stock-gramos').textContent = stockGramos.toLocaleString('es-CO');
+                document.getElementById('stock-empaques').textContent = cantidadEmpaques;
+                document.getElementById('costo-unitario').textContent = costoUnitario.toFixed(2);
+                document.getElementById('costo-empaque').textContent = costoEmpaque.toLocaleString('es-CO');
+                
+                // Actualizar textos de unidades
+                document.getElementById('unidad-medida-text').textContent = unidadMedida;
+                document.getElementById('unidad-medida-text2').textContent = unidadMedida;
+            }
+        }
+
+        function actualizarTextosUnidadCompra() {
+            const unidadCompra = document.getElementById('unidad_compra').value || 'Caja';
+            document.getElementById('unidad-compra-text').textContent = unidadCompra;
+            document.getElementById('unidad-compra-text2').textContent = unidadCompra;
+            document.getElementById('unidad-compra-text3').textContent = unidadCompra;
+        }
+
+        function validarFormulario() {
+            const precioValido = validarNumeroPositivo(document.getElementById('precio_total_compra'));
+            const gramosEmpaqueValido = validarGramosPorEmpaque(document.getElementById('gramos_por_empaque'));
+            const stockMinEmpaquesValido = validarStockMinimoEmpaques(document.getElementById('stock_minimo_empaques'));
+            const cantidadEmpaquesValida = validarNumeroPositivo(document.getElementById('cantidad_empaques_comprados'));
+            const stockMinValido = validarNumeroNoNegativo(document.getElementById('stock_minimo'));
+            
+            return precioValido && gramosEmpaqueValido && stockMinEmpaquesValido && cantidadEmpaquesValida && stockMinValido;
+        }
+
+        // Validación de fecha de vencimiento
+        function validarFechaVencimiento(input) {
+            const errorElement = document.getElementById('error-fecha_vencimiento');
+            const fechaSeleccionada = new Date(input.value);
+            const hoy = new Date();
+            
+            if (input.value && fechaSeleccionada < hoy) {
+                errorElement.style.display = 'block';
+                input.style.borderColor = '#dc3545';
+                return false;
+            } else {
+                errorElement.style.display = 'none';
+                input.style.borderColor = '#ddd';
+                return true;
+            }
+        }
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            const hoy = new Date().toISOString().split('T')[0];
+            document.getElementById('fecha_vencimiento').min = hoy;
+            
+            // Event listeners para cálculos en tiempo real
+            document.getElementById('unidad_compra').addEventListener('input', actualizarTextosUnidadCompra);
+            document.getElementById('gramos_por_empaque').addEventListener('input', calcularStockInicial);
+            document.getElementById('unidad_medida').addEventListener('change', calcularStockInicial);
+            
+            // Validación en tiempo real para todos los campos
+            const inputs = ['precio_total_compra', 'gramos_por_empaque', 'stock_minimo_empaques', 'cantidad_empaques_comprados', 'stock_minimo'];
+            inputs.forEach(inputId => {
+                const input = document.getElementById(inputId);
+                if (input) {
+                    input.addEventListener('blur', function() {
+                        if (inputId === 'stock_minimo') {
+                            validarNumeroNoNegativo(this);
+                        } else if (inputId === 'stock_minimo_empaques') {
+                            validarStockMinimoEmpaques(this);
+                        } else if (inputId === 'gramos_por_empaque') {
+                            validarGramosPorEmpaque(this);
+                        } else {
+                            validarNumeroPositivo(this);
+                        }
+                    });
+                }
+            });
+            
+            // Inicializar textos
+            actualizarTextosUnidadCompra();
+        });
+    </script>
+</body>
+</html>

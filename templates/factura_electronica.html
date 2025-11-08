@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Factura Electrónica - {{ venta.id }}</title>
+    <style>
+        /* Estilos optimizados para impresión térmica/factura */
+        @media print {
+            @page {
+                margin: 0;
+                size: 80mm 297mm; /* Típico para facturas */
+            }
+            body {
+                font-family: 'Courier New', monospace;
+                font-size: 12px;
+                margin: 5mm;
+                line-height: 1.2;
+            }
+            .no-print { display: none; }
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 80mm;
+            margin: 0 auto;
+            padding: 10px;
+        }
+        
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .empresa {
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .nit {
+            font-size: 11px;
+        }
+        
+        .factura-info {
+            margin: 10px 0;
+            padding: 5px;
+            background: #f5f5f5;
+        }
+        
+        .detalles {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        
+        .detalles th {
+            border-bottom: 1px solid #000;
+            text-align: left;
+            padding: 3px;
+        }
+        
+        .detalles td {
+            padding: 3px;
+            border-bottom: 1px dotted #ccc;
+        }
+        
+        .totales {
+            margin-top: 15px;
+            border-top: 2px solid #000;
+            padding-top: 10px;
+        }
+        
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 2px 0;
+        }
+        
+        .total-final {
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .legal {
+            font-size: 10px;
+            text-align: center;
+            margin-top: 15px;
+            color: #666;
+        }
+        
+        .qr-code {
+            text-align: center;
+            margin: 10px 0;
+        }
+        
+        .resolucion-dian {
+            font-size: 9px;
+            text-align: center;
+            margin-top: 10px;
+            color: #444;
+        }
+    </style>
+</head>
+<body onload="window.print()">
+    <div class="header">
+        <div class="empresa">{{ config.nombre_empresa }}</div>
+        <div class="nit">NIT: {{ config.nit_empresa }}</div>
+        <div>{{ config.direccion_empresa }}</div>
+        <div>{{ config.telefono_empresa }}</div>
+    </div>
+    
+    <div class="factura-info">
+        <strong>FACTURA ELECTRÓNICA DE VENTA</strong><br>
+        No. {{ venta.consecutivo_pos or venta.id }}<br>
+        Fecha: {{ venta.fecha_hora.strftime('%Y-%m-%d %H:%M') }}<br>
+        {% if venta.cufe %}
+        CUFE: {{ venta.cufe[:20] }}...<br>
+        {% endif %}
+    </div>
+    
+    <!-- Busca la sección del cliente en factura_electronica.html -->
+    <div class="cliente-info">
+        <h4>INFORMACIÓN DEL CLIENTE</h4>
+        {% if venta.cliente %}
+            <p><strong>Nombre/Razón Social:</strong> {{ venta.cliente.nombre }}</p>
+            <p><strong>Documento:</strong> {{ venta.cliente.documento }}</p>
+            <p><strong>Tipo:</strong> 
+                {% if venta.cliente.tipo_persona == 'J' %}Persona Jurídica
+                {% else %}Persona Natural{% endif %}
+            </p>
+            {% if venta.cliente.direccion %}<p><strong>Dirección:</strong> {{ venta.cliente.direccion }}</p>{% endif %}
+            {% if venta.cliente.telefono %}<p><strong>Teléfono:</strong> {{ venta.cliente.telefono }}</p>{% endif %}
+            {% if venta.cliente.email %}<p><strong>Email:</strong> {{ venta.cliente.email }}</p>{% endif %}
+        {% else %}
+            <p><strong>Cliente:</strong> CONSUMIDOR FINAL</p>
+            <p><strong>Documento:</strong> 222222222222</p>
+            <p><strong>Tipo:</strong> Persona Natural</p>
+        {% endif %}
+    </div>
+    
+    <table class="detalles">
+        <thead>
+            <tr>
+                <th>Producto</th>
+                <th>Cant</th>
+                <th>Valor</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for detalle in detalles %}
+            <tr>
+                <td>
+                    {% if detalle.producto %}
+                        {{ detalle.producto.nombre }}
+                    {% elif detalle.producto_externo %}
+                        {{ detalle.producto_externo.nombre }}
+                    {% else %}
+                        Producto {{ detalle.id }}
+                    {% endif %}
+                </td>
+                <td>{{ detalle.cantidad }}</td>
+                <td>${{ "{:,.0f}".format(detalle.precio_unitario * detalle.cantidad) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <div class="totales">
+        <div class="total-row">
+            <span>Subtotal:</span>
+            <span>${{ "{:,.0f}".format(venta.total) }}</span>
+        </div>
+        <div class="total-row">
+            <span>IVA (0%):</span>
+            <span>$0</span>
+        </div>
+        <div class="total-row total-final">
+            <span>TOTAL:</span>
+            <span>${{ "{:,.0f}".format(venta.total) }}</span>
+        </div>
+    </div>
+    
+    <div class="metodo-pago">
+        <strong>Método de pago:</strong> {{ venta.metodo_pago|title }}<br>
+        <strong>Estado DIAN:</strong> {{ venta.estado_dian.replace('_', ' ')|title }}
+    </div>
+    
+    {% if venta.qr_factura %}
+    <div class="qr-code">
+        <!-- Espacio para QR de la factura -->
+        <div style="border: 1px solid #ccc; padding: 5px; display: inline-block;">
+            [CÓDIGO QR FACTURA ELECTRÓNICA]
+        </div>
+    </div>
+    {% endif %}
+    
+    <div class="resolucion-dian">
+        Resolución DIAN: 18764002797412 del 2020-07-27<br>
+        Numeración: {{ venta.consecutivo_pos or venta.id }} al 999999<br>
+        Factura electrónica - Régimen Simplificado
+    </div>
+    
+    <div class="legal">
+        {{ venta.texto_legal or "Este documento es una representación impresa de la factura electrónica" }}<br>
+        Fecha de impresión: {{ ahora.strftime('%Y-%m-%d %H:%M:%S') }}
+    </div>
+    
+    <div class="no-print" style="text-align: center; margin-top: 20px;">
+        <button onclick="window.print()" class="btn btn-primary">🖨️ Imprimir</button>
+        <button onclick="descargarXMLFactura({{ venta.id }})" class="btn btn-success">📄 Descargar XML</button>
+        <button onclick="window.close()" class="btn btn-secondary">❌ Cerrar</button>
+    </div>
+</body>
+</html>

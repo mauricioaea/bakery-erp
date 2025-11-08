@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS Moderno - Panadería</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/pos-moderno.css') }}" rel="stylesheet">
+</head>
+<body>
+
+    <!-- Navbar Superior -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/dashboard">
+                <i class="fas fa-bread-slice me-2"></i>
+                <strong>Panadería POS</strong>
+            </a>
+            
+            <div class="d-flex align-items-center">
+                <!-- Dashboard en Tiempo Real -->
+                <div class="dashboard-rapido me-4">
+                    <span class="badge bg-success me-2">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span id="ventasHoy">0</span> ventas
+                    </span>
+                    <span class="badge bg-warning me-2">
+                        <i class="fas fa-coins"></i>
+                        $<span id="ingresosHoy">0</span>
+                    </span>
+                    <span class="badge bg-info">
+                        <i class="fas fa-clock"></i>
+                        <span id="horaActual">--:--</span>
+                    </span>
+                </div>
+
+                <!-- Usuario -->
+                <div class="navbar-text me-3">
+                    <i class="fas fa-user me-1"></i>
+                    {{ session.username }}
+                </div>
+                <a class="btn btn-outline-light btn-sm" href="/logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid h-100">
+        <div class="row h-100">
+            <!-- COLUMNA IZQUIERDA: CATEGORÍAS Y PRODUCTOS -->
+            <div class="col-md-9 main-content">
+                <div class="row h-100">
+                    <!-- Sidebar Categorías -->
+                    <div class="col-md-3 categorias-sidebar">
+                        <div class="card h-100">
+                            <div class="card-header bg-dark text-white">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-tags me-2"></i>
+                                    Categorías
+                                </h6>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="list-group list-group-flush" id="listaCategorias">
+                                    <div class="text-center py-4">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Cargando categorías...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-light">
+                                <small class="text-muted">
+                                    <i class="fas fa-keyboard me-1"></i>
+                                    F1-F8: Categorías rápidas
+                                </small>
+                                <br>
+                                <small class="text-muted">
+                                    <i class="fas fa-receipt me-1"></i>
+                                    Sistema POS - Documentos equivalentes
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Área Principal de Productos -->
+                    <div class="col-md-9">
+                        <!-- Barra de Búsqueda Mejorada -->
+                        <div class="search-header sticky-top bg-white p-3 border-bottom">
+                            <div class="row g-2 search-controls">
+                                <div class="col-md-8">
+                                    <div class="input-group input-group-lg">
+                                        <span class="input-group-text bg-light">
+                                            <i class="fas fa-search"></i>
+                                        </span>
+                                        <input type="text" 
+                                               id="searchInput" 
+                                               class="form-control" 
+                                               placeholder="Buscar productos..."
+                                               autocomplete="off">
+                                        <button class="btn btn-outline-secondary" type="button" onclick="limpiarBusqueda()">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <select id="categoriaFilter" class="form-select form-select-lg">
+                                        <option value="">Todas las categorías</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Grid de Productos Moderno -->
+                        <div class="products-grid-container">
+                            <div id="productosContainer">
+                                <div class="text-center py-5" id="loadingProducts">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Cargando productos...</span>
+                                    </div>
+                                    <p class="mt-2 text-muted">Cargando catálogo de productos...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COLUMNA DERECHA: CARRITO FLOTANTE -->
+            <div class="col-md-3 carrito-sidebar">
+                <div class="card h-100 carrito-flotante">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-shopping-cart me-2"></i>
+                            Carrito
+                        </h5>
+                        <span class="badge bg-light text-dark" id="contadorCarrito">0</span>
+                    </div>
+
+                    <!-- ============================================= -->
+                    <!-- ESTRUCTURA CORREGIDA - CARRITO CON SCROLL -->
+                    <!-- ============================================= -->
+                    <div class="card-body p-0 d-flex flex-column" style="min-height: 0;">
+                        <!-- 🎯 ITEMS DEL CARRITO CON SCROLL -->
+                        <div class="carrito-items flex-grow-1" id="carritoItems">
+                            <div class="text-center py-4 text-muted">
+                                <i class="fas fa-cart-plus fa-2x mb-2"></i>
+                                <p>El carrito está vacío</p>
+                            </div>
+                        </div>
+
+                        <!-- 🎯 SECCIÓN INFERIOR FIJA -->
+                        <div class="carrito-footer flex-shrink-0">
+                            <!-- Resumen y Total -->
+                            <div class="resumen-venta">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Subtotal:</span>
+                                    <strong id="subtotal">$0</strong>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>IVA (0%):</span>
+                                    <span>$0</span>
+                                </div>
+                                <hr>
+                                <div class="d-flex justify-content-between total-venta">
+                                    <strong>TOTAL:</strong>
+                                    <strong id="total" class="text-success">$0</strong>
+                                </div>
+                            </div>
+
+                            <!-- Métodos de Pago Múltiples -->
+                            <div class="metodos-pago mt-3">
+                                <label class="form-label small text-muted">
+                                    <i class="fas fa-credit-card me-1"></i>
+                                    Métodos de Pago:
+                                </label>
+                                <div class="btn-group w-100 metodo-pago-container" role="group">
+                                    <input type="radio" class="btn-check" name="metodoPago" id="efectivo" value="efectivo" checked>
+                                    <label class="btn btn-outline-success btn-sm" for="efectivo">
+                                        <i class="fas fa-money-bill-wave"></i>
+                                    </label>
+
+                                    <input type="radio" class="btn-check" name="metodoPago" id="tarjeta" value="tarjeta">
+                                    <label class="btn btn-outline-primary btn-sm" for="tarjeta">
+                                        <i class="fas fa-credit-card"></i>
+                                    </label>
+
+                                    <input type="radio" class="btn-check" name="metodoPago" id="transferencia" value="transferencia">
+                                    <label class="btn btn-outline-info btn-sm" for="transferencia">
+                                        <i class="fas fa-university"></i>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- TOGGLE DE DONACIÓN -->
+                            <div class="donacion-toggle mt-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="modoDonacion" 
+                                        onchange="toggleModoDonacion()">
+                                    <label class="form-check-label text-warning" for="modoDonacion">
+                                        <i class="fas fa-gift me-1"></i> Modo Donación
+                                    </label>
+                                </div>
+                                <div id="campoMotivoDonacion" class="mt-2" style="display: none;">
+                                    <input type="text" class="form-control form-control-sm" 
+                                        id="motivoDonacion" placeholder="Motivo (opcional): Ej. Donación a institución...">
+                                    <small class="text-muted">El total será $0 y los productos se descargarán del inventario</small>
+                                </div>
+                            </div>
+
+                            <!-- Botones de Acción -->
+                            <div class="acciones-venta mt-3">
+                                <button class="btn btn-success btn-lg w-100 mb-2" 
+                                        onclick="iniciarProcesoVenta()" 
+                                        id="btnPagar" 
+                                        disabled>
+                                    <i class="fas fa-cash-register me-2"></i>   
+                                    PROCESAR VENTA
+                                </button>    
+                                <!-- Botón de Cierre Diario -->
+                                <button class="btn btn-warning btn-lg w-100 mb-2" 
+                                        onclick="procesarCierreDiario()" 
+                                        id="btnCierreDiario">
+                                    <i class="fas fa-lock me-2"></i>
+                                    CIERRE DIARIO
+                                </button>
+
+                                <button class="btn btn-outline-primary btn-sm w-100 mb-2" 
+                                            onclick="irAConfiguracionFacturacion()">
+                                        <i class="fas fa-cogs me-1"></i>
+                                        Configurar Facturación
+                                </button>
+
+                                <button class="btn btn-outline-info btn-sm" onclick="mostrarConfiguracionTickets()">
+                                    <i class="fas fa-receipt me-1"></i>
+                                    Personalizar Ticket
+                                </button>
+                                
+                                <div class="btn-group w-100">
+                                    <button class="btn btn-outline-danger" onclick="limpiarCarrito()">
+                                        <i class="fas fa-trash me-1"></i>
+                                        Limpiar
+                                    </button>
+                                    <button class="btn btn-outline-secondary" onclick="cargarProductos()">
+                                        <i class="fas fa-sync me-1"></i>
+                                        Actualizar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTÓN FLOTANTE PARA CARRITO EN MÓVILES -->
+    <!-- 🔽 REEMPLAZAR CON ESTE CÓDIGO MEJORADO 🔽 -->
+
+    <!-- BOTÓN FLOTANTE PARA CARRITO EN MÓVILES -->
+    <div class="d-md-none fixed-bottom mb-3 me-3" style="z-index: 1030;">
+        <button class="btn btn-success btn-lg rounded-pill shadow-lg carrito-flotante-btn" 
+                data-bs-toggle="offcanvas" 
+                data-bs-target="#carritoOffcanvas"
+                aria-controls="carritoOffcanvas">
+            <i class="fas fa-shopping-cart"></i>
+            <span class="badge bg-danger position-absolute top-0 start-100 translate-middle" 
+                id="carritoContadorMobile">0</span>
+        </button>
+    </div>
+
+    <!-- Offcanvas del carrito para móvil -->
+    <div class="offcanvas offcanvas-end d-md-none" tabindex="-1" id="carritoOffcanvas" aria-labelledby="carritoOffcanvasLabel">
+        <div class="offcanvas-header bg-success text-white">
+            <h5 class="offcanvas-title" id="carritoOffcanvasLabel">
+                <i class="fas fa-shopping-cart me-2"></i>
+                Carrito de Compras
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body p-0 d-flex flex-column">
+            <!-- Contenedor con scroll -->
+            <div class="carrito-contenido flex-grow-1">
+                <!-- Contenido del carrito móvil -->
+                <div class="carrito-items-movil" id="carritoItemsMovil">
+                    <div class="text-center py-4 text-muted">
+                        <i class="fas fa-cart-plus fa-2x mb-2"></i>
+                        <p>El carrito está vacío</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Footer fijo -->
+            <div class="carrito-footer">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <strong>Total:</strong>
+                    <strong id="totalMovil">$0</strong>
+                </div>
+                <div class="d-grid">
+                    <button class="btn btn-success btn-lg" onclick="procesarVenta()">
+                        <i class="fas fa-credit-card me-2"></i>PROCESAR VENTA
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="offcanvas offcanvas-end d-md-none" tabindex="-1" id="carritoOffcanvas" aria-labelledby="carritoOffcanvasLabel">
+        <div class="offcanvas-header bg-success text-white">
+            <h5 class="offcanvas-title" id="carritoOffcanvasLabel">
+                <i class="fas fa-shopping-cart me-2"></i>
+                Carrito de Compras
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body p-0 d-flex flex-column">
+            <!-- Contenedor con scroll -->
+            <div class="carrito-contenido flex-grow-1">
+                <!-- Contenido del carrito móvil -->
+                <div class="carrito-items-movil" id="carritoItemsMovil">
+                    <div class="text-center py-4 text-muted">
+                        <i class="fas fa-cart-plus fa-2x mb-2"></i>
+                        <p>El carrito está vacío</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Footer fijo -->
+            <div class="carrito-footer">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <strong>Total:</strong>
+                    <strong id="totalMovil">$0</strong>
+                </div>
+                <div class="d-grid">
+                    <button class="btn btn-success btn-lg" onclick="procesarVenta()">
+                        <i class="fas fa-credit-card me-2"></i>PROCESAR VENTA
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmación de Venta -->
+    <div class="modal fade" id="confirmModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <span id="modalTitulo">Venta Exitosa</span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <i class="fas fa-receipt fa-3x text-success mb-3"></i>
+                    <h5 id="modalMessage">Venta procesada correctamente</h5>
+                    <p class="mb-1"><strong>Total: </strong><span id="modalTotal" class="text-success">$0</span></p>
+                    <p class="mb-1"><strong>Documento: </strong><span id="modalDocumento">N/A</span></p>
+                    <p class="mb-1"><strong>Número: </strong><span id="modalNumero">N/A</span></p>
+                    <p class="mb-0"><strong>Método: </strong><span id="modalMetodo">Efectivo</span></p>
+                    
+                    <!-- INFORMACIÓN ADICIONAL PARA POS -->
+                    <div id="posInfo" class="mt-3 p-2 bg-light rounded" style="display: none;">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle"></i>
+                            Documento equivalente POS - No válido como factura electrónica
+                        </small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>
+                        Cerrar
+                    </button>
+                    <button onclick="imprimirFactura()" class="btn btn-success">
+                        <i class="fas fa-print me-1"></i>
+                        <span id="btnImprimirTexto">Imprimir Recibo</span>
+                    </button>
+                    <button type="button" class="btn btn-outline-info" onclick="exportarXML()" id="btnExportarXML" style="display: none;">
+                        <i class="fas fa-file-export me-1"></i>
+                        Exportar XML
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botón Flotante de Reportes -->
+    <div class="reportes-flotantes">
+        <div class="btn-group-vertical">
+            <button class="btn btn-info btn-sm" onclick="abrirReporteCierreCaja()" 
+                    title="Cierre de Caja">
+                <i class="fas fa-cash-register"></i>
+            </button>
+            <button class="btn btn-warning btn-sm" onclick="abrirReporteVentas()"
+                    title="Reporte de Ventas">
+                <i class="fas fa-chart-line"></i>
+            </button>
+            <button class="btn btn-success btn-sm" onclick="abrirReporteProductos()"
+                    title="Productos Populares">
+                <i class="fas fa-star"></i>
+            </button>
+            <button class="btn btn-danger btn-sm" onclick="abrirAnalisisPredictivo()"
+                    title="Análisis Predictivo">
+                <i class="fas fa-brain"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL PARA DATOS DEL CLIENTE - FACTURA ELECTRÓNICA -->
+    <div class="modal fade" id="clienteModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-user me-2"></i>
+                        Datos del Cliente - Facturación Electrónica
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formCliente">
+                        <!-- Tipo de Persona -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Tipo de Persona *</label>
+                                <div class="btn-group w-100" role="group">
+                                    <input type="radio" class="btn-check" name="tipo_persona" id="persona_juridica" value="J" checked>
+                                    <label class="btn btn-outline-primary" for="persona_juridica">
+                                        <i class="fas fa-building me-1"></i> Persona Jurídica
+                                    </label>
+                                    <input type="radio" class="btn-check" name="tipo_persona" id="persona_natural" value="N">
+                                    <label class="btn btn-outline-primary" for="persona_natural">
+                                        <i class="fas fa-user me-1"></i> Persona Natural
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Tipo de Documento *</label>
+                                <select class="form-select" id="tipo_documento" name="tipo_documento" required>
+                                    <option value="31">NIT</option>
+                                    <option value="13">Cédula de Ciudadanía</option>
+                                    <option value="22">Cédula de Extranjería</option>
+                                    <option value="41">Pasaporte</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Documento y Nombre -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Número de Documento *</label>
+                                <input type="text" class="form-control" id="documento" name="documento" 
+                                    placeholder="Ej: 9001234567" required maxlength="20">
+                                <div class="form-text" id="documentoHelp">
+                                    Para NIT: agregar dígito de verificación
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Nombre o Razón Social *</label>
+                                <input type="text" class="form-control" id="nombre" name="nombre" 
+                                    placeholder="Nombre completo o razón social" required maxlength="200">
+                            </div>
+                        </div>
+
+                        <!-- Información de Contacto -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Dirección</label>
+                                <input type="text" class="form-control" id="direccion" name="direccion" 
+                                    placeholder="Dirección completa" maxlength="200">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Teléfono</label>
+                                <input type="tel" class="form-control" id="telefono" name="telefono" 
+                                    placeholder="Número de contacto" maxlength="20">
+                            </div>
+                        </div>
+
+                        <!-- Ubicación -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Ciudad</label>
+                                <input type="text" class="form-control" id="ciudad" name="ciudad" 
+                                    placeholder="Ciudad" maxlength="100">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Departamento</label>
+                                <input type="text" class="form-control" id="departamento" name="departamento" 
+                                    placeholder="Departamento" maxlength="100">
+                            </div>
+                        </div>
+
+                        <!-- Información Adicional -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                    placeholder="correo@ejemplo.com" maxlength="100">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Régimen</label>
+                                <select class="form-select" id="regimen" name="regimen">
+                                    <option value="">Seleccionar régimen</option>
+                                    <option value="Simplificado">Régimen Simplificado</option>
+                                    <option value="Comun">Régimen Común</option>
+                                    <option value="Especial">Régimen Especial</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Responsabilidades Fiscales -->
+                        <div class="mb-3">
+                            <label class="form-label">Responsabilidades Fiscales</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="IVA" id="resp_iva">
+                                <label class="form-check-label" for="resp_iva">Responsable de IVA</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="ICA" id="resp_ica">
+                                <label class="form-check-label" for="resp_ica">Responsable de ICA</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="RETEIVA" id="resp_reteiva">
+                                <label class="form-check-label" for="resp_reteiva">Agente de Retención IVA</label>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- CLIENTES RECIENTES -->
+                    <div class="mt-4" id="clientesRecientesSection" style="display: none;">
+                        <h6 class="border-bottom pb-2">
+                            <i class="fas fa-history me-1"></i>Clientes Recientes
+                        </h6>
+                        <div id="listaClientesRecientes" class="list-group list-group-flush">
+                            <!-- Se llena dinámicamente -->
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="guardarCliente()">
+                        <i class="fas fa-save me-1"></i>Guardar y Continuar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PARA CÁLCULO DE CAMBIO - EFECTIVO -->
+    <div class="modal fade" id="cambioModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title">
+                        <i class="fas fa-calculator me-2"></i>
+                        Calcular Cambio
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <!-- Total a Pagar -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Total a Pagar</label>
+                        <input type="text" class="form-control form-control-lg text-center fs-4 fw-bold text-success" 
+                               id="totalPagar" readonly style="border: none; background: #f8f9fa;">
+                    </div>
+                    
+                    <!-- Efectivo Recibido -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Efectivo Recibido</label>
+                        <input type="number" class="form-control form-control-lg text-center fs-4" 
+                               id="efectivoRecibido" min="0" step="100" placeholder="0"
+                               oninput="calcularCambio()" autofocus>
+                    </div>
+                    
+                    <!-- Denominaciones Rápidas -->
+                    <div class="mb-3">
+                        <small class="text-muted">Denominaciones comunes:</small>
+                        <div class="btn-group w-100 mt-1" role="group">
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="agregarDenominacion(20000)">20K</button>
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="agregarDenominacion(50000)">50K</button>
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="agregarDenominacion(100000)">100K</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Resultado del Cambio -->
+                    <div class="alert alert-success" id="cambioAlert">
+                        <h4 class="mb-0">Cambio:</h4>
+                        <h2 class="text-success fw-bold mt-2" id="cambioCalculado">$0</h2>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="confirmarPago()" id="btnConfirmarPago">
+                        <i class="fas fa-check me-1"></i>Procesar Pago
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/pos-moderno.js') }}"></script>
+
+    <!-- SCRIPT CORREGIDO Y OPTIMIZADO -->
+    <script>
+        // VARIABLES GLOBALES
+        window.ultimaVentaId = null;
+        window.tipoDocumento = 'POS';
+        window.ultimoTotal = 0;
+        window.clienteActual = null;
+        window.modoFacturacionActual = 'POS';
+        window.totalVentaActual = 0;
+        window.efectivoRecibido = 0;
+        window.cambioCalculado = 0;
+
+        // =============================================
+        // 🎨 SISTEMA DE COLORES AUTOMÁTICOS
+        // =============================================
+
+        function aplicarColoresProductos() {
+            console.log('🎨 Aplicando colores automáticos a productos...');
+            
+            document.querySelectorAll('.producto-card-moderno').forEach(card => {
+                const nombreElement = card.querySelector('.producto-nombre');
+                if (!nombreElement) return;
+                
+                const nombre = nombreElement.textContent.toLowerCase();
+                
+                // Remover clases de color anteriores
+                card.classList.remove('fondo-panaderia', 'fondo-bebidas', 'fondo-pasteleria', 'fondo-salados', 'fondo-dulces');
+                
+                // DETECTAR TIPO DE PRODUCTO POR NOMBRE
+                if (nombre.includes('pan') || nombre.includes('pam') || nombre.includes('guau')) {
+                    card.classList.add('fondo-panaderia');
+                    console.log('🍞 Aplicando color panadería a:', nombre);
+                } 
+                else if (nombre.includes('bebida') || nombre.includes('borglo') || nombre.includes('agua') || nombre.includes('refresco')) {
+                    card.classList.add('fondo-bebidas');
+                    console.log('🥤 Aplicando color bebidas a:', nombre);
+                }
+                else if (nombre.includes('pastel') || nombre.includes('torta') || nombre.includes('dulce')) {
+                    card.classList.add('fondo-pasteleria');
+                }
+                else if (nombre.includes('salado') || nombre.includes('empanada') || nombre.includes('queso')) {
+                    card.classList.add('fondo-salados');
+                }
+            });
+        }
+
+        function iniciarObservadorColores() {
+            // Ejecutar inmediatamente
+            setTimeout(aplicarColoresProductos, 1000);
+            
+            // Ejecutar periódicamente
+            setInterval(aplicarColoresProductos, 3000);
+        }
+
+        // =============================================
+        // FUNCIONES PRINCIPALES DEL SISTEMA
+        // =============================================
+
+        // FUNCIONES PARA GESTIÓN DE CLIENTES
+        function solicitarDatosCliente() {
+            console.log('📝 Solicitando datos del cliente...');
+            const clienteModal = new bootstrap.Modal(document.getElementById('clienteModal'));
+            clienteModal.show();
+            cargarClientesRecientes();
+            configurarEventosCliente();
+        }
+
+        function configurarEventosCliente() {
+            document.querySelectorAll('input[name="tipo_persona"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    const tipoDocSelect = document.getElementById('tipo_documento');
+                    if (this.value === 'J') {
+                        tipoDocSelect.innerHTML = `
+                            <option value="31" selected>NIT</option>
+                            <option value="41">Pasaporte</option>
+                        `;
+                        document.getElementById('documentoHelp').textContent = 'Para NIT: agregar dígito de verificación';
+                    } else {
+                        tipoDocSelect.innerHTML = `
+                            <option value="13">Cédula de Ciudadanía</option>
+                            <option value="22">Cédula de Extranjería</option>
+                            <option value="41">Pasaporte</option>
+                            <option value="11">Registro Civil</option>
+                        `;
+                        document.getElementById('documentoHelp').textContent = 'Número completo del documento';
+                    }
+                });
+            });
+            
+            document.getElementById('documento').addEventListener('input', function(e) {
+                validarDocumento(this.value);
+            });
+        }
+
+        function validarDocumento(documento) {
+            const tipoDoc = document.getElementById('tipo_documento').value;
+            const feedback = document.getElementById('documentoHelp');
+            
+            if (tipoDoc === '31') {
+                if (documento.length >= 9 && !documento.includes('-')) {
+                    feedback.innerHTML = '<span class="text-warning">💡 Sugerencia: Formato NIT: 900123456-7</span>';
+                } else if (documento.includes('-')) {
+                    feedback.innerHTML = '<span class="text-success">✅ Formato NIT válido</span>';
+                }
+            }
+        }
+
+        async function guardarCliente() {
+            const form = document.getElementById('formCliente');
+            
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            
+            const formData = new FormData(form);
+            const clienteData = {
+                tipo_persona: formData.get('tipo_persona'),
+                tipo_documento: formData.get('tipo_documento'),
+                documento: formData.get('documento'),
+                nombre: formData.get('nombre'),
+                direccion: formData.get('direccion'),
+                telefono: formData.get('telefono'),
+                ciudad: formData.get('ciudad'),
+                departamento: formData.get('departamento'),
+                email: formData.get('email'),
+                regimen: formData.get('regimen'),
+                responsabilidades: obtenerResponsabilidades()
+            };
+            
+            try {
+                const response = await fetch('/api/guardar-cliente', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(clienteData)
+                });
+                
+                const resultado = await response.json();
+                
+                if (resultado.success) {
+                    window.clienteActual = resultado.cliente;
+                    bootstrap.Modal.getInstance(document.getElementById('clienteModal')).hide();
+                    procesarVentaElectronica();
+                } else {
+                    mostrarNotificacion('❌ Error guardando cliente: ' + resultado.error, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                mostrarNotificacion('❌ Error de conexión', 'error');
+            }
+        }
+
+        function obtenerResponsabilidades() {
+            const responsabilidades = [];
+            if (document.getElementById('resp_iva').checked) responsabilidades.push('IVA');
+            if (document.getElementById('resp_ica').checked) responsabilidades.push('ICA');
+            if (document.getElementById('resp_reteiva').checked) responsabilidades.push('RETEIVA');
+            return responsabilidades.join(',');
+        }
+
+        async function cargarClientesRecientes() {
+            try {
+                const response = await fetch('/api/clientes-recientes');
+                const clientes = await response.json();
+                
+                const lista = document.getElementById('listaClientesRecientes');
+                const section = document.getElementById('clientesRecientesSection');
+                
+                if (clientes.length > 0) {
+                    section.style.display = 'block';
+                    lista.innerHTML = '';
+                    
+                    clientes.forEach(cliente => {
+                        const item = document.createElement('button');
+                        item.type = 'button';
+                        item.className = 'list-group-item list-group-item-action';
+                        item.innerHTML = `
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">${cliente.nombre}</h6>
+                                <small>${cliente.tipo_documento === '31' ? 'NIT' : 'CC'}</small>
+                            </div>
+                            <p class="mb-1">${cliente.documento}</p>
+                            <small>${cliente.ciudad || 'Sin ciudad'}</small>
+                        `;
+                        item.onclick = () => seleccionarClienteExistente(cliente);
+                        lista.appendChild(item);
+                    });
+                } else {
+                    section.style.display = 'none';
+                }
+            } catch (error) {
+                console.log('No se pudieron cargar clientes recientes');
+            }
+        }
+
+        function seleccionarClienteExistente(cliente) {
+            window.clienteActual = cliente;
+            bootstrap.Modal.getInstance(document.getElementById('clienteModal')).hide();
+            procesarVentaElectronica();
+        }
+
+        // FUNCIÓN DE CONFIGURACIÓN DE MODAL
+        function configurarModalVenta(respuesta) {
+            const esPOS = !respuesta.tipo_documento || respuesta.tipo_documento === 'POS';
+            
+            document.getElementById('modalTitulo').textContent = 
+                esPOS ? 'Recibo POS Generado' : 'Factura Electrónica Generada';
+            
+            document.getElementById('btnImprimirTexto').textContent = 
+                esPOS ? 'Imprimir Recibo' : 'Imprimir Factura';
+            
+            document.getElementById('modalDocumento').textContent = 
+                esPOS ? 'RECIBO POS' : 'FACTURA ELECTRÓNICA';
+            
+            document.getElementById('modalNumero').textContent = 
+                respuesta.numero_factura || `POS${respuesta.consecutivo_pos || respuesta.venta_id}`;
+            
+            document.getElementById('posInfo').style.display = esPOS ? 'block' : 'none';
+            document.getElementById('btnExportarXML').style.display = esPOS ? 'none' : 'block';
+            
+            window.ultimaVentaId = respuesta.venta_id;
+            window.tipoDocumento = respuesta.tipo_documento || 'POS';
+            window.ultimoTotal = respuesta.total || 0;
+        }
+
+        // FUNCIÓN PRINCIPAL DE VENTA
+        async function procesarVenta() {
+            if (carrito.length === 0) {
+                mostrarNotificacion('❌ El carrito está vacío', 'error');
+                return;
+            }
+
+            const totalVenta = calcularTotalCarrito();
+            const metodoPago = document.querySelector('input[name="metodoPago"]:checked').value;
+            const esDonacion = document.getElementById('modoDonacion').checked;
+            const motivoDonacion = document.getElementById('motivoDonacion').value;
+            
+            if (esDonacion) {
+                if (!confirm('🎁 ¿Confirmar DONACIÓN?\n\nLos productos se descargarán del inventario pero el ingreso será $0.\n¿Continuar?')) {
+                    return;
+                }
+            }
+            
+            try {
+                const configResponse = await fetch('/api/configuracion-sistema');
+                const config = await configResponse.json();
+                window.modoFacturacionActual = config.tipo_facturacion;
+                
+                if (window.modoFacturacionActual === 'ELECTRONICA' && !esDonacion) {
+                    if (!window.clienteActual) {
+                        solicitarDatosCliente();
+                        return;
+                    } else {
+                        procesarVentaElectronica();
+                    }
+                } else {
+                    procesarVentaPOS();
+                }
+            } catch (error) {
+                console.error('Error detectando configuración:', error);
+                procesarVentaPOS();
+            }
+        }
+
+        // VENTA ELECTRÓNICA
+        async function procesarVentaElectronica() {
+            if (!window.clienteActual) {
+                mostrarNotificacion('❌ No hay cliente seleccionado', 'error');
+                return;
+            }
+
+            const metodoPago = document.querySelector('input[name="metodoPago"]:checked').value;
+            const esDonacion = document.getElementById('modoDonacion').checked;
+            const motivoDonacion = document.getElementById('motivoDonacion').value;
+            
+            try {
+                const response = await fetch('/registrar_venta', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        carrito: carrito,
+                        metodo_pago: metodoPago,
+                        cliente_id: window.clienteActual.id,
+                        tipo_documento: 'ELECTRONICA',
+                        es_donacion: esDonacion,
+                        motivo_donacion: motivoDonacion
+                    })
+                });
+
+                const resultado = await response.json();
+
+                if (resultado.success) {
+                    if (resultado.es_donacion) {
+                        document.getElementById('modalTitulo').textContent = 'Donación Registrada';
+                        document.getElementById('modalMessage').textContent = 'Donación procesada correctamente';
+                        document.getElementById('btnImprimirTexto').textContent = 'Imprimir Comprobante';
+                        document.getElementById('modalDocumento').textContent = 'COMPROBANTE DONACIÓN';
+                    } else {
+                        configurarModalVenta(resultado);
+                    }
+                    
+                    document.getElementById('modalTotal').textContent = `$${resultado.total.toLocaleString()}`;
+                    document.getElementById('modalMetodo').textContent = resultado.es_donacion ? 'DONACIÓN' : metodoPago.charAt(0).toUpperCase() + metodoPago.slice(1);
+                    
+                    const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+                    modal.show();
+                    
+                    // Limpiar carrito y resetear
+                    carrito = [];
+                    window.clienteActual = null;
+                    document.getElementById('modoDonacion').checked = false;
+                    toggleModoDonacion();
+                    actualizarCarrito();
+                    if (typeof actualizarCarritoMobile === 'function') {
+                        actualizarCarritoMobile();
+                    }
+                    
+                    actualizarDonacionesDespuesVenta();
+                    
+                } else {
+                    mostrarNotificacion('❌ Error: ' + resultado.error, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                mostrarNotificacion('❌ Error al procesar la venta: ' + error.message, 'error');
+            }
+        }
+
+        // VENTA POS
+        async function procesarVentaPOS() {
+            const metodoPago = document.querySelector('input[name="metodoPago"]:checked').value;
+            const esDonacion = document.getElementById('modoDonacion').checked;
+            const motivoDonacion = document.getElementById('motivoDonacion').value;
+            
+            try {
+                const response = await fetch('/registrar_venta', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        carrito: carrito,
+                        metodo_pago: metodoPago,
+                        tipo_documento: 'POS',
+                        es_donacion: esDonacion,
+                        motivo_donacion: motivoDonacion
+                    })
+                });
+
+                const resultado = await response.json();
+
+                if (resultado.success) {
+                    if (resultado.es_donacion) {
+                        document.getElementById('modalTitulo').textContent = 'Donación Registrada';
+                        document.getElementById('modalMessage').textContent = 'Donación procesada correctamente';
+                        document.getElementById('btnImprimirTexto').textContent = 'Imprimir Comprobante';
+                        document.getElementById('modalDocumento').textContent = 'COMPROBANTE DONACIÓN';
+                    } else {
+                        configurarModalVenta(resultado);
+                    }
+                    
+                    document.getElementById('modalTotal').textContent = `$${resultado.total.toLocaleString()}`;
+                    document.getElementById('modalMetodo').textContent = resultado.es_donacion ? 'DONACIÓN' : metodoPago.charAt(0).toUpperCase() + metodoPago.slice(1);
+                    
+                    const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+                    modal.show();
+                    
+                    carrito = [];
+                    document.getElementById('modoDonacion').checked = false;
+                    toggleModoDonacion();
+                    actualizarCarrito();
+                    actualizarCarritoMobile();
+                    actualizarDonacionesDespuesVenta();
+                    
+                } else {
+                    mostrarNotificacion('❌ Error: ' + resultado.error, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                mostrarNotificacion('❌ Error al procesar la venta: ' + error.message, 'error');
+            }
+        }
+
+        // FUNCIONES DE CÁLCULO DE CAMBIO
+
+        // 🔽 AGREGAR ESTA FUNCIÓN - Cerca de las otras funciones de cambio 🔽
+        
+
+        
+        
+        function mostrarCalculadoraCambio(total) {
+            window.totalVentaActual = total;
+            document.getElementById('totalPagar').value = `$${total.toLocaleString()}`;
+            document.getElementById('efectivoRecibido').value = '';
+            document.getElementById('cambioCalculado').textContent = '$0';
+            
+            const alerta = document.getElementById('cambioAlert');
+            alerta.classList.remove('alert-danger', 'alert-warning');
+            alerta.classList.add('alert-success');
+            
+            const modal = new bootstrap.Modal(document.getElementById('cambioModal'));
+            modal.show();
+            
+            setTimeout(() => {
+                document.getElementById('efectivoRecibido').focus();
+            }, 500);
+        }
+
+
+
+        function calcularCambio() {
+            const efectivoInput = document.getElementById('efectivoRecibido');
+            const efectivo = parseFloat(efectivoInput.value) || 0;
+            const alerta = document.getElementById('cambioAlert');
+            const btnConfirmar = document.getElementById('btnConfirmarPago');
+            
+            window.efectivoRecibido = efectivo;
+            window.cambioCalculado = Math.max(0, efectivo - window.totalVentaActual);
+            
+            document.getElementById('cambioCalculado').textContent = `$${window.cambioCalculado.toLocaleString()}`;
+            
+            if (efectivo === 0) {
+                alerta.classList.remove('alert-danger', 'alert-warning');
+                alerta.classList.add('alert-success');
+                btnConfirmar.disabled = true;
+            } else if (efectivo < window.totalVentaActual) {
+                alerta.classList.remove('alert-success', 'alert-warning');
+                alerta.classList.add('alert-danger');
+                btnConfirmar.disabled = true;
+            } else if (efectivo === window.totalVentaActual) {
+                alerta.classList.remove('alert-danger', 'alert-success');
+                alerta.classList.add('alert-warning');
+                btnConfirmar.disabled = false;
+            } else {
+                alerta.classList.remove('alert-danger', 'alert-warning');
+                alerta.classList.add('alert-success');
+                btnConfirmar.disabled = false;
+            }
+        }
+
+        function agregarDenominacion(monto) {
+            document.getElementById('efectivoRecibido').value = monto;
+            calcularCambio();
+        }
+
+        function confirmarPago() {
+            if (window.efectivoRecibido < window.totalVentaActual) {
+                mostrarNotificacion('❌ El efectivo recibido es menor al total', 'error');
+                return;
+            }
+            
+            bootstrap.Modal.getInstance(document.getElementById('cambioModal')).hide();
+            
+            if (window.cambioCalculado > 0) {
+                mostrarNotificacion(`💰 Cambio a entregar: $${window.cambioCalculado.toLocaleString()}`, 'success');
+            } else {
+                mostrarNotificacion('✅ Pago exacto - Sin cambio', 'info');
+            }
+            
+            procesarVentaSegunModo();
+        }
+
+        function procesarVentaSegunModo() {
+            fetch('/api/configuracion-sistema')
+                .then(response => response.json())
+                .then(config => {
+                    if (config.tipo_facturacion === 'ELECTRONICA') {
+                        if (!window.clienteActual) {
+                            solicitarDatosCliente();
+                        } else {
+                            procesarVentaElectronica();
+                        }
+                    } else {
+                        procesarVentaPOS();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error detectando configuración:', error);
+                    procesarVentaPOS();
+                });
+        }
+
+
+
+        // FUNCIONALIDAD DONACIÓN
+        function toggleModoDonacion() {
+            const esDonacion = document.getElementById('modoDonacion').checked;
+            const campoMotivo = document.getElementById('campoMotivoDonacion');
+            const totalElement = document.getElementById('total');
+            const subtotalElement = document.getElementById('subtotal');
+            
+            if (esDonacion) {
+                campoMotivo.style.display = 'block';
+                window.totalOriginal = calcularTotalCarrito();
+                subtotalElement.textContent = '$0';
+                totalElement.textContent = '$0';
+                totalElement.classList.add('text-warning');
+                subtotalElement.classList.add('text-warning');
+                
+                mostrarNotificacion('🔶 Modo donación activado - Total: $0', 'warning');
+                
+                document.querySelectorAll('.metodo-pago-container .btn').forEach(btn => {
+                    btn.classList.add('disabled');
+                });
+                
+            } else {
+                campoMotivo.style.display = 'none';
+                const totalActual = window.totalOriginal || calcularTotalCarrito();
+                subtotalElement.textContent = `$${totalActual.toLocaleString()}`;
+                totalElement.textContent = `$${totalActual.toLocaleString()}`;
+                totalElement.classList.remove('text-warning');
+                subtotalElement.classList.remove('text-warning');
+                
+                document.querySelectorAll('.metodo-pago-container .btn').forEach(btn => {
+                    btn.classList.remove('disabled');
+                });
+            }
+        }
+
+        function calcularTotalCarrito() {
+            return carrito.reduce((total, item) => total + (item.precio * item.cantidad), 0);
+        }
+
+        // FUNCIONES DE UTILIDAD
+        function mostrarNotificacion(mensaje, tipo = 'info') {
+            const toastContainer = document.getElementById('toastContainer') || crearToastContainer();
+            const toast = document.createElement('div');
+            toast.className = `toast align-items-center text-white bg-${tipo === 'error' ? 'danger' : tipo} border-0`;
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">${mensaje}</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+            toastContainer.appendChild(toast);
+            
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+            
+            toast.addEventListener('hidden.bs.toast', () => {
+                toast.remove();
+            });
+        }
+
+        function crearToastContainer() {
+            const container = document.createElement('div');
+            container.id = 'toastContainer';
+            container.className = 'toast-container position-fixed top-0 end-0 p-3';
+            container.style.zIndex = '9999';
+            document.body.appendChild(container);
+            return container;
+        }
+
+        function imprimirFactura() {
+            if (!window.ultimaVentaId) {
+                mostrarNotificacion('❌ No hay venta reciente para imprimir', 'error');
+                return;
+            }
+            
+            const url = window.tipoDocumento === 'ELECTRONICA' 
+                ? `/api/imprimir-factura/${window.ultimaVentaId}`
+                : `/recibo-pos/${window.ultimaVentaId}`;
+            
+            const ventanaImpresion = window.open(url, '_blank');
+            
+            if (!ventanaImpresion) {
+                mostrarNotificacion('❌ Permitir ventanas emergentes para imprimir', 'error');
+                return;
+            }
+            
+            const modal = bootstrap.Modal.getInstance(document.getElementById('confirmModal'));
+            if (modal) {
+                modal.hide();
+            }
+            
+            mostrarNotificacion('📄 Abriendo documento para impresión...', 'info');
+        }
+
+        function exportarXML() {
+            if (!window.ultimaVentaId) {
+                mostrarNotificacion('❌ No hay venta para exportar', 'error');
+                return;
+            }
+            
+            if (window.tipoDocumento !== 'ELECTRONICA') {
+                mostrarNotificacion('❌ Solo se puede exportar XML de facturas electrónicas', 'error');
+                return;
+            }
+            
+            window.open(`/api/exportar-xml/${window.ultimaVentaId}`, '_blank');
+            mostrarNotificacion('📄 Descargando XML DIAN...', 'success');
+        }
+
+        // FUNCIONES DE NAVEGACIÓN
+        function irAConfiguracionFacturacion() {
+            window.location.href = '/configuracion/facturacion';
+        }
+
+        function mostrarConfiguracionTickets() {
+            window.location.href = '/configuracion/tickets';
+        }
+
+        // FUNCIONES DE REPORTES
+        function abrirReporteCierreCaja() {
+            window.open('/reporte/cierre_caja', '_blank');
+        }
+
+        function abrirReporteVentas() {
+            window.open('/reporte/ventas', '_blank');
+        }
+
+        function abrirReporteProductos() {
+            window.open('/reporte/productos_populares', '_blank');
+        }
+
+        function abrirAnalisisPredictivo() {
+            window.open('/reporte/analisis_predictivo', '_blank');
+        }
+
+        // FUNCIONALIDAD DONACIONES
+        async function actualizarDonacionesPuntoVenta() {
+            try {
+                const response = await fetch('/api/donaciones/hoy');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        document.getElementById('donacionesHoyPuntoVenta').textContent = data.total_donaciones || '0';
+                    }
+                }
+            } catch (error) {
+                console.log('ℹ️ No se pudieron cargar las donaciones:', error);
+            }
+        }
+
+        function actualizarDonacionesDespuesVenta() {
+            setTimeout(actualizarDonacionesPuntoVenta, 1500);
+        }
+
+        // INICIALIZACIÓN
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Inicializando sistema POS...');
+            
+            // 🎨 INICIAR SISTEMA DE COLORES
+            iniciarObservadorColores();
+            
+            // VERIFICAR COMPATIBILIDAD
+            setTimeout(() => {
+                const funcionesEsenciales = [
+                    'actualizarCarrito', 'actualizarCarritoMobile', 'limpiarCarrito',
+                    'cargarProductos', 'procesarCierreDiario'
+                ];
+                
+                let todasDisponibles = true;
+                funcionesEsenciales.forEach(func => {
+                    if (typeof window[func] !== 'function') {
+                        console.error(`❌ Función faltante: ${func}`);
+                        todasDisponibles = false;
+                    }
+                });
+                
+                if (todasDisponibles) {
+                    console.log('✅ Todas las funciones esenciales están disponibles');
+                    if (typeof cargarProductos === 'function') {
+                        cargarProductos();
+                    }
+                } else {
+                    console.error('❌ Algunas funciones esenciales no están disponibles');
+                    mostrarNotificacion('⚠️ Error de integración - Recargue la página', 'error');
+                }
+            }, 1000);
+            
+            // INICIALIZAR COMPONENTES
+            crearToastContainer();
+            actualizarDonacionesPuntoVenta();
+            
+            // CONFIGURAR VARIABLES GLOBALES
+            window.ultimaVentaId = null;
+            window.tipoDocumento = 'POS';
+            window.ultimoTotal = 0;
+            
+            console.log('✅ Sistema POS inicializado correctamente');
+        });
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,1923 @@
+/* ============================================= */
+/* ARCHIVO CSS REPARADO - 2025-11-07 14:11:38 */
+/* ============================================= */
+
+/* ============================================= */
+/* POS MODERNO - ESTILOS TIPO SQUARE/SHOPIFY */
+/* ============================================= */
+
+:root {
+    --primary-color: #2c3e50;
+    --secondary-color: #3498db;
+    --success-color: #27ae60;
+    --warning-color: #f39c12;
+    --danger-color: #e74c3c;
+    --light-bg: #f8f9fa;
+    --dark-bg: #2c3e50;
+    --border-color: #e1e8ed;
+    --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --transition: all 0.3s ease;
+}
+
+/* ESTILOS GENERALES */
+body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    height: 100vh;
+    overflow: auto;
+}
+
+.container-fluid.h-100 {
+    padding: 0;
+    height: calc(100vh - 56px);
+}
+
+/* NAVBAR SUPERIOR */
+.navbar.bg-primary {
+    background: linear-gradient(135deg, var(--primary-color), #34495e) !important;
+    box-shadow: var(--shadow);
+    border: none;
+}
+
+.dashboard-rapido .badge {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 20px;
+}
+
+/* LAYOUT PRINCIPAL */
+.row.h-100 {
+    margin: 0;
+    height: 100%;
+}
+
+/* ============================================= */
+/* SIDEBAR DE CATEGORÍAS */
+/* ============================================= */
+.categorias-sidebar {
+    background: white;
+    border-right: 1px solid var(--border-color);
+    height: 100%;
+    overflow-y: auto;
+}
+
+.categorias-sidebar .card {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.categorias-sidebar .card-header {
+    border-radius: 0 !important;
+    background: var(--dark-bg) !important;
+    padding: 1rem;
+}
+
+.categorias-sidebar .list-group-item {
+    border: none;
+    border-bottom: 1px solid var(--border-color);
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+}
+
+.categorias-sidebar .list-group-item:hover {
+    background-color: #f8f9fa;
+    transform: translateX(5px);
+}
+
+.categorias-sidebar .list-group-item.active {
+    background: var(--secondary-color);
+    border-color: var(--secondary-color);
+    transform: translateX(5px);
+}
+
+.categorias-sidebar .list-group-item i {
+    width: 20px;
+    margin-right: 10px;
+    color: var(--secondary-color);
+}
+
+.categorias-sidebar .list-group-item.active i {
+    color: white;
+}
+
+/* ============================================= */
+/* BARRA DE BÚSQUEDA */
+/* ============================================= */
+.search-header {
+    z-index: 1000;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.search-header .input-group-lg {
+    box-shadow: var(--shadow);
+    border-radius: 10px;
+    overflow: auto;
+}
+
+.search-header .input-group-text {
+    background: white;
+    border: none;
+    color: var(--secondary-color);
+}
+
+.search-header .form-control {
+    border: none;
+    font-size: 1.1rem;
+    padding: 0.75rem 1rem;
+}
+
+.search-header .form-control:focus {
+    box-shadow: none;
+    outline: none;
+}
+
+/* ============================================= */
+/* GRID DE PRODUCTOS MODERNO */
+/* ============================================= */
+.products-grid-container {
+    height: calc(100vh - 200px);
+    overflow-y: auto;
+    padding: 1rem;
+}
+
+.producto-card-moderno {
+    background: white;
+    border: 2px solid transparent;
+    border-radius: 15px;
+    padding: 1.5rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: var(--shadow);
+    margin-bottom: 1.5rem;
+    height: 180px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: auto;
+}
+
+.producto-card-moderno:hover {
+    transform: translateY(-5px);
+    border-color: var(--secondary-color);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.producto-card-moderno.sin-stock {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.producto-card-moderno.sin-stock:hover {
+    transform: none;
+    border-color: var(--danger-color);
+}
+
+.producto-imagen {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, var(--secondary-color), #667eea);
+    border-radius: 50%;
+    margin: 0 auto 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.producto-nombre {
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    color: var(--primary-color);
+}
+
+.producto-precio {
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: var(--success-color);
+    margin-bottom: 0.5rem;
+}
+
+.producto-stock {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 10px;
+    display: inline-block;
+}
+
+.stock-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 0.7rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 8px;
+}
+
+.bg-stock-bajo {
+    background: var(--warning-color);
+    color: white;
+}
+
+.bg-stock-critico {
+    background: var(--danger-color);
+    color: white;
+}
+
+.bg-stock-ok {
+    background: var(--success-color);
+    color: white;
+}
+
+/* Selector de Cantidad Moderno */
+.quantity-selector-moderno {
+    margin-top: 0.5rem;
+}
+
+.quantity-selector-moderno .input-group {
+    border-radius: 25px;
+    overflow: auto;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.quantity-selector-moderno input {
+    border: none;
+    text-align: center;
+    font-weight: bold;
+    background: white;
+}
+
+.quantity-selector-moderno .btn {
+    border: none;
+    padding: 0.375rem 0.75rem;
+}
+
+.quantity-selector-moderno .btn-success {
+    background: var(--success-color);
+}
+
+.quantity-selector-moderno .btn-success:hover {
+    background: #219653;
+}
+
+/* ============================================= */
+/* CARRITO FLOTANTE MODERNO */
+/* ============================================= */
+/* CARRITO FLOTANTE MODERNO - AMPLIADO */
+/* ============================================= */
+/* CARRITO FLOTANTE MODERNO - ESTRUCTURA CORREGIDA */
+/* ============================================= */
+.carrito-sidebar {
+    background: var(--light-bg);
+    border-left: 1px solid var(--border-color);
+    padding: 0;
+    width: 500px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.carrito-flotante {
+    border: none;
+    border-radius: 0;
+    box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* HEADER FIJO */
+.carrito-flotante .card-header {
+    border-radius: 0;
+    background: var(--success-color) !important;
+    padding: 1.25rem;
+    font-size: 1.3rem;
+    flex-shrink: 0; /* ← NO SE ENCOGE */
+}
+
+/* CUERPO PRINCIPAL CON SCROLL */
+.carrito-flotante .card-body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 0;
+    min-height: 0; /* ← CLAVE PARA SCROLL */
+}
+
+/* ÁREA DE ITEMS CON SCROLL */
+.carrito-items {
+    flex: 1; /* ← OCUPA TODO EL ESPACIO DISPONIBLE */
+    overflow-y: auto;
+    padding: 1rem;
+    min-height: 200px;
+}
+
+/* ITEMS COMPACTOS */
+.carrito-item-moderno {
+    background: white;
+    border-radius: 8px;
+    padding: 0.8rem;
+    margin-bottom: 0.6rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    border-left: 3px solid var(--secondary-color);
+}
+
+.carrito-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 0.4rem;
+}
+
+.carrito-item-nombre {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--primary-color);
+    margin: 0;
+    line-height: 1.3;
+}
+
+.carrito-item-precio {
+    font-size: 0.85rem;
+    color: var(--success-color);
+    font-weight: bold;
+}
+
+.carrito-item-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 0.5rem;
+}
+
+.carrito-item-cantidad {
+    font-weight: bold;
+    color: var(--primary-color);
+    font-size: 0.85rem;
+}
+
+.carrito-item-actions .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+    min-height: 28px;
+}
+
+/* SECCIÓN INFERIOR FIJA */
+.carrito-footer {
+    flex-shrink: 0 !important;
+    padding: 1rem !important;
+    position: sticky !important;
+    box-shadow: 0 -2px 15px rgba(0,0,0,0.1) !important;
+}
+
+.resumen-venta {
+    background: white;
+    padding: 1.2rem;
+    border-radius: 10px;
+    margin: 1rem;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.total-venta {
+    font-size: 1.3rem;
+    color: var(--success-color);
+    font-weight: bold;
+}
+
+.acciones-venta {
+    padding: 1rem;
+    background: var(--light-bg);
+}
+
+.acciones-venta .btn-lg {
+    border-radius: 8px;
+    font-weight: 600;
+    padding: 0.85rem;
+    font-size: 1.1rem;
+    min-height: 52px;
+}
+
+.metodos-pago .btn-group {
+    border-radius: 8px;
+    overflow: auto;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.metodos-pago .btn {
+    border: 1px solid var(--border-color);
+    padding: 0.6rem;
+    font-size: 0.9rem;
+}
+
+.metodos-pago .btn-check:checked + .btn {
+    background: var(--secondary-color);
+    color: white;
+    border-color: var(--secondary-color);
+}
+
+/* Botones de Acción */
+.acciones-venta {
+    padding: 1rem !important;
+    background: var(--light-bg);
+    border-top: 1px solid var(--border-color);
+    flex-shrink: 0 !important; /* ← EVITA QUE SE COMPRIMA */
+}
+
+.acciones-venta .btn-lg {
+    border-radius: 8px !important;
+    font-weight: 600;
+    font-size: 1rem !important;
+    min-height: 50px !important;
+    box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+}
+
+.acciones-venta .btn-group .btn {
+    border-radius: 8px;
+    margin: 0 2px;
+}
+
+/* ============================================= */
+/* MINI DASHBOARD */
+/* ============================================= */
+.mini-dashboard {
+    border: none;
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+}
+
+.mini-dashboard .card-header {
+    border-radius: 10px 10px 0 0 !important;
+    padding: 0.75rem 1rem;
+}
+
+.metric-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 0.25rem;
+}
+
+.metric-label {
+    color: #6c757d;
+    font-size: 0.8rem;
+}
+
+/* ============================================= */
+/* MODAL MODERNO */
+/* ============================================= */
+.modal-content {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+.modal-header {
+    border-radius: 15px 15px 0 0 !important;
+}
+
+/* ============================================= */
+/* ESTADOS Y ANIMACIONES */
+/* ============================================= */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.producto-card-moderno {
+    animation: fadeIn 0.5s ease-out;
+}
+
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* ============================================= */
+/* SCROLLBAR PERSONALIZADO */
+/* ============================================= */
+.categorias-sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.categorias-sidebar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.categorias-sidebar::-webkit-scrollbar-thumb {
+    background: var(--secondary-color);
+    border-radius: 10px;
+}
+
+.categorias-sidebar::-webkit-scrollbar-thumb:hover {
+    background: #2980b9;
+}
+
+/* ============================================= */
+/* RESPONSIVE DESIGN */
+/* ============================================= */
+@media (max-width: 768px) {
+    .container-fluid.h-100 {
+        height: auto;
+        overflow: auto;
+    }
+
+    .categorias-sidebar {
+        height: auto;
+        max-height: 200px;
+    }
+
+    .products-grid-container {
+        height: auto;
+        max-height: 50vh;
+    }
+
+
+}
+
+/* ============================================= */
+/* ESTILOS PARA CATEGORÍAS CON ÍCONOS */
+/* ============================================= */
+.categoria-icon {
+    width: 30px;
+    height: 30px;
+    background: linear-gradient(135deg, var(--secondary-color), #667eea);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.9rem;
+    margin-right: 10px;
+}
+
+/* Efectos de hover mejorados */
+.btn:hover {
+    transform: translateY(-2px);
+    transition: var(--transition);
+}
+
+/* Loading states */
+.loading-skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+
+/* ============================================= */
+/* BOTONES FLOTANTES DE REPORTES - BARRA LATERAL DERECHA */
+/* ============================================= */
+.reportes-flotantes {
+    position: fixed;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    z-index: 1000;
+}
+
+.reportes-flotantes .btn-group-vertical .btn {
+    margin-bottom: 5px;
+    border-radius: 8px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+    font-size: 0.8rem;
+}
+
+.reportes-flotantes .btn-group-vertical .btn:hover {
+    transform: translateX(-5px);
+    width: 120px;
+    border-radius: 20px;
+    justify-content: flex-start;
+    padding-left: 15px;
+}
+
+.reportes-flotantes .btn:hover i {
+    margin-right: 8px;
+}
+
+/* ============================================= */
+/* OPTIMIZACIÓN PARA TABLETAS Y TÁCTIL */
+/* ============================================= */
+
+@media (max-width: 768px) {
+    /* Layout principal - stack vertical */
+    .container-fluid {
+        flex-direction: column !important;
+        height: auto !important;
+        overflow-x: hidden !important;
+    }
+
+    .row.h-100 {
+        height: auto !important;
+        flex-direction: column !important;
+    }
+
+    /* Sidebar de categorías se convierte en horizontal */
+    .categorias-sidebar {
+        width: 100% !important;
+        height: auto !important;
+        margin-bottom: 10px !important;
+    }
+
+    #listaCategorias {
+        display: flex !important;
+        flex-direction: row !important;
+        overflow-x: auto !important;
+        white-space: nowrap !important;
+        flex-wrap: nowrap !important;
+    }
+
+    #listaCategorias .list-group-item {
+        min-width: 120px !important;
+        text-align: center !important;
+        flex: 0 0 auto !important;
+        white-space: nowrap !important;
+    }
+
+    #listaCategorias .categoria-icon {
+        margin-right: 0 !important;
+        margin-bottom: 5px !important;
+    }
+
+    /* Contenedor principal ocupa toda la pantalla */
+    .main-content {
+        width: 100% !important;
+        margin-left: 0 !important;
+        height: 60vh !important;
+        overflow-y: auto !important;
+    }
+
+    /* Header más compacto */
+    .pos-header {
+        padding: 10px 5px !important;
+    }
+
+    .navbar-brand {
+        font-size: 1rem !important;
+    }
+
+    /* Controles de búsqueda en columna */
+    .search-controls {
+        flex-direction: column !important;
+        gap: 8px !important;
+    }
+
+    .search-controls .input-group {
+        width: 100% !important;
+    }
+
+    /* Grid de productos - 2 columnas en móviles */
+    .products-grid-container {
+        height: 50vh !important;
+        overflow-y: auto !important;
+    }
+
+    .products-grid-container .row {
+        margin: 0 -5px !important;
+    }
+
+    .col-xl-3, .col-lg-4, .col-md-6 {
+        flex: 0 0 50% !important;
+        max-width: 50% !important;
+        padding: 5px !important;
+    }
+
+    /* Cards de productos más compactas */
+    .producto-card-moderno {
+        padding: 10px !important;
+        margin-bottom: 8px !important;
+        height: auto !important;
+    }
+
+    .producto-imagen {
+        height: 50px !important;
+        margin-bottom: 8px !important;
+    }
+
+    .producto-imagen i {
+        font-size: 20px !important;
+    }
+
+    .producto-nombre {
+        font-size: 12px !important;
+        line-height: 1.2 !important;
+        height: 2.4em !important;
+        overflow: auto !important;
+    }
+
+    .producto-precio {
+        font-size: 14px !important;
+    }
+
+    /* Carrito lateral se convierte en drawer móvil */
+    .carrito-sidebar {
+        position: fixed !important;
+        bottom: -100% !important;
+        left: 0 !important;
+        right: 0 !important;
+        height: 70vh !important;
+        border-radius: 15px 15px 0 0 !important;
+        box-shadow: 0 -2px 20px rgba(0,0,0,0.3) !important;
+        transition: bottom 0.3s ease !important;
+    }
+
+
+    .carrito-sidebar .card-body {
+        padding: 15px !important;
+        max-height: 50vh !important;
+        overflow-y: auto !important;
+    }
+
+    /* Botón flotante para abrir carrito */
+    .carrito-flotante-mobile {
+        position: fixed !important;
+        bottom: 20px !important;
+        right: 20px !important;
+        z-index: 1060 !important;
+        background: #28a745 !important;
+        color: white !important;
+        border-radius: 50% !important;
+        width: 60px !important;
+        height: 60px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-shadow: 0 4px 15px rgba(40,167,69,0.4) !important;
+        font-size: 20px !important;
+    }
+
+    .carrito-contador-badge {
+        position: absolute !important;
+        top: -5px !important;
+        right: -5px !important;
+        background: #dc3545 !important;
+        color: white !important;
+        border-radius: 50% !important;
+        width: 24px !important;
+        height: 24px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 12px !important;
+        font-weight: bold !important;
+    }
+
+    /* Ajustar items del carrito */
+    .carrito-item-moderno {
+        padding: 10px !important;
+        margin-bottom: 8px !important;
+    }
+
+    .carrito-item-nombre {
+        font-size: 14px !important;
+    }
+
+    .carrito-item-precio {
+        font-size: 14px !important;
+    }
+
+    /* Botones de acción más pequeños pero táctiles */
+    .carrito-item-actions .btn {
+        min-width: 36px !important;
+        min-height: 36px !important;
+        padding: 5px !important;
+    }
+
+    /* Botón procesar venta fijo en bottom */
+    #btnPagar {
+        position: sticky !important;
+        border-radius: 0 !important;
+        height: 50px !important;
+        font-size: 16px !important;
+        z-index: 10 !important;
+    }
+
+    /* Ocultar dashboard en móviles para ahorrar espacio */
+    .mini-dashboard {
+        display: none !important;
+    }
+
+    /* Reportes flotantes en móvil */
+    .reportes-flotantes {
+        bottom: 90px !important;
+        right: 10px !important;
+    }
+}
+
+/* ============================================= */
+/* MEJORAS ESPECÍFICAS PARA MÓVILES PEQUEÑOS */
+/* ============================================= */
+
+@media (max-width: 480px) {
+    .col-xl-3, .col-lg-4, .col-md-6 {
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+    }
+
+    .producto-card-moderno {
+        padding: 8px !important;
+    }
+
+    #listaCategorias .list-group-item {
+        min-width: 100px !important;
+        font-size: 12px !important;
+        padding: 8px 10px !important;
+    }
+
+    .carrito-sidebar {
+        height: 80vh !important;
+    }
+}
+
+/* ============================================= */
+/* MEJORAS DE ACCESIBILIDAD TÁCTIL */
+/* ============================================= */
+
+/* Elementos interactivos más grandes para dedos */
+@media (max-width: 768px) {
+    .btn,
+    .cantidad-input,
+    .producto-card-moderno,
+    .list-group-item {
+        min-height: 44px !important;
+    }
+
+    .cantidad-input {
+        font-size: 16px !important;
+        height: 44px !important;
+    }
+
+    /* Mejorar feedback táctil */
+    .btn:active,
+    .producto-card-moderno:active {
+        background-color: #e9ecef !important;
+        transform: scale(0.98) !important;
+        transition: all 0.1s ease !important;
+    }
+
+    /* Scroll suave */
+    .products-grid-container,
+    .carrito-items {
+        -webkit-overflow-scrolling: touch !important;
+        scroll-behavior: smooth !important;
+    }
+}
+
+/* Prevenir zoom en inputs en iOS */
+@media (max-width: 768px) {
+    input, select, textarea {
+        font-size: 16px !important;
+    }
+}
+
+/* Clase para ocultar elementos en móviles */
+.d-md-inline {
+    display: inline !important;
+}
+
+@media (max-width: 768px) {
+    .d-md-inline {
+        display: none !important;
+    }
+
+    .d-md-none {
+        display: block !important;
+    }
+}
+
+/* ============================================= */
+/* MEJORAS ESPECÍFICAS PARA MÓVILES MUY PEQUEÑOS */
+/* ============================================= */
+
+@media (max-width: 360px) {
+    .col-xl-3, .col-lg-4, .col-md-6 {
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+    }
+
+    .producto-card-moderno {
+        padding: 8px !important;
+    }
+
+    #listaCategorias .list-group-item {
+        min-width: 100px !important;
+        font-size: 12px !important;
+        padding: 8px 10px !important;
+    }
+}
+
+/* ============================================= */
+/* MEJORAS DE ACCESIBILIDAD TÁCTIL */
+/* ============================================= */
+
+/* Elementos interactivos más grandes para dedos */
+@media (max-width: 768px) {
+    .btn,
+    .cantidad-input,
+    .producto-card-moderno,
+    .list-group-item {
+        min-height: 44px !important; /* Tamaño mínimo recomendado para touch */
+    }
+
+    /* Mejorar feedback táctil */
+    .btn:active,
+    .producto-card-moderno:active {
+        background-color: #e9ecef !important;
+        transform: scale(0.98) !important;
+        transition: all 0.1s ease !important;
+    }
+
+    /* Remover hover en dispositivos táctiles */
+    @media (hover: none) {
+        .producto-card-moderno:hover {
+            transform: none !important;
+            box-shadow: none !important;
+        }
+    }
+}
+
+/* Prevenir zoom en inputs en iOS */
+@media (max-width: 768px) {
+    input, select, textarea {
+        font-size: 16px !important; /* Previene zoom automático en iOS */
+    }
+}
+
+/* ===== OPTIMIZACIONES MÓVILES RESCATADAS ===== */
+/* Extraídas automáticamente desde versión con optimizaciones */
+
+/* Optimización móvil 1 */
+@media (max-width: 768px) {
+    .carrito-item-precio-unitario {
+        margin-left: 0;
+        margin-top: 0.25rem;
+        font-size: 0.75rem;
+    }
+
+    .carrito-item-detalles {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+        padding: 0.25rem 0;
+    }
+
+    .carrito-item-subtotal {
+        font-size: 0.85rem;
+    }
+}
+
+/* Optimización móvil 2 */
+@media (max-width: 768px) {
+    /* Ocultar sidebar de categorías en móviles */
+    .col-md-3.categorias-sidebar {
+        display: none !important;
+    }
+
+    /* Asegurar que el dropdown ocupe el espacio disponible */
+    #categoriaFilter {
+        display: block !important;
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+
+    /* Ajustar el grid de productos para usar todo el ancho */
+    .productos-container .row-cols-2 {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Mejorar visibilidad del dropdown en móvil */
+    .search-container .col-md-4 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+
+    /* Ajustar el contenedor principal para usar espacio liberado */
+    .col-md-9 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+
+
+    /* Asegurar que el dropdown ocupe el espacio disponible */
+    #categoriaFilter {
+        display: block !important;
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+
+    /* Opcional: Ajustar el grid de productos para usar todo el ancho */
+    .productos-container .row-cols-2 {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Mejorar visibilidad del dropdown en móvil */
+    .search-container .col-md-4 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+}
+
+/* Optimización móvil 3 */
+.col-md-3.categorias-sidebar {
+        display: none !important;
+    }
+
+/* Optimización móvil 4 */
+#categoriaFilter {
+        display: block !important;
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+
+/* Optimización móvil 5 */
+#categoriaFilter {
+        display: block !important;
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+
+/* Optimización móvil 6 */
+.search-container .col-md-4 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+
+/* Optimización móvil 7 */
+.search-container .col-md-4 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+
+/* ============================================= */
+/* OPTIMIZACIÓN ESPECÍFICA PARA TARJETAS MÓVILES */
+/* ============================================= */
+
+@media (max-width: 768px) {
+    /* TRANSFORMAR TARJETAS CUADRADAS → TARJETAS DE LÍNEA */
+    .producto-card-moderno {
+        height: auto !important;
+        padding: 12px !important;
+        margin-bottom: 8px !important;
+        flex-direction: row !important;
+        text-align: left !important;
+        align-items: center !important;
+        border-radius: 10px !important;
+    }
+
+    /* REORGANIZAR CONTENIDO EN LÍNEA */
+    .producto-card-moderno .producto-imagen {
+        width: 40px !important;
+        height: 40px !important;
+        margin: 0 12px 0 0 !important;
+        flex-shrink: 0 !important;
+    }
+
+    .producto-card-moderno .producto-imagen i {
+        font-size: 18px !important;
+    }
+
+    /* CONTENIDO PRINCIPAL FLEXIBLE */
+    .producto-card-moderno > div:not(.producto-imagen) {
+        flex: 1 !important;
+        min-width: 0 !important;
+    }
+
+    /* NOMBRE Y PRECIO EN LÍNEA */
+    .producto-card-moderno .producto-nombre {
+        font-size: 14px !important;
+        margin-bottom: 2px !important;
+        white-space: nowrap !important;
+        overflow: auto !important;
+        text-overflow: ellipsis !important;
+    }
+
+    .producto-card-moderno .producto-precio {
+        font-size: 16px !important;
+        margin-bottom: 4px !important;
+    }
+
+    /* BADGE DE STOCK MÁS PEQUEÑO */
+    .producto-card-moderno .stock-badge {
+        position: relative !important;
+        top: auto !important;
+        right: auto !important;
+        margin-left: 8px !important;
+        font-size: 10px !important;
+        padding: 2px 6px !important;
+    }
+
+    /* SELECTOR DE CANTIDAD COMPACTO */
+    .producto-card-moderno .quantity-selector-moderno {
+        margin-top: 0 !important;
+        margin-left: auto !important;
+        flex-shrink: 0 !important;
+        width: 120px !important;
+    }
+
+    .producto-card-moderno .quantity-selector-moderno .input-group {
+        width: 100% !important;
+    }
+
+    .producto-card-moderno .quantity-selector-moderno input {
+        padding: 4px !important;
+        font-size: 14px !important;
+    }
+
+    .producto-card-moderno .quantity-selector-moderno .btn {
+        padding: 4px 8px !important;
+    }
+
+    /* OCULTAR ELEMENTOS SECUNDARIOS EN MÓVIL */
+    .producto-card-moderno small.text-muted {
+        display: none !important;
+    }
+
+    /* GRID DE 1 COLUMNA EN MÓVILES */
+    .products-grid-container .row {
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    .products-grid-container .col-xl-3,
+    .products-grid-container .col-lg-4,
+    .products-grid-container .col-md-6,
+    .products-grid-container .col-12 {
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+        padding: 4px !important;
+    }
+
+    /* MEJORAR ESPACIADO GENERAL */
+    .products-grid-container {
+        padding: 8px !important;
+    }
+
+    /* HEADER MÁS COMPACTO */
+    .search-header {
+        padding: 12px 8px !important;
+    }
+
+    .search-header .input-group-lg {
+        margin-bottom: 8px !important;
+    }
+
+    /* CATEGORÍAS HORIZONTALES */
+    .categorias-sidebar {
+        height: auto !important;
+        max-height: 120px !important;
+        margin-bottom: 8px !important;
+    }
+
+    #listaCategorias {
+        flex-direction: row !important;
+        overflow-x: auto !important;
+    }
+
+    #listaCategorias .list-group-item {
+        min-width: 100px !important;
+        padding: 8px 12px !important;
+        text-align: center !important;
+        flex: 0 0 auto !important;
+    }
+
+    #listaCategorias .categoria-icon {
+        margin-right: 0 !important;
+        margin-bottom: 4px !important;
+    }
+}
+
+/* ============================================= */
+/* MEJORAS PARA MÓVILES MUY PEQUEÑOS */
+/* ============================================= */
+
+@media (max-width: 480px) {
+    .producto-card-moderno {
+        padding: 10px !important;
+    }
+
+    .producto-card-moderno .producto-imagen {
+        width: 36px !important;
+        height: 36px !important;
+        margin-right: 10px !important;
+    }
+
+    .producto-card-moderno .producto-nombre {
+        font-size: 13px !important;
+    }
+
+    .producto-card-moderno .producto-precio {
+        font-size: 15px !important;
+    }
+
+    .producto-card-moderno .quantity-selector-moderno {
+        width: 110px !important;
+    }
+
+    /* MÁS ESPACIO PARA BOTONES TÁCTILES */
+    .producto-card-moderno .btn {
+        min-height: 36px !important;
+        min-width: 36px !important;
+    }
+}
+
+/* ============================================= */
+/* ESTADOS ESPECIALES PARA TARJETAS MÓVILES */
+/* ============================================= */
+
+@media (max-width: 768px) {
+    /* EFECTO HOVER MÁS SUAVE EN MÓVILES */
+    .producto-card-moderno:active {
+        background-color: #f8f9fa !important;
+        transform: scale(0.98) !important;
+        transition: all 0.1s ease !important;
+    }
+
+    /* REMOVER HOVER EN DISPOSITIVOS TÁCTILES */
+    @media (hover: none) {
+        .producto-card-moderno:hover {
+            transform: none !important;
+            box-shadow: none !important;
+        }
+    }
+
+    /* MEJORAR VISIBILIDAD DE STOCK CRÍTICO */
+    .producto-card-moderno.sin-stock {
+        opacity: 0.6 !important;
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef) !important;
+    }
+
+    .producto-card-moderno.sin-stock .producto-nombre {
+        text-decoration: line-through !important;
+    }
+}
+
+/* ===========================Optimización para muchos productos en el punto de venta*======================================/
+/* ============================================= */
+/* SOLUCIÓN DEFINITIVA - ELIMINAR ESPACIO VACÍO + TARJETAS GRANDES */
+/* ============================================= */
+
+@media (min-width: 769px) {
+    /* ELIMINAR COMPLETAMENTE EL ESPACIO VACÍO */
+    .container-fluid.h-100 {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .row.h-100 {
+        margin: 0 !important;
+        gap: 0 !important; /* Eliminar espacio entre columnas */
+    }
+
+    /* REDISTRIBUCIÓN OPTIMIZADA SIN ESPACIOS VACÍOS */
+    .col-md-3.categorias-sidebar {
+        flex: 0 0 260px !important; /* Categorías más compactas */
+        max-width: 260px !important;
+        margin-right: 0 !important;
+    }
+
+    /* ÁREA PRINCIPAL - OCUPA TODO EL ESPACIO DISPONIBLE */
+    .col-md-9.main-content {
+        flex: 1 !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* CONTENEDOR DE PRODUCTOS - SIN MÁRGENES */
+    .col-md-9:not(.categorias-sidebar) {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+   /* CARRITO FIJO A LA DERECHA - MUY AMPLIO */
+
+
+    /* ============================================= */
+/* SISTEMA DE GRID RESPONSIVE MEJORADO - CORREGIDO */
+/* ============================================= */
+
+    /* CONTENEDOR PRINCIPAL CON SCROLL CONTROLADO */
+    .products-grid-container {
+        padding: 1rem !important;
+        height: calc(100vh - 180px) !important;
+        overflow-y: auto !important;
+        margin: 0 !important;
+        width: 100% !important;
+    }
+
+    /* SISTEMA DE GRID ADAPTATIVO MEJORADO */
+    /* ============================================= */
+/* SOLUCIÓN PROFESIONAL - TARJETAS CUADRADAS FIJAS */
+/* ============================================= */
+
+    /* CONTENEDOR PRINCIPAL */
+    .products-grid-container {
+        padding: 1rem !important;
+        height: calc(100vh - 180px) !important;
+        overflow-y: auto !important;
+        margin: 0 !important;
+        width: 100% !important;
+    }
+
+    /* GRID CON TARJETAS CUADRADAS FIJAS */
+    /* GRID CON COLUMNAS FIJAS - TAMAÑO CONSTANTE */
+
+    .products-grid-container .row {
+        margin: 0 !important;
+        display: grid !important;
+        grid-template-columns: repeat(auto-fit, 280px) !important; /* ← CLAVE: auto-fit + tamaño fijo */
+        gap: 15px !important;
+        width: 100% !important;
+        align-items: start !important;
+        grid-auto-rows: min-content !important;
+        justify-content: start !important;
+        justify-items: start !important; /* ← NUEVA LÍNEA */
+    }
+
+    /* ELIMINAR RESTRICCIONES BOOTSTRAP */
+    .products-grid-container .col-xl-3,
+    .products-grid-container .col-lg-4,
+    .products-grid-container .col-md-6,
+    .products-grid-container .col-12 {
+        padding: 0 !important;
+        margin: 0 !important;
+        flex: none !important;
+        max-width: none !important;
+        width: 100% !important;
+        height: auto !important;
+    }
+
+    /* TARJETAS CUADRADAS FIJAS - TODO EL CONTENIDO VISIBLE */
+    /* TARJETAS CUADRADAS FIJAS - MÁS ALTURA PARA TODO EL CONTENIDO */
+    /* TARJETAS CUADRADAS PERFECTAS - TODO EL CONTENIDO VISIBLE */
+    .producto-card-moderno {
+        width: 100% !important;
+        height: 220px !important; /* ⚡ MÁS ALTO */
+        min-height: 220px !important;
+        max-height: 220px !important;
+        aspect-ratio: 1 / 1 !important; /* ⚡ CUADRADO PERFECTO */
+        padding: 1.5rem 1rem !important; /* ⚡ MÁS PADDING */
+        margin: 0 !important;
+        border-radius: 12px !important;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08) !important;
+        transition: all 0.2s ease !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: space-between !important;
+        position: relative !important;
+        box-sizing: border-box !important;
+        overflow: auto !important;
+    }
+    .producto-card-moderno:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.12) !important;
+    }
+
+    /* CONTENIDO OPTIMIZADO PARA CUADRADO */
+    .producto-imagen {
+        width: 50px !important;
+        height: 50px !important;
+        margin: 0 auto 0.5rem auto !important;
+        background: linear-gradient(135deg, var(--secondary-color), #667eea) !important;
+        border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        color: white !important;
+        font-size: 1.25rem !important;
+        flex-shrink: 0 !important;
+    }
+
+    .producto-nombre {
+        font-size: 0.9rem !important;
+        font-weight: 600 !important;
+        color: var(--primary-color) !important;
+        margin-bottom: 0.4rem !important;
+        text-align: center !important;
+        line-height: 1.3 !important;
+        flex-shrink: 0 !important;
+        /* ⚡ ELIMINAMOS LÍMITES DE ALTURA */
+        max-height: none !important;
+        overflow: visible !important;
+        display: block !important;
+        word-wrap: break-word !important;
+        white-space: normal !important;
+    }
+
+    .producto-precio {
+        font-size: 1.1rem !important;
+        font-weight: 700 !important;
+        color: var(--success-color) !important;
+        margin-bottom: 0.3rem !important;
+        text-align: center !important;
+        flex-shrink: 0 !important;
+    }
+
+    .producto-tipo {
+        font-size: 0.75rem !important;
+        color: #6c757d !important;
+        text-align: center !important;
+        margin-bottom: 0.5rem !important;
+        flex-shrink: 0 !important;
+    }
+
+    .stock-badge {
+        position: absolute !important;
+        top: 8px !important;
+        right: 8px !important;
+        font-size: 0.7rem !important;
+        padding: 0.3rem 0.5rem !important;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+    }
+
+    .quantity-selector-moderno {
+        flex-shrink: 0 !important;
+    }
+
+    .quantity-selector-moderno .input-group {
+        max-width: 130px !important;
+        margin: 0 auto !important;
+        border-radius: 6px !important;
+    }
+
+    .quantity-selector-moderno input {
+        border: none !important;
+        text-align: center !important;
+        font-weight: 600 !important;
+        font-size: 0.9rem !important;
+        padding: 0.35rem !important;
+        height: 32px !important;
+    }
+
+    .quantity-selector-moderno .btn {
+        border: none !important;
+        padding: 0.35rem 0.5rem !important;
+        font-size: 0.9rem !important;
+        height: 32px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .quantity-selector-moderno .btn-success {
+        background: var(--success-color) !important;
+        color: white !important;
+    }
+
+    .quantity-selector-moderno .btn-success:hover {
+        background: #219653 !important;
+    }
+    /* ========== HEADER MÁS COMPACTO ========== */
+
+    .search-header {
+        border-bottom: 1px solid var(--border-color) !important;
+        padding: 1rem 1.5rem !important;
+        margin: 0 !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
+    }
+
+    .search-controls {
+        margin: 0 !important;
+    }
+
+
+    /* ========== CATEGORÍAS MÁS COMPACTAS ========== */
+
+    .categorias-sidebar {
+        border-right: 1px solid var(--border-color) !important;
+        height: 100vh !important;
+        overflow-y: auto !important;
+    }
+
+    .categorias-sidebar .card {
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        height: 100% !important;
+    }
+
+    .categorias-sidebar .card-header {
+        padding: 1.25rem !important;
+        background: var(--dark-bg) !important;
+        border-radius: 0 !important;
+    }
+
+    .categorias-sidebar .list-group-item {
+        padding: 1rem 1.25rem !important;
+        border: none !important;
+        border-bottom: 1px solid #f1f3f4 !important;
+        transition: all 0.2s ease !important;
+    }
+
+    .categorias-sidebar .list-group-item:hover {
+        background: #f8f9fa !important;
+        transform: translateX(5px) !important;
+        border-left: 3px solid var(--secondary-color) !important;
+    }
+
+    .categorias-sidebar .list-group-item.active {
+        background: var(--secondary-color) !important;
+        color: white !important;
+        border-left: 3px solid white !important;
+        transform: translateX(5px) !important;
+    }
+}
+
+/* ============================================= */
+/* OPTIMIZACIÓN PARA PANTALLAS GRANDES */
+/* ============================================= */
+
+@media (min-width: 1200px) {
+    .products-grid-container .row {
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)) !important; /* Aún más grandes */
+    }
+
+    .producto-card-moderno {
+        height: 230px !important; /* Un poco más altas */
+    }
+
+    .producto-imagen {
+        width: 85px !important;
+        height: 85px !important;
+    }
+}
+
+/* ============================================= */
+/* DENSIDAD PARA TABLETS GRANDES */
+/* ============================================= */
+
+@media (min-width: 769px) and (max-width: 991px) {
+    .products-grid-container .row {
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+    }
+
+    .col-md-3.carrito-sidebar {
+        flex: 0 0 350px !important;
+        max-width: 350px !important;
+    }
+}
+
+/* ============================================= */
+/* VERIFICACIÓN VISUAL - ELIMINAR ESPACIOS FANTASMA */
+/* ============================================= */
+
+/* ESTO ELIMINA CUALQUIER ESPACIO RESIDUAL */
+.container-fluid,
+.container-fluid > .row,
+.row.h-100,
+[class*="col-"] {
+    box-sizing: border-box !important;
+}
+
+/* DEBUG: Para verificar que no hay espacios (puedes eliminar después) */
+/*
+.container-fluid { border: 1px solid red !important; }
+.row.h-100 { border: 1px solid blue !important; }
+[class*="col-"] { border: 1px solid green !important; }
+*/
+/* ============================================= */
+/* SOLUCIÓN DEFINITIVA - ELIMINAR ESPACIO VACÍO */
+/* ============================================= */
+
+@media (min-width: 769px) {
+    /* ELIMINAR MÁRGENES Y PADDINGS QUE CREAN ESPACIOS VACÍOS */
+    .container-fluid.h-100 {
+        padding: 0 !important;
+        max-width: 100% !important;
+    }
+
+    .row.h-100 {
+        margin: 0 !important;
+        gap: 0 !important;
+        width: 100% !important;
+    }
+
+    /* REDISTRIBUCIÓN SIN ESPACIOS MUERTOS */
+    .col-md-3.categorias-sidebar {
+        flex: 0 0 250px !important;
+        max-width: 250px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* ÁREA PRINCIPAL OCUPA TODO EL ESPACIO */
+    .main-content {
+        flex: 1 !important;
+        max-width: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        min-width: 0 !important; /* Importante para flexbox */
+    }
+
+    /* CONTENEDOR INTERNO SIN MÁRGENES */
+    .main-content > .row {
+        margin: 0 !important;
+        width: 100% !important;
+    }
+
+    /* PRODUCTOS SIN ESPACIOS */
+    .main-content .col-md-9 {
+        padding: 0 !important;
+        margin: 0 !important;
+        flex: 1 !important;
+        max-width: none !important;
+    }
+
+    .products-grid-container {
+        padding: 1rem !important;
+        margin: 0 !important;
+        width: 100% !important;
+    }
+
+    /* CARRITO FIJO */
+
+    .carrito-sidebar {
+        flex: 0 0 500px !important; /* ← AUMENTADO a 500px */
+        max-width: 500px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border-left: 1px solid var(--border-color) !important;
+    }
+
+    /* VERIFICACIÓN: ELIMINAR CUALQUIER ESPACIO RESIDUAL */
+    .row > [class*="col-"] {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+}
+
+/* ============================================= */
+/* DEBUG VISUAL (OPCIONAL) - PARA VERIFICAR */
+/* ============================================= */
+/*
+@media (min-width: 769px) {
+    .col-md-3.categorias-sidebar { background: #e3f2fd !important; }
+    .main-content { background: #f3e5f5 !important; }
+    .carrito-sidebar { background: #e8f5e8 !important; }
+}
+*/
+/* ============================================= */
+/* CONFIGURACIÓN DE COLUMNAS FIJAS POR PANTALLA */
+/* ============================================= */
+
+/* ============================================= */
+/* CONFIGURACIÓN DE CUADRADOS PERFECTOS POR PANTALLA */
+/* ============================================= */
+
+/* 🖥️ PANTALLAS MUY GRANDES - 4 COLUMNAS DE 260px */
+@media (min-width: 1600px) {
+    .products-grid-container .row {
+        grid-template-columns: repeat(4, 260px) !important;
+        gap: 15px !important;
+    }
+
+    .producto-card-moderno {
+        height: 260px !important;
+        min-height: 260px !important;
+        max-height: 260px !important;
+    }
+}
+
+/* 💻 PANTALLAS GRANDES - 3 COLUMNAS DE 280px */
+@media (min-width: 1200px) and (max-width: 1599px) {
+    .products-grid-container .row {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important; /* ← CAMBIADO */
+        gap: 15px !important;
+    }
+
+    .producto-card-moderno {
+        height: 280px !important;
+        min-height: 280px !important;
+        max-height: 280px !important;
+    }
+}
+
+/* 📟 TABLETS GRANDES - 2 COLUMNAS DE 300px */
+@media (min-width: 992px) and (max-width: 1199px) {
+    .products-grid-container .row {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important; /* ← CAMBIADO */
+        gap: 12px !important;
+    }
+
+    .producto-card-moderno {
+        height: 300px !important;
+        min-height: 300px !important;
+        max-height: 300px !important;
+    }
+}
+
+
+/* 📱 TABLETS - 2 COLUMNAS DE 280px */
+@media (min-width: 769px) and (max-width: 991px) {
+    .products-grid-container .row {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important; /* ← CAMBIADO */
+        gap: 10px !important;
+    }
+
+    .producto-card-moderno {
+        height: 280px !important;
+        min-height: 280px !important;
+        max-height: 280px !important;
+    }
+}
+/* ============================================= */
+/* SOLUCIÓN DEFINITIVA - EXPANSIÓN COMPLETA */
+/* ============================================= */
+
+/* Forzar que el grid ocupe todo el espacio disponible */
+@media (min-width: 769px) {
+    .products-grid-container {
+        width: 100% !important;
+        min-width: 0 !important;
+        flex: 1 !important;
+    }
+
+    .products-grid-container .row {
+        grid-template-columns: repeat(auto-fit, 280px) !important;
+        justify-content: start !important;
+    }
+
+    /* Asegurar que las tarjetas mantengan su tamaño */
+    .producto-card-moderno {
+        width: 280px !important;
+        min-width: 280px !important;
+        max-width: 280px !important;
+    }
+}
+
+/* Carrito extra ancho para laptops */
+@media (min-width: 992px) and (max-width: 1399px) {
+    .col-md-3.carrito-sidebar {
+        flex: 0 0 480px !important;
+        max-width: 480px !important;
+    }
+
+}
+
+/* Carrito super ancho para pantallas grandes */
+@media (min-width: 1400px) {
+    .col-md-3.carrito-sidebar {
+        flex: 0 0 520px !important;
+        max-width: 520px !important;
+    }
+
+}
+
+
+.offcanvas-body {
+    flex: 1;
+    padding: 1rem;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+}
+
+/* Scroll móvil para carrito */
+#carritoMovil .offcanvas-body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+#carritoMovil .carrito-contenido {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+#carritoMovil .carrito-footer {
+    flex-shrink: 0 !important;
+    padding: 1rem !important;
+    position: sticky !important;
+    box-shadow: 0 -2px 15px rgba(0,0,0,0.1) !important;
+}
+/* FORZAR SCROLL EN CARRITO MÓVIL */
+#carritoOffcanvas .offcanvas-body {
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+#carritoOffcanvas .carrito-contenido {
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    flex: 1 !important;
+    max-height: calc(100vh - 200px) !important;
+}
+
+
+
+/* MEJORAS PARA FOOTER MÓVIL - CORRECCIÓN BOTÓN RECORTADO */
+.carrito-footer {
+    flex-shrink: 0 !important;
+    padding: 1rem !important;
+    position: sticky !important;
+    box-shadow: 0 -2px 15px rgba(0,0,0,0.1) !important;
+}
+
+
+
+
+
+/* Asegurar que el contenido tenga espacio para el footer */
+
+/* Corrección para iOS Safari */
+@supports (-webkit-touch-callout: none) {
+
+}
+
+
+@supports (-webkit-touch-callout: none) {
+    .carrito-footer {
+        padding-bottom: max(1rem, env(safe-area-inset-bottom)) !important;
+    }
+
+    .carrito-footer .btn {
+        min-height: 58px !important;
+    }
+}
+
+
+
+
+/* ===== ESTILOS ESPECÍFICOS PARA CARRITO MÓVIL ===== */
+/* #carritoOffcanvas tiene clase d-md-none (oculto en escritorio) */
+/* Los selectores son específicos para el offcanvas móvil */ */
+
+/*  (#carritoOffcanvas) */ */
+/* El carrito móvil está OCULTO en escritorio por d-md-none */
+
+/* ===== TAMAÑO OPTIMIZADO BOTÓN MÓVIL ===== */
+/* Botón más compacto pero completamente visible */
+#carritoOffcanvas .carrito-footer {
+    position: sticky !important;
+/* } */
+
+#carritoOffcanvas .carrito-footer .btn {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 48px !important;  /* Más compacto */
+    padding: 0.6rem 1rem !important;  /* Menos padding */
+    font-size: 1rem !important;  /* Tamaño de fuente normal */
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+    background: #28a745 !important;  /* Color sólido en lugar de gradiente */
+    border: 1px solid #28a745 !important;
+    box-shadow: 0 2px 6px rgba(40, 167, 69, 0.3) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* Asegurar que el contenido tenga espacio adecuado */
+#carritoOffcanvas .offcanvas-body {
+    padding-bottom: 100px !important;  /* Menos espacio reservado */
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+#carritoOffcanvas .carrito-contenido {
+    flex: 1 !important;
+    overflow-y: auto !important;
+}
+
+/* Corrección para dispositivos pequeños */
+@media (max-width: 375px) {
+    #carritoOffcanvas .carrito-footer .btn {
+        min-height: 44px !important;
+        padding: 0.5rem 0.8rem !important;
+        font-size: 0.95rem !important;
+    }
+
+    #carritoOffcanvas .offcanvas-body {
+        padding-bottom: 90px !important;
+    }
+}
+
+/* Estos estilos SOLO aplican al carrito móvil (#carritoOffcanvas) */
+
+}

@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte de Ventas por Período - Panadería</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* ===== ESTILOS NORMALES PARA PANTALLA ===== */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .reporte-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+            margin: 20px auto;
+            max-width: 1400px;
+        }
+        .reporte-header {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .reporte-body {
+            padding: 30px;
+        }
+        .metric-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #27ae60;
+            transition: transform 0.3s ease;
+        }
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .tendencia-positiva {
+            color: #28a745;
+        }
+        .tendencia-negativa {
+            color: #dc3545;
+        }
+        .producto-item {
+            background: #fff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid #3498db;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .btn-pdf {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .btn-pdf:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+        }
+        .chart-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        .periodo-badge {
+            font-size: 1.1rem;
+            padding: 10px 20px;
+        }
+        .tabla-ventas {
+            font-size: 0.9rem;
+        }
+        .tabla-ventas th {
+            background: #34495e;
+            color: white;
+        }
+
+        /* ===== ESTILOS SOLO PARA PDF/IMPRESIÓN ===== */
+        @media print {
+            /* Ocultar elementos no necesarios en PDF */
+            .no-print, .btn-pdf, .selector-fechas {
+                display: none !important;
+            }
+            
+            /* Resetear estilos para PDF */
+            body {
+                background: white !important;
+                font-size: 10px !important;
+                line-height: 1.1 !important;
+                padding: 5px !important;
+                margin: 0 !important;
+            }
+            
+            .reporte-container {
+                box-shadow: none !important;
+                margin: 0 !important;
+                border-radius: 0 !important;
+                max-width: 100% !important;
+            }
+            
+            .reporte-header {
+                padding: 10px !important;
+                margin-bottom: 10px !important;
+                background: #27ae60 !important;
+            }
+            
+            .reporte-body {
+                padding: 10px !important;
+            }
+            
+            /* Compactar cards para PDF */
+            .metric-card {
+                padding: 8px !important;
+                margin-bottom: 8px !important;
+                border-left: 2px solid #27ae60 !important;
+            }
+            
+            /* Reducir fuentes para PDF */
+            h1 { font-size: 1.2rem !important; }
+            h2 { font-size: 1.1rem !important; }
+            h3 { font-size: 1rem !important; }
+            h4 { font-size: 0.9rem !important; }
+            h5 { font-size: 0.8rem !important; }
+            h6 { font-size: 0.7rem !important; }
+            
+            .metric-value {
+                font-size: 1.2rem !important;
+            }
+            
+            /* Control de paginación */
+            .page-break {
+                page-break-after: always;
+            }
+            .no-break {
+                page-break-inside: avoid;
+            }
+            
+            /* Tablas compactas para PDF */
+            .tabla-pdf {
+                font-size: 8px !important;
+            }
+            .tabla-pdf th, 
+            .tabla-pdf td {
+                padding: 3px 4px !important;
+            }
+            
+            /* Gráficos más pequeños en PDF */
+            .chart-container {
+                padding: 8px !important;
+                margin-bottom: 8px !important;
+                height: 150px !important;
+            }
+            
+            /* Ocultar canvas en PDF */
+            canvas {
+                display: none !important;
+            }
+            
+            /* Reducir márgenes en PDF */
+            .mb-1 { margin-bottom: 0.1rem !important; }
+            .mb-2 { margin-bottom: 0.2rem !important; }
+            .mb-3 { margin-bottom: 0.3rem !important; }
+            .mb-4 { margin-bottom: 0.4rem !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="reporte-container">
+
+        <!-- Selector de Fechas (OCULTO EN PDF) -->
+        <div class="row mb-4 no-print selector-fechas">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-calendar-alt"></i> Seleccionar Período</h5>
+                        <form id="formFechas" class="row g-3">
+                            <div class="col-md-3">
+                                <label for="fecha_inicio" class="form-label">Fecha Inicio</label>
+                                <input type="date" class="form-control" id="fecha_inicio" 
+                                    value="{{ fecha_inicio.strftime('%Y-%m-%d') if fecha_inicio else '' }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="fecha_fin" class="form-label">Fecha Fin</label>
+                                <input type="date" class="form-control" id="fecha_fin" 
+                                    value="{{ fecha_fin.strftime('%Y-%m-%d') if fecha_fin else datetime.now().strftime('%Y-%m-%d') }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="periodo" class="form-label">Período Rápido</label>
+                                <select class="form-select" id="periodo">
+                                    <option value="hoy">Hoy</option>
+                                    <option value="ayer">Ayer</option>
+                                    <option value="semana">Esta Semana</option>
+                                    <option value="mes">Este Mes</option>
+                                    <option value="mes_anterior">Mes Anterior</option>
+                                    <option value="personalizado" selected>Personalizado</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 d-flex align-items-end">
+                                <button type="button" class="btn btn-primary w-100" onclick="actualizarReporte()">
+                                    <i class="fas fa-sync-alt"></i> Actualizar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Encabezado del Reporte -->
+        <div class="reporte-header no-break">
+            <div class="row align-items-center">
+                <div class="col-md-10">
+                    <h1 class="fw-bold mb-1">REPORTE DE VENTAS POR PERÍODO</h1>
+                    <h4 class="mb-1">Panadería Dulce Tradición</h4>
+                    <p class="mb-0">
+                        <i class="fas fa-calendar-alt"></i>
+                        Período: 
+                        <span class="badge periodo-badge bg-light text-dark">
+                            {{ fecha_inicio.strftime('%d/%m/%Y') }} - {{ fecha_fin.strftime('%d/%m/%Y') }}
+                        </span>
+                    </p>
+                </div>
+                <div class="col-md-2 text-center no-print">
+                    <button class="btn btn-pdf" onclick="generarPDF()">
+                        <i class="fas fa-file-pdf"></i> Exportar PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cuerpo del Reporte -->
+        <div class="reporte-body">
+            <!-- Resumen Principal -->
+            <div class="row mb-4 no-break">
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <h5><i class="fas fa-money-bill-wave"></i> Total Ventas</h5>
+                        <div class="metric-value">${{ "{:,.2f}".format(total_ventas) }}</div>
+                        <small class="text-muted">Ingresos reales (excluye donaciones)</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <h5><i class="fas fa-receipt"></i> Transacciones</h5>
+                        <div class="metric-value">{{ total_transacciones }}</div>
+                        <small class="text-muted">Total ventas + donaciones</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <h5><i class="fas fa-calculator"></i> Ticket Promedio</h5>
+                        <div class="metric-value">${{ "{:,.2f}".format(promedio_venta) }}</div>
+                        <small class="text-muted">Por transacción (ventas reales)</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <h5><i class="fas fa-chart-line"></i> Tendencia</h5>
+                        <div class="metric-value {% if tendencia >= 0 %}tendencia-positiva{% else %}tendencia-negativa{% endif %}">
+                            {{ "{:+.1f}".format(tendencia) }}%
+                        </div>
+                        <small class="text-muted">vs período anterior</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 🎁 SECCIÓN DE DONACIONES - AGREGAR DESPUÉS DEL RESUMEN PRINCIPAL -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="metric-card" style="border-left-color: #ffc107;">
+                        <h5><i class="fas fa-gift text-warning"></i> Donaciones</h5>
+                        <div class="metric-value text-warning">{{ total_donaciones }}</div>
+                        <small class="text-muted">Transacciones de donación en el período</small>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="metric-card" style="border-left-color: #ffc107;">
+                        <h5><i class="fas fa-box text-warning"></i> Productos Donados</h5>
+                        <div class="metric-value text-warning">{{ productos_donados }}</div>
+                        <small class="text-muted">Unidades donadas en el período</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráficos de Distribución -->
+            <div class="row mb-4 no-break">
+                <div class="col-md-6">
+                    <div class="chart-container">
+                        <h4><i class="fas fa-chart-pie"></i> Distribución por Categoría</h4>
+                        
+                        <!-- Gráfico para pantalla -->
+                        <div class="no-print">
+                            <canvas id="categoriaChart" width="400" height="300"></canvas>
+                        </div>
+                        
+                        <!-- Tabla para PDF -->
+                        <div class="d-none d-print-block">
+                            <table class="table table-sm table-bordered tabla-pdf">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Categoría</th>
+                                        <th>Porcentaje</th>
+                                        <th>Ventas Estimadas</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Panadería</td>
+                                        <td>40%</td>
+                                        <td>${{ "{:,.2f}".format(total_ventas * 0.4) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Pastelería</td>
+                                        <td>35%</td>
+                                        <td>${{ "{:,.2f}".format(total_ventas * 0.35) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Bebidas</td>
+                                        <td>15%</td>
+                                        <td>${{ "{:,.2f}".format(total_ventas * 0.15) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Otros</td>
+                                        <td>10%</td>
+                                        <td>${{ "{:,.2f}".format(total_ventas * 0.1) }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="chart-container">
+                        <h4><i class="fas fa-chart-bar"></i> Resumen de Desempeño</h4>
+                        
+                        <!-- Gráfico para pantalla -->
+                        <div class="no-print">
+                            <canvas id="tendenciaChart" width="400" height="300"></canvas>
+                        </div>
+                        
+                        <!-- Tabla para PDF -->
+                        <div class="d-none d-print-block">
+                            <table class="table table-sm table-bordered tabla-pdf">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Métrica</th>
+                                        <th>Valor</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Ventas Totales</td>
+                                        <td>${{ "{:,.2f}".format(total_ventas) }}</td>
+                                        <td>
+                                            <span class="badge {% if tendencia >= 0 %}bg-success{% else %}bg-danger{% endif %}">
+                                                {{ "{:+.1f}".format(tendencia) }}%
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Transacciones</td>
+                                        <td>{{ total_transacciones }}</td>
+                                        <td>
+                                            <span class="badge {% if total_transacciones > 50 %}bg-success{% elif total_transacciones > 20 %}bg-warning{% else %}bg-danger{% endif %}">
+                                                {{ total_transacciones }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Ticket Promedio</td>
+                                        <td>${{ "{:,.2f}".format(promedio_venta) }}</td>
+                                        <td>
+                                            <span class="badge {% if promedio_venta > 500 %}bg-success{% elif promedio_venta > 300 %}bg-warning{% else %}bg-danger{% endif %}">
+                                                ${{ "{:,.0f}".format(promedio_venta) }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Análisis de Productos -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="metric-card">
+                        <h4><i class="fas fa-boxes"></i> Análisis de Productos por Categoría</h4>
+                        
+                        <div class="table-responsive mt-3">
+                            <table class="table table-striped tabla-ventas tabla-pdf">
+                                <thead>
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th>Categoría</th>
+                                        <th class="text-center">Unidades</th>
+                                        <th class="text-end">Ingresos</th>
+                                        <th class="text-center">Frecuencia</th>
+                                        <th class="text-center">Desempeño</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for key, producto in productos_analisis.items() %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ producto.nombre[:20] }}{% if producto.nombre|length > 20 %}...{% endif %}</strong>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">{{ producto.categoria[:10] }}{% if producto.categoria|length > 10 %}...{% endif %}</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-primary">{{ producto.cantidad }}</span>
+                                        </td>
+                                        <td class="text-end">
+                                            <strong>${{ "{:,.2f}".format(producto.ingresos) }}</strong>
+                                        </td>
+                                        <td class="text-center">
+                                            {% if producto.frecuencia > 10 %}
+                                                <span class="badge bg-success">Alta</span>
+                                            {% elif producto.frecuencia > 5 %}
+                                                <span class="badge bg-warning">Media</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Baja</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            {% if producto.ingresos > 1000 %}
+                                                <i class="fas fa-rocket text-success" title="Alto desempeño"></i>
+                                            {% elif producto.ingresos > 500 %}
+                                                <i class="fas fa-chart-line text-warning" title="Medio desempeño"></i>
+                                            {% else %}
+                                                <i class="fas fa-exclamation-triangle text-danger" title="Bajo desempeño"></i>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Insights Predictivos -->
+            <div class="row no-break">
+                <div class="col-12">
+                    <div class="metric-card">
+                        <h4><i class="fas fa-brain"></i> Análisis Predictivo y Recomendaciones</h4>
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <div class="alert alert-success p-2">
+                                    <i class="fas fa-thumbs-up"></i>
+                                    <strong>Fortalezas:</strong><br>
+                                    <small>
+                                    {% if tendencia > 0 %}
+                                        • Crecimiento del {{ "{:.1f}".format(tendencia) }}%<br>
+                                    {% endif %}
+                                    {% if promedio_venta > 500 %}
+                                        • Ticket promedio: ${{ "{:,.2f}".format(promedio_venta) }}<br>
+                                    {% endif %}
+                                    • {{ total_transacciones }} transacciones
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="alert alert-info p-2">
+                                    <i class="fas fa-lightbulb"></i>
+                                    <strong>Recomendaciones:</strong><br>
+                                    <small>
+                                    {% if tendencia < 0 %}
+                                        • Implementar promociones<br>
+                                    {% endif %}
+                                    {% if promedio_venta < 300 %}
+                                        • Crear combos<br>
+                                    {% endif %}
+                                    • Optimizar stock
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pie del Reporte -->
+        <div class="reporte-footer bg-light py-2 px-3 text-center mt-3">
+            <small class="text-muted">
+                <i class="fas fa-sync-alt"></i>
+                Reporte generado el {{ fecha_inicio.strftime('%d/%m/%Y') if fecha_inicio else datetime.now().strftime('%d/%m/%Y') }} | 
+                Período: {{ periodo }}
+            </small>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function generarPDF() {
+            window.print();
+        }
+
+        // Manejo de selección de fechas
+        document.getElementById('periodo').addEventListener('change', function() {
+            const hoy = new Date();
+            const fechaFin = document.getElementById('fecha_fin');
+            const fechaInicio = document.getElementById('fecha_inicio');
+            
+            switch(this.value) {
+                case 'hoy':
+                    fechaInicio.value = hoy.toISOString().split('T')[0];
+                    fechaFin.value = hoy.toISOString().split('T')[0];
+                    break;
+                case 'ayer':
+                    const ayer = new Date(hoy);
+                    ayer.setDate(hoy.getDate() - 1);
+                    fechaInicio.value = ayer.toISOString().split('T')[0];
+                    fechaFin.value = ayer.toISOString().split('T')[0];
+                    break;
+                case 'semana':
+                    const inicioSemana = new Date(hoy);
+                    inicioSemana.setDate(hoy.getDate() - hoy.getDay());
+                    fechaInicio.value = inicioSemana.toISOString().split('T')[0];
+                    fechaFin.value = hoy.toISOString().split('T')[0];
+                    break;
+                case 'mes':
+                    const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+                    fechaInicio.value = inicioMes.toISOString().split('T')[0];
+                    fechaFin.value = hoy.toISOString().split('T')[0];
+                    break;
+                case 'mes_anterior':
+                    const inicioMesAnterior = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
+                    const finMesAnterior = new Date(hoy.getFullYear(), hoy.getMonth(), 0);
+                    fechaInicio.value = inicioMesAnterior.toISOString().split('T')[0];
+                    fechaFin.value = finMesAnterior.toISOString().split('T')[0];
+                    break;
+            }
+        });
+
+        function actualizarReporte() {
+            const fechaInicio = document.getElementById('fecha_inicio').value;
+            const fechaFin = document.getElementById('fecha_fin').value;
+            const urlActual = window.location.href.split('?')[0];
+            
+            if (urlActual.includes('ventas')) {
+                window.location.href = `${urlActual}?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+            } else if (urlActual.includes('productos_populares')) {
+                window.location.href = `${urlActual}?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+            } else if (urlActual.includes('cierre_caja')) {
+                window.location.href = `${urlActual}?fecha=${fechaInicio}`;
+            } else {
+                window.location.href = `${urlActual}?fecha_inicio=${fecha_inicio}&fecha_fin=${fecha_fin}`;
+            }
+        }
+
+        // Gráfico de Categorías
+        const categoriaCtx = document.getElementById('categoriaChart').getContext('2d');
+        const categoriaChart = new Chart(categoriaCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Panadería', 'Pastelería', 'Bebidas', 'Otros'],
+                datasets: [{
+                    data: [40, 35, 15, 10],
+                    backgroundColor: [
+                        '#FF6384',
+                        '#36A2EB',
+                        '#FFCE56',
+                        '#4BC0C0'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        // Gráfico de Tendencia
+        const tendenciaCtx = document.getElementById('tendenciaChart').getContext('2d');
+        const tendenciaChart = new Chart(tendenciaCtx, {
+            type: 'line',
+            data: {
+                labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
+                datasets: [{
+                    label: 'Ventas Diarias',
+                    data: [1200, 1900, 1500, 2200, 1800, 2500, 2000],
+                    borderColor: '#27ae60',
+                    backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Auto-cierre después de 2 minutos (opcional)
+        setTimeout(() => {
+            if (confirm('¿Deseas cerrar el reporte?')) {
+                window.close();
+            }
+        }, 120000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte de Producción Diaria - Panadería</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: white;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
+        }
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .fecha {
+            color: #666;
+            font-size: 1.1em;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        .section-title {
+            background: #f5f5f5;
+            padding: 10px 15px;
+            border-left: 4px solid #667eea;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .metric-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            border-left: 4px solid #667eea;
+        }
+        .metric-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .metric-label {
+            color: #666;
+            margin-top: 5px;
+        }
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #666;
+            font-size: 0.9em;
+        }
+        @media print {
+            .no-print {
+                display: none;
+            }
+            body {
+                padding: 0;
+            }
+            .container {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Reporte de Producción Diaria</h1>
+            <div class="fecha">Fecha: {{ fecha.strftime('%d/%m/%Y') }}</div>
+            <div class="no-print" style="margin-top: 10px;">
+                <button onclick="window.print()" class="btn" style="background: #667eea; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">
+                    🖨️ Imprimir Reporte
+                </button>
+                <button onclick="window.close()" class="btn" style="background: #6c757d; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">
+                    ❌ Cerrar
+                </button>
+            </div>
+        </div>
+
+        <!-- Métricas del día -->
+        <div class="metrics">
+            <div class="metric-card">
+                <div class="metric-value">{{ total_producido }}</div>
+                <div class="metric-label">Total Producido</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">{{ total_recetas }}</div>
+                <div class="metric-label">Recetas Producidas</div>
+            </div>
+        </div>
+
+        <!-- Órdenes Completadas Hoy -->
+        <div class="section">
+            <div class="section-title">✅ Órdenes Completadas Hoy</div>
+            {% if ordenes_hoy %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Receta</th>
+                        <th>Cantidad</th>
+                        <th>Hora Completada</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for orden in ordenes_hoy %}
+                    <tr>
+                        <td>{{ orden.receta.nombre }}</td>
+                        <td>{{ orden.cantidad_producir }} unidades</td>
+                        <td>{{ orden.fecha_fin.strftime('%H:%M') if orden.fecha_fin else 'N/A' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="no-data">No hay órdenes completadas hoy</div>
+            {% endif %}
+        </div>
+
+        <!-- Stock Actual -->
+        <div class="section">
+            <div class="section-title">📦 Stock Actual en Vitrina</div>
+            {% if stock_actual %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Stock</th>
+                        <th>Categoría</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in stock_actual %}
+                    <tr>
+                        <td>{{ item.nombre }}</td>
+                        <td>{{ item.stock }} unidades</td>
+                        <td>{{ item.categoria }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="no-data">No hay información de stock disponible</div>
+            {% endif %}
+        </div>
+
+        <div class="footer">
+            <p>Generado el {{ fecha.strftime('%d/%m/%Y a las %H:%M') }}</p>
+            <p>Sistema de Gestión Panadería</p>
+        </div>
+    </div>
+
+    <script>
+        // Auto-imprimir al cargar (opcional)
+        // window.onload = function() { window.print(); }
+        
+        // Cerrar después de imprimir
+        window.afterprint = function() {
+            setTimeout(function() {
+                window.close();
+            }, 500);
+        };
+    </script>
+</body>
+</html>

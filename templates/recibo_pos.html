@@ -1,0 +1,393 @@
+<!-- 📍 Crear archivo: templates/recibo_pos.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recibo POS #{{ venta.consecutivo_pos }}</title>
+    <style>
+        /* ✅ ESTILOS OPTIMIZADOS PARA IMPRESORAS TÉRMICAS */
+    @media print {
+        @page {
+            margin: 0;
+            padding: 0;
+            size: 80mm 200mm; /* Ancho estándar térmicas */
+        }
+        body { 
+            margin: 0 !important; 
+            padding: 2mm !important;
+            width: 76mm !important; /* 80mm - márgenes */
+            font-family: 'Courier New', monospace !important;
+            font-size: 10px !important;
+            line-height: 1 !important;
+            background: white !important;
+            color: black !important;
+        }
+        .no-print { display: none !important; }
+        .receipt { 
+            width: 76mm !important; 
+            margin: 0 !important; 
+            padding: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+        * { 
+            font-size: 10px !important;
+            line-height: 1 !important;
+            color: black !important;
+            background: transparent !important;
+        }
+        table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+        }
+        td, th {
+            padding: 1px 2px !important;
+        }
+    }
+    
+        /* Estilos normales para pantalla */
+        body {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.2;
+        }
+        
+        .receipt {
+            width: 80mm;
+            margin: 20px auto;
+            padding: 15px;
+            border: 1px solid #ccc;
+            background: white;
+        }
+        
+        .header {
+            text-align: center;
+            border-bottom: 1px dashed #000;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .company-name {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        
+        .company-info {
+            font-size: 10px;
+            margin-bottom: 5px;
+        }
+        
+        .receipt-title {
+            font-weight: bold;
+            font-size: 13px;
+            margin: 10px 0;
+        }
+        
+        .receipt-info {
+            margin: 8px 0;
+        }
+        
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        
+        .items-table th {
+            border-bottom: 1px solid #000;
+            padding: 4px 2px;
+            text-align: left;
+            font-weight: bold;
+        }
+        
+        .items-table td {
+            padding: 3px 2px;
+            border-bottom: 1px dashed #ccc;
+        }
+        
+        .total-section {
+            border-top: 2px solid #000;
+            margin-top: 10px;
+            padding-top: 10px;
+            font-weight: bold;
+        }
+        
+        .legal-text {
+            font-size: 9px;
+            text-align: center;
+            margin-top: 15px;
+            border-top: 1px dashed #000;
+            padding-top: 10px;
+            font-style: italic;
+        }
+        
+        .payment-method {
+            margin: 8px 0;
+            font-weight: bold;
+        }
+        
+        .thank-you {
+            text-align: center;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        
+        .barcode-area {
+            text-align: center;
+            margin: 10px 0;
+            padding: 5px;
+            border: 1px dashed #000;
+        }
+    </style>
+</head>
+<body>
+    <div class="receipt">
+        <!-- Encabezado -->
+        
+        <div class="header">
+            <!-- 🆕 LOGO PERSONALIZADO -->
+            <div id="logoEmpresaContainer" style="text-align: center; margin-bottom: 8px; display: none;">
+                <img id="logoEmpresa" src="" style="max-width: 45mm; max-height: 15mm;">
+            </div>
+            
+            <div class="company-name" id="empresaNombre">{{ config.nombre_empresa }}</div>
+            <div class="company-info" id="empresaInfo">
+                NIT: <span id="empresaNIT">{{ config.nit_empresa }}</span><br>
+                <span id="empresaDireccion">{{ config.direccion_empresa }}</span><br>
+                <span id="empresaCiudad">{% if config.ciudad_empresa %}{{ config.ciudad_empresa }}{% else %}Pasto{% endif %}</span>
+                Tel: <span id="empresaTelefono">{{ config.telefono_empresa }}</span>
+            </div>
+        </div>
+
+        <!-- 🆕 MENSAJE PERSONALIZADO -->
+        <div id="mensajePersonalizado" class="thank-you" style="display: none;">
+            <!-- Se llena con JavaScript -->
+        </div>
+        
+        <!-- Información del Recibo -->
+        <div class="receipt-title">RECIBO POS</div>
+        <div class="receipt-info">
+            <strong>No:</strong> POS{{ "%06d" % venta.consecutivo_pos }}<br>
+            <strong>Fecha:</strong> {{ venta.fecha_hora.strftime('%d/%m/%Y') }}<br>
+            <strong>Hora:</strong> {{ venta.fecha_hora.strftime('%H:%M:%S') }}<br>
+            <strong>Vendedor:</strong> {{ venta.usuario_asociado.username }}
+        </div>
+        
+        <!-- Items -->
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Cant</th>
+                    <th>Precio</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for detalle in detalles %}
+                <tr>
+                    <td>
+                        {% if detalle.producto %}
+                            {{ detalle.producto.nombre }}
+                        {% elif detalle.producto_externo %}
+                            {{ detalle.producto_externo.nombre }}
+                        {% else %}
+                            Producto #{{ detalle.producto_id or detalle.producto_externo_id }}
+                        {% endif %}
+                    </td>
+                    <td>{{ detalle.cantidad }}</td>
+                    <td>${{ "{:,.0f}".format(detalle.precio_unitario) }}</td>
+                    <td>${{ "{:,.0f}".format(detalle.cantidad * detalle.precio_unitario) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <!-- Totales -->
+        <div class="total-section">
+            <div style="display: flex; justify-content: space-between;">
+                <span>TOTAL:</span>
+                <span>${{ "{:,.0f}".format(venta.total) }}</span>
+            </div>
+        </div>
+        
+        <!-- Método de Pago -->
+        <div class="payment-method">
+            Método de pago: 
+            {% if venta.metodo_pago == 'efectivo' %}
+                EFECTIVO
+            {% elif venta.metodo_pago == 'tarjeta' %}
+                TARJETA
+            {% elif venta.metodo_pago == 'transferencia' %}
+                TRANSFERENCIA
+            {% else %}
+                {{ venta.metodo_pago.upper() }}
+            {% endif %}
+        </div>
+        
+        <!-- Área de código de barras (placeholder) -->
+        <div class="barcode-area">
+            [CÓDIGO DE BARRAS]<br>
+            <small>POS{{ "%06d" % venta.consecutivo_pos }}</small>
+        </div>
+        
+        <!-- Texto Legal -->
+        <div class="legal-text">
+            {{ venta.texto_legal }}<br>
+            {{ config.regimen_empresa }}<br>
+            Este documento es generado electrónicamente
+        </div>
+        
+        <!-- Agradecimiento -->
+        <div class="thank-you">
+            ¡Gracias por su compra!<br>
+            Vuelva pronto
+        </div>
+    </div>
+    
+    <!-- Botones de Acción (no se imprimen) -->
+    <!-- Botones de Acción (no se imprimen) -->
+    <div class="no-print" style="text-align: center; margin: 20px;">
+        <button onclick="window.print()" class="btn btn-primary">
+            <i class="fas fa-print"></i> Imprimir Recibo
+        </button>
+        
+        {% if venta.tipo_documento == 'ELECTRONICA' %}
+        <button onclick="descargarXMLFactura({{ venta.id }})" class="btn btn-success">
+            <i class="fas fa-file-export"></i> Descargar XML
+        </button>
+        {% endif %}
+        
+        <button onclick="window.close()" class="btn btn-secondary">
+            <i class="fas fa-times"></i> Cerrar
+        </button>
+        
+        <a href="{{ url_for('punto_venta') }}" class="btn btn-info">
+            <i class="fas fa-cash-register"></i> Nueva Venta
+        </a>
+    </div>
+
+    <script>
+    // Auto-imprimir al cargar (para impresoras térmicas)
+        window.onload = function() {
+            // ✅ DESCOMENTA esta línea para auto-imprimir en impresoras térmicas
+            window.print();
+            
+            // Opcional: Cerrar después de imprimir
+            window.onafterprint = function() {
+                setTimeout(function() {
+                    window.close();
+                }, 1000);
+            };
+        };
+
+        // Función para forzar impresión térmica
+        function imprimirParaTermica() {
+            const estiloOriginal = document.styleSheets;
+            
+            // Aplicar estilos específicos para térmica
+            const estiloTermica = `
+                @media print {
+                    body { 
+                        margin: 0 !important; 
+                        padding: 0 !important;
+                        width: 80mm !important;
+                        font-size: 12px !important;
+                    }
+                    .no-print { display: none !important; }
+                    .receipt { 
+                        width: 80mm !important; 
+                        margin: 0 !important; 
+                        padding: 5px !important;
+                        border: none !important;
+                    }
+                    * { 
+                        font-size: 12px !important;
+                        line-height: 1.2 !important;
+                    }
+                }
+            `;
+            
+            const styleSheet = document.createElement("style");
+            styleSheet.type = "text/css";
+            styleSheet.innerText = estiloTermica;
+            document.head.appendChild(styleSheet);
+            
+            window.print();
+        }
+
+        // 🆕 CONFIGURACIÓN PERSONALIZADA DEL TICKET
+        const configTicket = {
+            empresa: {
+                nombre: "{{ config.nombre_empresa }}",
+                direccion: "{{ config.direccion_empresa }}",
+                telefono: "{{ config.telefono_empresa }}",
+                nit: "{{ config.nit_empresa }}",
+                ciudad: "{{ config.ciudad_empresa }}"
+            },
+            ticket: {
+                mostrarLogo: false,
+                logoUrl: "",
+                mensajePersonalizado: "¡Gracias por su compra! Vuelva pronto",
+                mostrarQR: true,
+                qrMensaje: "Escanea para dejar tu reseña",
+                mostrarPromociones: true
+            },
+            diseño: {
+                encabezadoColor: "#2c3e50",
+                textoColor: "#2c3e50", 
+                enfasisColor: "#e74c3c"
+            }
+        };
+
+        // 🆕 CARGAR CONFIGURACIÓN GUARDADA
+       
+        function cargarConfiguracionTicket() {
+            const configGuardada = localStorage.getItem('configTicketPersonalizada');
+            if (configGuardada) {
+                const config = JSON.parse(configGuardada);
+                
+                // Aplicar configuración personalizada
+                if (config.empresa) {
+                    document.getElementById('empresaNombre').textContent = config.empresa.nombre || "{{ config.nombre_empresa }}";
+                    document.getElementById('empresaDireccion').textContent = config.empresa.direccion || "{{ config.direccion_empresa }}";
+                    document.getElementById('empresaTelefono').textContent = config.empresa.telefono || "{{ config.telefono_empresa }}";
+                    document.getElementById('empresaNIT').textContent = config.empresa.nit || "{{ config.nit_empresa }}";
+                    document.getElementById('empresaCiudad').textContent = config.empresa.ciudad || "{{ config.ciudad_empresa }}";
+                }
+                
+                // 🆕 MANEJAR LOGO
+                if (config.ticket.mostrarLogo && config.ticket.logoUrl) {
+                    const logoContainer = document.getElementById('logoEmpresaContainer');
+                    const logoImg = document.getElementById('logoEmpresa');
+                    
+                    logoContainer.style.display = 'block';
+                    logoImg.src = config.ticket.logoUrl;
+                    logoImg.alt = config.empresa.nombre || 'Logo Empresa';
+                    
+                    // Manejar errores de imagen
+                    logoImg.onerror = function() {
+                        logoContainer.style.display = 'none';
+                        console.log('Logo no encontrado:', config.ticket.logoUrl);
+                    };
+                }
+                
+                // Mensaje personalizado
+                if (config.ticket.mensajePersonalizado) {
+                    document.getElementById('mensajePersonalizado').style.display = 'block';
+                    document.getElementById('mensajePersonalizado').innerHTML = config.ticket.mensajePersonalizado;
+                }
+            }
+        }
+
+        // 🆕 EJECUTAR AL CARGAR
+        window.onload = function() {
+            cargarConfiguracionTicket();
+            // Auto-imprimir (opcional)
+            // window.print();
+        };
+    </script>
+</body>
+</html>

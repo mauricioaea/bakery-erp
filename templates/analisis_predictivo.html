@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis Predictivo - Panadería</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* ===== ESTILOS NORMALES PARA PANTALLA ===== */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .reporte-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+            margin: 20px auto;
+            max-width: 1400px;
+        }
+        .reporte-header {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .reporte-body {
+            padding: 30px;
+        }
+        .metric-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #9b59b6;
+            transition: transform 0.3s ease;
+        }
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .producto-analisis {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 5px solid #9b59b6;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        .riesgo-alto { border-left-color: #e74c3c; background: #ffeaea; }
+        .riesgo-medio { border-left-color: #f39c12; background: #fff4e6; }
+        .riesgo-bajo { border-left-color: #27ae60; background: #eaffea; }
+        .btn-pdf {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .btn-pdf:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+        }
+        .chart-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        .alerta-card {
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid;
+        }
+        .alerta-alta { border-left-color: #e74c3c; background: #ffeaea; }
+        .alerta-media { border-left-color: #f39c12; background: #fff4e6; }
+        .alerta-baja { border-left-color: #3498db; background: #eaf2f8; }
+        .badge-riesgo {
+            font-size: 0.9rem;
+            padding: 6px 12px;
+        }
+        .progreso-stock {
+            height: 8px;
+            margin-top: 5px;
+        }
+        .ai-badge {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+
+        /* ===== ESTILOS SOLO PARA PDF/IMPRESIÓN ===== */
+        @media print {
+            /* Ocultar elementos no necesarios en PDF */
+            .no-print, .btn-pdf, .selector-fechas {
+                display: none !important;
+            }
+            
+            /* Resetear estilos para PDF */
+            body {
+                background: white !important;
+                font-size: 10px !important;
+                line-height: 1.1 !important;
+                padding: 5px !important;
+                margin: 0 !important;
+            }
+            
+            .reporte-container {
+                box-shadow: none !important;
+                margin: 0 !important;
+                border-radius: 0 !important;
+                max-width: 100% !important;
+            }
+            
+            .reporte-header {
+                padding: 10px !important;
+                margin-bottom: 10px !important;
+                background: #8e44ad !important;
+            }
+            
+            .reporte-body {
+                padding: 10px !important;
+            }
+            
+            /* Compactar cards para PDF */
+            .metric-card {
+                padding: 8px !important;
+                margin-bottom: 8px !important;
+                border-left: 2px solid #9b59b6 !important;
+            }
+            
+            .producto-analisis {
+                padding: 6px !important;
+                margin-bottom: 6px !important;
+                border-left: 3px solid #9b59b6 !important;
+                font-size: 9px !important;
+            }
+            
+            .alerta-card {
+                padding: 6px !important;
+                margin-bottom: 4px !important;
+                font-size: 9px !important;
+            }
+            
+            /* Reducir fuentes para PDF */
+            h1 { font-size: 1.2rem !important; }
+            h2 { font-size: 1.1rem !important; }
+            h3 { font-size: 1rem !important; }
+            h4 { font-size: 0.9rem !important; }
+            h5 { font-size: 0.8rem !important; }
+            h6 { font-size: 0.7rem !important; }
+            
+            /* Control de paginación */
+            .page-break {
+                page-break-after: always;
+            }
+            .no-break {
+                page-break-inside: avoid;
+            }
+            
+            /* Tabla compacta solo para PDF */
+            .tabla-pdf {
+                font-size: 8px !important;
+            }
+            .tabla-pdf th, 
+            .tabla-pdf td {
+                padding: 3px 4px !important;
+            }
+            
+            /* Gráficos más pequeños en PDF */
+            .chart-container {
+                padding: 8px !important;
+                margin-bottom: 8px !important;
+                height: 150px !important;
+            }
+            
+            /* Reducir márgenes en PDF */
+            .mb-1 { margin-bottom: 0.1rem !important; }
+            .mb-2 { margin-bottom: 0.2rem !important; }
+            .mb-3 { margin-bottom: 0.3rem !important; }
+            .mb-4 { margin-bottom: 0.4rem !important; }
+
+            /* ===== ESTILOS SOLO PARA PDF/IMPRESIÓN ===== */
+        @media print {
+            /* ... (mantén todo lo que ya tienes) ... */
+            
+            /* Asegurar que las tablas de gráficos sean compactas */
+            .chart-container table {
+                font-size: 8px !important;
+                margin-bottom: 0 !important;
+            }
+            .chart-container table th, 
+            .chart-container table td {
+                padding: 3px 4px !important;
+            }
+            
+            /* Ocultar completamente los canvas en PDF */
+            canvas {
+                display: none !important;
+            }
+            
+            /* Asegurar que los contenedores de gráficos tengan altura fija */
+            .chart-container {
+                min-height: 120px !important;
+                height: auto !important;
+            }
+        }
+        }
+    </style>
+</head>
+<body>
+    <div class="reporte-container">
+
+        <!-- Selector de Fechas (OCULTO EN PDF) -->
+        <div class="row mb-4 no-print selector-fechas">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-calendar-alt"></i> Seleccionar Período</h5>
+                        <form id="formFechas" class="row g-3">
+                            <div class="col-md-3">
+                                <label for="fecha_inicio" class="form-label">Fecha Inicio</label>
+                                <input type="date" class="form-control" id="fecha_inicio" 
+                                    value="{{ fecha_inicio.strftime('%Y-%m-%d') if fecha_inicio else '' }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="fecha_fin" class="form-label">Fecha Fin</label>
+                                <input type="date" class="form-control" id="fecha_fin" 
+                                    value="{{ fecha_fin.strftime('%Y-%m-%d') if fecha_fin else datetime.now().strftime('%Y-%m-%d') }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="periodo" class="form-label">Período Rápido</label>
+                                <select class="form-select" id="periodo">
+                                    <option value="hoy">Hoy</option>
+                                    <option value="ayer">Ayer</option>
+                                    <option value="semana">Esta Semana</option>
+                                    <option value="mes">Este Mes</option>
+                                    <option value="mes_anterior">Mes Anterior</option>
+                                    <option value="personalizado" selected>Personalizado</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 d-flex align-items-end">
+                                <button type="button" class="btn btn-primary w-100" onclick="actualizarReporte()">
+                                    <i class="fas fa-sync-alt"></i> Actualizar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Encabezado del Reporte -->
+        <div class="reporte-header no-break">
+            <div class="row align-items-center">
+                <div class="col-md-2 text-center">
+                    <i class="fas fa-brain fa-3x mb-3"></i>
+                </div>
+                <div class="col-md-8">
+                    <h1 class="display-5 fw-bold">ANÁLISIS PREDICTIVO CON IA</h1>
+                    <h3 class="mb-0">Proyecciones y Recomendaciones Inteligentes</h3>
+                    <p class="mb-0 mt-2">
+                        <i class="fas fa-calendar-alt"></i>
+                        Fecha de análisis: {{ fecha_analisis.strftime('%d/%m/%Y') }}
+                        <span class="ai-badge ms-2 no-print">
+                            <i class="fas fa-robot"></i> APRENDIZAJE AUTOMÁTICO ACTIVO
+                        </span>
+                    </p>
+                </div>
+                <div class="col-md-2 text-center no-print">
+                    <button class="btn btn-pdf" onclick="generarPDF()">
+                        <i class="fas fa-file-pdf"></i> Exportar PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cuerpo del Reporte -->
+        <div class="reporte-body">
+            <!-- Alertas Inteligentes -->
+            {% if alertas %}
+            <div class="row mb-4 no-break">
+                <div class="col-12">
+                    <div class="metric-card">
+                        <h4><i class="fas fa-exclamation-triangle"></i> Alertas Inteligentes del Sistema</h4>
+                        <div class="row mt-3">
+                            {% for alerta in alertas %}
+                            <div class="col-md-6 mb-3">
+                                <div class="alerta-card {% if alerta.prioridad == 'ALTA' %}alerta-alta
+                                                    {% elif alerta.prioridad == 'MEDIA' %}alerta-media
+                                                    {% else %}alerta-baja{% endif %}">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">
+                                                {% if alerta.tipo == 'STOCK_CRITICO' %}
+                                                    <i class="fas fa-boxes text-danger"></i>
+                                                {% else %}
+                                                    <i class="fas fa-chart-line text-warning"></i>
+                                                {% endif %}
+                                                {{ alerta.mensaje }}
+                                            </h6>
+                                            <small class="text-muted no-print">Detectado automáticamente por el sistema</small>
+                                        </div>
+                                        <span class="badge {% if alerta.prioridad == 'ALTA' %}bg-danger
+                                                        {% elif alerta.prioridad == 'MEDIA' %}bg-warning
+                                                        {% else %}bg-info{% endif %}">
+                                            {{ alerta.prioridad }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- 🎁 SECCIÓN DE DONACIONES  -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card border-warning">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="mb-0">
+                                <i class="fas fa-gift me-2"></i>Impacto de Donaciones en el Inventario
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-md-6">
+                                    <div class="border rounded p-3 bg-light">
+                                        <h3 class="text-warning mb-1">{{ total_donaciones }}</h3>
+                                        <p class="mb-1 fw-bold">Donaciones</p>
+                                        <small class="text-muted">Últimos 30 días</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="border rounded p-3 bg-light">
+                                        <h3 class="text-warning mb-1">{{ productos_donados }}</h3>
+                                        <p class="mb-1 fw-bold">Productos Donados</p>
+                                        <small class="text-muted">Unidades descargadas sin ingresos</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="alert alert-info mt-3 mb-0">
+                                <i class="fas fa-lightbulb me-2"></i>
+                                <strong>Nota para el análisis predictivo:</strong> Las donaciones están incluidas en los datos históricos 
+                                utilizados para las proyecciones, lo que garantiza un cálculo preciso del inventario necesario.
+                                <span class="badge bg-primary ms-2">
+                                    <i class="fas fa-robot"></i> IA CONSIDERA DONACIONES
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Análisis Predictivo por Producto -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="metric-card">
+                        <h4><i class="fas fa-chart-line"></i> Proyecciones de Ventas - Próximos 7 Días</h4>
+                        <p class="text-muted">Basado en análisis de tendencias históricas y patrones de venta</p>
+                        
+                        <!-- Versión normal para pantalla -->
+                        <div class="no-print">
+                            {% for producto in productos_analisis %}
+                            <div class="producto-analisis {% if producto.nivel_riesgo == 'ALTO' %}riesgo-alto
+                                                        {% elif producto.nivel_riesgo == 'MEDIO' %}riesgo-medio
+                                                        {% else %}riesgo-bajo{% endif %}">
+                                <div class="row align-items-center">
+                                    <div class="col-md-3">
+                                        <h5 class="mb-1">{{ producto.producto }}</h5>
+                                        <small class="text-muted">Stock actual: {{ producto.stock_actual }} unidades</small>
+                                    </div>
+                                    <div class="col-md-2 text-center">
+                                        <strong class="fs-5">{{ producto.rotacion_actual }}</strong>
+                                        <br>
+                                        <small class="text-muted">rotación/día</small>
+                                    </div>
+                                    <div class="col-md-2 text-center">
+                                        <strong class="fs-5">{{ producto.proyeccion_ventas }}</strong>
+                                        <br>
+                                        <small class="text-muted">proyección 7 días</small>
+                                    </div>
+                                    <div class="col-md-2 text-center">
+                                        <strong class="fs-5 {% if producto.dias_stock < 3 %}text-danger
+                                                          {% elif producto.dias_stock < 7 %}text-warning
+                                                          {% else %}text-success{% endif %}">
+                                            {{ producto.dias_stock }} días
+                                        </strong>
+                                        <br>
+                                        <small class="text-muted">stock restante</small>
+                                    </div>
+                                    <div class="col-md-2 text-center">
+                                        <span class="badge {% if producto.nivel_riesgo == 'ALTO' %}bg-danger
+                                                        {% elif producto.nivel_riesgo == 'MEDIO' %}bg-warning
+                                                        {% else %}bg-success{% endif %} badge-riesgo">
+                                            {{ producto.nivel_riesgo }}
+                                        </span>
+                                    </div>
+                                    <div class="col-md-1 text-center">
+                                        {% if producto.nivel_riesgo == 'ALTO' %}
+                                            <i class="fas fa-exclamation-circle fa-2x text-danger"></i>
+                                        {% elif producto.nivel_riesgo == 'MEDIO' %}
+                                            <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
+                                        {% else %}
+                                            <i class="fas fa-check-circle fa-2x text-success"></i>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-12">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">Nivel de stock:</small>
+                                            <small class="text-muted">
+                                                {% if producto.dias_stock < 3 %}Crítico
+                                                {% elif producto.dias_stock < 7 %}Bajo
+                                                {% elif producto.dias_stock < 14 %}Normal
+                                                {% else %}Excedente
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                        <div class="progress progreso-stock">
+                                            <div class="progress-bar 
+                                                {% if producto.dias_stock < 3 %}bg-danger
+                                                {% elif producto.dias_stock < 7 %}bg-warning
+                                                {% elif producto.dias_stock < 14 %}bg-info
+                                                {% else %}bg-success{% endif %}" 
+                                                style="width: {{ [100 - (producto.dias_stock * 7), 5]|max }}%">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-12">
+                                        <div class="alert {% if producto.nivel_riesgo == 'ALTO' %}alert-danger
+                                                        {% elif producto.nivel_riesgo == 'MEDIO' %}alert-warning
+                                                        {% else %}alert-success{% endif %} py-2 mb-0">
+                                            <small>
+                                                <i class="fas fa-robot"></i> 
+                                                <strong>Recomendación IA:</strong> {{ producto.recomendacion }}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Versión tabla compacta para PDF -->
+                        <div class="d-none d-print-block">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered tabla-pdf">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Producto</th>
+                                            <th>Stock</th>
+                                            <th>Rotación/día</th>
+                                            <th>Proyección</th>
+                                            <th>Días Stock</th>
+                                            <th>Riesgo</th>
+                                            <th>Recomendación</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for producto in productos_analisis %}
+                                        <tr class="{% if producto.nivel_riesgo == 'ALTO' %}table-danger
+                                                  {% elif producto.nivel_riesgo == 'MEDIO' %}table-warning
+                                                  {% else %}table-success{% endif %}">
+                                            <td><strong>{{ producto.producto }}</strong></td>
+                                            <td>{{ producto.stock_actual }}</td>
+                                            <td>{{ producto.rotacion_actual }}</td>
+                                            <td>{{ producto.proyeccion_ventas }}</td>
+                                            <td>
+                                                <span class="{% if producto.dias_stock < 3 %}text-danger
+                                                           {% elif producto.dias_stock < 7 %}text-warning
+                                                           {% else %}text-success{% endif %}">
+                                                    {{ producto.dias_stock }} días
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge {% if producto.nivel_riesgo == 'ALTO' %}bg-danger
+                                                                {% elif producto.nivel_riesgo == 'MEDIO' %}bg-warning
+                                                                {% else %}bg-success{% endif %}">
+                                                    {{ producto.nivel_riesgo }}
+                                                </span>
+                                            </td>
+                                            <td><small>{{ producto.recomendacion[:60] }}{% if producto.recomendacion|length > 60 %}...{% endif %}</small></td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resto del contenido se mantiene igual -->
+            <!-- Gráficos Predictivos -->
+            <div class="row mb-4 no-break">
+                <div class="col-md-6">
+                    <div class="chart-container">
+                        <h4><i class="fas fa-project-diagram"></i> Distribución de Riesgos</h4>
+                        
+                        <!-- Gráfico para pantalla -->
+                        <div class="no-print">
+                            <canvas id="riesgoChart" width="400" height="300"></canvas>
+                        </div>
+                        
+                        <!-- Tabla para PDF -->
+                        <div class="d-none d-print-block">
+                            <table class="table table-sm table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Tipo de Riesgo</th>
+                                        <th>Cantidad</th>
+                                        <th>Porcentaje</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% set total_productos = productos_analisis|length %}
+                                    {% set riesgo_alto = productos_analisis|selectattr('nivel_riesgo', 'equalto', 'ALTO')|list|length %}
+                                    {% set riesgo_medio = productos_analisis|selectattr('nivel_riesgo', 'equalto', 'MEDIO')|list|length %}
+                                    {% set riesgo_bajo = productos_analisis|selectattr('nivel_riesgo', 'equalto', 'BAJO')|list|length %}
+                                    <tr class="table-danger">
+                                        <td>Riesgo Alto</td>
+                                        <td>{{ riesgo_alto }}</td>
+                                        <td>{{ "%.1f"|format((riesgo_alto / total_productos * 100) if total_productos > 0 else 0) }}%</td>
+                                    </tr>
+                                    <tr class="table-warning">
+                                        <td>Riesgo Medio</td>
+                                        <td>{{ riesgo_medio }}</td>
+                                        <td>{{ "%.1f"|format((riesgo_medio / total_productos * 100) if total_productos > 0 else 0) }}%</td>
+                                    </tr>
+                                    <tr class="table-success">
+                                        <td>Riesgo Bajo</td>
+                                        <td>{{ riesgo_bajo }}</td>
+                                        <td>{{ "%.1f"|format((riesgo_bajo / total_productos * 100) if total_productos > 0 else 0) }}%</td>
+                                    </tr>
+                                    <tr class="table-primary">
+                                        <td><strong>Total</strong></td>
+                                        <td><strong>{{ total_productos }}</strong></td>
+                                        <td><strong>100%</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="chart-container">
+                        <h4><i class="fas fa-bell"></i> Alertas por Prioridad</h4>
+                        
+                        <!-- Gráfico para pantalla -->
+                        <div class="no-print">
+                            <canvas id="alertasChart" width="400" height="300"></canvas>
+                        </div>
+                        
+                        <!-- Tabla para PDF -->
+                        <div class="d-none d-print-block">
+                            <table class="table table-sm table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Prioridad</th>
+                                        <th>Cantidad</th>
+                                        <th>Porcentaje</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% set total_alertas = alertas|length %}
+                                    {% set alertas_alta = alertas|selectattr('prioridad', 'equalto', 'ALTA')|list|length %}
+                                    {% set alertas_media = alertas|selectattr('prioridad', 'equalto', 'MEDIA')|list|length %}
+                                    {% set alertas_baja = alertas|selectattr('prioridad', 'equalto', 'BAJA')|list|length %}
+                                    <tr class="table-danger">
+                                        <td>Alta</td>
+                                        <td>{{ alertas_alta }}</td>
+                                        <td>{{ "%.1f"|format((alertas_alta / total_alertas * 100) if total_alertas > 0 else 0) }}%</td>
+                                    </tr>
+                                    <tr class="table-warning">
+                                        <td>Media</td>
+                                        <td>{{ alertas_media }}</td>
+                                        <td>{{ "%.1f"|format((alertas_media / total_alertas * 100) if total_alertas > 0 else 0) }}%</td>
+                                    </tr>
+                                    <tr class="table-info">
+                                        <td>Baja</td>
+                                        <td>{{ alertas_baja }}</td>
+                                        <td>{{ "%.1f"|format((alertas_baja / total_alertas * 100) if total_alertas > 0 else 0) }}%</td>
+                                    </tr>
+                                    <tr class="table-primary">
+                                        <td><strong>Total</strong></td>
+                                        <td><strong>{{ total_alertas }}</strong></td>
+                                        <td><strong>100%</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        <!-- Pie del Reporte -->
+        <div class="reporte-footer bg-light py-3 px-4 text-center">
+            <small class="text-muted">
+                <i class="fas fa-sync-alt"></i>
+                Reporte generado automáticamente el {{ fecha_analisis.strftime('%d/%m/%Y a las %H:%M') }} | 
+                Sistema Panadería con IA | Análisis predictivo con aprendizaje automático
+            </small>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function generarPDF() {
+            window.print();
+        }
+
+        // El resto del JavaScript se mantiene igual...
+        document.getElementById('periodo').addEventListener('change', function() {
+            const hoy = new Date();
+            const fechaFin = document.getElementById('fecha_fin');
+            const fechaInicio = document.getElementById('fecha_inicio');
+            
+            switch(this.value) {
+                case 'hoy':
+                    fechaInicio.value = hoy.toISOString().split('T')[0];
+                    fechaFin.value = hoy.toISOString().split('T')[0];
+                    break;
+                case 'ayer':
+                    const ayer = new Date(hoy);
+                    ayer.setDate(hoy.getDate() - 1);
+                    fechaInicio.value = ayer.toISOString().split('T')[0];
+                    fechaFin.value = ayer.toISOString().split('T')[0];
+                    break;
+                case 'semana':
+                    const inicioSemana = new Date(hoy);
+                    inicioSemana.setDate(hoy.getDate() - hoy.getDay());
+                    fechaInicio.value = inicioSemana.toISOString().split('T')[0];
+                    fechaFin.value = hoy.toISOString().split('T')[0];
+                    break;
+                case 'mes':
+                    const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+                    fechaInicio.value = inicioMes.toISOString().split('T')[0];
+                    fechaFin.value = hoy.toISOString().split('T')[0];
+                    break;
+                case 'mes_anterior':
+                    const inicioMesAnterior = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
+                    const finMesAnterior = new Date(hoy.getFullYear(), hoy.getMonth(), 0);
+                    fechaInicio.value = inicioMesAnterior.toISOString().split('T')[0];
+                    fechaFin.value = finMesAnterior.toISOString().split('T')[0];
+                    break;
+            }
+        });
+
+        function actualizarReporte() {
+            const fechaInicio = document.getElementById('fecha_inicio').value;
+            const fechaFin = document.getElementById('fecha_fin').value;
+            const urlActual = window.location.href.split('?')[0];
+            
+            if (urlActual.includes('ventas')) {
+                window.location.href = `${urlActual}?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+            } else if (urlActual.includes('productos_populares')) {
+                window.location.href = `${urlActual}?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+            } else if (urlActual.includes('cierre_caja')) {
+                window.location.href = `${urlActual}?fecha=${fechaInicio}`;
+            } else {
+                window.location.href = `${urlActual}?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+            }
+        }
+
+        // Gráficos
+        const riesgoCtx = document.getElementById('riesgoChart').getContext('2d');
+        const riesgoChart = new Chart(riesgoCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Riesgo Alto', 'Riesgo Medio', 'Riesgo Bajo'],
+                datasets: [{
+                    data: [
+                        {{ productos_analisis|selectattr('nivel_riesgo', 'equalto', 'ALTO')|list|length }},
+                        {{ productos_analisis|selectattr('nivel_riesgo', 'equalto', 'MEDIO')|list|length }},
+                        {{ productos_analisis|selectattr('nivel_riesgo', 'equalto', 'BAJO')|list|length }}
+                    ],
+                    backgroundColor: ['#e74c3c', '#f39c12', '#27ae60']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        const alertasCtx = document.getElementById('alertasChart').getContext('2d');
+        const alertasChart = new Chart(alertasCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Alertas Altas', 'Alertas Medias', 'Alertas Bajas'],
+                datasets: [{
+                    label: 'Cantidad de Alertas',
+                    data: [
+                        {{ alertas|selectattr('prioridad', 'equalto', 'ALTA')|list|length }},
+                        {{ alertas|selectattr('prioridad', 'equalto', 'MEDIA')|list|length }},
+                        {{ alertas|selectattr('prioridad', 'equalto', 'BAJA')|list|length }}
+                    ],
+                    backgroundColor: ['#e74c3c', '#f39c12', '#3498db']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+
+        // Auto-cierre después de 2 minutos
+        setTimeout(() => {
+            if (confirm('¿Deseas cerrar el reporte?')) {
+                window.close();
+            }
+        }, 120000);
+    </script>
+</body>
+</html>

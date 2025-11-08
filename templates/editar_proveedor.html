@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Proveedor - Panadería</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f8f9fa;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .container {
+            padding: 30px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .form-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        input:focus, select:focus, textarea:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+        .btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+        }
+        .btn:hover {
+            background: #218838;
+        }
+        .back-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .back-btn:hover {
+            background: #5a6268;
+        }
+        small {
+            color: #666;
+            font-size: 0.875em;
+        }
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+        .alert {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>✏️ Editar Proveedor</h1>
+        <div>
+            <a href="{{ url_for('proveedores') }}" class="back-btn">← Volver a Proveedores</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="form-container">
+            <!-- Mensajes Flash -->
+            <div class="flash-messages">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+
+            <form method="POST">
+                <div class="form-group">
+                    <label for="nombre">Nombre del Proveedor:</label>
+                    <input type="text" id="nombre" name="nombre" value="{{ proveedor.nombre }}" required 
+                           placeholder="Ej: Haz de Oros, Lacteos La Sabana...">
+                </div>
+
+                <div class="form-group">
+                    <label for="contacto">Persona de Contacto:</label>
+                    <input type="text" id="contacto" name="contacto" value="{{ proveedor.contacto or '' }}" 
+                           placeholder="Ej: Juan Pérez, María González...">
+                </div>
+
+                <div class="form-group">
+                    <label for="telefono">Teléfono:</label>
+                    <input type="text" id="telefono" name="telefono" value="{{ proveedor.telefono or '' }}" 
+                           placeholder="Ej: 3001234567">
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email:</label>
+                    <input type="email" id="email" name="email" value="{{ proveedor.email or '' }}" 
+                           placeholder="Ej: contacto@empresa.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="direccion">Dirección:</label>
+                    <textarea id="direccion" name="direccion" rows="3" 
+                              placeholder="Ej: Calle 123 #45-67, Bogotá">{{ proveedor.direccion or '' }}</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="productos_que_suministra">Productos que Suministra:</label>
+                    <textarea id="productos_que_suministra" name="productos_que_suministra" rows="3" 
+                              placeholder="Ej: Harina de trigo, azúcar, levadura...">{{ proveedor.productos_que_suministra or '' }}</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="tiempo_entrega_dias">Tiempo de Entrega (días):</label>
+                    <input type="number" id="tiempo_entrega_dias" name="tiempo_entrega_dias" 
+                           value="{{ proveedor.tiempo_entrega_dias or 1 }}" min="1" max="30"
+                           placeholder="Ej: 2">
+                    <small>Días promedio que tarda en entregar los pedidos</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="evaluacion">Evaluación:</label>
+                    <select id="evaluacion" name="evaluacion">
+                        <option value="5" {% if proveedor.evaluacion == 5 %}selected{% endif %}>⭐⭐⭐⭐⭐ (5) - Excelente</option>
+                        <option value="4" {% if proveedor.evaluacion == 4 %}selected{% endif %}>⭐⭐⭐⭐ (4) - Muy Bueno</option>
+                        <option value="3" {% if proveedor.evaluacion == 3 or not proveedor.evaluacion %}selected{% endif %}>⭐⭐⭐ (3) - Bueno</option>
+                        <option value="2" {% if proveedor.evaluacion == 2 %}selected{% endif %}>⭐⭐ (2) - Regular</option>
+                        <option value="1" {% if proveedor.evaluacion == 1 %}selected{% endif %}>⭐ (1) - Malo</option>
+                    </select>
+                    <small>Calificación del proveedor basada en calidad y servicio</small>
+                </div>
+
+                <button type="submit" class="btn">💾 Actualizar Proveedor</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

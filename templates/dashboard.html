@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Panadería</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f1f5f9;
+            min-height: 100vh;
+            padding: 20px;
+            color: #2d3748;
+        }
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            background: #f7fafc;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.06);
+            margin-bottom: 30px;
+            text-align: center;
+            border-left: 5px solid #2b6cb0;
+        }
+        .header h1 {
+            color: #1a365d;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            font-weight: 700;
+        }
+        .welcome {
+            color: #4a5568;
+            font-size: 1.2em;
+            margin-bottom: 5px;
+        }
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: #f7fafc;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.06);
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 2px solid #e2e8f0;
+            position: relative;
+            overflow: hidden;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.04), 0 4px 6px rgba(0, 0, 0, 0.06);
+        }
+        .card-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.04);
+        }
+        .card h3 {
+            color: #1a365d;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+            font-weight: 600;
+        }
+        .card p {
+            color: #4a5568;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        .card-btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #2b6cb0 0%, #3182ce 100%);
+            color: white;
+            padding: 12px 25px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(43, 108, 176, 0.3);
+            border: 2px solid #2b6cb0;
+        }
+        .card-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 15px rgba(43, 108, 176, 0.4);
+            background: linear-gradient(135deg, #2c5282 0%, #2b6cb0 100%);
+        }
+        .card-btn.disabled {
+            background: #a8a8a8;
+            cursor: not-allowed;
+            opacity: 0.6;
+            box-shadow: none;
+            border-color: #a8a8a8;
+        }
+        .card-btn.disabled:hover {
+            transform: none;
+            box-shadow: none;
+        }
+        .logout-section {
+            text-align: center;
+            margin-top: 40px;
+        }
+        .logout-btn {
+            background: #c53030;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+            box-shadow: 0 4px 10px rgba(196, 94, 60, 0.3);
+            border: 2px solid #c53030;
+        }
+        .logout-btn:hover {
+            background: #a84d2e;
+            transform: scale(1.05);
+            box-shadow: 0 6px 15px rgba(196, 94, 60, 0.4);
+        }
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: 500;
+        }
+        .alert-success {
+            background: #e8f5e9;
+            color: #276749;
+            border: 2px solid #c8e6c9;
+        }
+        .alert-error {
+            background: #ffebee;
+            color: #c53030;
+            border: 2px solid #ffcdd2;
+        }
+        
+        /* Nuevos estilos para el módulo de producción */
+        .production-highlight {
+            border: 3px solid #276749;
+            position: relative;
+            overflow: hidden;
+        }
+        .production-highlight::before {
+            content: "NUEVO";
+            position: absolute;
+            top: 10px;
+            right: -25px;
+            background: #276749;
+            color: white;
+            padding: 5px 30px;
+            transform: rotate(45deg);
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        .card-icon-production {
+            background: linear-gradient(135deg, #276749 0%, #38a169 100%) !important;
+        }
+        
+        /* Estilos para productos externos */
+        .external-highlight {
+            border: 3px solid #d69e2e;
+            position: relative;
+            overflow: hidden;
+        }
+        .external-highlight::before {
+            content: "NUEVO";
+            position: absolute;
+            top: 10px;
+            right: -25px;
+            background: #d69e2e;
+            color: white;
+            padding: 5px 30px;
+            transform: rotate(45deg);
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        .card-icon-external {
+            background: linear-gradient(135deg, #d69e2e 0%, #ecc94b 100%) !important;
+        }
+        
+        /* Estilos para reportes activos */
+        .reports-active {
+            border: 3px solid #2b6cb0;
+        }
+        .card-icon-reports {
+            background: linear-gradient(135deg, #2b6cb0 0%, #3182ce 100%) !important;
+        }
+        
+        /* Navegación rápida */
+        .quick-nav {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.06);
+            margin-bottom: 25px;
+            border-left: 5px solid #2b6cb0;
+        }
+        .quick-nav h3 {
+            color: #1a365d;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: 600;
+        }
+        .nav-buttons {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .nav-btn {
+            background: linear-gradient(135deg, #2b6cb0 0%, #3182ce 100%);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+            box-shadow: 0 4px 8px rgba(43, 108, 176, 0.3);
+            border: 2px solid #2b6cb0;
+        }
+        .nav-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px rgba(43, 108, 176, 0.4);
+            background: linear-gradient(135deg, #2c5282 0%, #2b6cb0 100%);
+        }
+        .nav-btn.external {
+            background: linear-gradient(135deg, #d69e2e 0%, #ecc94b 100%);
+            border-color: #d69e2e;
+        }
+        .nav-btn.reports {
+            background: linear-gradient(135deg, #2b6cb0 0%, #3182ce 100%);
+            border-color: #2b6cb0;
+        }
+
+        /* Estilos para tarjeta de activos fijos */
+        .assets-highlight {
+            border: 3px solid #d69e2e;
+            position: relative;
+        }
+        .assets-highlight::before {
+            content: "NUEVO";
+            position: absolute;
+            top: 10px;
+            right: -25px;
+            background: #d69e2e;
+            color: white;
+            padding: 5px 30px;
+            transform: rotate(45deg);
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        .card-icon-assets {
+            background: linear-gradient(135deg, #d69e2e 0%, #ecc94b 100%) !important;
+        }
+        
+        /* Botones para activos fijos */
+        .assets-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+        .btn-manage {
+            background: #d69e2e;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            border: 2px solid #d69e2e;
+            box-shadow: 0 4px 8px rgba(214, 158, 46, 0.3);
+        }
+        .btn-new {
+            background: transparent;
+            color: #2d3748;
+            padding: 10px 20px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            border: 2px solid #d69e2e;
+        }
+        .btn-manage:hover, .btn-new:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(214, 158, 46, 0.3);
+        }
+        .btn-manage:hover {
+            background: #b8860b;
+        }
+        .btn-new:hover {
+            background: #d69e2e;
+            color: white;
+        }
+
+        /* Estilos para gestión de usuarios */
+        .card-users {
+            border: 2px solid #9c27b0;
+        }
+        .card-icon-users {
+            background: linear-gradient(135deg, #9c27b0 0%, #ba68c8 100%) !important;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .modules-grid {
+                grid-template-columns: 1fr;
+            }
+            .header h1 {
+                font-size: 2em;
+            }
+            .card {
+                padding: 20px;
+            }
+            .nav-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            .nav-btn {
+                width: 100%;
+                max-width: 250px;
+                text-align: center;
+            }
+            .assets-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            .btn-manage, .btn-new {
+                width: 100%;
+                max-width: 200px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            .header {
+                padding: 20px;
+            }
+            .header h1 {
+                font-size: 1.7em;
+            }
+            .welcome {
+                font-size: 1em;
+            }
+            .card-icon {
+                width: 60px;
+                height: 60px;
+                font-size: 1.5em;
+            }
+            .card h3 {
+                font-size: 1.2em;
+            }
+        }
+
+        /* Efectos decorativos adicionales */
+        .card::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #2b6cb0, #3182ce);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+        .card:hover::after {
+            transform: scaleX(1);
+        }
+
+        .production-highlight::after {
+            background: linear-gradient(90deg, #276749, #38a169);
+        }
+
+        .external-highlight::after {
+            background: linear-gradient(90deg, #d69e2e, #ecc94b);
+        }
+
+        .assets-highlight::after {
+            background: linear-gradient(90deg, #d69e2e, #ecc94b);
+        }
+
+        /* Colores específicos para cada módulo según la paleta oficial */
+        .card-icon-pos {
+            background: linear-gradient(135deg, #2b6cb0 0%, #3182ce 100%) !important;
+        }
+        
+        .card-icon-financial {
+            background: linear-gradient(135deg, #276749 0%, #38a169 100%) !important;
+        }
+        
+        .card-icon-recipes {
+            background: linear-gradient(135deg, #d69e2e 0%, #ecc94b 100%) !important;
+        }
+        
+        .card-icon-suppliers {
+            background: linear-gradient(135deg, #9c27b0 0%, #ba68c8 100%) !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Mensajes Flash -->
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <div class="header">
+            <h1> Panel Principal  </h1>
+            <p class="welcome">Bienvenido/a, <strong>{{ username }}</strong>! 👋</p>
+            <p>Selecciona un módulo para comenzar a gestionar tu panadería</p>
+        </div>
+
+        <!-- Navegación Rápida -->
+        <div class="quick-nav">
+            <h3>🚀 Acceso Rápido</h3>
+            <div class="nav-buttons">
+                <a href="{{ url_for('punto_venta') }}" class="nav-btn">💳 Punto de Venta</a>
+                <a href="{{ url_for('produccion_diaria') }}" class="nav-btn">🏭 Producción</a>
+                <a href="{{ url_for('productos_externos') }}" class="nav-btn external">🥤 Productos Externos</a>
+                <a href="{{ url_for('activos_fijos') }}" class="nav-btn">🏢 Activos Fijos</a>
+            </div>
+        </div>
+
+        <div class="modules-grid">
+            <!-- Punto de Venta -->
+            <div class="card">
+                <div class="card-icon card-icon-pos">💰</div>
+                <h3>Punto de Venta</h3>
+                <p>Registrar ventas rápidas en caja y gestionar transacciones diarias</p>
+                <a href="{{ url_for('punto_venta') }}" class="card-btn">¡Clic para empezar!</a>
+            </div>
+
+            <!-- 🆕 MÓDULO: PRODUCCIÓN DIARIA -->
+            <div class="card production-highlight">
+                <div class="card-icon card-icon-production">🏭</div>
+                <h3>Producción Diaria</h3>
+                <p>Gestión de stock en vitrina, órdenes de producción y alertas inteligentes en tiempo real</p>
+                <a href="{{ url_for('produccion_diaria') }}" class="card-btn">🚀 ¡Ir a Producción!</a>
+            </div>
+
+            <!-- 🆕 MÓDULO: PRODUCTOS EXTERNOS -->
+            <div class="card external-highlight">
+                <div class="card-icon card-icon-external">🥤</div>
+                <h3>Productos Externos</h3>
+                <p>Gestionar bebidas, helados y productos externos con control de stock y utilidades</p>
+                <a href="{{ url_for('productos_externos') }}" class="card-btn">➕ Agregar Productos</a>
+            </div>
+
+            <!-- Recetas -->
+            <div class="card">
+                <div class="card-icon card-icon-recipes">👨‍🍳</div>
+                <h3>Recetas y Fórmulas</h3>
+                <p>Crear y editar recetas, calcular costos automáticos y análisis de rentabilidad</p>
+                <a href="{{ url_for('recetas') }}" class="card-btn">📋 Ver Recetas</a>
+            </div>
+
+            <!-- Gestión de Materias Primas -->
+            <div class="card">
+                <div class="card-icon card-icon-pos">📦</div>
+                <h3>Gestión de Materias Primas</h3>
+                <p>Administrar ingredientes, costos, stock y alertas de inventario</p>
+                <a href="{{ url_for('materias_primas') }}" class="card-btn">¡Clic para empezar!</a>
+            </div>
+
+            <!-- Gestión de Proveedores -->
+            <div class="card">
+                <div class="card-icon card-icon-suppliers">🏢</div>
+                <h3>Gestión de Proveedores</h3>
+                <p>Administrar proveedores, contactos y evaluaciones</p>
+                <a href="{{ url_for('proveedores') }}" class="card-btn">¡Clic para empezar!</a>
+            </div>
+
+            <!-- Gestión Financiera -->
+            <div class="card">
+                <div class="card-icon card-icon-financial">💰</div>
+                <h3>Gestión Financiera</h3>
+                <p>Control diario de dinero, gastos operativos, ingresos y flujo de caja</p>
+                <a href="{{ url_for('control_diario') }}" class="card-btn">💰 Control Diario</a>
+            </div>
+
+            <!-- Reportes -->
+            <div class="card">
+                <div class="card-icon card-icon-reports">📊</div>
+                <h3>Reportes Profesionales</h3>
+                <p>Genera reportes contables y analíticos para tu negocio</p>
+                <a href="{{ url_for('reportes') }}" class="card-btn">📈 Ver Reportes</a>
+            </div>
+
+            <!-- MÓDULO: ACTIVOS FIJOS -->
+            <div class="card assets-highlight">
+                <div class="card-icon card-icon-assets">🏢</div>
+                <h3>Activos Fijos</h3>
+                <p>Gestionar equipos, herramientas, mobiliario y todas las inversiones de la panadería</p>
+                
+                <!-- Botones de gestión - SIN MÉTRICAS NUMÉRICAS -->
+                <div class="assets-buttons">
+                    <a href="{{ url_for('activos_fijos') }}" class="btn-manage">Gestionar</a>
+                    <a href="{{ url_for('registrar_activo') }}" class="btn-new">Nuevo</a>
+                </div>
+            </div>
+
+            <!-- Gestión de Usuarios -->
+            <div class="card card-users">
+                <div class="card-icon card-icon-users">👥</div>
+                <h3>Gestión de Usuarios</h3>
+                <p>Administrar empleados, permisos y roles del sistema</p>
+                
+                {% if current_user.is_authenticated and current_user.tiene_permiso('usuarios', 'gestionar') %}
+                    <a href="{{ url_for('gestion_usuarios') }}" class="card-btn">
+                        ⚙️ Administrar
+                    </a>
+                {% else %}
+                    <span class="card-btn disabled">🔒 Solo administradores</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Información del Sistema -->
+        <div class="quick-nav">
+            <h3>ℹ️ Información del Sistema</h3>
+            <div class="nav-buttons">
+                {% if current_user.is_authenticated and current_user.rol == 'super_admin' %}
+                    <a href="{{ url_for('gestion_clientes') }}" class="nav-btn">👑 Gestión de Clientes</a>
+                {% endif %}
+                <a href="/debug_api_productos" class="nav-btn" target="_blank">📦 Ver Productos API</a>
+                <a href="/crear_productos_prueba" class="nav-btn" target="_blank">🧪 Crear Productos Prueba</a>
+            </div>
+        </div>
+
+        <div class="logout-section">
+            <a href="{{ url_for('logout') }}" class="logout-btn">🚪 Cerrar Sesión</a>
+        </div>
+    </div>
+
+    <script>
+        // Efectos especiales para tarjetas destacadas
+        document.addEventListener('DOMContentLoaded', function() {
+            // Efecto para producción
+            const productionCard = document.querySelector('.production-highlight');
+            if (productionCard) {
+                setInterval(() => {
+                    productionCard.style.boxShadow = productionCard.style.boxShadow ? 
+                        '0 4px 6px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.06)' : 
+                        '0 10px 15px rgba(39, 103, 73, 0.1), 0 4px 6px rgba(39, 103, 73, 0.05)';
+                }, 1000);
+            }
+            
+            // Efecto para productos externos
+            const externalCard = document.querySelector('.external-highlight');
+            if (externalCard) {
+                setInterval(() => {
+                    externalCard.style.boxShadow = externalCard.style.boxShadow ? 
+                        '0 4px 6px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.06)' : 
+                        '0 10px 15px rgba(214, 158, 46, 0.1), 0 4px 6px rgba(214, 158, 46, 0.05)';
+                }, 1200);
+            }
+            
+            // Efecto para activos fijos
+            const assetsCard = document.querySelector('.assets-highlight');
+            if (assetsCard) {
+                setInterval(() => {
+                    assetsCard.style.boxShadow = assetsCard.style.boxShadow ? 
+                        '0 4px 6px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.06)' : 
+                        '0 10px 15px rgba(214, 158, 46, 0.1), 0 4px 6px rgba(214, 158, 46, 0.05)';
+                }, 1100);
+            }
+            
+            console.log('🎯 Dashboard cargado. Módulos activos:');
+            console.log('- 💳 Punto de Venta');
+            console.log('- 🏭 Producción Diaria'); 
+            console.log('- 🥤 Productos Externos');
+            console.log('- 🏢 Activos Fijos (sin métricas)');
+        });
+    </script>
+</body>
+</html>
