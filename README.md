@@ -1,3 +1,30 @@
+# 🏪 Sistema ERP Panadería - Gestión Multicliente
+
+## 👋 ¡Bienvenido/a!
+
+¡Hola! Soy **Mauricio**, desarrollador de sistemas POS registrado en Cámara de Comercio. 
+Este proyecto representa meses de dedicación creando una solución completa para panaderías.
+
+### 💝 Mi Motivación
+Desarrollé este sistema para ayudar a pequeños y medianos empresarios de panaderías 
+a digitalizar sus operaciones y crecer sus negocios de manera profesional.
+
+### 🤝 Para Visitantes
+- **¿Eres desarrollador?** ¡Tu feedback es invaluable!
+- **¿Tienes una panadería?** Próximamente disponible como servicio en la nube
+- **¿Te gusta el proyecto?** ⭐ Dale una estrella en GitHub
+- **¿Tienes ideas?** ¡Abre un issue y hablemos!
+
+### 🚀 Estado Actual
+✅ **Versión funcional completa** - Sistema 100% operativo  
+🔧 **Desarrollo activo** - Mejorando continuamente  
+🌐 **Próximamente** - Servicio SaaS en la nube
+
+---
+
+*"Crear software que realmente ayude a los negocios es mi pasión"* 🎯
+
+
 
 # 🏪 Sistema ERP Panadería - Gestión Multicliente
 
@@ -243,4 +270,3 @@ El repositorio se hará privado al alcanzar la versión 1.0 estable.
 2. **✅ Funcionalidades Completadas** - Marca con [x] lo terminado  
 3. **🚧 Próximas Funcionalidades** - Agrega nuevas ideas
 
-**¿Quieres que personalicemos alguna sección específica o agreguemos algo más?** 🚀
