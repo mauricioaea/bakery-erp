@@ -900,7 +900,7 @@ class Cliente(db.Model):
 class Venta(db.Model):
     __tablename__ = 'ventas'
     id = db.Column(db.Integer, primary_key=True)
-    fecha_hora = db.Column(db.DateTime, default=datetime.utcnow)
+    fecha_hora = db.Column(db.DateTime, default=datetime.now) 
     total = db.Column(db.Float, nullable=False)
     metodo_pago = db.Column(db.String(20), nullable=False)  # 'efectivo', 'tarjeta', 'transferencia'
     usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)

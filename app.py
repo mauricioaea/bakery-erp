@@ -4,7 +4,7 @@ import json
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, Response, make_response
 from flask_login import LoginManager, login_required, current_user, login_user, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta, date, timezone
 from sqlalchemy import func, extract
 from reportes import GeneradorReportes
 from io import BytesIO
@@ -719,6 +719,13 @@ def reiniciar_consecutivo_pos():
 @login_required
 @modulo_requerido('punto_venta')
 def registrar_venta():
+    print("🛒 DEBUG - INICIANDO REGISTRO DE VENTA")
+    print(f"👤 User ID en sesión: {session.get('user_id')}")
+    
+    # 🎯 OBTENER USUARIO ACTUAL PARA panaderia_id
+    usuario_actual = Usuario.query.get(session['user_id'])
+    print(f"🏪 DEBUG - Panadería ID del usuario: {usuario_actual.panaderia_id}")
+    
     """Registrar venta con productos mixtos (panadería + externos) - VERSIÓN MEJORADA CON CLIENTES Y DONACIONES"""
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'No autorizado'})
@@ -727,8 +734,8 @@ def registrar_venta():
         data = request.get_json()
         carrito = data.get('carrito', [])
         metodo_pago = data.get('metodo_pago', 'efectivo')
-        cliente_id = data.get('cliente_id')  # 👈 Obtener cliente_id
-        tipo_documento_solicitado = data.get('tipo_documento')  # 👈 Tipo solicitado desde frontend
+        cliente_id = data.get('cliente_id')
+        tipo_documento_solicitado = data.get('tipo_documento')
         
         # 🎁 NUEVO: CAPTURAR DATOS DE DONACIÓN
         es_donacion = data.get('es_donacion', False)
@@ -787,22 +794,33 @@ def registrar_venta():
             print(f"🎁 REGISTRANDO DONACIÓN - Motivo: {motivo_donacion}")
             print(f"🎁 Productos en donación: {[item.get('nombre', 'N/A') for item in carrito]}")
         
-        # 🆕 CREAR VENTA CON NUEVOS CAMPOS (INCLUYENDO DONACIÓN)
+        # 🎯 SOLUCIÓN DEFINITIVA - FECHA/HORA CON TIMEZONE CORRECTO
+        # Crear datetime con timezone de Colombia (UTC-5)
+        tz_colombia = timezone(timedelta(hours=-5))
+        fecha_hora = datetime.now(tz_colombia)
+        
+        # 🆕 CREAR VENTA CON FECHA CORREGIDA
         nueva_venta = Venta(
             usuario_id=session['user_id'],
-            total=total_venta,  # 🎁 YA CALCULADO (0 si es donación)
+            total=total_venta,
             metodo_pago=metodo_pago,
-            cliente_id=cliente_id,  # Asignar cliente
-            # 🆕 CAMPOS EXISTENTES
+            cliente_id=cliente_id,
+            panaderia_id=usuario_actual.panaderia_id,
             tipo_documento=tipo_documento,
             consecutivo_pos=consecutivo_pos,
             texto_legal=texto_legal,
-            # 🎁 NUEVOS CAMPOS PARA DONACIÓN
             es_donacion=es_donacion,
-            motivo_donacion=motivo_donacion
+            motivo_donacion=motivo_donacion,
+            fecha_hora=fecha_hora  # ← FECHA CORREGIDA DEFINITIVAMENTE
         )
         db.session.add(nueva_venta)
         db.session.flush()  # Para obtener el ID
+        
+        print(f"✅ Venta creada con panaderia_id: {nueva_venta.panaderia_id}")
+        print(f"📅 Fecha registrada: {fecha_hora}")
+        
+                
+        print(f"✅ Venta creada con panaderia_id: {nueva_venta.panaderia_id}")
         
         detalles_venta = []
         
@@ -919,6 +937,8 @@ def registrar_venta():
             'es_donacion': es_donacion,
             'motivo_donacion': motivo_donacion
         }
+        
+        print(f"✅ Venta creada con panaderia_id: {nueva_venta.panaderia_id}")
         
         # 🆕 AGREGAR INFORMACIÓN DEL CLIENTE SI EXISTE
         if cliente_id:
@@ -4011,55 +4031,80 @@ def pagina_cierre_diario():
                          ventas_hoy=ventas_hoy,
                          hoy=hoy)
 
-# =============================================
-# RUTAS DE REPORTES PDF CON APRENDIZAJE AUTOMÁTICO
-# =============================================
-
 @app.route('/reporte/cierre_caja')
 @login_required
 @modulo_requerido('reportes')
 def reporte_cierre_caja():
-    """Reporte de cierre de caja con análisis automático"""
+    """Reporte de cierre de caja con análisis automático - VERSIÓN CON ANÁLISIS POR PRODUCTO"""
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    fecha = request.args.get('fecha', datetime.now().date().isoformat())
+    # 🆕 USAR 1 FECHA SOLAMENTE + FECHAS DE COMPARACIÓN
+    fecha_str = request.args.get('fecha', datetime.now().date().isoformat())
     
     try:
-        # Obtener ventas del día
-        fecha_obj = datetime.strptime(fecha, '%Y-%m-%d').date()
-        inicio_dia = datetime.combine(fecha_obj, datetime.min.time())
-        fin_dia = datetime.combine(fecha_obj, datetime.max.time())
+        # 🆕 CONVERTIR FECHA ÚNICA
+        fecha_consultada = datetime.strptime(fecha_str, '%Y-%m-%d').date()
+        hoy = datetime.now().date()
+        ayer = hoy - timedelta(days=1)
         
+        inicio_dia = datetime.combine(fecha_consultada, datetime.min.time())
+        fin_dia = datetime.combine(fecha_consultada, datetime.max.time())
+        
+        # 🆕 OBTENER panaderia_id DEL USUARIO ACTUAL
+        usuario_actual = Usuario.query.get(session['user_id'])
+        panaderia_id = usuario_actual.panaderia_id
+        
+        print(f"🔍 DEBUG: Generando reporte para panaderia_id: {panaderia_id}")
+        print(f"📅 Fecha consultada: {fecha_consultada}")
+        print(f"📅 Rango: {inicio_dia} a {fin_dia}")
+        
+        # 🆕 DEBUG: VER TODAS LAS VENTAS EN LA BD (SIN FILTROS)
+        print("🔎 DEBUG - TODAS las ventas en la BD:")
+        todas_ventas = Venta.query.all()
+        for v in todas_ventas:
+            print(f"   Venta ID: {v.id}, Fecha: {v.fecha_hora}, Panadería: {v.panaderia_id}, Total: ${v.total}")
+        
+        # 🆕 CONSULTAS CON FILTRO MULTICLIENTE
         ventas_dia = Venta.query.filter(
-            Venta.fecha_hora >= inicio_dia,
-            Venta.fecha_hora <= fin_dia
+            db.func.date(Venta.fecha_hora) == fecha_consultada,  # 🎯 SOLO POR FECHA
+            Venta.panaderia_id == panaderia_id
         ).all()
+        
+        print(f"📊 Ventas encontradas con filtros: {len(ventas_dia)}")
+        for v in ventas_dia:
+            print(f"   ✅ Venta encontrada: ID {v.id}, Fecha: {v.fecha_hora}, Total: ${v.total}")
         
         # 🎁 SEPARAR VENTAS NORMALES VS DONACIONES
         ventas_normales = [v for v in ventas_dia if not v.es_donacion]
         donaciones = [v for v in ventas_dia if v.es_donacion]
         
+        print(f"💰 Ventas normales: {len(ventas_normales)}")
+        print(f"🎁 Donaciones: {len(donaciones)}")
+        
         # 🎁 CALCULAR MÉTRICAS SEPARADAS
         total_ventas_normales = sum(venta.total for venta in ventas_normales)
-        total_transacciones = len(ventas_dia)  # Incluye donaciones en conteo
+        total_transacciones = len(ventas_dia)
         
-        # Calcular métricas
-        total_ventas = total_ventas_normales  # Usar solo ventas normales para ingresos
+        print(f"💵 Total ventas normales: ${total_ventas_normales}")
+        print(f"🔢 Total transacciones: {total_transacciones}")
+        
+        # Calcular métricas por método de pago (SOLO VENTAS NORMALES)
         ventas_por_metodo = {}
-        
-        for venta in ventas_normales:  # Solo ventas normales para ingresos por método
+        for venta in ventas_normales:
             if venta.metodo_pago not in ventas_por_metodo:
                 ventas_por_metodo[venta.metodo_pago] = 0
             ventas_por_metodo[venta.metodo_pago] += venta.total
         
-        # Obtener comparativa con día anterior
-        dia_anterior = fecha_obj - timedelta(days=1)
+        print(f"💳 Ventas por método: {ventas_por_metodo}")
+        
+        # 🆕 OBTENER COMPARATIVA CON DÍA ANTERIOR
+        dia_anterior = fecha_consultada - timedelta(days=1)
         ventas_dia_anterior = Venta.query.filter(
-            db.func.date(Venta.fecha_hora) == dia_anterior
+            db.func.date(Venta.fecha_hora) == dia_anterior,
+            Venta.panaderia_id == panaderia_id  # 🎯 FILTRO MULTICLIENTE
         ).all()
         
-        # 🎁 FILTRAR SOLO VENTAS NORMALES PARA COMPARACIÓN
         ventas_dia_anterior_normales = [v for v in ventas_dia_anterior if not v.es_donacion]
         total_dia_anterior = sum(venta.total for venta in ventas_dia_anterior_normales)
         
@@ -4069,11 +4114,16 @@ def reporte_cierre_caja():
         else:
             tendencia = 100 if total_ventas_normales > 0 else 0
         
-        # Productos más vendidos del día (INCLUYENDO DONACIONES)
+        print(f"📈 Tendencia: {tendencia}%")
+        
+        # 🆕 PRODUCTOS MÁS VENDIDOS (INCLUYENDO DONACIONES)
         detalles_dia = DetalleVenta.query.join(Venta).filter(
             Venta.fecha_hora >= inicio_dia,
-            Venta.fecha_hora <= fin_dia
+            Venta.fecha_hora <= fin_dia,
+            Venta.panaderia_id == panaderia_id  # 🎯 FILTRO MULTICLIENTE
         ).all()
+        
+        print(f"📦 Detalles de venta encontrados: {len(detalles_dia)}")
         
         productos_vendidos = {}
         for detalle in detalles_dia:
@@ -4090,26 +4140,260 @@ def reporte_cierre_caja():
         
         productos_top = sorted(productos_vendidos.items(), key=lambda x: x[1], reverse=True)[:5]
         
-        # 🎁 DATOS DE DONACIONES PARA EL TEMPLATE
-        total_donaciones = len(donaciones)
-        productos_donados = sum(len(v.detalles) for v in donaciones)
+        # 🎯 --- INICIO: MÉTRICAS FINANCIERAS CON COSTOS REALES ---
+        print("💰 CALCULANDO MÉTRICAS FINANCIERAS CON COSTOS REALES...")
         
+        # 🎯 1. CALCULAR COSTOS E INGRESOS CON FUENTES REALES
+        costo_total_inventario = 0
+        ingresos_totales = 0
+        total_productos_vendidos = 0
+
+        # 🆕 VARIABLES PARA ANÁLISIS POR PRODUCTO
+        ingresos_por_producto = {}
+        costos_por_producto = {}
+        utilidades_por_producto = {}
+
+        # 🆕 NUEVAS VARIABLES PARA PRODUCTOS SEPARADOS
+        productos_vendidos_lista = []
+        productos_donados_detalle = []
+
+        # 🆕 CONTADORES CORREGIDOS PARA DONACIONES
+        total_unidades_donadas = 0
+        total_productos_donados_unicos = 0
+
+        for detalle in detalles_dia:
+            # 🎯 OBTENER PRECIO DE COSTO CON FUENTES REALES
+            precio_costo = 0
+            fuente_costo = "No identificada"
+            
+            if detalle.producto:
+                # 📦 PRODUCTO DE PANADERÍA CON RECETA
+                producto = detalle.producto
+                if producto.receta and hasattr(producto.receta, 'costo_unitario') and producto.receta.costo_unitario:
+                    # 🎯 USAR COSTO UNITARIO REAL DE LA RECETA
+                    precio_costo = producto.receta.costo_unitario
+                    fuente_costo = "receta.costo_unitario (real)"
+                    print(f"✅ Producto {producto.nombre} - Costo real: ${precio_costo} desde receta")
+                    
+                elif hasattr(producto, 'costo_compra') and producto.costo_compra:
+                    precio_costo = producto.costo_compra
+                    fuente_costo = "producto.costo_compra"
+                else:
+                    # Estimación de reserva
+                    precio_costo = detalle.precio_unitario * 0.4
+                    fuente_costo = "estimación (40%)"
+                    
+            elif detalle.producto_externo:
+                # 🥤 PRODUCTO EXTERNO
+                producto = detalle.producto_externo
+                precio_costo = producto.precio_compra if hasattr(producto, 'precio_compra') else 0
+                fuente_costo = "producto_externo.precio_compra"
+            
+            # 🎯 CALCULAR COSTO TOTAL Y INGRESOS
+            costo_detalle = precio_costo * detalle.cantidad
+            ingreso_detalle = detalle.precio_unitario * detalle.cantidad
+            
+            costo_total_inventario += costo_detalle
+            ingresos_totales += ingreso_detalle
+            total_productos_vendidos += detalle.cantidad
+            
+            # 🆕 ACUMULAR POR PRODUCTO PARA ANÁLISIS DETALLADO
+            if detalle.producto:
+                nombre_producto = detalle.producto.nombre
+            else:
+                nombre_producto = detalle.producto_externo.nombre
+            
+            if nombre_producto not in ingresos_por_producto:
+                ingresos_por_producto[nombre_producto] = 0
+                costos_por_producto[nombre_producto] = 0
+                utilidades_por_producto[nombre_producto] = 0
+            
+            ingresos_por_producto[nombre_producto] += ingreso_detalle
+            costos_por_producto[nombre_producto] += costo_detalle
+            utilidades_por_producto[nombre_producto] += (ingreso_detalle - costo_detalle)
+            
+            # 🆕 SEPARAR PRODUCTOS VENDIDOS VS DONADOS
+            es_donacion = detalle.venta.es_donacion if detalle.venta else False
+            
+            if not es_donacion:
+                # PRODUCTO VENDIDO (GENERA INGRESOS REALES)
+                productos_vendidos_lista.append({
+                    'nombre': nombre_producto,
+                    'cantidad': detalle.cantidad,
+                    'ingresos': ingreso_detalle,
+                    'costo': costo_detalle,
+                    'utilidad': ingreso_detalle - costo_detalle,
+                    'margen': ((ingreso_detalle - costo_detalle) / ingreso_detalle * 100) if ingreso_detalle > 0 else 0
+                })
+            else:
+                # PRODUCTO DONADO (NO GENERA INGRESOS REALES)
+                productos_donados_detalle.append({
+                    'nombre': nombre_producto,
+                    'cantidad': detalle.cantidad,
+                    'valor_mercado': ingreso_detalle,  # Valor que habría generado
+                    'costo_real': costo_detalle  # Costo real de producción
+                })
+                # 🆕 CONTAR UNIDADES DONADAS
+                total_unidades_donadas += detalle.cantidad
+            
+            # Debug detallado
+            print(f"   📊 {nombre_producto} - Cant: {detalle.cantidad} - Precio: ${detalle.precio_unitario} - Costo: ${precio_costo} - Fuente: {fuente_costo} - Donación: {es_donacion}")
+
+        print(f"📦 Costo total inventario: ${costo_total_inventario:.0f}")
+        print(f"💰 Ingresos totales: ${ingresos_totales:.0f}")
+        print(f"🎯 Total productos vendidos: {total_productos_vendidos}")
+
+        # 🎯 2. CALCULAR MARGEN PROMEDIO CON COSTOS REALES (SOLO VENTAS NORMALES)
+        ingresos_ventas_normales = sum(item['ingresos'] for item in productos_vendidos_lista)
+        costos_ventas_normales = sum(item['costo'] for item in productos_vendidos_lista)
+        
+        if ingresos_ventas_normales > 0:
+            margen_promedio = ((ingresos_ventas_normales - costos_ventas_normales) / ingresos_ventas_normales) * 100
+        else:
+            margen_promedio = 0
+
+        # 🎯 3. CALCULAR UTILIDAD NETA REAL (SOLO VENTAS NORMALES)
+        utilidad_neta = ingresos_ventas_normales - costos_ventas_normales
+
+        # 🎯 4. CALCULAR TICKET PROMEDIO
+        transacciones_normales = len(ventas_normales)
+        if transacciones_normales > 0:
+            ticket_promedio = total_ventas_normales / transacciones_normales
+        else:
+            ticket_promedio = 0
+
+        # 🎯 5. CALCULAR PRODUCTOS POR VENTA
+        if transacciones_normales > 0:
+            productos_por_venta = total_productos_vendidos / transacciones_normales
+        else:
+            productos_por_venta = 0
+
+        print(f"📈 Margen promedio REAL: {margen_promedio:.1f}%")
+        print(f"💵 Utilidad neta REAL: ${utilidad_neta:.0f}")
+        print(f"🎫 Ticket promedio: ${ticket_promedio:.0f}")
+        print(f"📦 Productos por venta: {productos_por_venta:.1f}")
+        
+        # 🆕 AGRUPAR PRODUCTOS VENDIDOS POR NOMBRE
+        productos_vendidos_agrupados = {}
+        for producto in productos_vendidos_lista:
+            nombre = producto['nombre']
+            if nombre not in productos_vendidos_agrupados:
+                productos_vendidos_agrupados[nombre] = {
+                    'nombre': nombre,
+                    'cantidad': 0,
+                    'ingresos': 0,
+                    'costo': 0,
+                    'utilidad': 0
+                }
+            
+            productos_vendidos_agrupados[nombre]['cantidad'] += producto['cantidad']
+            productos_vendidos_agrupados[nombre]['ingresos'] += producto['ingresos']
+            productos_vendidos_agrupados[nombre]['costo'] += producto['costo']
+            productos_vendidos_agrupados[nombre]['utilidad'] += producto['utilidad']
+        
+        # CALCULAR MARGEN PARA CADA PRODUCTO AGRUPADO
+        for producto in productos_vendidos_agrupados.values():
+            if producto['ingresos'] > 0:
+                producto['margen'] = (producto['utilidad'] / producto['ingresos']) * 100
+            else:
+                producto['margen'] = 0
+        
+        productos_vendidos_final = list(productos_vendidos_agrupados.values())
+        
+        # 🆕 AGRUPAR PRODUCTOS DONADOS POR NOMBRE
+        productos_donados_agrupados = {}
+        for producto in productos_donados_detalle:
+            nombre = producto['nombre']
+            if nombre not in productos_donados_agrupados:
+                productos_donados_agrupados[nombre] = {
+                    'nombre': nombre,
+                    'cantidad': 0,
+                    'valor_mercado': 0,
+                    'costo_real': 0
+                }
+            
+            productos_donados_agrupados[nombre]['cantidad'] += producto['cantidad']
+            productos_donados_agrupados[nombre]['valor_mercado'] += producto['valor_mercado']
+            productos_donados_agrupados[nombre]['costo_real'] += producto['costo_real']
+        
+        productos_donados_final = list(productos_donados_agrupados.values())
+        
+        # 🆕 CALCULAR TOTALES CORREGIDOS PARA DONACIONES
+        total_productos_donados_unicos = len(productos_donados_final)
+        total_unidades_donadas = sum(item['cantidad'] for item in productos_donados_final)
+        valor_total_donaciones = sum(item['valor_mercado'] for item in productos_donados_final)
+        
+        print(f"🆕 PRODUCTOS VENDIDOS: {len(productos_vendidos_final)} productos únicos")
+        for producto in productos_vendidos_final[:3]:
+            print(f"   💰 {producto['nombre']} - Cant: {producto['cantidad']} - Ingresos: ${producto['ingresos']:.0f} - Utilidad: ${producto['utilidad']:.0f}")
+        
+        print(f"🆕 PRODUCTOS DONADOS: {total_productos_donados_unicos} productos únicos, {total_unidades_donadas} unidades totales")
+        for producto in productos_donados_final[:3]:
+            print(f"   🎁 {producto['nombre']} - Cant: {producto['cantidad']} - Valor: ${producto['valor_mercado']:.0f} - Costo: ${producto['costo_real']:.0f}")
+        
+        # 🎁 DATOS DE DONACIONES CORREGIDOS
+        total_donaciones = len(donaciones)  # Número de transacciones de donación
+        productos_donados = total_unidades_donadas  # Número total de unidades donadas
+        
+        print(f"💰 Valor total donaciones: ${valor_total_donaciones}")
+        print(f"🎁 Transacciones de donación: {total_donaciones}")
+        print(f"📦 Unidades donadas totales: {productos_donados}")
+        
+        # 🆕 PREPARAR VENTAS DETALLADAS PARA TABLA
+        ventas_detalladas = []
+        for venta in ventas_dia:
+            cantidad_productos = sum(detalle.cantidad for detalle in venta.detalles)
+            ventas_detalladas.append({
+                'id': venta.id,
+                'fecha_hora': venta.fecha_hora,
+                'metodo_pago': venta.metodo_pago,
+                'total': venta.total,
+                'es_donacion': venta.es_donacion,
+                'cantidad_productos': cantidad_productos
+            })
+        
+        print(f"✅ Reporte generado exitosamente")
+        print(f"🎁 Total donaciones (transacciones): {total_donaciones}")
+        print(f"📦 Productos donados (unidades): {productos_donados}")
+        print(f"💰 Valor donaciones: ${valor_total_donaciones}")
+        
+        # 🆕 ENVIAR DATOS COMPLETOS AL TEMPLATE
         return render_template('cierre_caja.html',
-                            fecha=fecha_obj,
-                            total_ventas=total_ventas_normales,  # Solo ventas normales
+                            fecha=fecha_consultada,
+                            hoy=hoy,
+                            ayer=ayer,
+                            es_hoy=(fecha_consultada == hoy),
+                            total_ventas=total_ventas_normales,
                             ventas_por_metodo=ventas_por_metodo,
                             tendencia=tendencia,
                             total_dia_anterior=total_dia_anterior,
                             productos_top=productos_top,
                             total_transacciones=total_transacciones,
-                            # 🎁 NUEVOS DATOS
                             total_donaciones=total_donaciones,
-                            productos_donados=productos_donados)
+                            productos_donados=productos_donados,  # 🆕 AHORA ES UNIDADES, NO TRANSACCIONES
+                            # 🆕 NUEVAS VARIABLES REQUERIDAS
+                            valor_total_donaciones=valor_total_donaciones,
+                            ventas_detalladas=ventas_detalladas,
+                            # 🎯 MÉTRICAS FINANCIERAS CON COSTOS REALES
+                            ticket_promedio=ticket_promedio,
+                            productos_por_venta=productos_por_venta,
+                            margen_promedio=margen_promedio,
+                            costo_inventario=costo_total_inventario,
+                            utilidad_neta=utilidad_neta,
+                            # 🆕 ANÁLISIS POR PRODUCTO
+                            ingresos_por_producto=ingresos_por_producto,
+                            costos_por_producto=costos_por_producto,
+                            utilidades_por_producto=utilidades_por_producto,
+                            # 🆕 NUEVAS VARIABLES PARA PDF SEPARADO
+                            productos_vendidos=productos_vendidos_final,
+                            productos_donados_detalle=productos_donados_final)
+                            
     
     except Exception as e:
+        print(f"❌ ERROR en reporte_cierre_caja: {str(e)}")
         flash(f'Error generando reporte: {str(e)}', 'error')
-        return redirect(url_for('punto_venta'))
-
+        return redirect(url_for('dashboard'))
+    
 @app.route('/reporte/ventas')
 @login_required
 @modulo_requerido('reportes')
@@ -5863,6 +6147,9 @@ def salir_acceso_remoto():
         flash('Has salido del modo acceso remoto', 'info')
     return redirect(url_for('gestion_clientes'))
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=False)
+ 
+app.config['TEMPLATES_AUTO_RELOAD'] = True
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', debug=True)

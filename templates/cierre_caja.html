@@ -7,252 +7,933 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        /* ESTILOS GENERALES */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 20px;
+            padding: 15px;
         }
+        
         .reporte-container {
             background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
             overflow: hidden;
-            margin: 20px auto;
+            margin: 0 auto;
             max-width: 1200px;
         }
+        
         .reporte-header {
             background: linear-gradient(135deg, #2c3e50, #34495e);
             color: white;
-            padding: 30px;
-            text-align: center;
+            padding: 20px 15px;
         }
+        
         .reporte-body {
-            padding: 30px;
+            padding: 20px 15px;
         }
+        
         .metric-card {
             background: #f8f9fa;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
-            border-left: 4px solid #007bff;
-            transition: transform 0.3s ease;
-        }
-        .metric-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-        .metric-value {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #2c3e50;
-        }
-        .tendencia-positiva {
-            color: #28a745;
-        }
-        .tendencia-negativa {
-            color: #dc3545;
-        }
-        .producto-item {
-            background: #fff;
             border-radius: 8px;
             padding: 15px;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
+            border-left: 4px solid #007bff;
+        }
+        
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #2c3e50;
+            line-height: 1.2;
+        }
+        
+        .tendencia-positiva { color: #28a745; }
+        .tendencia-negativa { color: #dc3545; }
+        
+        .producto-item {
+            background: #fff;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 8px;
             border-left: 4px solid #28a745;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
+        
         .badge-metodo {
-            font-size: 0.9rem;
-            padding: 8px 15px;
+            font-size: 0.8rem;
+            padding: 6px 12px;
+            margin-bottom: 5px;
         }
+        
+        .fecha-selector {
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 15px;
+        }
+        
+        .btn-periodo {
+            background: white;
+            border: 2px solid #2c3e50;
+            color: #2c3e50;
+            border-radius: 15px;
+            padding: 6px 15px;
+            margin: 0 3px 5px 0;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        /* NUEVOS ESTILOS ULTRA-COMPACTOS PARA PDF */
+        @media print {
+            body {
+                background: white !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                font-size: 0.7rem !important;
+                line-height: 1.1 !important;
+            }
+            
+            .reporte-container {
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                margin: 0 !important;
+                max-width: 100% !important;
+                border: none !important;
+            }
+            
+            /* Márgenes mínimos para PDF */
+            @page {
+                margin: 0.3cm !important;
+                size: letter;
+            }
+            
+            /* Ocultar elementos innecesarios en PDF */
+            .no-print, 
+            .fecha-selector, 
+            .btn-pdf, 
+            .btn-light,
+            .btn-periodo,
+            .reporte-footer,
+            .alert,
+            .banner-optimizado,
+            .d-print-none {
+                display: none !important;
+            }
+            
+            /* MOSTRAR elementos para PDF */
+            .d-print-block {
+                display: block !important;
+            }
+            
+            /* ENCABEZADO COMPACTO PARA PDF */
+            .reporte-header {
+                padding: 8px 6px !important;
+                background: #2c3e50 !important;
+                margin-bottom: 6px !important;
+                border-bottom: 1px solid #dee2e6 !important;
+            }
+            
+            .reporte-header h1 {
+                font-size: 1rem !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            
+            .reporte-header p {
+                font-size: 0.7rem !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            
+            .reporte-body {
+                padding: 6px 4px !important;
+                margin: 0 !important;
+            }
+            
+            /* TARJETAS COMPACTAS PARA PDF */
+            .tarjeta-compacta {
+                border: 1px solid #dee2e6 !important;
+                border-radius: 4px !important;
+                padding: 6px 8px !important;
+                margin-bottom: 6px !important;
+                page-break-inside: avoid;
+            }
+            
+            .tarjeta-donaciones {
+                border-left: 3px solid #ffc107 !important;
+                background: #fffdf6 !important;
+            }
+            
+            .tarjeta-metodos {
+                border-left: 3px solid #007bff !important;
+                background: #f8fbff !important;
+            }
+            
+            .tarjeta-resumen {
+                border-left: 3px solid #28a745 !important;
+                background: #f8fff9 !important;
+            }
+            
+            .tarjeta-compacta h6 {
+                font-size: 0.75rem !important;
+                margin: 0 0 4px 0 !important;
+                font-weight: bold !important;
+                color: #2c3e50 !important;
+                border-bottom: 1px solid #dee2e6 !important;
+                padding-bottom: 2px !important;
+            }
+            
+            .grid-datos {
+                display: grid !important;
+                grid-template-columns: repeat(4, 1fr) !important;
+                gap: 4px !important;
+                font-size: 0.65rem !important;
+            }
+            
+            .dato-item {
+                text-align: center !important;
+                padding: 3px !important;
+                background: white !important;
+                border-radius: 3px !important;
+                border: 1px solid #e9ecef !important;
+            }
+            
+            .dato-valor {
+                font-weight: bold !important;
+                font-size: 0.8rem !important;
+                margin-bottom: 1px !important;
+            }
+            
+            .dato-label {
+                color: #6c757d !important;
+                font-size: 0.6rem !important;
+            }
+            
+            /* TABLAS COMPACTAS */
+            .compact-table {
+                font-size: 0.65rem !important;
+                margin-bottom: 6px !important;
+                width: 100% !important;
+            }
+            
+            .compact-table th,
+            .compact-table td {
+                padding: 3px 4px !important;
+                border: 1px solid #dee2e6 !important;
+                vertical-align: middle !important;
+            }
+            
+            .compact-table th {
+                background-color: #2c3e50 !important;
+                color: white !important;
+                font-weight: bold !important;
+                text-align: center !important;
+                font-size: 0.6rem !important;
+            }
+            
+            .compact-table .product-name {
+                text-align: left !important;
+                font-weight: bold !important;
+            }
+            
+            /* MÉTODOS DE PAGO EN PDF */
+            .metodos-linea {
+                display: flex !important;
+                flex-wrap: wrap !important;
+                gap: 4px !important;
+                font-size: 0.65rem !important;
+            }
+            
+            .metodo-item {
+                background: white !important;
+                border: 1px solid #dee2e6 !important;
+                border-radius: 3px !important;
+                padding: 3px 6px !important;
+                flex: 1 !important;
+                min-width: 48% !important;
+                text-align: center !important;
+            }
+            
+            /* RESUMEN FINANCIERO */
+            .resumen-financiero {
+                background: #f8f9fa !important;
+                border: 1px solid #dee2e6 !important;
+                padding: 6px 8px !important;
+                margin-top: 6px !important;
+                font-size: 0.7rem !important;
+                border-radius: 4px !important;
+            }
+            
+            /* EVITAR SALTO DE PÁGINA */
+            .compact-table-container {
+                page-break-inside: avoid !important;
+            }
+        }
+
+        /* ESTILOS RESPONSIVOS PARA MÓVIL */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+                background: #f8f9fa;
+            }
+            
+            .reporte-container {
+                border-radius: 8px;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            }
+            
+            .reporte-header {
+                padding: 15px 10px;
+            }
+            
+            .reporte-header h1 {
+                font-size: 1.4rem;
+                margin-bottom: 8px;
+            }
+            
+            .reporte-body {
+                padding: 15px 10px;
+            }
+            
+            .metric-card {
+                padding: 12px 10px;
+                margin-bottom: 10px;
+            }
+            
+            .metric-value {
+                font-size: 1.3rem;
+            }
+            
+            .producto-item {
+                padding: 10px;
+                margin-bottom: 6px;
+            }
+            
+            .btn-periodo {
+                font-size: 0.8rem;
+                padding: 5px 12px;
+            }
+            
+            .producto-analisis-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 8px !important;
+            }
+            
+            .analisis-item {
+                padding: 8px 5px !important;
+                font-size: 0.8rem;
+            }
+            
+            .analisis-item strong {
+                font-size: 0.9rem;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .reporte-header h1 {
+                font-size: 1.2rem;
+            }
+            
+            .metric-value {
+                font-size: 1.1rem;
+            }
+            
+            .producto-analisis-grid {
+                grid-template-columns: 1fr !important;
+                gap: 5px !important;
+            }
+            
+            .btn-periodo {
+                font-size: 0.75rem;
+                padding: 4px 10px;
+            }
+        }
+
+        /* ESTILOS COMPARTIDOS */
+        .producto-analisis-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .analisis-item {
+            border-radius: 6px;
+            padding: 10px 8px;
+            text-align: center;
+            border: 1px solid #e9ecef;
+            font-size: 0.85rem;
+        }
+        
+        .analisis-unidades {
+            background: #e7f3ff;
+            border-left: 3px solid #007bff;
+        }
+        
+        .analisis-ingresos {
+            background: #e8f5e8;
+            border-left: 3px solid #28a745;
+        }
+        
+        .analisis-costos {
+            background: #fff3cd;
+            border-left: 3px solid #ffc107;
+        }
+        
+        .analisis-utilidad {
+            background: #d1ecf1;
+            border-left: 3px solid #17a2b8;
+        }
+        
         .btn-pdf {
             background: linear-gradient(135deg, #e74c3c, #c0392b);
             color: white;
             border: none;
-            padding: 12px 30px;
-            border-radius: 25px;
+            padding: 8px 20px;
+            border-radius: 20px;
             font-weight: bold;
-            transition: all 0.3s ease;
+            font-size: 0.9rem;
         }
-        .btn-pdf:hover {
-            transform: scale(1.05);
-            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+        
+        @media (max-width: 768px) {
+            .btn-pdf {
+                padding: 6px 15px;
+                font-size: 0.8rem;
+            }
+        }
+
+        .compact-table {
+            width: 100%;
+            font-size: 0.8rem;
+        }
+        
+        .text-success { color: #28a745 !important; }
+        .text-danger { color: #dc3545 !important; }
+        .text-warning { color: #ffc107 !important; }
+        
+        .banner-optimizado {
+            background: #28a745; 
+            color: white; 
+            padding: 6px; 
+            text-align: center; 
+            margin-bottom: 6px; 
+            border-radius: 4px; 
+            font-size: 0.8rem;
         }
     </style>
 </head>
 <body>
-    <div class="reporte-container">
+    <!-- Banner solo para web -->
+    <div class="banner-optimizado no-print">
+        ✅ REPORTE OPTIMIZADO - RESPONSIVE & PDF COMPACTO
+    </div>
 
-             
+    <div class="reporte-container">
         <!-- Encabezado del Reporte -->
         <div class="reporte-header">
             <div class="row align-items-center">
-                <div class="col-md-2 text-center">
-                    <i class="fas fa-cash-register fa-3x mb-3"></i>
-                </div>
-                <div class="col-md-8">
-                    <h1 class="display-5 fw-bold">REPORTE DE CIERRE DE CAJA</h1>
-                    <h3 class="mb-0">Panadería Dulce Tradición</h3>
-                    <p class="mb-0 mt-2">
-                        <i class="fas fa-calendar-alt"></i>
-                        Fecha: {{ fecha.strftime('%d/%m/%Y') }}
+                <div class="col-md-8 col-12">
+                    <h1 class="fw-bold mb-1" style="font-size: 1.6rem;">
+                        <i class="fas fa-cash-register me-2"></i>REPORTE DE CIERRE
+                    </h1>
+                    <p class="mb-0" style="font-size: 0.95rem;">
+                        <i class="fas fa-calendar-alt me-2"></i>
+                        {% if fecha %}
+                            {{ fecha.strftime('%d/%m/%Y') }}
+                        {% else %}
+                            Fecha no disponible
+                        {% endif %}
+                        {% if fecha and fecha.strftime('%d/%m/%Y') != hoy.strftime('%d/%m/%Y') %}
+                            <span class="badge bg-warning ms-2">HISTÓRICO</span>
+                        {% else %}
+                            <span class="badge bg-success ms-2">HOY</span>
+                        {% endif %}
                     </p>
                 </div>
-                <div class="col-md-2 text-center">
-                    <button class="btn btn-pdf" onclick="generarPDF()">
-                        <i class="fas fa-file-pdf"></i> Exportar PDF
+                <div class="col-md-4 col-12 text-md-end text-start mt-2 mt-md-0">
+                    <button class="btn btn-pdf me-2 no-print" onclick="generarPDF()">
+                        <i class="fas fa-file-pdf"></i> PDF
                     </button>
+                    <button class="btn btn-light no-print" onclick="window.close()">
+                        <i class="fas fa-times"></i> Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Selector de Fecha (solo web) -->
+        <div class="fecha-selector no-print">
+            <div class="row align-items-center">
+                <div class="col-md-8 col-12">
+                    <div class="d-flex flex-wrap align-items-center">
+                        <strong class="me-2" style="font-size: 0.9rem;">Consultar fecha:</strong>
+                        <button class="btn-periodo {% if es_hoy %}active{% endif %}" onclick="seleccionarFecha('{{ hoy.isoformat() }}')">Hoy</button>
+                        <button class="btn-periodo" onclick="seleccionarFecha('{{ ayer.isoformat() }}')">Ayer</button>
+                        
+                        <div class="input-group ms-2" style="max-width: 200px;">
+                            <input type="date" id="fecha_consulta" class="form-control form-control-sm" 
+                                   value="{{ fecha.isoformat() if fecha else hoy.isoformat() }}" 
+                                   max="{{ hoy.isoformat() }}">
+                            <button class="btn btn-primary btn-sm" onclick="aplicarFecha()">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 col-12 text-md-end text-start mt-2 mt-md-0">
+                    <small class="text-light">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Consulta histórica
+                    </small>
                 </div>
             </div>
         </div>
 
         <!-- Cuerpo del Reporte -->
         <div class="reporte-body">
-            <!-- Resumen Principal -->
-            <div class="row mb-4">
-                <div class="col-md-4">
-                    <div class="metric-card">
-                        <h5><i class="fas fa-money-bill-wave"></i> Total Ventas</h5>
-                        <div class="metric-value">${{ "{:,.2f}".format(total_ventas) }}</div>
-                        <small class="text-muted">Ingresos totales del día</small>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="metric-card">
-                        <h5><i class="fas fa-receipt"></i> Transacciones</h5>
-                        <div class="metric-value">{{ total_transacciones }}</div>
-                        <small class="text-muted">Total de ventas realizadas</small>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="metric-card">
-                        <h5><i class="fas fa-chart-line"></i> Tendencia</h5>
-                        <div class="metric-value {% if tendencia >= 0 %}tendencia-positiva{% else %}tendencia-negativa{% endif %}">
-                            {{ "{:+.1f}".format(tendencia) }}%
+            <!-- ============================================ -->
+            <!-- VERSIÓN COMPACTA PARA PDF (se muestra solo en impresión) -->
+            <!-- ============================================ -->
+            <div class="d-print-block" style="display: none;">
+                <!-- Resumen Ejecutivo Compacto -->
+                <div class="tarjeta-compacta tarjeta-resumen mb-2">
+                    <h6><i class="fas fa-chart-bar me-1"></i>RESUMEN EJECUTIVO</h6>
+                    <div class="grid-datos">
+                        <div class="dato-item">
+                            <div class="dato-valor text-primary">
+                                ${{ "{:,.0f}".format(total_ventas) if total_ventas is defined else 0 }}
+                            </div>
+                            <div class="dato-label">Total Ventas</div>
                         </div>
-                        <small class="text-muted">vs día anterior: ${{ "{:,.2f}".format(total_dia_anterior) }}</small>
+                        <div class="dato-item">
+                            <div class="dato-valor {% if tendencia >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                {{ "{:+.0f}".format(tendencia) if tendencia is defined else 0 }}%
+                            </div>
+                            <div class="dato-label">Tendencia</div>
+                        </div>
+                        <div class="dato-item">
+                            <div class="dato-valor text-info">
+                                {{ total_transacciones if total_transacciones is defined else 0 }}
+                            </div>
+                            <div class="dato-label">Transacciones</div>
+                        </div>
+                        <div class="dato-item">
+                            <div class="dato-valor text-warning">
+                                {{ total_donaciones if total_donaciones is defined else 0 }}
+                            </div>
+                            <div class="dato-label">Donaciones</div>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- 🎁 SECCIÓN DE DONACIONES - AGREGAR ANTES DE "Ventas por Método de Pago" -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="metric-card" style="border-left-color: #ffc107; background: linear-gradient(135deg, #fff9e6, #fff3cd);">
-                        <h4 class="text-warning">
-                            <i class="fas fa-gift me-2"></i>Resumen de Donaciones del Día
-                        </h4>
-                        <div class="row mt-3 text-center">
-                            <div class="col-md-4">
-                                <div class="border rounded p-3 bg-white">
-                                    <h3 class="text-warning mb-1">{{ total_donaciones }}</h3>
-                                    <p class="mb-0 small text-muted">Transacciones de Donación</p>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="border rounded p-3 bg-white">
-                                    <h3 class="text-warning mb-1">{{ productos_donados }}</h3>
-                                    <p class="mb-0 small text-muted">Productos Donados</p>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="border rounded p-3 bg-white">
-                                    <h3 class="text-success mb-1">$0</h3>
-                                    <p class="mb-0 small text-muted">Valor Comercial Donado</p>
-                                </div>
-                            </div>
-                        </div>
-                        {% if total_donaciones > 0 %}
-                        <div class="alert alert-warning mt-3 mb-0">
-                            <i class="fas fa-info-circle me-2"></i>
-                            <strong>Nota:</strong> Las {{ total_donaciones }} donaciones representan {{ productos_donados }} productos 
-                            que fueron descargados del inventario pero no generaron ingresos.
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-
-            <!-- Ventas por Método de Pago -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="metric-card">
-                        <h4><i class="fas fa-credit-card"></i> Ventas por Método de Pago</h4>
-                        <div class="row mt-3">
-                            {% for metodo, total in ventas_por_metodo.items() %}
-                            <div class="col-md-3 mb-3">
-                                <span class="badge badge-metodo bg-primary w-100 p-3">
-                                    {% if metodo == 'efectivo' %}
-                                        <i class="fas fa-money-bill"></i>
-                                    {% elif metodo == 'tarjeta' %}
-                                        <i class="fas fa-credit-card"></i>
-                                    {% elif metodo == 'transferencia' %}
-                                        <i class="fas fa-university"></i>
-                                    {% else %}
-                                        <i class="fas fa-wallet"></i>
-                                    {% endif %}
-                                    {{ metodo|title }}: ${{ "{:,.2f}".format(total) }}
-                                </span>
-                            </div>
+                <!-- PRODUCTOS VENDIDOS (Solo ventas reales) -->
+                {% if productos_vendidos and productos_vendidos|length > 0 %}
+                <div class="compact-table-container mb-2">
+                    <table class="compact-table table table-sm table-bordered">
+                        <thead>
+                            <tr>
+                                <th colspan="6" style="background: #28a745; color: white;">
+                                    <i class="fas fa-shopping-cart me-1"></i>PRODUCTOS VENDIDOS
+                                </th>
+                            </tr>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Unid</th>
+                                <th>Ingresos</th>
+                                <th>Costo</th>
+                                <th>Utilidad</th>
+                                <th>Margen</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for producto in productos_vendidos %}
+                            <tr>
+                                <td class="product-name">{{ producto.nombre }}</td>
+                                <td class="text-center">{{ producto.cantidad }}</td>
+                                <td class="text-end">${{ "{:,.0f}".format(producto.ingresos) }}</td>
+                                <td class="text-end">${{ "{:,.0f}".format(producto.costo) }}</td>
+                                <td class="text-end">${{ "{:,.0f}".format(producto.utilidad) }}</td>
+                                <td class="text-center">{{ "%.0f"|format(producto.margen) }}%</td>
+                            </tr>
                             {% endfor %}
-                        </div>
-                    </div>
+                        </tbody>
+                    </table>
                 </div>
-            </div>
+                {% endif %}
 
-            <!-- Productos Más Vendidos -->
-            <div class="row">
-                <div class="col-12">
-                    <div class="metric-card">
-                        <h4><i class="fas fa-star"></i> Productos Más Vendidos del Día</h4>
-                        <div class="mt-3">
-                            {% for producto, cantidad in productos_top %}
-                            <div class="producto-item">
-                                <div class="row align-items-center">
-                                    <div class="col-md-8">
-                                        <h5 class="mb-1">{{ producto }}</h5>
-                                        <small class="text-muted">Producto destacado</small>
-                                    </div>
-                                    <div class="col-md-4 text-end">
-                                        <span class="badge bg-success fs-6">
-                                            {{ cantidad }} unidades
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
+                <!-- PRODUCTOS DONADOS -->
+                {% if productos_donados_detalle and productos_donados_detalle|length > 0 %}
+                <div class="compact-table-container mb-2">
+                    <table class="compact-table table table-sm table-bordered">
+                        <thead>
+                            <tr>
+                                <th colspan="4" style="background: #ffc107; color: black;">
+                                    <i class="fas fa-gift me-1"></i>PRODUCTOS DONADOS
+                                </th>
+                            </tr>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Unid</th>
+                                <th>Valor Mercado</th>
+                                <th>Costo Real</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for producto in productos_donados_detalle %}
+                            <tr>
+                                <td class="product-name">{{ producto.nombre }}</td>
+                                <td class="text-center">{{ producto.cantidad }}</td>
+                                <td class="text-end">${{ "{:,.0f}".format(producto.valor_mercado) }}</td>
+                                <td class="text-end">${{ "{:,.0f}".format(producto.costo_real) }}</td>
+                            </tr>
                             {% endfor %}
-                        </div>
-                    </div>
+                        </tbody>
+                    </table>
                 </div>
-            </div>
+                {% endif %}
 
-            <!-- Análisis Automático -->
-            <div class="row mt-4">
-                <div class="col-12">
-                    <div class="metric-card">
-                        <h4><i class="fas fa-brain"></i> Análisis Automático</h4>
-                        <div class="alert alert-info mt-3">
-                            <i class="fas fa-lightbulb"></i>
-                            <strong>Insight del día:</strong>
-                            {% if tendencia > 0 %}
-                                Las ventas han aumentado un {{ "{:.1f}".format(tendencia) }}% respecto al día anterior. 
-                                ¡Excelente desempeño!
+                <!-- Métodos de Pago -->
+                {% if ventas_por_metodo %}
+                <div class="tarjeta-compacta tarjeta-metodos mb-2">
+                    <h6><i class="fas fa-credit-card me-1"></i>VENTAS POR MÉTODO DE PAGO</h6>
+                    <div class="metodos-linea">
+                        {% for metodo, total in ventas_por_metodo.items() %}
+                        <div class="metodo-item">
+                            {% if metodo == 'efectivo' %}
+                                <i class="fas fa-money-bill me-1"></i>Efectivo:
+                            {% elif metodo == 'tarjeta' %}
+                                <i class="fas fa-credit-card me-1"></i>Tarjeta:
+                            {% elif metodo == 'transferencia' %}
+                                <i class="fas fa-university me-1"></i>Transferencia:
                             {% else %}
-                                Las ventas han disminuido un {{ "{:.1f}".format(tendencia|abs) }}% respecto al día anterior. 
-                                Recomendación: Revisar estrategias de venta.
+                                <i class="fas fa-wallet me-1"></i>{{ metodo|title }}:
                             {% endif %}
+                            ${{ "{:,.0f}".format(total) }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Resumen Financiero -->
+                <div class="resumen-financiero">
+                    <div class="row text-center">
+                        <div class="col-3">
+                            <strong>Margen Real:</strong> {{ "%.0f"|format(margen_promedio) if margen_promedio is defined else 0 }}%
+                        </div>
+                        <div class="col-3">
+                            <strong>Utilidad Neta:</strong> ${{ "{:,.0f}".format(utilidad_neta) if utilidad_neta is defined else 0 }}
+                        </div>
+                        <div class="col-3">
+                            <strong>ROI:</strong> 
+                            {% if costo_inventario is defined and costo_inventario > 0 %}
+                                {{ "%.0f"|format((utilidad_neta / costo_inventario) * 100) }}%
+                            {% else %}
+                                0%
+                            {% endif %}
+                        </div>
+                        <div class="col-3">
+                            <strong>Transacciones:</strong> {{ total_transacciones if total_transacciones is defined else 0 }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================ -->
+            <!-- VERSIÓN WEB COMPLETA (INTERFAZ ORIGINAL) - CORREGIDA -->
+            <!-- ============================================ -->
+            <div class="d-print-none">
+                <!-- Resumen Principal Compacto -->
+                <div class="row mb-3">
+                    <div class="col-6 col-md-3 mb-2">
+                        <div class="metric-card text-center h-100">
+                            <h6 style="font-size: 0.85rem; margin-bottom: 5px;"><i class="fas fa-money-bill-wave"></i> Total Ventas</h6>
+                            <div class="metric-value">
+                                {% if total_ventas is defined %}
+                                    ${{ "{:,.0f}".format(total_ventas) }}
+                                {% else %}
+                                    $0
+                                {% endif %}
+                            </div>
+                            <small class="text-muted" style="font-size: 0.75rem;">Ventas normales</small>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3 mb-2">
+                        <div class="metric-card text-center h-100">
+                            <h6 style="font-size: 0.85rem; margin-bottom: 5px;"><i class="fas fa-chart-line"></i> Tendencia</h6>
+                            <div class="metric-value {% if tendencia >= 0 %}tendencia-positiva{% else %}tendencia-negativa{% endif %}">
+                                {% if tendencia is defined %}
+                                    {{ "{:+.0f}".format(tendencia) }}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </div>
+                            <small class="text-muted" style="font-size: 0.75rem;">vs ayer</small>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3 mb-2">
+                        <div class="metric-card text-center h-100">
+                            <h6 style="font-size: 0.85rem; margin-bottom: 5px;"><i class="fas fa-receipt"></i> Transacciones</h6>
+                            <div class="metric-value">
+                                {{ total_transacciones if total_transacciones is defined else 0 }}
+                            </div>
+                            <small class="text-muted" style="font-size: 0.75rem;">Total</small>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3 mb-2">
+                        <div class="metric-card text-center h-100">
+                            <h6 style="font-size: 0.85rem; margin-bottom: 5px;"><i class="fas fa-gift"></i> Donaciones</h6>
+                            <div class="metric-value text-warning">
+                                {{ total_donaciones if total_donaciones is defined else 0 }}
+                            </div>
+                            <small class="text-muted" style="font-size: 0.75rem;">
+                                {{ productos_donados if productos_donados is defined else 0 }} prod.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección de Donaciones (si existen) -->
+                {% if total_donaciones and total_donaciones > 0 %}
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="metric-card" style="border-left-color: #ffc107; background: linear-gradient(135deg, #fff9e6, #fff3cd); padding: 12px;">
+                            <h5 style="font-size: 1rem; margin-bottom: 10px;">
+                                <i class="fas fa-gift me-2"></i>Resumen de Donaciones
+                            </h5>
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <div style="border-radius: 6px; padding: 8px; background: white;">
+                                        <strong class="text-warning" style="font-size: 1.1rem;">{{ total_donaciones }}</strong>
+                                        <br>
+                                        <small class="text-muted" style="font-size: 0.7rem;">Transacciones</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div style="border-radius: 6px; padding: 8px; background: white;">
+                                        <strong class="text-warning" style="font-size: 1.1rem;">{{ productos_donados }}</strong>
+                                        <br>
+                                        <small class="text-muted" style="font-size: 0.7rem;">Productos</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div style="border-radius: 6px; padding: 8px; background: white;">
+                                        <strong class="text-warning" style="font-size: 1.1rem;">
+                                            {% if valor_total_donaciones is defined %}
+                                                ${{ "{:,.0f}".format(valor_total_donaciones) }}
+                                            {% else %}
+                                                $0
+                                            {% endif %}
+                                        </strong>
+                                        <br>
+                                        <small class="text-muted" style="font-size: 0.7rem;">Valor</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Ventas por Método de Pago Compacto -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="metric-card">
+                            <h5 style="font-size: 1rem; margin-bottom: 10px;">
+                                <i class="fas fa-credit-card"></i> Ventas por Método de Pago
+                            </h5>
+                            <div class="row">
+                                {% if ventas_por_metodo %}
+                                    {% for metodo, total in ventas_por_metodo.items() %}
+                                    <div class="col-6 col-md-4 mb-2">
+                                        <div class="badge-metodo bg-primary w-100 p-2 text-center">
+                                            {% if metodo == 'efectivo' %}
+                                                <i class="fas fa-money-bill me-1"></i>
+                                            {% elif metodo == 'tarjeta' %}
+                                                <i class="fas fa-credit-card me-1"></i>
+                                            {% elif metodo == 'transferencia' %}
+                                                <i class="fas fa-university me-1"></i>
+                                            {% else %}
+                                                <i class="fas fa-wallet me-1"></i>
+                                            {% endif %}
+                                            {{ metodo|title }}: ${{ "{:,.0f}".format(total) }}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                <div class="col-12">
+                                    <p class="text-muted text-center" style="font-size: 0.9rem;">No hay ventas registradas</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PRODUCTOS VENDIDOS - VERSIÓN CORREGIDA (solo ventas reales) -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="metric-card">
+                            <h5 style="font-size: 1rem; margin-bottom: 10px;">
+                                <i class="fas fa-chart-line"></i> Productos Vendidos - Análisis Financiero
+                            </h5>
+                            <div>
+                                {% if productos_vendidos and productos_vendidos|length > 0 %}
+                                    {% for producto in productos_vendidos %}
+                                    <div class="producto-item">
+                                        <div class="row align-items-center">
+                                            <div class="col-12 col-md-3 mb-2 mb-md-0">
+                                                <h6 style="font-size: 0.9rem; margin-bottom: 3px; font-weight: bold;">{{ producto.nombre }}</h6>
+                                                <small class="text-muted" style="font-size: 0.75rem;">Producto vendido</small>
+                                            </div>
+                                            <div class="col-12 col-md-9">
+                                                <div class="producto-analisis-grid">
+                                                    <div class="analisis-item analisis-unidades">
+                                                        <strong class="text-primary">{{ producto.cantidad }}</strong>
+                                                        <br>
+                                                        <small class="text-muted">Unid.</small>
+                                                    </div>
+                                                    <div class="analisis-item analisis-ingresos">
+                                                        <strong class="text-success">
+                                                            ${{ "{:,.0f}".format(producto.ingresos) }}
+                                                        </strong>
+                                                        <br>
+                                                        <small class="text-muted">Ingresos</small>
+                                                    </div>
+                                                    <div class="analisis-item analisis-costos">
+                                                        <strong class="text-warning">
+                                                            ${{ "{:,.0f}".format(producto.costo) }}
+                                                        </strong>
+                                                        <br>
+                                                        <small class="text-muted">Costo</small>
+                                                    </div>
+                                                    <div class="analisis-item analisis-utilidad">
+                                                        <strong class="text-info">
+                                                            ${{ "{:,.0f}".format(producto.utilidad) }}
+                                                        </strong>
+                                                        <br>
+                                                        <small class="text-muted">Utilidad</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <p class="text-muted text-center" style="font-size: 0.9rem;">No hay productos vendidos</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PRODUCTOS DONADOS - NUEVA SECCIÓN -->
+                {% if productos_donados_detalle and productos_donados_detalle|length > 0 %}
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="metric-card" style="border-left-color: #ffc107;">
+                            <h5 style="font-size: 1rem; margin-bottom: 10px;">
+                                <i class="fas fa-gift me-2"></i> Productos Donados
+                            </h5>
+                            <div>
+                                {% for producto in productos_donados_detalle %}
+                                <div class="producto-item" style="border-left-color: #ffc107;">
+                                    <div class="row align-items-center">
+                                        <div class="col-12 col-md-3 mb-2 mb-md-0">
+                                            <h6 style="font-size: 0.9rem; margin-bottom: 3px; font-weight: bold;">{{ producto.nombre }}</h6>
+                                            <small class="text-muted" style="font-size: 0.75rem;">Producto donado</small>
+                                        </div>
+                                        <div class="col-12 col-md-9">
+                                            <div class="producto-analisis-grid">
+                                                <div class="analisis-item analisis-unidades">
+                                                    <strong class="text-primary">{{ producto.cantidad }}</strong>
+                                                    <br>
+                                                    <small class="text-muted">Unid.</small>
+                                                </div>
+                                                <div class="analisis-item" style="background: #fff3e0; border-left: 3px solid #ff9800;">
+                                                    <strong class="text-warning">
+                                                        ${{ "{:,.0f}".format(producto.valor_mercado) }}
+                                                    </strong>
+                                                    <br>
+                                                    <small class="text-muted">Valor Mercado</small>
+                                                </div>
+                                                <div class="analisis-item" style="background: #ffebee; border-left: 3px solid #f44336;">
+                                                    <strong class="text-danger">
+                                                        ${{ "{:,.0f}".format(producto.costo_real) }}
+                                                    </strong>
+                                                    <br>
+                                                    <small class="text-muted">Costo Real</small>
+                                                </div>
+                                                <div class="analisis-item" style="background: #f3e5f5; border-left: 3px solid #9c27b0;">
+                                                    <strong class="text-info">
+                                                        ${{ "{:,.0f}".format(producto.valor_mercado - producto.costo_real) }}
+                                                    </strong>
+                                                    <br>
+                                                    <small class="text-muted">Pérdida</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Resumen Financiero Compacto -->
+                <div class="row mb-3">
+                    <div class="col-4">
+                        <div class="metric-card text-center h-100">
+                            <h6 style="font-size: 0.8rem; margin-bottom: 5px;"><i class="fas fa-percentage"></i> Margen</h6>
+                            <div class="metric-value">
+                                {% if margen_promedio is defined %}
+                                    {{ "%.0f"|format(margen_promedio) }}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </div>
+                            <small class="text-muted" style="font-size: 0.7rem;">Real</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="metric-card text-center h-100">
+                            <h6 style="font-size: 0.8rem; margin-bottom: 5px;"><i class="fas fa-hand-holding-usd"></i> Utilidad</h6>
+                            <div class="metric-value">
+                                {% if utilidad_neta is defined %}
+                                    ${{ "{:,.0f}".format(utilidad_neta) }}
+                                {% else %}
+                                    $0
+                                {% endif %}
+                            </div>
+                            <small class="text-muted" style="font-size: 0.7rem;">Neta</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="metric-card text-center h-100">
+                            <h6 style="font-size: 0.8rem; margin-bottom: 5px;"><i class="fas fa-balance-scale"></i> ROI</h6>
+                            <div class="metric-value">
+                                {% if costo_inventario is defined and costo_inventario > 0 %}
+                                    {{ "%.0f"|format((utilidad_neta / costo_inventario) * 100) }}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </div>
+                            <small class="text-muted" style="font-size: 0.7rem;">Inventario</small>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Pie del Reporte -->
-        <div class="reporte-footer bg-light py-3 px-4 text-center">
-            <small class="text-muted">
+        <!-- Pie del Reporte (solo web) -->
+        <div class="reporte-footer bg-light py-2 px-3 text-center no-print">
+            <small class="text-muted" style="font-size: 0.75rem;">
                 <i class="fas fa-sync-alt"></i>
-                Reporte generado automáticamente el {{ fecha.strftime('%d/%m/%Y a las %H:%M') }} | 
-                Sistema Panadería con IA
+                Generado el {{ hoy.strftime('%d/%m/%Y %H:%M') }} | Sistema Panadería
             </small>
         </div>
     </div>
@@ -264,30 +945,29 @@
             window.print();
         }
 
-        
-        function actualizarReporte() {
-            const fechaInicio = document.getElementById('fecha_inicio').value;
-            const fechaFin = document.getElementById('fecha_fin').value;
-            const urlActual = window.location.href.split('?')[0];
-            
-            // Determinar qué reporte estamos viendo y actualizar con nuevas fechas
-            if (urlActual.includes('ventas')) {
-                window.location.href = `${urlActual}?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
-            } else if (urlActual.includes('productos_populares')) {
-                window.location.href = `${urlActual}?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
-            } else if (urlActual.includes('cierre_caja')) {
-                window.location.href = `${urlActual}?fecha=${fechaInicio}`;
-            } else {
-                window.location.href = `${urlActual}?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
-            }
+        function seleccionarFecha(fecha) {
+            window.location.href = `/reporte/cierre_caja?fecha=${fecha}`;
         }
 
-        // Auto-cierre después de 2 minutos (opcional)
-        setTimeout(() => {
-            if (confirm('¿Deseas cerrar el reporte?')) {
-                window.close();
+        function aplicarFecha() {
+            const fechaInput = document.getElementById('fecha_consulta');
+            seleccionarFecha(fechaInput.value);
+        }
+
+        document.getElementById('fecha_consulta')?.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                aplicarFecha();
             }
-        }, 120000);
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.innerWidth < 768) {
+                const metricCards = document.querySelectorAll('.metric-card');
+                metricCards.forEach(card => {
+                    card.style.minHeight = 'auto';
+                });
+            }
+        });
     </script>
 </body>
 </html>

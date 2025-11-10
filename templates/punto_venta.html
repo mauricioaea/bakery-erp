@@ -212,7 +212,7 @@
                             <!-- Botones de Acción -->
                             <div class="acciones-venta mt-3">
                                 <button class="btn btn-success btn-lg w-100 mb-2" 
-                                        onclick="iniciarProcesoVenta()" 
+                                        onclick="iniciarProcesoVentaMejorado()"  
                                         id="btnPagar" 
                                         disabled>
                                     <i class="fas fa-cash-register me-2"></i>   
@@ -301,7 +301,7 @@
                     <strong id="totalMovil">$0</strong>
                 </div>
                 <div class="d-grid">
-                    <button class="btn btn-success btn-lg" onclick="procesarVenta()">
+                    <button class="btn btn-success btn-lg" onclick="iniciarProcesoVentaMejorado()">
                         <i class="fas fa-credit-card me-2"></i>PROCESAR VENTA
                     </button>
                 </div>
@@ -336,7 +336,7 @@
                     <strong id="totalMovil">$0</strong>
                 </div>
                 <div class="d-grid">
-                    <button class="btn btn-success btn-lg" onclick="procesarVenta()">
+                    <button class="btn btn-success btn-lg" onclick="iniciarProcesoVentaMejorado()">
                         <i class="fas fa-credit-card me-2"></i>PROCESAR VENTA
                     </button>
                 </div>
@@ -389,27 +389,91 @@
         </div>
     </div>
 
+    <!-- 🆕 SCRIPT PARA REINICIO AUTOMÁTICO -->
+    <script>
+        // Configurar reinicio automático al cerrar modal de confirmación
+        document.getElementById('confirmModal').addEventListener('hidden.bs.modal', function () {
+            console.log('🔄 Modal cerrado - Reiniciando sistema...');
+            if (typeof reiniciarSistemaParaNuevaVenta === 'function') {
+                reiniciarSistemaParaNuevaVenta();
+            }
+        });
+    </script>
+
     <!-- Botón Flotante de Reportes -->
-    <div class="reportes-flotantes">
-        <div class="btn-group-vertical">
-            <button class="btn btn-info btn-sm" onclick="abrirReporteCierreCaja()" 
-                    title="Cierre de Caja">
-                <i class="fas fa-cash-register"></i>
-            </button>
-            <button class="btn btn-warning btn-sm" onclick="abrirReporteVentas()"
-                    title="Reporte de Ventas">
-                <i class="fas fa-chart-line"></i>
-            </button>
-            <button class="btn btn-success btn-sm" onclick="abrirReporteProductos()"
-                    title="Productos Populares">
-                <i class="fas fa-star"></i>
-            </button>
-            <button class="btn btn-danger btn-sm" onclick="abrirAnalisisPredictivo()"
-                    title="Análisis Predictivo">
-                <i class="fas fa-brain"></i>
-            </button>
-        </div>
+    <!-- Botón Flotante de Reportes - VERSIÓN MEJORADA Y SEGURA -->
+    <!-- Botón Flotante - VERSIÓN MÍNIMA Y SEGURA -->
+    <!-- Botón Flotante - VERSIÓN MÍNIMA Y SEGURA -->
+    <!-- Botón Flotante de Reportes CORREGIDO -->
+<div class="reportes-flotantes">
+    <div class="btn-group-vertical">
+        <button class="btn btn-info btn-sm" 
+                onclick="window.open('/reporte/cierre_caja', '_blank')" 
+                title="Cierre de Caja">
+            <i class="fas fa-cash-register"></i>
+        </button>
+        <button class="btn btn-warning btn-sm" 
+                onclick="window.open('/reporte/ventas', '_blank')"
+                title="Reporte de Ventas">
+            <i class="fas fa-chart-line"></i>
+        </button>
+        <button class="btn btn-success btn-sm" 
+                onclick="window.open('/reporte/productos_populares', '_blank')"
+                title="Productos Populares">
+            <i class="fas fa-star"></i>
+        </button>
+        <button class="btn btn-danger btn-sm" 
+                onclick="window.open('/reporte/analisis_predictivo', '_blank')"
+                title="Análisis Predictivo">
+            <i class="fas fa-brain"></i>
+        </button>
     </div>
+</div>
+    <script>
+// 🆕 FUNCIÓN SEGURA PARA ABRIR REPORTES
+function abrirReporteConSeguridad(url) {
+    console.log('🔍 Intentando abrir reporte:', url);
+    
+    try {
+        // Verificar que la URL sea válida
+        if (!url || typeof url !== 'string') {
+            console.error('❌ URL inválida:', url);
+            mostrarNotificacion('❌ Error: URL de reporte inválida', 'error');
+            return;
+        }
+        
+        // Intentar abrir el reporte en nueva pestaña
+        const ventana = window.open(url, '_blank', 'width=1400,height=800,scrollbars=yes');
+        
+        // Verificar si se bloqueó la ventana emergente
+        if (!ventana || ventana.closed || typeof ventana.closed === 'undefined') {
+            console.warn('⚠️ Ventana emergente bloqueada. Redirigiendo en misma pestaña...');
+            window.location.href = url;
+        } else {
+            console.log('✅ Reporte abierto correctamente en nueva pestaña');
+            ventana.focus();
+        }
+        
+    } catch (error) {
+        console.error('❌ Error al abrir reporte:', error);
+        // Fallback: redirigir en la misma pestaña
+        window.location.href = url;
+    }
+}
+
+// 🆕 FUNCIÓN DE NOTIFICACIÓN (si no existe)
+function mostrarNotificacion(mensaje, tipo = 'info') {
+    // Usar la función existente o crear una básica
+    if (typeof mostrarNotificacionOriginal === 'function') {
+        mostrarNotificacionOriginal(mensaje, tipo);
+    } else if (typeof mostrarNotificacion === 'function' && mostrarNotificacion !== arguments.callee) {
+        mostrarNotificacion(mensaje, tipo);
+    } else {
+        // Fallback básico
+        alert(mensaje);
+    }
+}
+</script>
 
     <!-- MODAL PARA DATOS DEL CLIENTE - FACTURA ELECTRÓNICA -->
     <div class="modal fade" id="clienteModal" tabindex="-1" aria-hidden="true">
@@ -837,7 +901,7 @@
             window.ultimoTotal = respuesta.total || 0;
         }
 
-        // FUNCIÓN PRINCIPAL DE VENTA
+        // FUNCIÓN PRINCIPAL DE VENTA - VERSIÓN MEJORADA
         async function procesarVenta() {
             if (carrito.length === 0) {
                 mostrarNotificacion('❌ El carrito está vacío', 'error');
@@ -849,30 +913,78 @@
             const esDonacion = document.getElementById('modoDonacion').checked;
             const motivoDonacion = document.getElementById('motivoDonacion').value;
             
+            // 🆕 NUEVA LÓGICA PARA DONACIONES - SALTA CALCULADORA
             if (esDonacion) {
+                console.log('🎁 DONACIÓN DETECTADA - Saltando calculadora de cambio');
+                
+                if (!motivoDonacion.trim()) {
+                    mostrarNotificacion('❌ Ingresa el motivo de la donación', 'error');
+                    document.getElementById('motivoDonacion').focus();
+                    return;
+                }
+                
                 if (!confirm('🎁 ¿Confirmar DONACIÓN?\n\nLos productos se descargarán del inventario pero el ingreso será $0.\n¿Continuar?')) {
                     return;
                 }
+                
+                try {
+                    const configResponse = await fetch('/api/configuracion-sistema');
+                    const config = await configResponse.json();
+                    window.modoFacturacionActual = config.tipo_facturacion;
+                    
+                    // 🆕 PROCESAR DONACIÓN DIRECTAMENTE SIN CALCULADORA
+                    if (window.modoFacturacionActual === 'ELECTRONICA') {
+                        if (!window.clienteActual) {
+                            solicitarDatosCliente();
+                            return;
+                        } else {
+                            await procesarVentaElectronica();
+                        }
+                    } else {
+                        await procesarVentaPOS();
+                    }
+                    
+                } catch (error) {
+                    console.error('Error procesando donación:', error);
+                    procesarVentaPOS();
+                }
+                return; // 🆕 IMPORTANTE: Salir de la función después de procesar donación
             }
             
+            // 🎯 LÓGICA ORIGINAL PARA VENTAS NORMALES (CON CALCULADORA)
             try {
                 const configResponse = await fetch('/api/configuracion-sistema');
                 const config = await configResponse.json();
                 window.modoFacturacionActual = config.tipo_facturacion;
                 
-                if (window.modoFacturacionActual === 'ELECTRONICA' && !esDonacion) {
+                if (window.modoFacturacionActual === 'ELECTRONICA') {
                     if (!window.clienteActual) {
                         solicitarDatosCliente();
                         return;
                     } else {
-                        procesarVentaElectronica();
+                        // Para ventas electrónicas normales, mostrar calculadora si es efectivo
+                        if (metodoPago === 'efectivo') {
+                            mostrarCalculadoraCambio(totalVenta);
+                        } else {
+                            procesarVentaElectronica();
+                        }
                     }
                 } else {
-                    procesarVentaPOS();
+                    // Para POS normales, siempre mostrar calculadora si es efectivo
+                    if (metodoPago === 'efectivo') {
+                        mostrarCalculadoraCambio(totalVenta);
+                    } else {
+                        procesarVentaPOS();
+                    }
                 }
             } catch (error) {
                 console.error('Error detectando configuración:', error);
-                procesarVentaPOS();
+                // Fallback: mostrar calculadora para efectivo
+                if (metodoPago === 'efectivo') {
+                    mostrarCalculadoraCambio(totalVenta);
+                } else {
+                    procesarVentaPOS();
+                }
             }
         }
 
@@ -1095,6 +1207,7 @@
 
 
         // FUNCIONALIDAD DONACIÓN
+        // FUNCIONALIDAD DONACIÓN - VERSIÓN MEJORADA
         function toggleModoDonacion() {
             const esDonacion = document.getElementById('modoDonacion').checked;
             const campoMotivo = document.getElementById('campoMotivoDonacion');
@@ -1127,6 +1240,71 @@
                     btn.classList.remove('disabled');
                 });
             }
+            
+            // 🆕 ACTUALIZAR VARIABLE GLOBAL DE DONACIÓN
+            window.esDonacion = esDonacion;
+        }
+
+        // 🆕 FUNCIÓN MEJORADA PARA INICIAR PROCESO DE VENTA
+        // 🆕 FUNCIÓN MEJORADA PARA INICIAR PROCESO DE VENTA
+        function iniciarProcesoVentaMejorado() {
+            console.log('🚀 Iniciando proceso de venta mejorado...');
+            
+            // Verificar si es donación
+            const esDonacion = document.getElementById('modoDonacion').checked;
+            const motivoDonacion = document.getElementById('motivoDonacion').value;
+            
+            if (esDonacion) {
+                console.log('🎁 Procesando DONACIÓN - Saltando calculadora');
+                
+                // Validar motivo
+                if (!motivoDonacion.trim()) {
+                    mostrarNotificacion('❌ Ingresa el motivo de la donación', 'error');
+                    document.getElementById('motivoDonacion').focus();
+                    return;
+                }
+                
+                // 🆕 CONFIRMAR DONACIÓN DIRECTAMENTE
+                if (!confirm('🎁 ¿Confirmar DONACIÓN?\n\nLos productos se descargarán del inventario pero el ingreso será $0.\n¿Continuar?')) {
+                    return;
+                }
+                
+                console.log('✅ Donación confirmada - Procesando directamente...');
+                
+                // 🆕 USAR LA FUNCIÓN DE VENTA NORMAL PERO CON DATOS DE DONACIÓN
+                // Esto activará el flujo de donación en procesarVenta()
+                procesarVenta();
+                
+            } else {
+                console.log('💰 Procesando VENTA NORMAL - Mostrando calculadora');
+                
+                // Usar la función original para ventas normales
+                if (typeof window.iniciarProcesoVenta === 'function') {
+                    window.iniciarProcesoVenta();
+                } else {
+                    console.error('❌ Función iniciarProcesoVenta no disponible');
+                    mostrarNotificacion('❌ Error en el sistema de ventas', 'error');
+                }
+            }
+        }
+
+        // 🆕 FUNCIÓN PARA PROCESAR DONACIÓN DIRECTAMENTE (SI NO ESTÁ DISPONIBLE DESDE pos-moderno.js)
+        function procesarDonacionDirectamente() {
+            console.log('🎁 Procesando donación directamente desde HTML...');
+            
+            const motivoDonacion = document.getElementById('motivoDonacion').value;
+            
+            if (!motivoDonacion.trim()) {
+                mostrarNotificacion('❌ Ingresa el motivo de la donación', 'error');
+                document.getElementById('motivoDonacion').focus();
+                return;
+            }
+            
+            // Usar la función de procesar venta normal pero con datos de donación
+            const metodoPago = document.querySelector('input[name="metodoPago"]:checked').value;
+            
+            // Simular el proceso de donación
+            procesarVentaPOS(); // Esta función ya maneja las donaciones correctamente
         }
 
         function calcularTotalCarrito() {
@@ -1214,7 +1392,9 @@
 
         // FUNCIONES DE REPORTES
         function abrirReporteCierreCaja() {
-            window.open('/reporte/cierre_caja', '_blank');
+            const url = '/reporte/cierre_caja';
+            console.log('🔍 Abriendo reporte:', url);
+            window.open(url, '_blank', 'width=1200,height=800');
         }
 
         function abrirReporteVentas() {
@@ -1246,6 +1426,105 @@
 
         function actualizarDonacionesDespuesVenta() {
             setTimeout(actualizarDonacionesPuntoVenta, 1500);
+        }
+
+                // =============================================
+        // 🆕 FUNCIÓN PARA REINICIAR SISTEMA DESPUÉS DE VENTA
+        // =============================================
+
+        function reiniciarSistemaParaNuevaVenta() {
+            console.log('🔄 Iniciando reinicio del sistema...');
+            
+            try {
+                // 🆕 1. LIMPIAR EVENT LISTENERS DEL ENTER PRIMERO (EVITA BLOQUEO)
+                if (typeof limpiarEventListenersEnter === 'function') {
+                    limpiarEventListenersEnter();
+                } else {
+                    console.log('ℹ️ Función limpiarEventListenersEnter no disponible');
+                }
+                
+                // 2. CERRAR TODOS LOS MODALES ABIERTOS
+                const modales = ['confirmModal', 'cambioModal', 'clienteModal', 'modalMotivoDonacion'];
+                modales.forEach(modalId => {
+                    const modalElement = document.getElementById(modalId);
+                    if (modalElement) {
+                        const modal = bootstrap.Modal.getInstance(modalElement);
+                        if (modal) {
+                            modal.hide();
+                        }
+                    }
+                });
+                
+                // 3. REINICIAR VARIABLES TEMPORALES
+                window.clienteActual = null;
+                window.ultimaVentaId = null;
+                window.efectivoRecibido = 0;
+                window.cambioCalculado = 0;
+                window.totalVentaActual = 0;
+                
+                // 4. RESETEAR INTERFAZ
+                resetearInterfazVenta();
+                
+                // 🆕 5. FORZAR ACTUALIZACIÓN VISUAL DEL MODO DONACIÓN (SOLUCIÓN AL PROBLEMA)
+                if (typeof toggleModoDonacion === 'function') {
+                    toggleModoDonacion();
+                } else {
+                    console.log('ℹ️ Función toggleModoDonacion no disponible');
+                }
+                
+                console.log('✅ Sistema reiniciado para nueva venta');
+                
+            } catch (error) {
+                console.error('❌ Error en reinicio:', error);
+            }
+        }
+        
+        // 🆕 FUNCIÓN CORREGIDA PARA RESETEAR INTERFAZ
+        function reiniciarSistemaParaNuevaVenta() {
+            console.log('🔄 Iniciando reinicio del sistema...');
+            
+            try {
+                // 🆕 1. LIMPIAR EVENT LISTENERS DEL ENTER PRIMERO (EVITA BLOQUEO)
+                if (typeof limpiarEventListenersEnter === 'function') {
+                    limpiarEventListenersEnter();
+                } else {
+                    console.log('ℹ️ Función limpiarEventListenersEnter no disponible');
+                }
+                
+                // 2. CERRAR TODOS LOS MODALES ABIERTOS
+                const modales = ['confirmModal', 'cambioModal', 'clienteModal', 'modalMotivoDonacion'];
+                modales.forEach(modalId => {
+                    const modalElement = document.getElementById(modalId);
+                    if (modalElement) {
+                        const modal = bootstrap.Modal.getInstance(modalElement);
+                        if (modal) {
+                            modal.hide();
+                        }
+                    }
+                });
+                
+                // 3. REINICIAR VARIABLES TEMPORALES
+                window.clienteActual = null;
+                window.ultimaVentaId = null;
+                window.efectivoRecibido = 0;
+                window.cambioCalculado = 0;
+                window.totalVentaActual = 0;
+                
+                // 4. RESETEAR INTERFAZ
+                resetearInterfazVenta();
+                
+                // 🆕 5. FORZAR ACTUALIZACIÓN VISUAL DEL MODO DONACIÓN (SOLUCIÓN AL PROBLEMA)
+                if (typeof toggleModoDonacion === 'function') {
+                    toggleModoDonacion();
+                } else {
+                    console.log('ℹ️ Función toggleModoDonacion no disponible');
+                }
+                
+                console.log('✅ Sistema reiniciado para nueva venta');
+                
+            } catch (error) {
+                console.error('❌ Error en reinicio:', error);
+            }
         }
 
         // INICIALIZACIÓN

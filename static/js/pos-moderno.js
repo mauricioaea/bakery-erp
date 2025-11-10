@@ -8,6 +8,8 @@ let todosProductos = [];
 let categorias = [];
 let productosFiltrados = [];
 let categoriaActual = '';
+let esDonacion = false; // 🆕 NUEVA VARIABLE PARA DONACIONES
+let motivoDonacion = ''; // 🆕 MOTIVO DE DONACIÓN
 
 // Iconos por categoría (Font Awesome)
 const iconosCategorias = {
@@ -55,9 +57,27 @@ const configTicket = {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Iniciando POS Moderno...');
     
+    // 🆕 CONFIGURAR TECLA ENTER PARA MODAL DE CAMBIO
+    const cambioModal = document.getElementById('cambioModal');
+    if (cambioModal) {
+        cambioModal.addEventListener('shown.bs.modal', function() {
+            console.log('🎯 Modal de cambio abierto - Configurando ENTER...');
+            setTimeout(configurarEnterParaProcesarPago, 100);
+        });
+    } else {
+        console.log('⚠️ Modal de cambio no encontrado en DOM');
+    }
+    // 🆕 CONFIGURAR TECLA ENTER PARA MODAL DE CONFIRMACIÓN
+    const confirmModal = document.getElementById('confirmModal');
+    if (confirmModal) {
+        confirmModal.addEventListener('shown.bs.modal', function() {
+            console.log('🎯 Modal de confirmación abierto - Configurando ENTER para cerrar...');
+            setTimeout(configurarEnterParaCerrarModal, 100);
+        });
+    }
+
     // Cargar carrito desde localStorage
     cargarCarritoPersistente();
-
     cargarConfiguracionTickets()
     
     // Cargar productos y categorías
@@ -77,8 +97,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     console.log('✅ POS Moderno inicializado');
 
-        // ==================================================
-    // 🆕 INICIALIZACIÓN DROPDOWN CATEGORÍAS 
+    // ==================================================
+    // 🆕 INICIALIZACIÓN DROPDOWN CATEGORÍAS (ESTA ES LA ORIGINAL)
     // ==================================================
     const dropdownCategorias = document.getElementById('categoriaFilter');
     if (dropdownCategorias) {
@@ -93,6 +113,8 @@ document.addEventListener('DOMContentLoaded', function() {
             llenarDropdownCategorias();
         }, 500);
     }
+    
+
     // ==================================================
     // 🆕 INICIALIZACIÓN CONTADORES DE VENTAS EN TIEMPO REAL
     // ==================================================
@@ -1041,9 +1063,15 @@ async function procesarVenta() {
              window.tipoDocumento = resultado.tipo_documento || 'POS';
             window.ultimoTotal = resultado.total;
             
+           
             // Mostrar modal
             const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
             modal.show();
+
+            // 🆕 CONFIGURAR TECLA ENTER PARA CERRAR ESTE MODAL
+            setTimeout(() => {
+                configurarEnterParaCerrarModal();
+            }, 500);
             
             // Limpiar carrito y recargar productos
             // Limpiar carrito pero MANTENER productos actuales
@@ -1330,7 +1358,8 @@ function cargarConfiguracionTickets() {
     }
 }
 // =============================================
-// 8. DASHBOARD EN TIEMPO REAL
+// =============================================
+// 8. DASHBOARD EN TIEMPO REAL - VERSIÓN CORREGIDA
 // =============================================
 function iniciarDashboardTiempoReal() {
     // Actualizar hora cada segundo
@@ -1354,15 +1383,57 @@ function actualizarHora() {
 
 async function actualizarDashboard() {
     try {
-        // En un sistema real, aquí harías una llamada a una API
-        // Por ahora usamos datos simulados basados en el carrito
+        console.log('📊 Actualizando dashboard...');
         
-        document.getElementById('ingresosHoy').textContent = ingresosHoy.toFixed(0);
+        // 🆕 LLAMADA REAL A LA API PARA OBTENER DATOS
+        const response = await fetch('/api/dashboard/metricas-hoy');
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            // 🆕 USAR DATOS REALES DE LA API
+            const ingresos = parseFloat(data.ingresos_hoy) || 0;
+            const ventas = parseInt(data.ventas_hoy) || 0;
+            
+            document.getElementById('ingresosHoy').textContent = `$${ingresos.toLocaleString()}`;
+            document.getElementById('ventasHoy').textContent = ventas.toLocaleString();
+            
+            console.log(`✅ Dashboard actualizado: $${ingresos} - ${ventas} ventas`);
+            
+        } else {
+            // 🆕 FALLBACK: USAR DATOS DEL CARRITO COMO ESTIMACIÓN
+            throw new Error('API no disponible');
+        }
+        
     } catch (error) {
-        console.error('Error actualizando dashboard:', error);
+        console.log('ℹ️ Usando datos estimados del dashboard:', error.message);
+        
+        // 🆕 FALLBACK SEGURO - ESTIMAR BASADO EN CARRITO
+        const totalCarrito = calcularTotalCarrito();
+        const itemsCarrito = carrito.reduce((total, item) => total + item.cantidad, 0);
+        
+        // Estimación conservadora (carrito actual + histórico en memoria)
+        const ingresosEstimados = totalCarrito + (window.ingresosAcumulados || 0);
+        const ventasEstimadas = itemsCarrito + (window.ventasAcumuladas || 0);
+        
+        document.getElementById('ingresosHoy').textContent = `$${Math.round(ingresosEstimados).toLocaleString()}`;
+        document.getElementById('ventasHoy').textContent = ventasEstimadas.toLocaleString();
+        
+        // Guardar en memoria para la próxima actualización
+        window.ingresosAcumulados = ingresosEstimados;
+        window.ventasAcumuladas = ventasEstimadas;
     }
 }
 
+// 🆕 FUNCIÓN PARA CALCULAR TOTAL DEL CARRITO (SI NO EXISTE)
+function calcularTotalCarrito() {
+    if (!window.carrito || !Array.isArray(window.carrito)) {
+        return 0;
+    }
+    return window.carrito.reduce((total, item) => {
+        return total + (parseFloat(item.precio) || 0) * (parseInt(item.cantidad) || 0);
+    }, 0);
+}
 // =============================================
 // 9. ATAJOS DE TECLADO
 // =============================================
@@ -1694,6 +1765,13 @@ function iniciarProcesoVenta() {
     console.log('📦 typeof carrito:', typeof carrito);
     console.log('📦 Array.isArray(carrito):', Array.isArray(carrito));
     
+    // 🆕 VERIFICAR SI ES DONACIÓN
+    if (esDonacion) {
+        console.log('🎁 PROCESANDO DONACIÓN - Saltando calculadora de cambio');
+        procesarDonacionDirectamente();
+        return;
+    }
+    
     // Usar la variable GLOBAL directa (no window.carrito)
     if (typeof carrito !== 'undefined' && Array.isArray(carrito) && carrito.length > 0) {
         console.log('✅ Carrito válido encontrado:', carrito.length, 'productos');
@@ -1714,6 +1792,280 @@ function iniciarProcesoVenta() {
         console.error('❌ Array.isArray(carrito):', Array.isArray(carrito));
         mostrarNotificacion('❌ No hay productos en la venta', 'error');
     }
+}
+
+// =============================================
+// 🆕 FUNCIONES PARA PROCESAMIENTO DE DONACIONES
+// =============================================
+
+/**
+ * Función para activar modo donación
+ */
+function activarModoDonacion() {
+    if (carrito.length === 0) {
+        mostrarNotificacion('❌ El carrito está vacío', 'error');
+        return;
+    }
+    
+    console.log('🎁 Activando modo donación...');
+    
+    // Mostrar modal para ingresar motivo de donación
+    mostrarModalMotivoDonacion();
+}
+
+/**
+ * Modal para ingresar motivo de donación
+ */
+function mostrarModalMotivoDonacion() {
+    const modalHTML = `
+        <div class="modal fade" id="modalMotivoDonacion" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-warning text-dark">
+                        <h5 class="modal-title">
+                            <i class="fas fa-gift me-2"></i>
+                            Registrar Donación
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <strong>Motivo de la donación:</strong>
+                            </label>
+                            <textarea 
+                                class="form-control" 
+                                id="inputMotivoDonacion" 
+                                rows="3" 
+                                placeholder="Ej: Donación a comunidad, evento benéfico, etc."
+                                maxlength="200"
+                            ></textarea>
+                            <div class="form-text">
+                                Ingresa el motivo de la donación (máximo 200 caracteres)
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Total de productos en donación:</strong> ${carrito.length} items
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-1"></i>
+                            Cancelar
+                        </button>
+                        <button type="button" class="btn btn-warning" onclick="confirmarDonacion()">
+                            <i class="fas fa-check me-1"></i>
+                            Confirmar Donación
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Agregar modal al DOM
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    const modal = new bootstrap.Modal(document.getElementById('modalMotivoDonacion'));
+    modal.show();
+    
+    // Configurar tecla ENTER para confirmar
+    const inputMotivo = document.getElementById('inputMotivoDonacion');
+    if (inputMotivo) {
+        inputMotivo.focus();
+        inputMotivo.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                confirmarDonacion();
+            }
+        });
+    }
+    
+    // Limpiar modal al cerrar
+    document.getElementById('modalMotivoDonacion').addEventListener('hidden.bs.modal', function() {
+        this.remove();
+    });
+}
+
+/**
+ * Confirmar y procesar donación
+ */
+function confirmarDonacion() {
+    const motivoInput = document.getElementById('inputMotivoDonacion');
+    const motivo = motivoInput ? motivoInput.value.trim() : '';
+    
+    if (!motivo) {
+        mostrarNotificacion('❌ Por favor ingresa el motivo de la donación', 'error');
+        if (motivoInput) motivoInput.focus();
+        return;
+    }
+    
+    if (motivo.length > 200) {
+        mostrarNotificacion('❌ El motivo no puede exceder 200 caracteres', 'error');
+        return;
+    }
+    
+    // Guardar variables de donación
+    esDonacion = true;
+    motivoDonacion = motivo;
+    
+    // Cerrar modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('modalMotivoDonacion'));
+    if (modal) modal.hide();
+    
+    console.log('🎁 Donación confirmada - Motivo:', motivo);
+    
+    // Procesar donación directamente
+    procesarDonacionDirectamente();
+}
+
+/**
+ * Procesar donación directamente sin calculadora
+ */
+async function procesarDonacionDirectamente() {
+    console.log('🎁 Procesando donación directamente...');
+    
+    if (carrito.length === 0) {
+        mostrarNotificacion('❌ No hay productos en la donación', 'error');
+        return;
+    }
+    
+    try {
+        // Mostrar loading
+        mostrarNotificacion('🔄 Procesando donación...', 'info');
+        
+        const response = await fetch('/registrar_venta', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                carrito: carrito,
+                metodo_pago: 'efectivo', // Donaciones siempre en efectivo
+                es_donacion: true,
+                motivo_donacion: motivoDonacion,
+                tipo_documento: 'POS'
+            })
+        });
+
+        const resultado = await response.json();
+        
+        if (resultado.success) {
+            // Mostrar modal de éxito específico para donaciones
+            mostrarModalDonacionExitosa(resultado);
+            
+            // Limpiar variables de donación
+            esDonacion = false;
+            motivoDonacion = '';
+            
+        } else {
+            throw new Error(resultado.error);
+        }
+        
+    } catch (error) {
+        console.error('Error procesando donación:', error);
+        mostrarNotificacion(`❌ Error al procesar donación: ${error.message}`, 'error');
+        
+        // Resetear variables en caso de error
+        esDonacion = false;
+        motivoDonacion = '';
+    }
+}
+
+/**
+ * Modal de éxito para donaciones
+ */
+function mostrarModalDonacionExitosa(resultado) {
+    const modalHTML = `
+        <div class="modal fade" id="modalDonacionExitosa" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title">
+                            <i class="fas fa-gift me-2"></i>
+                            Donación Registrada
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                            <h4>¡Donación Exitosa!</h4>
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <strong>Motivo:</strong> ${motivoDonacion}
+                        </div>
+                        
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <div class="metric-value text-primary">${carrito.length}</div>
+                                <div class="metric-label">Productos Donados</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="metric-value text-info">${resultado.consecutivo_pos || 'N/A'}</div>
+                                <div class="metric-label">Comprobante</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-3 p-3 bg-light rounded">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                La donación ha sido registrada sin generar factura POS.
+                            </small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-success" data-bs-dismiss="modal">
+                            <i class="fas fa-check me-1"></i>
+                            Aceptar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Agregar modal al DOM
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    const modal = new bootstrap.Modal(document.getElementById('modalDonacionExitosa'));
+    modal.show();
+    
+    // Configurar acciones al cerrar modal
+    document.getElementById('modalDonacionExitosa').addEventListener('hidden.bs.modal', function() {
+        // Limpiar carrito
+        carrito = [];
+        actualizarCarrito();
+        
+        // Actualizar stock visualmente
+        actualizarStockVisualmente();
+        
+        // Resetear inputs
+        setTimeout(() => {
+            document.querySelectorAll('.cantidad-input').forEach(input => {
+                if (input.value !== '0') {
+                    input.value = '0';
+                }
+            });
+        }, 100);
+        
+        // Remover modal
+        this.remove();
+    });
+    
+    // Configurar tecla ENTER para cerrar modal
+    setTimeout(() => {
+        document.addEventListener('keypress', function manejarEnterDonacion(e) {
+            if (e.key === 'Enter') {
+                const modalInstance = bootstrap.Modal.getInstance(document.getElementById('modalDonacionExitosa'));
+                if (modalInstance) {
+                    modalInstance.hide();
+                }
+                document.removeEventListener('keypress', manejarEnterDonacion);
+            }
+        });
+    }, 500);
 }
 
 // =============================================
@@ -1760,6 +2112,55 @@ function actualizarStockVisualmente() {
     
     console.log('✅ Stock actualizado visualmente');
 }
+
+// =============================================
+// 🆕 FUNCIÓN PARA MOSTRAR CALCULADORA DE CAMBIO
+// =============================================
+
+function mostrarCalculadoraCambio(total) {
+    console.log('🧮 Mostrando calculadora de cambio para total:', total);
+    
+    window.totalVentaActual = total;
+    
+    // Actualizar elementos de la interfaz
+    const totalPagarElement = document.getElementById('totalPagar');
+    const efectivoRecibidoElement = document.getElementById('efectivoRecibido');
+    const cambioCalculadoElement = document.getElementById('cambioCalculado');
+    
+    if (totalPagarElement) {
+        totalPagarElement.value = `$${total.toLocaleString()}`;
+    }
+    if (efectivoRecibidoElement) {
+        efectivoRecibidoElement.value = '';
+    }
+    if (cambioCalculadoElement) {
+        cambioCalculadoElement.textContent = '$0';
+    }
+    
+    // Configurar alerta visual
+    const alerta = document.getElementById('cambioAlert');
+    if (alerta) {
+        alerta.classList.remove('alert-danger', 'alert-warning');
+        alerta.classList.add('alert-success');
+    }
+    
+    // Mostrar el modal
+    const modalElement = document.getElementById('cambioModal');
+    if (modalElement) {
+        const modal = new bootstrap.Modal(modalElement);
+        modal.show();
+        
+        // 🆕 CONFIGURAR TECLA ENTER DESPUÉS DE MOSTRAR EL MODAL
+        setTimeout(() => {
+            if (efectivoRecibidoElement) {
+                efectivoRecibidoElement.focus();
+                configurarEnterParaProcesarPago(); // 🆕 ESTA ES LA LÍNEA CLAVE
+            }
+        }, 500);
+    } else {
+        console.error('❌ Modal de cambio no encontrado');
+    }
+}
 // =============================================
 // 12. INICIALIZACIÓN FINAL
 // =============================================
@@ -1796,6 +2197,134 @@ if (typeof window.carrito === 'undefined') {
 }
 
 console.log('✅ Funciones del carrito exportadas al ámbito global');
+
+// =============================================
+// 🆕 FUNCIONALIDAD TECLA ENTER PARA PROCESAR PAGO
+// =============================================
+
+function configurarEnterParaProcesarPago() {
+    console.log('⌨️ Configurando tecla ENTER para procesar pago...');
+    
+    // Buscar el campo de efectivo recibido
+    const efectivoInput = document.getElementById('efectivoRecibido');
+    
+    if (efectivoInput) {
+        // 🆕 LIMPIAR EVENT LISTENER ANTERIOR PARA EVITAR DUPLICADOS
+        if (window.manejarEnterPagoGlobal) {
+            efectivoInput.removeEventListener('keypress', window.manejarEnterPagoGlobal);
+            console.log('🧹 Event listener anterior de ENTER para pago removido');
+        }
+        
+        // 🆕 CREAR NUEVO EVENT LISTENER CON LIMPIEZA AUTOMÁTICA
+        window.manejarEnterPagoGlobal = function(e) {
+            if (e.key === 'Enter') {
+                console.log('✅ Tecla ENTER detectada - Procesando pago...');
+                e.preventDefault(); // Evitar que se recargue la página
+                
+                // Verificar si el botón está habilitado
+                const btnConfirmar = document.getElementById('btnConfirmarPago');
+                if (btnConfirmar && !btnConfirmar.disabled) {
+                    btnConfirmar.click(); // Simular clic en el botón
+                    
+                    // 🆕 LIMPIAR ESTE EVENT LISTENER DESPUÉS DE USARLO
+                    efectivoInput.removeEventListener('keypress', window.manejarEnterPagoGlobal);
+                    window.manejarEnterPagoGlobal = null;
+                    console.log('🧹 Event listener de ENTER para pago limpiado después de usar');
+                } else {
+                    console.log('⚠️ Botón deshabilitado - Verifique el monto ingresado');
+                    mostrarNotificacion('💰 Ingrese un monto válido para habilitar el pago', 'warning');
+                }
+            }
+        };
+        
+        // Agregar el nuevo event listener
+        efectivoInput.addEventListener('keypress', window.manejarEnterPagoGlobal);
+        console.log('✅ Detector de ENTER para pago configurado correctamente (con limpieza automática)');
+    }
+}
+
+// =============================================
+// 🆕 FUNCIÓN PARA LIMPIAR TODOS LOS EVENT LISTENERS DEL ENTER
+// =============================================
+
+/**
+ * Limpia todos los event listeners de ENTER para evitar duplicados y bloqueos
+ * Esta función debe llamarse cuando se cierran modales o se reinicia el sistema
+ */
+// 🆕 FUNCIÓN MEJORADA - SOLO LIMPIA EVENT LISTENERS DE MODALES
+function limpiarEventListenersEnter() {
+    console.log('🧹 Limpiando event listeners de ENTER de modales...');
+    
+    try {
+        // 1. LIMPIAR SOLO EVENT LISTENER DEL MODAL DE CONFIRMACIÓN
+        if (window.manejarEnterModalGlobal) {
+            document.removeEventListener('keypress', window.manejarEnterModalGlobal);
+            window.manejarEnterModalGlobal = null;
+            console.log('✅ Event listener de modal de confirmación limpiado');
+        }
+        
+        // 2. LIMPIAR SOLO EVENT LISTENER DEL MODAL DE PAGO/CAMBIO
+        if (window.manejarEnterPagoGlobal) {
+            const efectivoInput = document.getElementById('efectivoRecibido');
+            if (efectivoInput) {
+                efectivoInput.removeEventListener('keypress', window.manejarEnterPagoGlobal);
+            }
+            window.manejarEnterPagoGlobal = null;
+            console.log('✅ Event listener de modal de pago limpiado');
+        }
+        
+        // 🆕 NO LIMPIAR LOS INPUTS DE CANTIDAD DE PRODUCTOS
+        console.log('✅ Event listeners de modales limpiados (inputs de productos preservados)');
+        
+    } catch (error) {
+        console.error('❌ Error al limpiar event listeners:', error);
+    }
+}
+
+// =============================================
+// 🆕 FUNCIONALIDAD TECLA ENTER PARA CERRAR MODAL DE CONFIRMACIÓN
+// =============================================
+
+function configurarEnterParaCerrarModal() {
+    console.log('⌨️ Configurando tecla ENTER para cerrar modal de confirmación...');
+    
+    // 🆕 LIMPIAR EVENT LISTENER ANTERIOR PARA EVITAR DUPLICADOS
+    if (window.manejarEnterModalGlobal) {
+        document.removeEventListener('keypress', window.manejarEnterModalGlobal);
+        console.log('🧹 Event listener anterior de ENTER removido');
+    }
+    
+    // 🆕 CREAR NUEVO EVENT LISTENER CON LIMPIEZA AUTOMÁTICA
+    window.manejarEnterModalGlobal = function manejarEnterModal(e) {
+        // Verificar si el modal de confirmación está visible
+        const confirmModal = document.getElementById('confirmModal');
+        if (confirmModal && confirmModal.classList.contains('show')) {
+            if (e.key === 'Enter') {
+                console.log('✅ Tecla ENTER detectada - Cerrando modal de confirmación...');
+                e.preventDefault();
+                
+                // Cerrar el modal
+                const modalInstance = bootstrap.Modal.getInstance(confirmModal);
+                if (modalInstance) {
+                    modalInstance.hide();
+                }
+                
+                // 🆕 LIMPIAR ESTE EVENT LISTENER DESPUÉS DE USARLO
+                document.removeEventListener('keypress', window.manejarEnterModalGlobal);
+                window.manejarEnterModalGlobal = null;
+                console.log('🧹 Event listener de ENTER limpiado después de usar');
+                
+                // Opcional: Limpiar carrito si es necesario
+                console.log('🔄 Modal cerrado - Listo para nueva venta');
+            }
+        }
+    };
+    
+    // Agregar el nuevo event listener
+    document.addEventListener('keypress', window.manejarEnterModalGlobal);
+    console.log('✅ Detector de ENTER para modal de confirmación configurado (con limpieza automática)');
+}
+
 // 🆕 INICIALIZACIÓN COMPATIBILIDAD
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🔄 Inicializando compatibilidad POS + Facturación electrónica');
