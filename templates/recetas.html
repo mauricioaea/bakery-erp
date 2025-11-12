@@ -78,7 +78,7 @@
         }
         .recetas-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
             gap: 25px;
             margin-top: 20px;
         }
@@ -252,6 +252,289 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* ===== RESPONSIVE DESIGN MEJORADO ===== */
+        
+        /* TABLETS (768px - 1024px) */
+        @media (max-width: 1024px) {
+            .recetas-grid {
+                grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+                gap: 20px;
+            }
+            
+            .receta-card {
+                padding: 20px;
+            }
+        }
+
+        /* MÓVILES GRANDES (576px - 768px) */
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+            
+            /* HEADER RESPONSIVE */
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: center;
+                text-align: center;
+            }
+            
+            .header h1 {
+                font-size: 1.5em;
+            }
+            
+            /* GRID RESPONSIVE - 1 COLUMNA */
+            .recetas-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .receta-card {
+                padding: 20px;
+                width: 100%;
+                margin: 0;
+            }
+            
+            .receta-card h3 {
+                font-size: 1.2em;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                align-items: flex-start;
+            }
+            
+            .receta-card h3 .badge {
+                align-self: flex-start;
+                float: none;
+            }
+            
+            /* INFO GRID RESPONSIVE */
+            .info-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            
+            .info-item {
+                margin-bottom: 10px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            
+            /* SECCIONES RESPONSIVE */
+            .costos-section,
+            .utilidad-section {
+                padding: 15px;
+            }
+            
+            .costo-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+                margin-bottom: 10px;
+            }
+            
+            .costo-label,
+            .costo-value {
+                width: 100%;
+            }
+            
+            /* BOTONES RESPONSIVE */
+            .receta-actions {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .action-btn {
+                width: 100%;
+                padding: 12px;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 250px;
+                text-align: center;
+                margin-bottom: 10px;
+            }
+            
+            .btn-secondary {
+                width: auto;
+                margin-bottom: 5px;
+            }
+            
+            /* INPUT RESPONSIVE */
+            .precio-real-input {
+                width: 100%;
+                max-width: 150px;
+            }
+            
+            /* ESTADÍSTICAS RESPONSIVE */
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 15px !important;
+            }
+            
+            .stats-grid > div {
+                padding: 15px !important;
+            }
+            
+            .stats-grid div div:first-child {
+                font-size: 1.5em !important;
+            }
+        }
+
+        /* MÓVILES PEQUEÑOS (hasta 576px) */
+        @media (max-width: 576px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+            
+            .receta-card {
+                padding: 15px;
+            }
+            
+            .receta-card h3 {
+                font-size: 1.1em;
+                padding-bottom: 8px;
+            }
+            
+            .info-grid {
+                gap: 10px;
+            }
+            
+            .info-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 2px;
+            }
+            
+            .costos-section,
+            .utilidad-section {
+                padding: 12px;
+            }
+            
+            .costo-item {
+                font-size: 0.85em;
+            }
+            
+            .receta-actions {
+                gap: 8px;
+            }
+            
+            .action-btn {
+                padding: 10px;
+                font-size: 0.85em;
+            }
+            
+            .precio-real-input {
+                max-width: 130px;
+                font-size: 0.85em;
+                padding: 6px 10px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr !important;
+                gap: 12px !important;
+            }
+            
+            .empty-state {
+                padding: 30px 20px;
+            }
+            
+            .empty-state h3 {
+                font-size: 1.3em;
+            }
+            
+            .alert {
+                padding: 10px 12px;
+                font-size: 0.9em;
+            }
+            
+            .navigation-links {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                align-items: center;
+            }
+            
+            .btn-secondary {
+                width: 100%;
+                max-width: 200px;
+                text-align: center;
+            }
+        }
+
+        /* MÓVILES MUY PEQUEÑOS (hasta 375px) */
+        @media (max-width: 375px) {
+            body {
+                padding: 8px;
+            }
+            
+            .container {
+                padding: 12px;
+                border-radius: 8px;
+            }
+            
+            .receta-card {
+                padding: 12px;
+            }
+            
+            .costos-section,
+            .utilidad-section {
+                padding: 10px;
+            }
+            
+            .costo-item {
+                font-size: 0.8em;
+            }
+            
+            .precio-real-input {
+                max-width: 110px;
+                padding: 5px 8px;
+            }
+            
+            .action-btn {
+                padding: 8px;
+                font-size: 0.8em;
+            }
+        }
+
+        /* MEJORAS ESPECÍFICAS PARA TABLET */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .recetas-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .header {
+                align-items: center;
+            }
+        }
+
+        /* MEJORAS PARA PANTALLAS GRANDES */
+        @media (min-width: 1400px) {
+            .recetas-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        /* CORRECCIÓN ESPECÍFICA PARA EVITAR SUPERPOCISIÓN */
+        .recetas-grid {
+            width: 100%;
+        }
+        
+        .receta-card {
+            min-width: 0; /* Previene problemas de desbordamiento */
+        }
     </style>
 </head>
 <body>
@@ -280,8 +563,8 @@
             {% for receta in recetas %}
             <div class="receta-card">
                 <h3>
-                    {{ receta.nombre }}
-                    <span class="badge {% if not receta.activo %}badge-inactive{% endif %}" style="float: right;">
+                    <span>{{ receta.nombre }}</span>
+                    <span class="badge {% if not receta.activo %}badge-inactive{% endif %}">
                         {{ 'Activa' if receta.activo else 'Inactiva' }}
                     </span>
                 </h3>
@@ -351,7 +634,7 @@
                         </div>
                     </div>
 
-                    <!-- ✅ NUEVA SECCIÓN: PRECIO REAL Y UTILIDAD -->
+                    <!-- SECCIÓN: PRECIO REAL Y UTILIDAD -->
                     <div class="utilidad-section">
                         <h4 style="margin-bottom: 15px; color: #333;">💰 Precio Real y Utilidad</h4>
                         
@@ -413,7 +696,7 @@
                     </div>
                 </div>
 
-                <!-- BOTONES DE ACCIÓN ACTUALIZADOS -->
+                <!-- BOTONES DE ACCIÓN -->
                 <div class="receta-actions">
                     <a href="{{ url_for('editar_receta', id=receta.id) }}" 
                        class="action-btn" 
@@ -451,11 +734,11 @@
         </div>
         {% endif %}
 
-        <!-- ESTADÍSTICAS RÁPIDAS MEJORADAS -->
+        <!-- ESTADÍSTICAS RÁPIDAS -->
         {% if recetas %}
         <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
             <h4 style="margin-bottom: 15px;">📈 Resumen de Rentabilidad</h4>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;" class="stats-grid">
                 <div style="text-align: center;">
                     <div style="font-size: 2em; color: #667eea; font-weight: bold;">{{ recetas|length }}</div>
                     <div style="color: #666; font-size: 0.9em;">Total Recetas</div>
@@ -509,10 +792,9 @@
                 }
             });
 
-            // ✅ MANEJADOR PARA ACTUALIZAR PRECIOS REALES EN TIEMPO REAL
+            // MANEJADOR PARA ACTUALIZAR PRECIOS REALES
             const precioInputs = document.querySelectorAll('.precio-real-input');
             precioInputs.forEach(input => {
-                // Configurar timeout para evitar muchas llamadas API
                 let timeoutId;
                 
                 input.addEventListener('input', function() {
@@ -520,19 +802,14 @@
                     const nuevoPrecio = parseFloat(this.value) || 0;
                     const loadingElement = document.getElementById(`loading-${recetaId}`);
                     
-                    // Mostrar loading
                     loadingElement.style.display = 'inline-block';
-                    
-                    // Limpiar timeout anterior
                     clearTimeout(timeoutId);
                     
-                    // Esperar 1 segundo después de que el usuario deje de escribir
                     timeoutId = setTimeout(() => {
                         actualizarPrecioReal(recetaId, nuevoPrecio, loadingElement);
                     }, 1000);
                 });
 
-                // También actualizar al perder el foco (por si acaso)
                 input.addEventListener('blur', function() {
                     const recetaId = this.getAttribute('data-receta-id');
                     const nuevoPrecio = parseFloat(this.value) || 0;
@@ -544,7 +821,6 @@
             });
         });
 
-        // ✅ FUNCIÓN PARA ACTUALIZAR PRECIO REAL VIA API
         function actualizarPrecioReal(recetaId, nuevoPrecio, loadingElement) {
             if (nuevoPrecio < 0) {
                 loadingElement.style.display = 'none';
@@ -564,7 +840,6 @@
                 loadingElement.style.display = 'none';
                 
                 if (data.success) {
-                    // Recargar la página para ver los cambios actualizados
                     location.reload();
                 } else {
                     alert('❌ Error al actualizar el precio: ' + (data.error || 'Error desconocido'));

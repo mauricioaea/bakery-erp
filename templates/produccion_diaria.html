@@ -107,7 +107,7 @@
         /* TARJETAS DE STOCK */
         .stock-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
@@ -284,6 +284,191 @@
             color: #666;
             margin-top: 5px;
         }
+
+        /* ===== RESPONSIVE DESIGN ===== */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            /* HEADER RESPONSIVE */
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .header h1 {
+                font-size: 1.5em;
+            }
+            
+            /* PESTAÑAS RESPONSIVE */
+            .tabs {
+                flex-wrap: wrap;
+                gap: 5px;
+            }
+            
+            .tab-button {
+                flex: 1;
+                min-width: 120px;
+                padding: 10px 15px;
+                font-size: 0.9em;
+            }
+            
+            /* GRID DE TARJETAS RESPONSIVE */
+            .stock-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .stock-card {
+                padding: 15px;
+            }
+            
+            .stock-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .stock-actions {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .stock-actions .btn {
+                width: 100%;
+                text-align: center;
+                margin-right: 0;
+                margin-bottom: 5px;
+            }
+            
+            /* TABLAS RESPONSIVE */
+            .stock-table {
+                overflow-x: auto;
+            }
+            
+            table {
+                min-width: 600px;
+            }
+            
+            th, td {
+                padding: 8px 10px;
+                font-size: 0.9em;
+            }
+            
+            /* MÉTRICAS RESPONSIVE */
+            .metrics {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+            }
+            
+            .metric-card {
+                padding: 15px;
+            }
+            
+            .metric-value {
+                font-size: 1.5em;
+            }
+            
+            /* ÓRDENES RESPONSIVE */
+            .order-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .order-actions {
+                width: 100%;
+                justify-content: flex-start;
+                flex-wrap: wrap;
+            }
+            
+            .order-actions .btn {
+                flex: 1;
+                min-width: 120px;
+                text-align: center;
+            }
+            
+            /* ALERTAS RESPONSIVE */
+            .alertas-section,
+            .orders-section {
+                padding: 15px;
+            }
+            
+            .section-title {
+                font-size: 1.1em;
+            }
+            
+            /* BOTONES GENERALES RESPONSIVE */
+            .btn {
+                padding: 10px 15px;
+                font-size: 0.85em;
+                margin-right: 5px;
+                margin-bottom: 5px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .metrics {
+                grid-template-columns: 1fr;
+            }
+            
+            .tab-button {
+                min-width: 100px;
+                padding: 8px 12px;
+                font-size: 0.8em;
+            }
+            
+            .stock-grid {
+                gap: 10px;
+            }
+            
+            .stock-card {
+                padding: 12px;
+            }
+            
+            .stock-title {
+                font-size: 1.1em;
+            }
+            
+            .btn {
+                width: 100%;
+                margin-right: 0;
+                margin-bottom: 8px;
+            }
+            
+            .order-actions {
+                flex-direction: column;
+            }
+            
+            .order-actions .btn {
+                width: 100%;
+            }
+        }
+
+        /* MODAL RESPONSIVE */
+        @media (max-width: 768px) {
+            #modalProduccion > div {
+                width: 95% !important;
+                max-width: 95% !important;
+                padding: 20px !important;
+                margin: 10px !important;
+                transform: none !important;
+                top: 50% !important;
+                left: 50% !important;
+                transform: translate(-50%, -50%) !important;
+            }
+            
+            #modalProduccion h3 {
+                font-size: 1.2em !important;
+            }
+            
+            #modalProduccion .btn {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -360,7 +545,6 @@
                                 class="btn btn-success">
                             🚀 Ordenar Producción
                         </button>
-                        <!-- ✅ NUEVO BOTÓN EN LAS TARJETAS -->
                         <a href="{{ url_for('configurar_stock_producto', receta_id=receta.id) }}" 
                            class="btn btn-warning" style="background: #ffc107; color: black;">
                             ⚙️ Configurar
@@ -505,7 +689,6 @@
                                         class="btn btn-success btn-sm">
                                     🚀 Ordenar
                                 </button>
-                                <!-- ✅ NUEVO BOTÓN EN LA TABLA -->
                                 <a href="{{ url_for('configurar_stock_producto', receta_id=receta.id) }}" 
                                    class="btn btn-warning btn-sm" style="background: #ffc107; color: black;">
                                     ⚙️ Configurar
