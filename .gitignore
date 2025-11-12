@@ -72,3 +72,4 @@ tmp/
 *.old
 *.tmp
 *_respaldo_*
+backups_ultra_seguros/ 

@@ -1,0 +1,59 @@
+<!-- SECCIÓN 2: ANÁLISIS DETALLADO DE PRODUCTOS -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="metric-card">
+            <h4><i class="fas fa-boxes"></i> Productos Más Vendidos</h4>
+            
+            <div class="table-responsive mt-3">
+                <table class="table table-striped tabla-ventas">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Categoría</th>
+                            <th class="text-center">Unidades</th>
+                            <th class="text-end">Ingresos</th>
+                            <th class="text-center">Frecuencia</th>
+                            <th class="text-center">Desempeño</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if productos_analisis and productos_analisis is mapping %}
+                            {% for key, producto in productos_analisis.items() %}
+                            <tr>
+                                <td><strong>{{ producto.nombre[:20] }}{% if producto.nombre|length > 20 %}...{% endif %}</strong></td>
+                                <td><span class="badge bg-secondary">{{ producto.categoria[:10] if producto.categoria else 'N/A' }}</span></td>
+                                <td class="text-center"><span class="badge bg-primary">{{ producto.cantidad }}</span></td>
+                                <td class="text-end"><strong>${{ "{:,.2f}".format(producto.ingresos) }}</strong></td>
+                                <td class="text-center">
+                                    {% if producto.frecuencia > 10 %}
+                                        <span class="badge bg-success">Alta</span>
+                                    {% elif producto.frecuencia > 5 %}
+                                        <span class="badge bg-warning">Media</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Baja</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if producto.ingresos > 1000 %}
+                                        <i class="fas fa-rocket text-success" title="Alto desempeño"></i>
+                                    {% elif producto.ingresos > 500 %}
+                                        <i class="fas fa-chart-line text-warning" title="Medio desempeño"></i>
+                                    {% else %}
+                                        <i class="fas fa-exclamation-triangle text-danger" title="Bajo desempeño"></i>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">
+                                    <i class="fas fa-info-circle"></i> No hay datos de productos para el período seleccionado
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

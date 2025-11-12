@@ -2327,7 +2327,6 @@ class GeneradorReportes:
             return alertas[:5]  # Máximo 5 alertas
             
         except Exception as e:
-            print(f"Error en generación de alertas: {e}")
             return ["Sistema de alertas no disponible temporalmente"]
 
     def _generar_recomendaciones_inventarios(self, datos_inventarios, datos_rotacion):

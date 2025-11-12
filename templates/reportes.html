@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reportes - Panadería Semillas</title>
+    <title>Reportes - Panadería </title>
+     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
     <style>
         * { 
             margin: 0; 
@@ -352,6 +354,23 @@
                         📥 Descargar PDF
                     </button>
                 </div>
+
+                        <!-- 🚀 NUEVO REPORTE AVANZADO UNIFICADO -->
+                <div class="reporte-card gerencial">
+                    <h3><i class="fas fa-robot"></i> Reporte Avanzado Ventas + IA</h3>
+                    <p><strong>Reporte Unificado Inteligente</strong><br/>
+                    Combina análisis de ventas, tendencias, ML y recomendaciones IA en un solo reporte interactivo.</p>
+                    <div class="nav-buttons">
+                        <a href="{{ url_for('reporte_ventas_avanzado') }}" class="btn btn-primary">
+                            <i class="fas fa-chart-line"></i> Ver Reporte Web
+                        </a>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <span class="badge bg-success">NUEVO</span>
+                        <span class="badge bg-info">ML</span>
+                        <span class="badge bg-warning">UNIFICADO</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -523,11 +542,9 @@
         case 'analisis_gastos':  // ✅ NUEVO REPORTE
             url = `/generar_reporte_analisis_gastos?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
             break;
-        case 'tendencia_ventas':
-            url = `/generar_reporte_tendencia_ventas?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+        /* OBSOLETO: case 'tendencia_ventas': url = ... */
             break;
-        case 'ia_predictivo':
-            url = `/generar_reporte_ia_predictivo?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+        /* OBSOLETO: case 'ia_predictivo': url = ... */
             break;
         case 'analisis_inventarios':
             url = `/generar_reporte_analisis_inventarios?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;

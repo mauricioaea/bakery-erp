@@ -4609,6 +4609,259 @@ def reporte_analisis_predictivo():
                      productos_donados=productos_donados_30dias)
     
 
+# (aquí termina reporte_analisis_predictivo)
+
+
+# 🆕 NUEVA FUNCIÓN - INSERTAR AQUÍ
+@app.route('/reporte/ventas_avanzado')
+@login_required
+@modulo_requerido('reportes')
+def reporte_ventas_avanzado():
+    """Reporte unificado: Ventas por período + Análisis Predictivo + ML"""
+    
+    # 🎯 VERIFICAR SESIÓN
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    # 🎯 OBTENER PARÁMETROS DE FECHA (COMÚN A AMBOS REPORTES)
+    fecha_inicio_str = request.args.get('fecha_inicio')
+    fecha_fin_str = request.args.get('fecha_fin')
+    periodo = request.args.get('periodo', 'semana_actual')
+    
+    # 🎯 OBTENER FECHAS CON VALORES POR DEFECTO
+    hoy = datetime.now().date()
+    
+    if fecha_inicio_str and fecha_fin_str:
+        fecha_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d').date()
+        fecha_fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d').date()
+        periodo = 'personalizado'
+    else:
+        # Por defecto: esta semana
+        fecha_fin = hoy
+        fecha_inicio = fecha_fin - timedelta(days=fecha_fin.weekday())  # Inicio de semana (lunes)
+        periodo = 'semana_actual'
+    
+    # 🎯 VALIDACIÓN DE FECHAS
+    if fecha_inicio > fecha_fin:
+        flash('❌ La fecha de inicio no puede ser mayor que la fecha fin', 'error')
+        fecha_inicio = fecha_fin - timedelta(days=7)
+    
+    # 🎯 OBTENER panaderia_id DEL USUARIO ACTUAL (MULTICLIENTE)
+    usuario_actual = Usuario.query.get(session['user_id'])
+    panaderia_id = usuario_actual.panaderia_id
+    
+    print(f"🔍 [VENTAS_AVANZADO] Usuario: {usuario_actual.username}, Panadería: {panaderia_id}")
+    print(f"📅 Período: {fecha_inicio} a {fecha_fin}")
+    
+    # =====================================================================
+    # 📊 SECCIÓN 1: DATOS DE VENTAS REALES
+    # =====================================================================
+    
+    # 🎯 OBTENER VENTAS DEL PERÍODO (INCLUYENDO DONACIONES)
+    ventas_periodo = Venta.query.filter(
+        db.func.date(Venta.fecha_hora) >= fecha_inicio,
+        db.func.date(Venta.fecha_hora) <= fecha_fin,
+        Venta.panaderia_id == panaderia_id  # 🎯 FILTRO MULTICLIENTE
+    ).all()
+    
+    # 🎁 SEPARAR VENTAS NORMALES VS DONACIONES
+    ventas_normales = [v for v in ventas_periodo if not v.es_donacion]
+    donaciones = [v for v in ventas_periodo if v.es_donacion]
+    
+    # 🎯 CALCULAR MÉTRICAS BÁSICAS DE VENTAS
+    total_ventas_normales = sum(venta.total for venta in ventas_normales)
+    total_transacciones = len(ventas_periodo)
+    
+    # 🎯 CALCULAR PROMEDIO DE VENTA (SOLO VENTAS NORMALES)
+    promedio_venta = total_ventas_normales / len(ventas_normales) if ventas_normales else 0
+    
+    # 🎁 DATOS DE DONACIONES
+    total_donaciones = len(donaciones)
+    productos_donados = sum(len(v.detalles) for v in donaciones)
+    
+    print(f"💰 Ventas: ${total_ventas_normales:.2f}, Transacciones: {total_transacciones}")
+    
+    # =====================================================================
+    # 📈 NUEVOS CÁLCULOS PARA GRÁFICOS Y DATOS REALES
+    # =====================================================================
+    
+    # 🎯 TOP 5 PRODUCTOS MÁS VENDIDOS (REALES - CON VALIDACIÓN)
+    from collections import Counter
+    productos_vendidos = []
+    
+    for venta in ventas_normales:
+        for item in venta.detalles:
+            # ✅ VALIDAR QUE EL PRODUCTO NO SEA None - ESTO EVITA EL ERROR
+            if item.producto is not None:
+                productos_vendidos.append({
+                    'nombre': item.producto.nombre,
+                    'cantidad': item.cantidad,
+                    'categoria': getattr(item.producto, 'categoria', 'Sin Categoría')
+                })
+            else:
+                print(f"⚠️  DetalleVenta {item.id} tiene producto None, omitiendo...")
+    
+    # Contar productos más vendidos
+    contador_productos = Counter()
+    for producto in productos_vendidos:
+        contador_productos[producto['nombre']] += producto['cantidad']
+    
+    # Obtener top 5 productos (o menos si no hay suficientes)
+    top_5_productos = contador_productos.most_common(5)
+    top_productos_labels = [producto[0] for producto in top_5_productos]
+    top_productos_data = [producto[1] for producto in top_5_productos]
+    
+    # 🎯 DISTRIBUCIÓN POR CATEGORÍA
+    categorias_counter = Counter()
+    for producto in productos_vendidos:
+        categoria = producto['categoria']
+        categorias_counter[categoria] += producto['cantidad']
+    
+    categorias_labels = list(categorias_counter.keys())
+    categorias_data = list(categorias_counter.values())
+    
+    # 🎯 TENDENCIA DIARIA DE VENTAS
+    ventas_por_dia = {}
+    for venta in ventas_normales:
+        fecha = venta.fecha_hora.date()
+        ventas_por_dia[fecha] = ventas_por_dia.get(fecha, 0) + venta.total
+    
+    # Ordenar por fecha y llenar vacíos
+    todas_fechas = []
+    fecha_actual = fecha_inicio
+    while fecha_actual <= fecha_fin:
+        todas_fechas.append(fecha_actual)
+        fecha_actual += timedelta(days=1)
+    
+    tendencia_labels = [fecha.strftime('%d/%m') for fecha in todas_fechas]
+    tendencia_data = [ventas_por_dia.get(fecha, 0) for fecha in todas_fechas]
+    
+    # 🎯 CÁLCULO DE TENDENCIA vs PERÍODO ANTERIOR
+    periodo_anterior_inicio = fecha_inicio - (fecha_fin - fecha_inicio)
+    periodo_anterior_fin = fecha_inicio - timedelta(days=1)
+    
+    ventas_periodo_anterior = Venta.query.filter(
+        Venta.panaderia_id == panaderia_id,
+        db.func.date(Venta.fecha_hora) >= periodo_anterior_inicio,
+        db.func.date(Venta.fecha_hora) <= periodo_anterior_fin,
+        Venta.es_donacion == False
+    ).all()
+    
+    total_ventas_anterior = sum(v.total for v in ventas_periodo_anterior)
+    
+    if total_ventas_anterior > 0:
+        tendencia_porcentaje = ((total_ventas_normales - total_ventas_anterior) / total_ventas_anterior * 100)
+    else:
+        tendencia_porcentaje = 100 if total_ventas_normales > 0 else 0
+    
+    # 🎯 PORCENTAJES VENTAS VS DONACIONES
+    porcentaje_ventas = 100 - (total_donaciones / total_transacciones * 100) if total_transacciones > 0 else 100
+    porcentaje_donaciones = (total_donaciones / total_transacciones * 100) if total_transacciones > 0 else 0
+    
+    # =====================================================================
+    # 🤖 SECCIÓN 2: ANÁLISIS ML (MANTENIENDO TU LÓGICA EXISTENTE)
+    # =====================================================================
+    
+    # 🎯 TENDENCIA (usando tu función existente)
+    try:
+        tendencia_ml = calcular_tendencia_ventas(fecha_inicio, fecha_fin)
+        print(f"📈 Tendencia ML: {tendencia_ml:.1f}%")
+    except Exception as e:
+        print(f"⚠️  Error en tendencia ML: {e}")
+        tendencia_ml = tendencia_porcentaje  # Usar cálculo alternativo
+    
+    # 🎯 ALERTAS INTELIGENTES
+    try:
+        alertas = generar_alertas_inteligentes()
+        print(f"🔔 Alertas: {len(alertas)}")
+    except Exception as e:
+        print(f"⚠️  Error en alertas: {e}")
+        alertas = []
+    
+    # 🎯 ANÁLISIS DE PRODUCTOS
+    try:
+        detalles_periodo = DetalleVenta.query.join(Venta).filter(
+            db.func.date(Venta.fecha_hora) >= fecha_inicio,
+            db.func.date(Venta.fecha_hora) <= fecha_fin,
+            Venta.panaderia_id == panaderia_id
+        ).all()
+        
+        productos_analisis = analizar_productos_periodo(detalles_periodo)
+        print(f"📦 Productos analizados: {len(productos_analisis)}")
+    except Exception as e:
+        print(f"⚠️  Error en análisis productos: {e}")
+        productos_analisis = {}
+    
+    # 🎯 PROYECCIONES ML (POR AHORA VACÍO)
+    productos_analisis_ml = []
+    
+    # 🎯 GENERAR RECOMENDACIONES BASADAS EN DATOS REALES
+    recomendaciones = []
+    if top_5_productos:
+        recomendaciones.append(f"Aumentar producción de '{top_5_productos[0][0]}' en 20%")
+    if tendencia_porcentaje > 50:
+        recomendaciones.append("Mantener estrategia comercial actual - crecimiento excelente")
+    elif tendencia_porcentaje < 0:
+        recomendaciones.append("Revisar estrategia comercial - tendencia negativa detectada")
+    
+    if len(ventas_normales) > 0:
+        # Análisis de horarios pico
+        ventas_por_hora = Counter()
+        for venta in ventas_normales:
+            hora = venta.fecha_hora.hour
+            ventas_por_hora[hora] += 1
+        
+        if ventas_por_hora:
+            hora_pico = ventas_por_hora.most_common(1)[0][0]
+            recomendaciones.append(f"Optimizar personal para horario pico: {hora_pico}:00")
+    
+    print(f"✅ [VENTAS_AVANZADO] Reporte generado exitosamente")
+    print(f"📊 Productos en top: {len(top_productos_labels)}, Categorías: {len(categorias_labels)}")
+    
+    # =====================================================================
+    # 🎯 RENDERIZAR TEMPLATE UNIFICADO CON TODOS LOS DATOS
+    # =====================================================================
+    return render_template('ventas_avanzado.html',
+                         # Fechas y período
+                         periodo=periodo,
+                         fecha_inicio=fecha_inicio,
+                         fecha_fin=fecha_fin,
+                         
+                         # Métricas principales (manteniendo compatibilidad)
+                         total_ventas=total_ventas_normales,
+                         promedio_venta=promedio_venta,
+                         total_transacciones=total_transacciones,
+                         total_donaciones=total_donaciones,
+                         productos_donados=productos_donados,
+                         
+                         # ML (funciones existentes)
+                         tendencia=tendencia_ml,
+                         alertas=alertas,
+                         productos_analisis=productos_analisis,
+                         productos_analisis_ml=productos_analisis_ml,
+                         
+                         # NUEVOS DATOS PARA GRÁFICOS Y ANÁLISIS
+                         tendencia_ventas=tendencia_porcentaje,
+                         ticket_promedio=promedio_venta,
+                         
+                         # Datos para gráficos
+                         top_productos_labels=top_productos_labels,
+                         top_productos_data=top_productos_data,
+                         categorias_labels=categorias_labels,
+                         categorias_data=categorias_data,
+                         tendencia_labels=tendencia_labels,
+                         tendencia_data=tendencia_data,
+                         porcentaje_ventas=porcentaje_ventas,
+                         porcentaje_donaciones=porcentaje_donaciones,
+                         
+                         # Datos para secciones
+                         ventas_detalle=ventas_periodo,
+                         productos_vendidos=productos_vendidos,
+                         recomendaciones=recomendaciones,
+                         
+                         datetime=datetime)
+    
+
 # Busca un lugar después de las otras rutas y agrega:
 
 # ================================================== MÓDULO FINANCIERO ====================================================

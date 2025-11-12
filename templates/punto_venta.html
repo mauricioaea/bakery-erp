@@ -412,20 +412,15 @@
                 title="Cierre de Caja">
             <i class="fas fa-cash-register"></i>
         </button>
-        <button class="btn btn-warning btn-sm" 
-                onclick="window.open('/reporte/ventas', '_blank')"
-                title="Reporte de Ventas">
-            <i class="fas fa-chart-line"></i>
-        </button>
-        <button class="btn btn-success btn-sm" 
-                onclick="window.open('/reporte/productos_populares', '_blank')"
-                title="Productos Populares">
-            <i class="fas fa-star"></i>
-        </button>
-        <button class="btn btn-danger btn-sm" 
-                onclick="window.open('/reporte/analisis_predictivo', '_blank')"
-                title="Análisis Predictivo">
-            <i class="fas fa-brain"></i>
+        
+        
+        
+
+        <!-- 🚀 NUEVO REPORTE AVANZADO - AGREGAR DESPUÉS DE ANÁLISIS PREDICTIVO -->
+        <button class="btn btn-primary btn-sm" 
+                onclick="window.open('/reporte/ventas_avanzado', '_blank')"
+                title="Reporte Avanzado Ventas + IA">
+            <i class="fas fa-robot"></i>
         </button>
     </div>
 </div>
@@ -1398,15 +1393,15 @@ function mostrarNotificacion(mensaje, tipo = 'info') {
         }
 
         function abrirReporteVentas() {
-            window.open('/reporte/ventas', '_blank');
+            
         }
 
         function abrirReporteProductos() {
-            window.open('/reporte/productos_populares', '_blank');
+            
         }
 
         function abrirAnalisisPredictivo() {
-            window.open('/reporte/analisis_predictivo', '_blank');
+            
         }
 
         // FUNCIONALIDAD DONACIONES
