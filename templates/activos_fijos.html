@@ -81,6 +81,10 @@
             transition: all 0.3s ease;
             border: none;
             cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
         }
         .btn-primary {
             background: #007bff;
@@ -120,14 +124,16 @@
         }
         .asset-header {
             display: flex;
-            justify-content: between;
-            align-items: center;
+            justify-content: space-between;
+            align-items: flex-start;
             margin-bottom: 15px;
+            gap: 10px;
         }
         .asset-name {
             font-size: 1.2em;
             font-weight: bold;
             color: #333;
+            flex: 1;
         }
         .asset-category {
             background: #e9ecef;
@@ -135,6 +141,7 @@
             border-radius: 15px;
             font-size: 0.8em;
             color: #666;
+            white-space: nowrap;
         }
         .asset-details {
             margin-bottom: 15px;
@@ -155,8 +162,9 @@
             margin-top: 15px;
         }
         .btn-sm {
-            padding: 5px 10px;
+            padding: 8px 12px;
             font-size: 0.8em;
+            min-height: 32px;
         }
         .empty-state {
             text-align: center;
@@ -193,15 +201,354 @@
             padding: 10px 20px;
             border-radius: 25px;
             text-decoration: none;
-            display: inline-block;
-            margin-bottom: 20px;
+            display: inline-flex;
+            align-items: center;
+            margin: 20px;
+            transition: all 0.3s ease;
+        }
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        /* ===== MEDIA QUERIES CORREGIDAS PARA MÓVILES ===== */
+        
+        /* MÓVILES (0px - 767px) */
+        @media (max-width: 767px) {
+            body {
+                padding: 10px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+            }
+            
+            .container {
+                border-radius: 10px;
+                margin: 0 auto;
+            }
+            
+            .header {
+                padding: 20px 15px;
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+                margin-bottom: 8px;
+            }
+            
+            .subtitle {
+                font-size: 1em;
+                line-height: 1.4;
+            }
+            
+            .metrics-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 15px;
+                padding: 15px;
+            }
+            
+            .metric-card {
+                padding: 15px;
+                border-left-width: 3px;
+            }
+            
+            .metric-value {
+                font-size: 1.5em;
+            }
+            
+            .metric-label {
+                font-size: 0.8em;
+            }
+            
+            /* CORRECCIÓN CRÍTICA: Barra de acciones */
+            .actions-bar {
+                padding: 12px 15px;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
+            }
+            
+            .actions-bar > div:first-child {
+                text-align: center;
+                width: 100%;
+            }
+            
+            .actions-bar h3 {
+                text-align: center;
+                font-size: 1.1em;
+                margin: 0;
+                color: black;
+            }
+            
+            .actions-buttons {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                width: 100%;
+            }
+            
+            .btn {
+                padding: 12px 16px;
+                font-size: 0.9em;
+                width: 100%;
+                margin: 0;
+                min-height: 44px;
+            }
+            
+            .content {
+                padding: 15px;
+            }
+            
+            .content h3 {
+                font-size: 1.3em;
+                text-align: center;
+                margin-bottom: 15px;
+            }
+            
+            .assets-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+                margin-top: 15px;
+            }
+            
+            .asset-card {
+                padding: 15px;
+                margin: 0;
+            }
+            
+            .asset-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            
+            .asset-name {
+                font-size: 1.1em;
+                width: 100%;
+            }
+            
+            .asset-category {
+                align-self: flex-start;
+            }
+            
+            .asset-details {
+                margin-bottom: 12px;
+            }
+            
+            .asset-detail {
+                font-size: 0.85em;
+                margin-bottom: 6px;
+            }
+            
+            .asset-actions {
+                justify-content: center;
+                gap: 8px;
+            }
+            
+            .btn-sm {
+                padding: 8px 12px;
+                font-size: 0.8em;
+                min-height: 36px;
+                flex: 1;
+            }
+            
+            .back-btn {
+                padding: 12px 16px;
+                font-size: 0.9em;
+                margin: 15px;
+                width: calc(100% - 30px);
+                justify-content: center;
+                min-height: 44px;
+            }
+            
+            .alert {
+                padding: 12px;
+                font-size: 0.9em;
+                margin: 0 15px 15px 15px;
+            }
+            
+            .empty-state {
+                padding: 30px 15px;
+            }
+            
+            .empty-state h3 {
+                font-size: 1.2em;
+            }
+            
+            .empty-state p {
+                font-size: 0.9em;
+            }
+
+            /* Desactivar efectos hover en móviles */
+            .asset-card:hover {
+                transform: none;
+            }
+            
+            .btn:hover {
+                transform: none;
+            }
+            
+            .back-btn:hover {
+                transform: none;
+            }
+        }
+        
+        /* MÓVILES PEQUEÑOS (0px - 480px) */
+        @media (max-width: 480px) {
+            .header {
+                padding: 15px 12px;
+            }
+            
+            .header h1 {
+                font-size: 1.5em;
+            }
+            
+            .subtitle {
+                font-size: 0.9em;
+            }
+            
+            .metrics-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+                padding: 12px;
+            }
+            
+            .metric-card {
+                padding: 12px;
+            }
+            
+            .metric-value {
+                font-size: 1.3em;
+            }
+            
+            .actions-bar {
+                padding: 10px 12px;
+                gap: 10px;
+            }
+            
+            .btn {
+                padding: 10px 12px;
+                font-size: 0.85em;
+            }
+            
+            .content {
+                padding: 12px;
+            }
+            
+            .asset-card {
+                padding: 12px;
+            }
+            
+            .asset-name {
+                font-size: 1em;
+            }
+            
+            .asset-detail {
+                font-size: 0.8em;
+            }
+            
+            .btn-sm {
+                padding: 6px 10px;
+                font-size: 0.75em;
+                min-height: 32px;
+            }
+        }
+        
+        /* ORIENTACIÓN LANDSCAPE EN MÓVILES */
+        @media (max-width: 767px) and (orientation: landscape) {
+            body {
+                padding: 5px;
+            }
+            
+            .container {
+                max-height: 95vh;
+                overflow-y: auto;
+            }
+            
+            .header {
+                padding: 12px;
+            }
+            
+            .header h1 {
+                font-size: 1.3em;
+            }
+            
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+                padding: 10px;
+            }
+            
+            .actions-bar {
+                padding: 8px 10px;
+                gap: 8px;
+            }
+            
+            .btn {
+                padding: 8px 10px;
+                font-size: 0.8em;
+            }
+            
+            .assets-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+        }
+        
+        /* TABLETS (768px - 1023px) */
+        @media (min-width: 768px) and (max-width: 1023px) {
+            .container {
+                margin: 0 10px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+                padding: 15px;
+            }
+            
+            .actions-bar {
+                padding: 12px 15px;
+            }
+            
+            .btn {
+                padding: 10px 15px;
+                font-size: 0.9em;
+            }
+            
+            .assets-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+            }
+        }
+        
+        /* MEJORAS DE ACCESIBILIDAD PARA MÓVILES */
+        @media (max-width: 767px) {
+            /* Mejorar legibilidad del texto */
+            body {
+                -webkit-text-size-adjust: 100%;
+            }
+            
+            /* Mejorar experiencia táctil */
+            .btn, .back-btn, .btn-sm {
+                min-height: 44px;
+                touch-action: manipulation;
+            }
+            
+            /* Scroll suave */
+            html {
+                scroll-behavior: smooth;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <!-- Botón Volver -->
-        <div style="padding: 20px 20px 0 20px;">
+        <div>
             <a href="{{ url_for('dashboard') }}" class="back-btn">← Volver al Dashboard</a>
         </div>
 
@@ -241,12 +588,12 @@
             </div>
         </div>
 
-        <!-- Barra de Acciones -->
+        <!-- Barra de Acciones CORREGIDA -->
         <div class="actions-bar">
             <div>
-                <h3 style="color: black; margin: 0;">Acciones Rápidas</h3>
+                <h3>Acciones Rápidas</h3>
             </div>
-            <div style="display: flex; gap: 10px;">
+            <div class="actions-buttons">
                 <a href="{{ url_for('registrar_activo') }}" class="btn btn-success">➕ Nuevo Activo</a>
                 <a href="{{ url_for('lista_activos') }}" class="btn btn-primary">📋 Lista Completa</a>
                 <a href="{{ url_for('reporte_activos') }}" class="btn btn-warning">📊 Generar Reporte</a>
@@ -308,9 +655,20 @@
     </div>
 
     <script>
-        console.log('🏢 Módulo de Activos Fijos cargado');
-        console.log('Total de activos: {{ total_activos }}');
-        console.log('Valor total: ${{ valor_total }}');
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🏢 Módulo de Activos Fijos cargado');
+            console.log('Total de activos: {{ total_activos }}');
+            console.log('Valor total: ${{ valor_total }}');
+            
+            // Mejorar experiencia en móviles
+            if (window.innerWidth <= 767) {
+                // Optimizar botones para pantallas táctiles
+                document.querySelectorAll('.btn, .back-btn, .btn-sm').forEach(btn => {
+                    btn.style.minHeight = '44px';
+                    btn.style.touchAction = 'manipulation';
+                });
+            }
+        });
     </script>
 </body>
 </html>

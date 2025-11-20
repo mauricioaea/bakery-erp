@@ -56,6 +56,10 @@
             transition: all 0.3s ease;
             border: none;
             cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
         }
         .btn-primary {
             background: #007bff;
@@ -84,11 +88,13 @@
             overflow-x: auto;
             border-radius: 10px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            -webkit-overflow-scrolling: touch;
         }
         table {
             width: 100%;
             border-collapse: collapse;
             background: white;
+            min-width: 800px;
         }
         th {
             background: #343a40;
@@ -111,6 +117,7 @@
             border-radius: 15px;
             font-size: 0.8em;
             font-weight: bold;
+            display: inline-block;
         }
         .status-maintenance {
             background: #fff3cd;
@@ -119,6 +126,7 @@
             border-radius: 15px;
             font-size: 0.8em;
             font-weight: bold;
+            display: inline-block;
         }
         .status-inactive {
             background: #f8d7da;
@@ -127,6 +135,7 @@
             border-radius: 15px;
             font-size: 0.8em;
             font-weight: bold;
+            display: inline-block;
         }
         .category-badge {
             background: #e9ecef;
@@ -134,6 +143,7 @@
             padding: 4px 8px;
             border-radius: 12px;
             font-size: 0.7em;
+            display: inline-block;
         }
         .back-btn {
             background: #6c757d;
@@ -141,8 +151,14 @@
             padding: 10px 20px;
             border-radius: 25px;
             text-decoration: none;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
             margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
         .flash-messages {
             margin-bottom: 20px;
@@ -179,13 +195,308 @@
             margin-bottom: 15px;
             opacity: 0.5;
         }
-        @media (max-width: 768px) {
+
+        /* ===== MEDIA QUERIES PARA MÓVILES ===== */
+        
+        /* MÓVILES (0px - 767px) */
+        @media (max-width: 767px) {
+            body {
+                padding: 10px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+            }
+            
+            .container {
+                border-radius: 10px;
+                margin: 0 auto;
+            }
+            
+            .header {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 1.5em;
+                margin-bottom: 5px;
+            }
+            
+            .subtitle {
+                font-size: 0.9em;
+            }
+            
             .actions-bar {
+                padding: 12px 15px;
                 flex-direction: column;
                 align-items: stretch;
+                gap: 8px;
             }
-            .btn {
+            
+            .actions-bar > div {
+                display: flex;
+                justify-content: center;
+            }
+            
+            .actions-bar h3 {
                 text-align: center;
+                font-size: 1em;
+            }
+            
+            .btn {
+                padding: 10px 15px;
+                font-size: 0.85em;
+                width: 100%;
+                margin: 2px 0;
+            }
+            
+            .content {
+                padding: 15px;
+            }
+            
+            .table-container {
+                border-radius: 8px;
+                margin: 0 -15px;
+                width: calc(100% + 30px);
+            }
+            
+            table {
+                min-width: 700px;
+            }
+            
+            th, td {
+                padding: 10px 8px;
+                font-size: 0.85em;
+            }
+            
+            .back-btn {
+                padding: 8px 15px;
+                font-size: 0.9em;
+                margin-bottom: 15px;
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .alert {
+                padding: 12px;
+                font-size: 0.9em;
+                margin-bottom: 10px;
+            }
+            
+            .empty-state {
+                padding: 30px 15px;
+            }
+            
+            .empty-state h3 {
+                font-size: 1.2em;
+            }
+            
+            /* Resumen Estadístico para móviles */
+            .stats-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+                margin-top: 20px;
+                padding: 15px;
+                background: #f8f9fa;
+                border-radius: 8px;
+            }
+            
+            .stat-item {
+                text-align: center;
+                padding: 10px;
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            }
+            
+            .stat-value {
+                font-size: 1.2em;
+                font-weight: bold;
+                color: #333;
+                margin-bottom: 5px;
+            }
+            
+            .stat-label {
+                color: #666;
+                font-size: 0.75em;
+            }
+        }
+        
+        /* MÓVILES PEQUEÑOS (0px - 480px) */
+        @media (max-width: 480px) {
+            .header {
+                padding: 12px;
+            }
+            
+            .header h1 {
+                font-size: 1.3em;
+            }
+            
+            .subtitle {
+                font-size: 0.8em;
+            }
+            
+            .actions-bar {
+                padding: 10px 12px;
+            }
+            
+            .btn {
+                padding: 8px 12px;
+                font-size: 0.8em;
+            }
+            
+            .content {
+                padding: 12px;
+            }
+            
+            th, td {
+                padding: 8px 6px;
+                font-size: 0.8em;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 8px;
+                padding: 12px;
+            }
+            
+            .stat-item {
+                padding: 8px;
+            }
+            
+            .stat-value {
+                font-size: 1.1em;
+            }
+            
+            .status-active,
+            .status-maintenance,
+            .status-inactive {
+                font-size: 0.7em;
+                padding: 4px 8px;
+            }
+            
+            .category-badge {
+                font-size: 0.65em;
+                padding: 3px 6px;
+            }
+        }
+        
+        /* ORIENTACIÓN LANDSCAPE EN MÓVILES */
+        @media (max-width: 767px) and (orientation: landscape) {
+            body {
+                padding: 5px;
+            }
+            
+            .container {
+                max-height: 95vh;
+                overflow-y: auto;
+            }
+            
+            .header {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 1.2em;
+            }
+            
+            .actions-bar {
+                padding: 8px 10px;
+            }
+            
+            .btn {
+                padding: 6px 10px;
+                font-size: 0.75em;
+            }
+        }
+        
+        /* TABLETS (768px - 1023px) */
+        @media (min-width: 768px) and (max-width: 1023px) {
+            .container {
+                margin: 0 10px;
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .actions-bar {
+                padding: 12px 20px;
+            }
+            
+            .btn {
+                padding: 10px 16px;
+                font-size: 0.9em;
+            }
+        }
+        
+        /* MEJORAS DE ACCESIBILIDAD PARA MÓVILES */
+        @media (max-width: 767px) {
+            /* Mejorar legibilidad del texto */
+            body {
+                -webkit-text-size-adjust: 100%;
+            }
+            
+            /* Mejorar experiencia táctil */
+            .btn, .back-btn {
+                min-height: 44px;
+                touch-action: manipulation;
+            }
+            
+            /* Prevenir zoom en inputs */
+            input, select, textarea {
+                font-size: 16px;
+            }
+            
+            /* Scroll suave */
+            html {
+                scroll-behavior: smooth;
+            }
+        }
+        
+        /* MODO OSCURO */
+        @media (prefers-color-scheme: dark) {
+            .container {
+                background: #2d3748;
+                color: #e2e8f0;
+            }
+            
+            .header {
+                background: #2d3748;
+                border-bottom-color: #4a5568;
+            }
+            
+            .header h1 {
+                color: #f7fafc;
+            }
+            
+            .subtitle {
+                color: #cbd5e0;
+            }
+            
+            table {
+                background: #2d3748;
+                color: #e2e8f0;
+            }
+            
+            th {
+                background: #1a202c;
+            }
+            
+            td {
+                border-bottom-color: #4a5568;
+            }
+            
+            tr:hover {
+                background: #4a5568;
+            }
+            
+            .category-badge {
+                background: #4a5568;
+                color: #e2e8f0;
+            }
+            
+            .empty-state {
+                color: #cbd5e0;
             }
         }
     </style>
@@ -272,33 +583,22 @@
             </div>
 
             <!-- Resumen Estadístico -->
-            <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
-                <h3 style="margin-bottom: 15px; color: #333;">📈 Resumen Estadístico</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                    <div style="text-align: center;">
-                        <div style="font-size: 1.5em; font-weight: bold; color: #333;">
-                            ${{ "{:,.0f}".format(activos|sum(attribute='valor_compra')) }}
-                        </div>
-                        <div style="color: #666; font-size: 0.9em;">Inversión Total</div>
-                    </div>
-                    <div style="text-align: center;">
-                        <div style="font-size: 1.5em; font-weight: bold; color: #333;">
-                            ${{ "{:,.0f}".format(activos|sum(attribute='valor_compra')) }}
-                        </div>
-                        <div style="color: #666; font-size: 0.9em;">Depreciación Acumulada</div>
-                    </div>
-                    <div style="text-align: center;">
-                        <div style="font-size: 1.5em; font-weight: bold; color: #333;">
-                            {{ (activos|selectattr('estado', 'equalto', 'ACTIVO')|list|length) }}
-                        </div>
-                        <div style="color: #666; font-size: 0.9em;">Activos Activos</div>
-                    </div>
-                    <div style="text-align: center;">
-                        <div style="font-size: 1.5em; font-weight: bold; color: #333;">
-                            {{ (activos|selectattr('estado', 'equalto', 'MANTENIMIENTO')|list|length) }}
-                        </div>
-                        <div style="color: #666; font-size: 0.9em;">En Mantenimiento</div>
-                    </div>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-value">${{ "{:,.0f}".format(activos|sum(attribute='valor_compra')) }}</div>
+                    <div class="stat-label">Inversión Total</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${{ "{:,.0f}".format(activos|sum(attribute='valor_compra')) }}</div>
+                    <div class="stat-label">Depreciación Acumulada</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">{{ (activos|selectattr('estado', 'equalto', 'ACTIVO')|list|length) }}</div>
+                    <div class="stat-label">Activos Activos</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">{{ (activos|selectattr('estado', 'equalto', 'MANTENIMIENTO')|list|length) }}</div>
+                    <div class="stat-label">En Mantenimiento</div>
                 </div>
             </div>
 
@@ -319,6 +619,22 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('📋 Lista de activos cargada');
             console.log('Total de activos: {{ activos|length }}');
+            
+            // Mejorar experiencia en móviles
+            if (window.innerWidth <= 767) {
+                // Añadir indicador de scroll horizontal para la tabla
+                const tableContainer = document.querySelector('.table-container');
+                if (tableContainer) {
+                    tableContainer.style.overflowX = 'auto';
+                    tableContainer.style.webkitOverflowScrolling = 'touch';
+                }
+                
+                // Optimizar botones para pantallas táctiles
+                document.querySelectorAll('.btn, .back-btn').forEach(btn => {
+                    btn.style.minHeight = '44px';
+                    btn.style.touchAction = 'manipulation';
+                });
+            }
         });
     </script>
 </body>
