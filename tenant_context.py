@@ -95,3 +95,12 @@ class TenantContext:
         if hasattr(model_class, 'panaderia_id') and tenant_id:
             return model_class.panaderia_id == tenant_id
         return True  # Sin filtro si no hay tenant_id
+    @staticmethod
+    def get_super_admin_behavior():
+        """Define el comportamiento para super administrador"""
+        if not current_user or not hasattr(current_user, 'es_super_admin'):
+            return "normal"
+        
+        if current_user.es_super_admin:
+            return "super_admin"
+        return "normal"

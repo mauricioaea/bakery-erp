@@ -1672,7 +1672,7 @@ def productos_externos():
         panaderia_id=panaderia_actual  # ← ESTA LÍNEA ES LA CLAVE
     ).all()
     
-    proveedores = Proveedor.query.filter_by(panaderia_id=1, activo=True).all()
+    proveedores = Proveedor.query.filter_by(panaderia_id=current_user.panaderia_id, activo=True).all()
     
     # Calcular métricas adicionales para cada producto
     for producto in productos:
@@ -1871,7 +1871,7 @@ def materias_primas():
         panaderia_id=panaderia_actual
     ).all()
     
-    proveedores = Proveedor.query.filter_by(panaderia_id=1, activo=True).all()
+    proveedores = Proveedor.query.filter_by(panaderia_id=current_user.panaderia_id, activo=True).all()
     
     # ✅ AGREGAR FECHAS PARA EL TEMPLATE (SOLO EN ESTA RUTA)
     hoy = datetime.now().date()
@@ -1891,7 +1891,7 @@ def agregar_materia_prima():
         return redirect(url_for('login'))
     
     panaderia_actual = session.get('panaderia_id', 1)
-    proveedores = Proveedor.query.filter_by(panaderia_id=1, activo=True).all()
+    proveedores = Proveedor.query.filter_by(panaderia_id=current_user.panaderia_id, activo=True).all()
     
     
     
@@ -1987,7 +1987,7 @@ def editar_materia_prima(id):
     
     panaderia_actual = session.get('panaderia_id', 1)
     materia = MateriaPrima.query.get_or_404(id)
-    proveedores = Proveedor.query.filter_by(panaderia_id=1, activo=True).all()
+    proveedores = Proveedor.query.filter_by(panaderia_id=current_user.panaderia_id, activo=True).all()
     
     if request.method == 'POST':
         try:

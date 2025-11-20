@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-ANALIZADOR DE MODELOS Y RELACIONES ENTRE MÓDULOS
-Verifica que todos los modelos tengan panaderia_id y las relaciones funcionen
+DIAGNÓSTICO DE MODELOS Y RELACIONES - ACTUALIZADO
+Verifica que todos los modelos tengan panaderia_id después de las correcciones
 """
 
 import re
@@ -10,7 +10,7 @@ import os
 def analizar_modelos(archivo_models):
     """Analiza models.py para verificar estructura multi-tenant"""
     
-    print("🔍 ANALIZANDO ESTRUCTURA DE MODELOS...")
+    print("🔍 ANALIZANDO ESTRUCTURA DE MODELOS - POST CORRECCIÓN")
     print("=" * 60)
     
     with open(archivo_models, 'r', encoding='utf-8') as f:
@@ -21,9 +21,10 @@ def analizar_modelos(archivo_models):
     modelos = re.findall(patron_modelos, contenido)
     
     print(f"📋 MODELOS ENCONTRADOS: {len(modelos)}")
-    print(", ".join(modelos))
     
     resultados_modelos = {}
+    modelos_con_tenant = []
+    modelos_sin_tenant = []
     
     for modelo in modelos:
         # Buscar la definición de cada modelo
@@ -32,68 +33,94 @@ def analizar_modelos(archivo_models):
         
         if match:
             definicion = match.group(1)
-            tiene_panaderia_id = 'panaderia_id' in definicion
-            tiene_relacion_db = 'db.Column' in definicion and 'db.ForeignKey' in definicion
+            tiene_panaderia_id = 'panaderia_id = db.Column' in definicion
             
-            resultados_modelos[modelo] = {
-                'tiene_panaderia_id': tiene_panaderia_id,
-                'tiene_relaciones': tiene_relacion_db,
-                'definicion': definicion[:200] + "..." if len(definicion) > 200 else definicion
-            }
+            if tiene_panaderia_id:
+                modelos_con_tenant.append(modelo)
+                print(f"  ✅ {modelo}: TIENE panaderia_id")
+            else:
+                modelos_sin_tenant.append(modelo)
+                print(f"  ❌ {modelo}: NO TIENE panaderia_id")
     
-    return modelos, resultados_modelos
+    return modelos, modelos_con_tenant, modelos_sin_tenant
 
-def generar_reporte_modelos(modelos, resultados):
-    """Genera reporte de análisis de modelos"""
+def verificar_base_datos():
+    """Verifica que la base de datos tenga las columnas panaderia_id"""
     
-    print("\n📊 REPORTE DE MODELOS:")
+    print("\n🗄️ VERIFICANDO BASE DE DATOS...")
     print("=" * 60)
     
-    modelos_sin_tenant = []
-    modelos_con_tenant = []
+    import sqlite3
     
-    for modelo in modelos:
-        info = resultados[modelo]
-        if info['tiene_panaderia_id']:
-            modelos_con_tenant.append(modelo)
-            print(f"✅ {modelo}: TIENE panaderia_id")
-        else:
-            modelos_sin_tenant.append(modelo)
-            print(f"❌ {modelo}: NO TIENE panaderia_id")
+    db_path = "panaderia.db"
     
-    print(f"\n🎯 RESUMEN:")
-    print(f"   ✅ Modelos con tenant: {len(modelos_con_tenant)}")
-    print(f"   ❌ Modelos sin tenant: {len(modelos_sin_tenant)}")
+    if not os.path.exists(db_path):
+        print(f"❌ Base de datos no encontrada: {db_path}")
+        return [], []
     
-    if modelos_sin_tenant:
-        print(f"\n🚨 MODELOS QUE NECESITAN panaderia_id:")
-        for modelo in modelos_sin_tenant:
-            print(f"   • {modelo}")
+    try:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        
+        # Obtener todas las tablas
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        tablas = [tabla[0] for tabla in cursor.fetchall()]
+        
+        tablas_con_tenant = []
+        tablas_sin_tenant = []
+        
+        for tabla in tablas:
+            # Verificar si la tabla tiene columna panaderia_id
+            cursor.execute(f"PRAGMA table_info({tabla})")
+            columnas = [col[1] for col in cursor.fetchall()]
+            
+            if 'panaderia_id' in columnas:
+                tablas_con_tenant.append(tabla)
+                print(f"  ✅ {tabla}: TIENE panaderia_id")
+            else:
+                tablas_sin_tenant.append(tabla)
+                print(f"  ❌ {tabla}: NO TIENE panaderia_id")
+        
+        conn.close()
+        return tablas_con_tenant, tablas_sin_tenant
+        
+    except Exception as e:
+        print(f"❌ Error verificando base de datos: {e}")
+        return [], []
 
-def analizar_relaciones_entre_modelos(archivo_models):
-    """Analiza las relaciones entre modelos para identificar dependencias"""
+def generar_reporte_final(modelos, modelos_con_tenant, modelos_sin_tenant, tablas_con_tenant, tablas_sin_tenant):
+    """Genera reporte final del diagnóstico"""
     
-    print("\n🔗 ANALIZANDO RELACIONES ENTRE MODELOS...")
+    print("\n📊 REPORTE FINAL - POST CORRECCIÓN")
     print("=" * 60)
     
-    with open(archivo_models, 'r', encoding='utf-8') as f:
-        contenido = f.read()
+    print(f"🎯 MODELOS ENCONTRADOS: {len(modelos)}")
+    print(f"✅ Modelos CON panaderia_id: {len(modelos_con_tenant)}")
+    print(f"❌ Modelos SIN panaderia_id: {len(modelos_sin_tenant)}")
     
-    # Buscar relaciones ForeignKey
-    patron_foreign_keys = r'(\w+)\s*=\s*db\.Column\([^)]*db\.ForeignKey\([^)]+\)[^)]*\)'
-    foreign_keys = re.findall(patron_foreign_keys, contenido)
+    print(f"\n🗄️ TABLAS EN BD: {len(tablas_con_tenant) + len(tablas_sin_tenant)}")
+    print(f"✅ Tablas CON panaderia_id: {len(tablas_con_tenant)}")
+    print(f"❌ Tablas SIN panaderia_id: {len(tablas_sin_tenant)}")
     
-    print("🔗 RELACIONES FOREIGN KEY ENCONTRADAS:")
-    for fk in foreign_keys:
-        print(f"   • {fk}")
+    # Verificar si estamos 100% completos
+    modelos_completos = len(modelos_sin_tenant) == 0
+    bd_completa = len(tablas_sin_tenant) == 0
     
-    # Buscar relaciones de referencia entre modelos
-    patron_relaciones = r'(\w+)\s*=\s*db\.relationship\([^)]*\)'
-    relaciones = re.findall(patron_relaciones, contenido)
-    
-    print(f"\n🤝 RELACIONES DB.RELATIONSHIP ENCONTRADAS:")
-    for rel in relaciones:
-        print(f"   • {rel}")
+    if modelos_completos and bd_completa:
+        print("\n🎉 ¡SISTEMA 100% PREPARADO PARA MULTI-TENANT!")
+        print("✅ Todos los modelos tienen panaderia_id")
+        print("✅ Todas las tablas de BD tienen panaderia_id")
+        print("🚀 ¡Listo para aplicar decoradores de seguridad!")
+    else:
+        print("\n⚠️  SISTEMA PARCIALMENTE PREPARADO")
+        if not modelos_completos:
+            print(f"❌ Faltan {len(modelos_sin_tenant)} modelos por corregir:")
+            for modelo in modelos_sin_tenant:
+                print(f"   • {modelo}")
+        if not bd_completa:
+            print(f"❌ Faltan {len(tablas_sin_tenant)} tablas por migrar:")
+            for tabla in tablas_sin_tenant:
+                print(f"   • {tabla}")
 
 if __name__ == "__main__":
     archivo_models = "models.py"
@@ -102,16 +129,18 @@ if __name__ == "__main__":
         print("❌ Error: models.py no encontrado")
         exit(1)
     
-    print("🚀 DIAGNÓSTICO DE MODELOS Y RELACIONES")
+    print("🚀 DIAGNÓSTICO POST-CORRECCIÓN MULTI-TENANT")
     print("=" * 60)
     
     # Analizar modelos
-    modelos, resultados = analizar_modelos(archivo_models)
-    generar_reporte_modelos(modelos, resultados)
+    modelos, modelos_con_tenant, modelos_sin_tenant = analizar_modelos(archivo_models)
     
-    # Analizar relaciones
-    analizar_relaciones_entre_modelos(archivo_models)
+    # Verificar base de datos
+    tablas_con_tenant, tablas_sin_tenant = verificar_base_datos()
+    
+    # Generar reporte final
+    generar_reporte_final(modelos, modelos_con_tenant, modelos_sin_tenant, tablas_con_tenant, tablas_sin_tenant)
     
     print("\n" + "=" * 60)
-    print("🎯 ANÁLISIS DE MODELOS COMPLETADO")
+    print("🎯 DIAGNÓSTICO COMPLETADO")
     print("=" * 60)
