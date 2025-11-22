@@ -62,6 +62,9 @@ def crear_tenant_saas(nombre_panaderia, subdominio, email_contacto=None):
         print(f"❌ Error creando tenant SaaS: {e}")
         return False, f"Error creando tenant: {str(e)}", None
 
+from tenant_decorators import tenant_required, with_tenant_context, tenant_query, get_current_tenant_id
+from tenant_context import TenantContext
+from security_utils import validate_tenant_access, safe_tenant_query, check_tenant_ownership
 
 # SAAS MIDDLEWARE - Arquitectura Multi-Tenant
 from middleware_saas import init_tenants_app, gestor_tenants
@@ -93,6 +96,7 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 
 # 🆕 CREAR APLICACIÓN FLASK
 app = Flask(__name__)
+TenantContext.initialize_app(app)
 # INICIALIZAR SISTEMA SAAS MULTI-TENANT
 init_tenants_app(app)
 print("🚀 Middleware SaaS - Sistema multi-tenant activado")
@@ -121,6 +125,9 @@ from models import calcular_tendencia_ventas, analizar_productos_periodo, calcul
 from models import calcular_proyeccion_ventas, generar_recomendacion_stock, generar_alertas_inteligentes
 from models import obtener_productos_sin_ventas_recientes, ActivoFijo, CATEGORIAS_ACTIVOS
 from facturacion.generador_xml import generar_xml_ubl_21
+
+
+
 
 # =============================================
 # CONFIGURACIÓN FLASK-LOGIN
@@ -1672,7 +1679,7 @@ def productos_externos():
         panaderia_id=panaderia_actual  # ← ESTA LÍNEA ES LA CLAVE
     ).all()
     
-    proveedores = Proveedor.query.filter_by(panaderia_id=current_user.panaderia_id, activo=True).all()
+    proveedores = Proveedor.query.filter_by(panaderia_id=1, activo=True).all()
     
     # Calcular métricas adicionales para cada producto
     for producto in productos:
@@ -1871,7 +1878,7 @@ def materias_primas():
         panaderia_id=panaderia_actual
     ).all()
     
-    proveedores = Proveedor.query.filter_by(panaderia_id=current_user.panaderia_id, activo=True).all()
+    proveedores = Proveedor.query.filter_by(panaderia_id=1, activo=True).all()
     
     # ✅ AGREGAR FECHAS PARA EL TEMPLATE (SOLO EN ESTA RUTA)
     hoy = datetime.now().date()
@@ -1891,7 +1898,7 @@ def agregar_materia_prima():
         return redirect(url_for('login'))
     
     panaderia_actual = session.get('panaderia_id', 1)
-    proveedores = Proveedor.query.filter_by(panaderia_id=current_user.panaderia_id, activo=True).all()
+    proveedores = Proveedor.query.filter_by(panaderia_id=1, activo=True).all()
     
     
     
@@ -1987,7 +1994,7 @@ def editar_materia_prima(id):
     
     panaderia_actual = session.get('panaderia_id', 1)
     materia = MateriaPrima.query.get_or_404(id)
-    proveedores = Proveedor.query.filter_by(panaderia_id=current_user.panaderia_id, activo=True).all()
+    proveedores = Proveedor.query.filter_by(panaderia_id=1, activo=True).all()
     
     if request.method == 'POST':
         try:
@@ -5771,15 +5778,39 @@ def generar_reporte_analisis_inventarios():
         flash(f'❌ Error al generar análisis de inventarios: {str(e)}', 'error')
         return redirect(url_for('reportes'))
     
-# ============================================ MODELO DE ACTIVOS FIJOS ========================================================
+# ============================================ MODELO DE ACTIVOS FIJOS EN APP.PY ========================================================
 
 # === RUTAS DE ACTIVOS FIJOS ===
 
 @app.route('/activos_fijos')
 @login_required
+@tenant_required
 @modulo_requerido('activos')
 def activos_fijos():
-    activos = ActivoFijo.query.filter_by(panaderia_id=1).all()
+    # 🆕 VERIFICACIÓN SEGURA PARA SUPER ADMINISTRADOR
+    es_super_admin = False
+    try:
+        # Verificación EXTRA segura
+        user_id = getattr(current_user, 'id', None)
+        username = getattr(current_user, 'username', '')
+        email = getattr(current_user, 'email', '') or ''
+        
+        es_super_admin = (
+            user_id == 1 or 
+            username == 'dev_master' or 
+            (email and hasattr(email, 'endswith') and email.endswith('dev_master'))
+        )
+    except Exception as e:
+        print(f"⚠️ Error en verificación super admin: {e}")
+        es_super_admin = False
+    
+    if es_super_admin:
+        # Super admin: mostrar lista vacía para demostraciones
+        activos = []
+        flash('Modo demostración: Super administrador - Sin datos de clientes', 'info')
+    else:
+        # Usuarios normales: aislamiento multi-tenant normal
+        activos = ActivoFijo.query.filter_by(panaderia_id=current_user.panaderia_id).all()
     
     # Calcular métricas
     total_activos = len(activos)
@@ -5796,8 +5827,29 @@ def activos_fijos():
 
 @app.route('/registrar_activo', methods=['GET', 'POST'])
 @login_required
+@tenant_required
 @modulo_requerido('activos')
 def registrar_activo():
+    # 🆕 VERIFICACIÓN SEGURA PARA SUPER ADMINISTRADOR
+    es_super_admin = False
+    try:
+        user_id = getattr(current_user, 'id', None)
+        username = getattr(current_user, 'username', '')
+        email = getattr(current_user, 'email', '') or ''
+        
+        es_super_admin = (
+            user_id == 1 or 
+            username == 'dev_master' or 
+            (email and hasattr(email, 'endswith') and email.endswith('dev_master'))
+        )
+    except Exception as e:
+        print(f"⚠️ Error en verificación super admin: {e}")
+        es_super_admin = False
+    
+    if es_super_admin:
+        flash('Modo demostración: El super administrador no puede crear activos reales', 'info')
+        return redirect(url_for('activos_fijos'))
+    
     if request.method == 'POST':
         try:
             # Obtener datos del formulario
@@ -5815,7 +5867,7 @@ def registrar_activo():
             responsable = request.form['responsable']
             
             # Crear nuevo activo
-            nuevo_activo = ActivoFijo(panaderia_id=1, 
+            nuevo_activo = ActivoFijo(panaderia_id=current_user.panaderia_id, 
                 nombre=nombre,
                 categoria=categoria,
                 descripcion=descripcion,
@@ -5845,78 +5897,122 @@ def registrar_activo():
 
 @app.route('/lista_activos')
 @login_required
+@tenant_required
 @modulo_requerido('activos')
 def lista_activos():
-    activos = ActivoFijo.query.order_by(ActivoFijo.fecha_compra.desc()).all()
+    # 🆕 VERIFICACIÓN SEGURA PARA SUPER ADMINISTRADOR
+    es_super_admin = False
+    try:
+        user_id = getattr(current_user, 'id', None)
+        username = getattr(current_user, 'username', '')
+        email = getattr(current_user, 'email', '') or ''
+        
+        es_super_admin = (
+            user_id == 1 or 
+            username == 'dev_master' or 
+            (email and hasattr(email, 'endswith') and email.endswith('dev_master'))
+        )
+    except Exception as e:
+        print(f"⚠️ Error en verificación super admin: {e}")
+        es_super_admin = False
+    
+    if es_super_admin:
+        activos = []
+        flash('Modo demostración: Sin datos de clientes', 'info')
+    else:
+        activos = ActivoFijo.query.filter_by(panaderia_id=current_user.panaderia_id).order_by(ActivoFijo.fecha_compra.desc()).all()
+    
     return render_template('lista_activos.html', activos=activos, categorias=CATEGORIAS_ACTIVOS)
 
 @app.route('/reporte_activos')
 @login_required
+@tenant_required
 @modulo_requerido('activos')
 def reporte_activos():
-    activos = ActivoFijo.query.filter_by(panaderia_id=1).all()
+    # 🆕 VERIFICACIÓN SEGURA PARA SUPER ADMINISTRADOR
+    es_super_admin = False
+    try:
+        user_id = getattr(current_user, 'id', None)
+        username = getattr(current_user, 'username', '')
+        email = getattr(current_user, 'email', '') or ''
+        
+        es_super_admin = (
+            user_id == 1 or 
+            username == 'dev_master' or 
+            (email and hasattr(email, 'endswith') and email.endswith('dev_master'))
+        )
+    except Exception as e:
+        print(f"⚠️ Error en verificación super admin: {e}")
+        es_super_admin = False
     
-    # Generar gráficos si hay activos
-    if activos:
-        try:
-            fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(12, 10))
-            
-            # Gráfico 1: Distribución por categoría
-            categorias_count = {}
-            for activo in activos:
-                cat_nombre = CATEGORIAS_ACTIVOS.get(activo.categoria, activo.categoria)
-                categorias_count[cat_nombre] = categorias_count.get(cat_nombre, 0) + 1
-            
-            if categorias_count:
-                ax1.pie(categorias_count.values(), labels=categorias_count.keys(), autopct='%1.1f%%')
-                ax1.set_title('Distribución de Activos por Categoría')
-            
-            # Gráfico 2: Valor por categoría
-            categorias_valor = {}
-            for activo in activos:
-                cat_nombre = CATEGORIAS_ACTIVOS.get(activo.categoria, activo.categoria)
-                categorias_valor[cat_nombre] = categorias_valor.get(cat_nombre, 0) + activo.valor_actual()
-            
-            if categorias_valor:
-                ax2.bar(categorias_valor.keys(), categorias_valor.values())
-                ax2.set_title('Valor Actual por Categoría')
-                ax2.tick_params(axis='x', rotation=45)
-            
-            # Gráfico 3: Estado de activos
-            estados_count = {}
-            for activo in activos:
-                estados_count[activo.estado] = estados_count.get(activo.estado, 0) + 1
-            
-            if estados_count:
-                ax3.pie(estados_count.values(), labels=estados_count.keys(), autopct='%1.1f%%')
-                ax3.set_title('Estado de los Activos')
-            
-            # Gráfico 4: Depreciación acumulada
-            nombres = [activo.nombre[:15] + '...' if len(activo.nombre) > 15 else activo.nombre for activo in activos]
-            valores_compra = [activo.valor_compra for activo in activos]
-            depreciacion = [activo.depreciacion_acumulada() for activo in activos]
-            
-            x = range(len(activos))
-            ax4.bar(x, valores_compra, label='Valor Compra', alpha=0.7)
-            ax4.bar(x, depreciacion, label='Depreciación Acumulada', alpha=0.7)
-            ax4.set_title('Depreciación Acumulada')
-            ax4.legend()
-            ax4.set_xticks(x)
-            ax4.set_xticklabels(nombres, rotation=45, ha='right')
-            
-            plt.tight_layout()
-            
-            # Guardar gráfico
-            graph_path = os.path.join('static', 'temp', 'activos_report.png')
-            os.makedirs(os.path.dirname(graph_path), exist_ok=True)
-            plt.savefig(graph_path)
-            plt.close()
-            
-        except Exception as e:
-            print(f"Error generando gráficos: {e}")
-            graph_path = None
-    else:
+    if es_super_admin:
+        activos = []
+        flash('Modo demostración: Reportes vacíos para super administrador', 'info')
         graph_path = None
+    else:
+        activos = ActivoFijo.query.filter_by(panaderia_id=current_user.panaderia_id).all()
+    
+        # Generar gráficos si hay activos
+        if activos:
+            try:
+                fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(12, 10))
+                
+                # Gráfico 1: Distribución por categoría
+                categorias_count = {}
+                for activo in activos:
+                    cat_nombre = CATEGORIAS_ACTIVOS.get(activo.categoria, activo.categoria)
+                    categorias_count[cat_nombre] = categorias_count.get(cat_nombre, 0) + 1
+                
+                if categorias_count:
+                    ax1.pie(categorias_count.values(), labels=categorias_count.keys(), autopct='%1.1f%%')
+                    ax1.set_title('Distribución de Activos por Categoría')
+                
+                # Gráfico 2: Valor por categoría
+                categorias_valor = {}
+                for activo in activos:
+                    cat_nombre = CATEGORIAS_ACTIVOS.get(activo.categoria, activo.categoria)
+                    categorias_valor[cat_nombre] = categorias_valor.get(cat_nombre, 0) + activo.valor_actual()
+                
+                if categorias_valor:
+                    ax2.bar(categorias_valor.keys(), categorias_valor.values())
+                    ax2.set_title('Valor Actual por Categoría')
+                    ax2.tick_params(axis='x', rotation=45)
+                
+                # Gráfico 3: Estado de activos
+                estados_count = {}
+                for activo in activos:
+                    estados_count[activo.estado] = estados_count.get(activo.estado, 0) + 1
+                
+                if estados_count:
+                    ax3.pie(estados_count.values(), labels=estados_count.keys(), autopct='%1.1f%%')
+                    ax3.set_title('Estado de los Activos')
+                
+                # Gráfico 4: Depreciación acumulada
+                nombres = [activo.nombre[:15] + '...' if len(activo.nombre) > 15 else activo.nombre for activo in activos]
+                valores_compra = [activo.valor_compra for activo in activos]
+                depreciacion = [activo.depreciacion_acumulada() for activo in activos]
+                
+                x = range(len(activos))
+                ax4.bar(x, valores_compra, label='Valor Compra', alpha=0.7)
+                ax4.bar(x, depreciacion, label='Depreciación Acumulada', alpha=0.7)
+                ax4.set_title('Depreciación Acumulada')
+                ax4.legend()
+                ax4.set_xticks(x)
+                ax4.set_xticklabels(nombres, rotation=45, ha='right')
+                
+                plt.tight_layout()
+                
+                # Guardar gráfico
+                graph_path = os.path.join('static', 'temp', 'activos_report.png')
+                os.makedirs(os.path.dirname(graph_path), exist_ok=True)
+                plt.savefig(graph_path)
+                plt.close()
+                
+            except Exception as e:
+                print(f"Error generando gráficos: {e}")
+                graph_path = None
+        else:
+            graph_path = None
     
     return render_template('reporte_activos.html', 
                          activos=activos, 
@@ -5928,16 +6024,41 @@ def reporte_activos():
 
 @app.route('/api/activos_metrics')
 @login_required
+@tenant_required
 @modulo_requerido('activos')
 def api_activos_metrics():
-    activos = ActivoFijo.query.filter_by(panaderia_id=1).all()
+    # 🆕 VERIFICACIÓN SEGURA PARA SUPER ADMINISTRADOR
+    es_super_admin = False
+    try:
+        user_id = getattr(current_user, 'id', None)
+        username = getattr(current_user, 'username', '')
+        email = getattr(current_user, 'email', '') or ''
+        
+        es_super_admin = (
+            user_id == 1 or 
+            username == 'dev_master' or 
+            (email and hasattr(email, 'endswith') and email.endswith('dev_master'))
+        )
+    except Exception as e:
+        print(f"⚠️ Error en verificación super admin: {e}")
+        es_super_admin = False
     
-    metrics = {
-        'total_activos': len(activos),
-        'valor_total': sum(activo.valor_actual() for activo in activos),
-        'activos_mantenimiento': len([a for a in activos if a.estado == 'MANTENIMIENTO']),
-        'proxima_depreciacion': 0
-    }
+    if es_super_admin:
+        metrics = {
+            'total_activos': 0,
+            'valor_total': 0,
+            'activos_mantenimiento': 0,
+            'proxima_depreciacion': 0
+        }
+    else:
+        activos = ActivoFijo.query.filter_by(panaderia_id=current_user.panaderia_id).all()
+        
+        metrics = {
+            'total_activos': len(activos),
+            'valor_total': sum(activo.valor_actual() for activo in activos),
+            'activos_mantenimiento': len([a for a in activos if a.estado == 'MANTENIMIENTO']),
+            'proxima_depreciacion': 0
+        }
     
     return jsonify(metrics)
 
