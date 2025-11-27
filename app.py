@@ -1618,6 +1618,7 @@ def agregar_proveedor():
 def editar_proveedor(id):
     if 'user_id' not in session:
         return redirect(url_for('login'))
+    panaderia_actual = session.get('panaderia_id', 1)  # Línea agregada aquí
     
     proveedor = Proveedor.query.filter_by(panaderia_id=panaderia_actual, id=id).first_or_404()
     
@@ -1642,13 +1643,13 @@ def editar_proveedor(id):
     
     return render_template('editar_proveedor.html', proveedor=proveedor)
 
-    panaderia_actual = session.get('panaderia_id', 1)
 @app.route('/toggle_proveedor/<int:id>')
 @login_required
 @modulo_requerido('proveedores')
 def toggle_proveedor(id):
     if 'user_id' not in session:
         return redirect(url_for('login'))
+    panaderia_actual = session.get('panaderia_id', 1)  # Línea agregada aquí
     
     proveedor = Proveedor.query.filter_by(panaderia_id=panaderia_actual, id=id).first_or_404()
     proveedor.activo = not proveedor.activo
@@ -1658,7 +1659,6 @@ def toggle_proveedor(id):
     flash(f'Proveedor "{proveedor.nombre}" {estado} correctamente', 'success')
     return redirect(url_for('proveedores'))
 
-
 # =============================================
 # RUTAS DE PRODUCTOS EXTERNOS
 # =============================================
@@ -1667,19 +1667,19 @@ def toggle_proveedor(id):
 @app.route('/productos_externos')
 @login_required
 @modulo_requerido('productos')
+@tenant_required  # ← DECORADOR AGREGADO
 def productos_externos():
     """Gestión de productos externos (bebidas, helados) - SOLO de esta panadería"""
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
     # FILTRO CLAVE: Solo productos de ESTA panadería
-    panaderia_actual = obtener_panaderia_actual()  # ← ÚNICO CAMBIO AQUÍ
     productos = ProductoExterno.query.filter_by(
         activo=True, 
-        panaderia_id=panaderia_actual  # ← ESTA LÍNEA ES LA CLAVE
+        panaderia_id=current_user.panaderia_id  # ← CORREGIDO: current_user.panaderia_id
     ).all()
     
-    proveedores = Proveedor.query.filter_by(panaderia_id=1, activo=True).all()
+    proveedores = Proveedor.query.filter_by(panaderia_id=current_user.panaderia_id, activo=True).all()  # ← CORREGIDO: current_user.panaderia_id
     
     # Calcular métricas adicionales para cada producto
     for producto in productos:
@@ -1694,14 +1694,13 @@ def productos_externos():
 @app.route('/crear_producto_externo', methods=['POST'])
 @login_required
 @modulo_requerido('productos')
+@tenant_required  # ← DECORADOR AGREGADO
 def crear_producto_externo():
     """Crear nuevo producto externo - Asigna automáticamente la panadería actual"""
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
     try:
-        panaderia_actual = session.get('panaderia_id', 1)
-        
         nuevo_producto = ProductoExterno(
             nombre=request.form['nombre'],
             descripcion=request.form.get('descripcion', ''),
@@ -1713,7 +1712,7 @@ def crear_producto_externo():
             precio_venta=float(request.form['precio_venta']),
             stock_actual=int(request.form.get('stock_actual', 0)),
             stock_minimo=int(request.form.get('stock_minimo', 5)),
-            panaderia_id=panaderia_actual  # ← ASIGNACIÓN AUTOMÁTICA
+            panaderia_id=current_user.panaderia_id  # ← CORREGIDO: current_user.panaderia_id
         )
         
         db.session.add(nuevo_producto)
@@ -1866,41 +1865,40 @@ def registrar_compra_externa():
 @app.route('/materias_primas')
 @login_required
 @modulo_requerido('inventario')
+@tenant_required  # ← DECORADOR AGREGADO
 def materias_primas():
     """Gestión de materias primas - SOLO de esta panadería"""
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    # FILTRO CLAVE: Solo materias primas de ESTA panadería (CON ACCESO REMOTO)
-    panaderia_actual = obtener_panaderia_actual()  # ← ÚNICO CAMBIO EN FILTRO
+    # FILTRO CLAVE: Solo materias primas de ESTA panadería
     materias = MateriaPrima.query.filter_by(
         activo=True, 
-        panaderia_id=panaderia_actual
+        panaderia_id=current_user.panaderia_id  # ← CORREGIDO: current_user.panaderia_id
     ).all()
     
-    proveedores = Proveedor.query.filter_by(panaderia_id=1, activo=True).all()
+    proveedores = Proveedor.query.filter_by(panaderia_id=current_user.panaderia_id, activo=True).all()  # ← CORREGIDO: current_user.panaderia_id
     
-    # ✅ AGREGAR FECHAS PARA EL TEMPLATE (SOLO EN ESTA RUTA)
+    # ✅ AGREGAR FECHAS PARA EL TEMPLATE
+    from datetime import datetime, timedelta
     hoy = datetime.now().date()
     hoy_mas_15 = hoy + timedelta(days=15)
     
     return render_template('materias_primas.html', 
-                         materias_primas=materias,  # ← nombre que usa el template
+                         materias_primas=materias,
                          proveedores=proveedores,
-                         hoy=hoy,                   # ← AGREGAR
-                         hoy_mas_15=hoy_mas_15)     # ← AGREGAR
+                         hoy=hoy,
+                         hoy_mas_15=hoy_mas_15)
 
 @app.route('/agregar_materia_prima', methods=['GET', 'POST'])
 @login_required
 @modulo_requerido('inventario')
+@tenant_required  # ← DECORADOR AGREGADO
 def agregar_materia_prima():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    panaderia_actual = session.get('panaderia_id', 1)
-    proveedores = Proveedor.query.filter_by(panaderia_id=1, activo=True).all()
-    
-    
+    proveedores = Proveedor.query.filter_by(panaderia_id=current_user.panaderia_id, activo=True).all()  # ← CORREGIDO: current_user.panaderia_id
     
     if request.method == 'POST':
         try:
@@ -1955,7 +1953,7 @@ def agregar_materia_prima():
                 unidad_compra=unidad_compra,
                 gramos_por_empaque=gramos_por_empaque,
                 stock_minimo_empaques=stock_minimo_empaques,
-                panaderia_id=panaderia_actual,
+                panaderia_id=current_user.panaderia_id,  # ← CORREGIDO: current_user.panaderia_id
                 activo=True
             )
             
@@ -3558,6 +3556,7 @@ def imprimir_factura(factura_id):
 @app.route('/agregar_producto_externo', methods=['POST'])
 @login_required
 @modulo_requerido('productos')
+@tenant_required  # ← DECORADOR AGREGADO
 def agregar_producto_externo():
     """Agregar nuevo producto externo al inventario"""
     if 'user_id' not in session:
@@ -3583,9 +3582,12 @@ def agregar_producto_externo():
         if not proveedor_id:
             return jsonify({'success': False, 'message': '❌ Debe seleccionar un proveedor'})
         
-        # Verificar si el código de barras ya existe
+        # Verificar si el código de barras ya existe EN ESTA PANADERÍA
         if codigo_barras:
-            producto_existente = ProductoExterno.query.filter_by(codigo_barras=codigo_barras).first()
+            producto_existente = ProductoExterno.query.filter_by(
+                codigo_barras=codigo_barras, 
+                panaderia_id=current_user.panaderia_id  # ← CORREGIDO: Filtro por tenant
+            ).first()
             if producto_existente:
                 return jsonify({'success': False, 'message': '❌ Ya existe un producto con ese código de barras'})
         
@@ -3616,6 +3618,7 @@ def agregar_producto_externo():
             stock_minimo=stock_minimo,
             precio_compra=precio_compra,
             precio_venta=precio_venta,
+            panaderia_id=current_user.panaderia_id,  # ← CORREGIDO: current_user.panaderia_id
             activo=True
         )
         
@@ -5117,7 +5120,7 @@ def obtener_ventas_del_dia(fecha):
         print(f"Error al obtener ventas: {e}")
         return 0
 
-def actualizar_saldo_automatico(efectivo=0, transferencias=0, pagos=0, accion_efectivo="depositar"):
+def actualizar_saldo_automatico(panaderia_id, efectivo=0, transferencias=0, pagos=0, accion_efectivo="depositar"):
     """
     Actualizar saldo automáticamente considerando ingresos y egresos
     - transferencias: dinero que ENTRA a la cuenta
@@ -5125,7 +5128,8 @@ def actualizar_saldo_automatico(efectivo=0, transferencias=0, pagos=0, accion_ef
     - efectivo: depende de la acción seleccionada
     """
     try:
-        saldo_actual_obj = SaldoBanco.query.order_by(SaldoBanco.fecha_actualizacion.desc()).first()
+        # CORREGIDO: Filtro por panaderia_id
+        saldo_actual_obj = SaldoBanco.query.filter_by(panaderia_id=panaderia_id).order_by(SaldoBanco.fecha_actualizacion.desc()).first()
         saldo_actual = saldo_actual_obj.saldo_actual if saldo_actual_obj else 0
         
         # Calcular nuevo saldo
@@ -5153,8 +5157,8 @@ def actualizar_saldo_automatico(efectivo=0, transferencias=0, pagos=0, accion_ef
         
         comentario += " | ".join(partes) if partes else "Sin movimientos"
         
-        # Crear nuevo registro de saldo
-        nuevo_registro_saldo = SaldoBanco(panaderia_id=1, 
+        # Crear nuevo registro de saldo - CORREGIDO: panaderia_id del parámetro
+        nuevo_registro_saldo = SaldoBanco(panaderia_id=panaderia_id, 
             saldo_actual=nuevo_saldo,
             comentario=comentario
         )
@@ -5180,6 +5184,7 @@ def sanitizar_numero(valor, default=0.0):
 @app.route('/registrar_dia', methods=['POST'])
 @login_required
 @modulo_requerido('finanzas')
+@tenant_required  # ← DECORADOR MULTI-TENANT AGREGADO
 def registrar_dia():
     """Registrar los ingresos y gastos del día"""
     try:
@@ -5204,15 +5209,15 @@ def registrar_dia():
         descripcion = request.form.get('descripcion', '')
         numero_factura = request.form.get('numero_factura', '')
         
-        # Verificar si ya existe registro para esta fecha
-        registro_existente = RegistroDiario.query.filter_by(panaderia_id=1, fecha=fecha).first()
+        # Verificar si ya existe registro para esta fecha - CORREGIDO: current_user.panaderia_id
+        registro_existente = RegistroDiario.query.filter_by(panaderia_id=current_user.panaderia_id, fecha=fecha).first()
         
         if registro_existente:
             # Actualizar registro existente
             registro = registro_existente
         else:
-            # Crear nuevo registro
-            registro = RegistroDiario(fecha=fecha, panaderia_id=1)
+            # Crear nuevo registro - CORREGIDO: current_user.panaderia_id
+            registro = RegistroDiario(fecha=fecha, panaderia_id=current_user.panaderia_id)
         
         # Actualizar datos
         registro.venta_total = venta_total
@@ -5245,24 +5250,25 @@ def registrar_dia():
 @app.route('/control_diario')
 @login_required
 @modulo_requerido('finanzas')
+@tenant_required  # ← DECORADOR MULTI-TENANT AGREGADO
 def control_diario():
     """Vista principal del control financiero diario"""
     from datetime import datetime, date
     
-    # Obtener saldo actual
-    saldo_banco = SaldoBanco.query.order_by(SaldoBanco.fecha_actualizacion.desc()).first()
+    # Obtener saldo actual CON FILTRO TENANT
+    saldo_banco = SaldoBanco.query.filter_by(panaderia_id=current_user.panaderia_id).order_by(SaldoBanco.fecha_actualizacion.desc()).first()
     saldo_actual = saldo_banco.saldo_actual if saldo_banco else 0
     
-    # Obtener registros recientes (últimos 7 días)
-    registros_recientes = RegistroDiario.query.filter_by(panaderia_id=1).order_by(RegistroDiario.fecha.desc()).limit(7).all()
+    # Obtener registros recientes (últimos 7 días) CON FILTRO TENANT
+    registros_recientes = RegistroDiario.query.filter_by(panaderia_id=current_user.panaderia_id).order_by(RegistroDiario.fecha.desc()).limit(7).all()
     
-    # Obtener proveedores para el dropdown
-    proveedores = Proveedor.query.filter_by(panaderia_id=panaderia_actual).all()
+    # Obtener proveedores para el dropdown CON FILTRO TENANT
+    proveedores = Proveedor.query.filter_by(panaderia_id=current_user.panaderia_id).all()
     
-    # Obtener pagos de hoy
+    # Obtener pagos de hoy CON FILTRO TENANT
     hoy = date.today()
-    pagos_hoy = PagoIndividual.query.filter_by(panaderia_id=1, fecha_pago=hoy).all()
-    registro_hoy = RegistroDiario.query.filter_by(panaderia_id=1, fecha=hoy).first()
+    pagos_hoy = PagoIndividual.query.filter_by(panaderia_id=current_user.panaderia_id, fecha_pago=hoy).all()
+    registro_hoy = RegistroDiario.query.filter_by(panaderia_id=current_user.panaderia_id, fecha=hoy).first()
     
     return render_template('control_diario.html',
                          saldo_actual=saldo_actual,
@@ -5275,6 +5281,7 @@ def control_diario():
 @app.route('/registrar_pago_individual', methods=['POST'])
 @login_required
 @modulo_requerido('finanzas')
+@tenant_required  # ← DECORADOR MULTI-TENANT AGREGADO
 def registrar_pago_individual():
     """Registrar un pago individual con actualización automática del saldo"""
     try:
@@ -5304,8 +5311,8 @@ def registrar_pago_individual():
                 except ValueError:
                     proveedor_id = None
         
-        # Crear nuevo pago
-        nuevo_pago = PagoIndividual(panaderia_id=1, 
+        # Crear nuevo pago CON FILTRO TENANT
+        nuevo_pago = PagoIndividual(panaderia_id=current_user.panaderia_id,  # ← CORREGIDO: current_user.panaderia_id
             categoria=categoria,
             proveedor_id=proveedor_id,
             monto=monto,
@@ -5317,8 +5324,9 @@ def registrar_pago_individual():
         
         db.session.add(nuevo_pago)
         
-        # 🆕 ACTUALIZAR SALDO - RESTAR EL PAGO
+        # 🆕 ACTUALIZAR SALDO - RESTAR EL PAGO (POR AHORA DEJAMOS ESTA FUNCIÓN COMO ESTÁ)
         saldo_actual = actualizar_saldo_automatico(
+            panaderia_id=current_user.panaderia_id,
             efectivo=0,
             transferencias=0, 
             pagos=monto,  # Restar el monto del pago
@@ -5339,6 +5347,7 @@ def registrar_pago_individual():
 @app.route('/registrar_cierre_caja', methods=['POST'])
 @login_required
 @modulo_requerido('finanzas')
+@tenant_required  # ← DECORADOR MULTI-TENANT AGREGADO
 def registrar_cierre_caja():
     """Registrar el cierre de caja diario con validaciones de seguridad"""
     try:
@@ -5363,13 +5372,13 @@ def registrar_cierre_caja():
                 flash(f'❌ El total ingresado en métodos de pago (${suma_metodos:,.0f}) es INFERIOR al total de ventas (${venta_total:,.0f}). Diferencia: -${diferencia:,.0f}', 'error')
             return redirect(url_for('control_diario'))
         
-        # Verificar si ya existe registro para esta fecha
-        registro_existente = RegistroDiario.query.filter_by(panaderia_id=1, fecha=fecha).first()
+        # Verificar si ya existe registro para esta fecha - CORREGIDO: current_user.panaderia_id
+        registro_existente = RegistroDiario.query.filter_by(panaderia_id=current_user.panaderia_id, fecha=fecha).first()
         
         if registro_existente:
             registro = registro_existente
         else:
-            registro = RegistroDiario(fecha=fecha, panaderia_id=1)
+            registro = RegistroDiario(fecha=fecha, panaderia_id=current_user.panaderia_id)
         
         # Actualizar datos de ingresos
         registro.venta_total = venta_total
@@ -5383,8 +5392,9 @@ def registrar_cierre_caja():
         if not registro_existente:
             db.session.add(registro)
         
-        # 🆕 ACTUALIZAR SALDO - SOLO INGRESOS (no pagos aquí)
+        # 🆕 ACTUALIZAR SALDO - SOLO INGRESOS (no pagos aquí) - CORREGIDO: current_user.panaderia_id
         saldo_actual = actualizar_saldo_automatico(
+            panaderia_id=current_user.panaderia_id,  # ← PARÁMETRO AGREGADO
             efectivo=efectivo, 
             transferencias=transferencias, 
             pagos=0,  # Los pagos se actualizan en su propia ruta
@@ -5404,7 +5414,7 @@ def registrar_cierre_caja():
     
     return redirect(url_for('control_diario'))
 
-# ... todo tu código existente ...
+
 
 # ================================================== MÓDULO DE REPORTES ====================================================
 
