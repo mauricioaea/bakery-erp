@@ -70,6 +70,7 @@ from security_utils import validate_tenant_access, safe_tenant_query, check_tena
 from middleware_saas import init_tenants_app, gestor_tenants
 
 from flask_login import LoginManager, login_required, current_user, login_user, logout_user
+from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta, date, timezone
 from sqlalchemy import func, extract
@@ -117,7 +118,7 @@ from models import db
 from models import Usuario, Producto, Venta, DetalleVenta, MateriaPrima, Receta, RecetaIngrediente, Panaderia,  ConfiguracionPanaderia
 from models import OrdenProduccion, Categoria, Proveedor, HistorialCompra, HistorialInventario
 from models import ConfiguracionProduccion, HistorialRotacionProducto, ControlVidaUtil, Factura
-from models import ProductoExterno, CompraExterna, RegistroDiario, SaldoBanco, PagoIndividual
+from models import ProductoExterno, CompraExterna, RegistroDiario, SaldoBanco, PagoIndividual, DepositoBancario
 from models import JornadaVentas, CierreDiario, obtener_jornada_activa, cerrar_jornada_actual, obtener_ventas_dia, obtener_historial_cierres
 from models import ConsecutivoPOS, ConfiguracionSistema, Cliente
 from models import calcular_rotacion_automatica, actualizar_rotaciones_automaticas
@@ -139,6 +140,7 @@ login_manager.login_view = 'login'
 
 # Inicializar db con la app
 db.init_app(app)
+migrate = Migrate(app, db)
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -2121,26 +2123,27 @@ def historial_compras(materia_prima_id):
     historial = HistorialCompra.query.filter_by(materia_prima_id=materia_prima_id).order_by(HistorialCompra.fecha_compra.desc()).all()
     
     return render_template('historial_compras.html', materia=materia, historial=historial)
+# =============================================
+# RUTAS DE PRODUCCIÓN Y RECETAS - CORREGIDAS MULTI-TENANT
+# =============================================
+from tenant_decorators import tenant_required  # Asegúrate de importar el decorador
 
-# =============================================
-# RUTAS DE PRODUCCIÓN Y RECETAS - COMPLETAMENTE ACTUALIZADAS CON PRECIOS REALES
-# =============================================
 @app.route('/recetas')
 @login_required
 @modulo_requerido('produccion')
+@tenant_required  # ✅ NUEVO: Decorador multi-tenant
 def recetas():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    # ✅ AGREGADO: Filtro multicliente (CON ACCESO REMOTO)
-    panaderia_actual = obtener_panaderia_actual()  # ← ÚNICO CAMBIO EN FILTRO
+    # ✅ CORREGIDO: Usar current_user.panaderia_id en lugar de función personalizada
+    panaderia_actual = current_user.panaderia_id
     print(f"🔍 DEBUG RECETAS: Panadería actual: {panaderia_actual}")
     
-    # ✅ ✅ ✅ NUEVO: BLOQUE SUPER USUARIO (MEJORADO) ✅ ✅ ✅
+    # ✅ BLOQUE SUPER USUARIO (MEJORADO)
     if es_super_usuario() and not session.get('panaderia_remota'):
         flash("🔧 Como super usuario, usa 'Acceder a esta panadería' para ver recetas específicas", "info")
         return render_template('recetas.html', recetas=[])
-    # ✅ ✅ ✅ FIN BLOQUE SUPER USUARIO ✅ ✅ ✅
     
     # ✅ CORREGIDO: Solo recetas de ESTA panadería
     recetas_panaderia = Receta.query.filter_by(panaderia_id=panaderia_actual, activo=True).all()
@@ -2154,23 +2157,27 @@ def recetas():
 @app.route('/detalle_receta/<int:id>')
 @login_required
 @modulo_requerido('produccion')
+@tenant_required  # ✅ NUEVO: Decorador multi-tenant
 def detalle_receta(id):
     """Página de detalle de una receta específica"""
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    receta = Receta.query.get_or_404(id)
+    # ✅ CORREGIDO: Asegurar que la receta pertenezca al tenant actual
+    receta = Receta.query.filter_by(id=id, panaderia_id=current_user.panaderia_id).first_or_404()
     return render_template('detalle_receta.html', receta=receta)
 
 @app.route('/producir_receta/<int:id>', methods=['GET', 'POST'])
 @login_required
 @modulo_requerido('produccion')
+@tenant_required  # ✅ NUEVO: Decorador multi-tenant
 def producir_receta(id):
     """Producción de una receta - cálculo de ingredientes"""
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    receta = Receta.query.get_or_404(id)
+    # ✅ CORREGIDO: Asegurar que la receta pertenezca al tenant actual
+    receta = Receta.query.filter_by(id=id, panaderia_id=current_user.panaderia_id).first_or_404()
     
     if request.method == 'POST':
         try:
@@ -2200,7 +2207,8 @@ def producir_receta(id):
                 cantidad_producir=cantidad,
                 estado='confirmada',
                 usuario_id=session['user_id'],
-                fecha_inicio=datetime.utcnow()
+                fecha_inicio=datetime.utcnow(),
+                panaderia_id=current_user.panaderia_id  # ✅ NUEVO: Asignar panaderia_id
             )
             db.session.add(orden_produccion)
             db.session.flush()  # Para obtener el ID
@@ -2217,7 +2225,8 @@ def producir_receta(id):
                     materia_prima_id=ingrediente.materia_prima.id,
                     orden_produccion_id=orden_produccion.id,
                     cantidad_utilizada=cantidad_necesaria,
-                    tipo_movimiento='produccion'
+                    tipo_movimiento='produccion',
+                    panaderia_id=current_user.panaderia_id  # ✅ NUEVO: Asignar panaderia_id
                 )
                 db.session.add(movimiento)
             
@@ -2237,14 +2246,14 @@ def producir_receta(id):
 @app.route('/api/calcular_ingredientes/<int:id>')
 @login_required
 @modulo_requerido('produccion')
+@tenant_required  # ✅ NUEVO: Decorador multi-tenant
 def calcular_ingredientes(id):
     """API para calcular ingredientes necesarios (AJAX)"""
     if 'user_id' not in session:
         return jsonify({'error': 'No autorizado'}), 401
     
-    # ✅ AGREGADO: Filtro multicliente
-    panaderia_actual = session.get('panaderia_id')
-    receta = Receta.query.filter_by(id=id, panaderia_id=panaderia_actual).first()
+    # ✅ CORREGIDO: Usar current_user.panaderia_id y filtrar receta
+    receta = Receta.query.filter_by(id=id, panaderia_id=current_user.panaderia_id).first()
     
     if not receta:
         return jsonify({'error': 'Receta no encontrada'}), 404
@@ -2272,12 +2281,14 @@ def calcular_ingredientes(id):
 @app.route('/api/actualizar_precio_real/<int:receta_id>', methods=['POST'])
 @login_required
 @modulo_requerido('produccion')
+@tenant_required  # ✅ NUEVO: Decorador multi-tenant
 def actualizar_precio_real(receta_id):
     """API para actualizar el precio real de una receta desde la lista"""
     if 'user_id' not in session:
         return jsonify({'error': 'No autorizado'}), 401
     
-    receta = Receta.query.get_or_404(receta_id)
+    # ✅ CORREGIDO: Asegurar que la receta pertenezca al tenant actual
+    receta = Receta.query.filter_by(id=receta_id, panaderia_id=current_user.panaderia_id).first_or_404()
     data = request.get_json()
     nuevo_precio = float(data.get('precio_real', 0))
     
@@ -2305,6 +2316,7 @@ def actualizar_precio_real(receta_id):
 @app.route('/api/calcular_precio_receta', methods=['POST'])
 @login_required
 @modulo_requerido('produccion')
+@tenant_required  # ✅ NUEVO: Decorador multi-tenant
 def calcular_precio_receta():
     """API para cálculos en tiempo real de costos y precios con 45% CIF + 45% Ganancia"""
     if 'user_id' not in session:
@@ -2322,7 +2334,11 @@ def calcular_precio_receta():
             cantidad_gramos = float(ingrediente.get('cantidad_gramos', 0))
             
             if materia_prima_id and cantidad_gramos > 0:
-                materia_prima = MateriaPrima.query.get(materia_prima_id)
+                # ✅ CORREGIDO: Filtrar materia prima por tenant
+                materia_prima = MateriaPrima.query.filter_by(
+                    id=materia_prima_id, 
+                    panaderia_id=current_user.panaderia_id
+                ).first()
                 if materia_prima:
                     # Calcular costo del ingrediente
                     costo_ingrediente = cantidad_gramos * materia_prima.costo_promedio
@@ -2404,20 +2420,19 @@ def calcular_precio_receta():
 @app.route('/crear_receta', methods=['GET', 'POST'])
 @login_required
 @modulo_requerido('produccion')
+@tenant_required  # ✅ NUEVO: Decorador multi-tenant
 def crear_receta():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
     # ✅ DEBUG PARA CONFIRMAR PANADERÍA
-    panaderia_actual = session.get('panaderia_id')
+    panaderia_actual = current_user.panaderia_id
     print(f"🔍 DEBUG CREAR_RECETA: Panadería actual: {panaderia_actual}")
     print(f"🔍 DEBUG CREAR_RECETA: User ID: {session.get('user_id')}")
     
-    # VERIFICAR QUE HAY MATERIAS PRIMAS DISPONIBLES
-    materias_primas = MateriaPrima.query.filter_by(activo=True).all()
+    # ✅ CORREGIDO: Filtrar materias primas por tenant
+    materias_primas = MateriaPrima.query.filter_by(activo=True, panaderia_id=panaderia_actual).all()
     print(f"🔍 Materias primas encontradas: {len(materias_primas)}")
-    
-    # ... resto del código ...
     
     if request.method == 'POST':
         try:
@@ -2432,8 +2447,8 @@ def crear_receta():
                 peso_unidad_gramos=float(request.form['peso_unidad_gramos']),
                 porcentaje_perdida=float(request.form.get('porcentaje_perdida', 10.0)),
                 activo=True,
-                precio_venta_real=precio_venta_real,  # ✅ ASIGNAR PRECIO REAL
-                panaderia_id=session.get('panaderia_id')  # ✅ FILTRO MULTICLIENTE CRÍTICO
+                precio_venta_real=precio_venta_real,
+                panaderia_id=panaderia_actual  # ✅ CORREGIDO: Usar current_user.panaderia_id
             )
             
             db.session.add(nueva_receta)
@@ -2450,7 +2465,11 @@ def crear_receta():
                 materia_prima_id = request.form[f'ingredientes[{i}][materia_prima_id]']
                 gramos = float(request.form[f'ingredientes[{i}][gramos]'])  # Gramos directos
                 
-                materia_prima = MateriaPrima.query.get(materia_prima_id)
+                # ✅ CORREGIDO: Filtrar materia prima por tenant
+                materia_prima = MateriaPrima.query.filter_by(
+                    id=materia_prima_id, 
+                    panaderia_id=panaderia_actual
+                ).first()
                 if materia_prima and gramos > 0:
                     cantidad_gramos = gramos
                     costo_ingrediente = cantidad_gramos * materia_prima.costo_promedio
@@ -2498,11 +2517,10 @@ def crear_receta():
             # ✅ precio_venta_real ya fue asignado al crear la receta
             
             # ✅ NUEVO: CREAR PRODUCTO AUTOMÁTICAMENTE A PARTIR DE LA RECETA
-            # ✅ NUEVO: CREAR PRODUCTO AUTOMÁTICAMENTE A PARTIR DE LA RECETA
             producto_automatico = Producto(
                 nombre=nueva_receta.nombre,
                 descripcion=nueva_receta.descripcion,
-                categoria_id=obtener_categoria_id(nueva_receta.categoria),
+                categoria_id=obtener_categoria_id(nueva_receta.categoria, panaderia_actual),  # ✅ CORREGIDO: Pasar panaderia_id
                 precio_venta=precio_venta_real if precio_venta_real > 0 else precio_venta_unitario,
                 stock_actual=0,  # Inicialmente sin stock - se llena con producción
                 stock_minimo=10,
@@ -2511,7 +2529,7 @@ def crear_receta():
                 es_pan=True if 'pan' in nueva_receta.nombre.lower() else False,
                 receta_id=nueva_receta.id,
                 activo=True,
-                panaderia_id=session.get('panaderia_id')  # ✅ FILTRO MULTICLIENTE
+                panaderia_id=panaderia_actual  # ✅ CORREGIDO: Usar current_user.panaderia_id
             )
             
             db.session.add(producto_automatico)
@@ -2547,19 +2565,20 @@ def crear_receta():
     
     return render_template('crear_receta.html', materias_primas=materias_primas)
 
-# ✅ NUEVA FUNCIÓN HELPER - AGREGAR ESTA FUNCIÓN EN app.py
-def obtener_categoria_id(nombre_categoria):
+# ✅ FUNCIÓN HELPER CORREGIDA - AGREGAR panaderia_id
+def obtener_categoria_id(nombre_categoria, panaderia_id):
     """Obtiene el ID de categoría basado en el nombre - crea si no existe"""
     # Normalizar nombre de categoría
     nombre_categoria = nombre_categoria.strip().title()
     
-    categoria = Categoria.query.filter_by(nombre=nombre_categoria).first()
+    # ✅ CORREGIDO: Filtrar categoría por tenant
+    categoria = Categoria.query.filter_by(nombre=nombre_categoria, panaderia_id=panaderia_id).first()
     if not categoria:
         # Crear categoría si no existe
-        categoria = Categoria(nombre=nombre_categoria)
+        categoria = Categoria(nombre=nombre_categoria, panaderia_id=panaderia_id)
         db.session.add(categoria)
         db.session.commit()
-        print(f"✅ Nueva categoría creada: {nombre_categoria}")
+        print(f"✅ Nueva categoría creada: {nombre_categoria} para panadería {panaderia_id}")
     
     return categoria.id
 
@@ -2567,13 +2586,17 @@ def obtener_categoria_id(nombre_categoria):
 @app.route('/editar_receta/<int:id>', methods=['GET', 'POST'])
 @login_required
 @modulo_requerido('produccion')
+@tenant_required  # ✅ NUEVO: Decorador multi-tenant
 def editar_receta(id):
     """Editar una receta existente - AHORA CON PRECIO REAL"""
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    receta = Receta.query.get_or_404(id)
-    materias_primas = MateriaPrima.query.filter_by(activo=True).all()
+    # ✅ CORREGIDO: Asegurar que la receta pertenezca al tenant actual
+    receta = Receta.query.filter_by(id=id, panaderia_id=current_user.panaderia_id).first_or_404()
+    
+    # ✅ CORREGIDO: Filtrar materias primas por tenant
+    materias_primas = MateriaPrima.query.filter_by(activo=True, panaderia_id=current_user.panaderia_id).all()
     
     if request.method == 'POST':
         try:
@@ -2600,7 +2623,11 @@ def editar_receta(id):
                 materia_prima_id = request.form[f'ingredientes[{i}][materia_prima_id]']
                 gramos = float(request.form[f'ingredientes[{i}][gramos]'])
                 
-                materia_prima = MateriaPrima.query.get(materia_prima_id)
+                # ✅ CORREGIDO: Filtrar materia prima por tenant
+                materia_prima = MateriaPrima.query.filter_by(
+                    id=materia_prima_id, 
+                    panaderia_id=current_user.panaderia_id
+                ).first()
                 if materia_prima and gramos > 0:
                     cantidad_gramos = gramos
                     costo_ingrediente = cantidad_gramos * materia_prima.costo_promedio
@@ -2661,7 +2688,6 @@ def editar_receta(id):
                          receta=receta, 
                          materias_primas=materias_primas, 
                          editar=True)
-    
     
 
 # =============================================
@@ -5424,6 +5450,7 @@ from io import BytesIO
 @app.route('/reportes')
 @login_required
 @modulo_requerido('reportes')
+@tenant_required
 def reportes():
     """Vista principal de reportes"""
     return render_template('reportes.html')
@@ -5431,6 +5458,7 @@ def reportes():
 @app.route('/generar_reporte_estado_resultados')
 @login_required
 @modulo_requerido('reportes')
+@tenant_required  # ← NUEVO: Añadir decorador tenant
 def generar_reporte_estado_resultados():
     """Genera reporte de Estado de Resultados en PDF"""
     try:
@@ -5452,6 +5480,7 @@ def generar_reporte_estado_resultados():
             return redirect(url_for('reportes'))
         
         generador = GeneradorReportes()
+        # ✅ current_user.panaderia_id disponible automáticamente gracias a @tenant_required
         pdf_buffer = generador.generar_reporte_estado_resultados(fecha_inicio, fecha_fin)
         
         nombre_archivo = f"estado_resultados_{fecha_inicio}_{fecha_fin}.pdf"
@@ -5471,6 +5500,7 @@ def generar_reporte_estado_resultados():
 @app.route('/generar_reporte_flujo_caja')
 @login_required
 @modulo_requerido('reportes')
+@tenant_required
 def generar_reporte_flujo_caja():
     """Genera reporte de Flujo de Caja en PDF"""
     try:
@@ -5513,6 +5543,7 @@ def generar_reporte_flujo_caja():
 @app.route('/generar_reporte_libro_diario')
 @login_required
 @modulo_requerido('reportes')
+@tenant_required 
 def generar_reporte_libro_diario():
     """Genera reporte de Libro Diario Contable en PDF"""
     try:
@@ -5553,6 +5584,7 @@ def generar_reporte_libro_diario():
 @app.route('/generar_reporte_conciliacion')
 @login_required
 @modulo_requerido('reportes')
+@tenant_required 
 def generar_reporte_conciliacion():
     """Genera reporte de Conciliación Bancaria en PDF"""
     try:
@@ -5609,6 +5641,7 @@ metodos = [method for method in dir(generador_test) if callable(getattr(generado
 @app.route('/generar_reporte_analisis_gastos')
 @login_required
 @modulo_requerido('reportes')
+@tenant_required 
 def generar_reporte_analisis_gastos():
     """Genera reporte de Análisis de Gastos por Categoría en PDF"""
     try:
@@ -5665,6 +5698,7 @@ verificar_metodos()
 @app.route('/generar_reporte_tendencia_ventas')
 @login_required
 @modulo_requerido('reportes')
+@tenant_required
 def generar_reporte_tendencia_ventas():
     """Genera reporte de Tendencia de Ventas en PDF"""
     try:
@@ -5708,6 +5742,7 @@ def generar_reporte_tendencia_ventas():
 @app.route('/generar_reporte_ia_predictivo')
 @login_required
 @modulo_requerido('reportes')
+@tenant_required 
 def generar_reporte_ia_predictivo():
     """Genera reporte de IA Predictivo en PDF"""
     try:
@@ -5752,6 +5787,7 @@ def generar_reporte_ia_predictivo():
 @app.route('/generar_reporte_analisis_inventarios')
 @login_required
 @modulo_requerido('reportes')
+@tenant_required 
 def generar_reporte_analisis_inventarios():
     """Genera reporte de Análisis de Inventarios en PDF"""
     try:
@@ -5787,7 +5823,416 @@ def generar_reporte_analisis_inventarios():
         print(f"Error al generar análisis de inventarios: {str(e)}")
         flash(f'❌ Error al generar análisis de inventarios: {str(e)}', 'error')
         return redirect(url_for('reportes'))
+
+# ========================================== REPORTE UNIFICADO DE TESORERÍA ===========================================
+
+@app.route('/generar_reporte_tesoreria_unificado')
+@login_required
+@modulo_requerido('reportes')
+@tenant_required
+def generar_reporte_tesoreria_unificado():
+    """Genera reporte unificado de Tesorería (Libro Mayor + Flujo de Caja) en PDF"""
+    try:
+        from datetime import datetime
+        
+        fecha_inicio = request.args.get('fecha_inicio')
+        fecha_fin = request.args.get('fecha_fin')
+        nivel_detalle = request.args.get('nivel_detalle', 'completo')  # Por defecto completo
+        
+        # Validar fechas
+        if not fecha_inicio or not fecha_fin:
+            flash('❌ Debes seleccionar ambas fechas', 'error')
+            return redirect(url_for('reportes'))
+        
+        fecha_inicio = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+        fecha_fin = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
+        
+        if fecha_inicio > fecha_fin:
+            flash('❌ La fecha de inicio no puede ser mayor a la fecha fin', 'error')
+            return redirect(url_for('reportes'))
+        
+        generador = GeneradorReportes()
+        pdf_buffer = generador.generar_reporte_tesoreria_unificado(fecha_inicio, fecha_fin, nivel_detalle)
+        
+        nombre_archivo = f"tesoreria_unificado_{fecha_inicio}_{fecha_fin}.pdf"
+        
+        return Response(
+            pdf_buffer,
+            mimetype='application/pdf',
+            headers={
+                'Content-Disposition': f'attachment; filename={nombre_archivo}'
+            }
+        )
+        
+    except Exception as e:
+        flash(f'❌ Error al generar reporte unificado: {str(e)}', 'error')
+        return redirect(url_for('reportes'))
     
+# ==========================================
+# RUTAS PARA DEPÓSITOS BANCARIOS (MÓDULO TESORERÍA)
+# ==========================================
+
+@app.route('/depositos_bancarios', methods=['GET'])
+@tenant_required
+@login_required  # <-- SOLO ESTOS DOS
+def listar_depositos_bancarios():
+    """Lista todos los depósitos bancarios del tenant actual"""
+    try:
+        from reportes import GeneradorReportes
+
+        # Obtener parámetros de filtro
+        fecha_inicio = request.args.get('fecha_inicio')
+        fecha_fin = request.args.get('fecha_fin')
+        estado = request.args.get('estado')
+
+        generador = GeneradorReportes()
+
+        if fecha_inicio and fecha_fin:
+            # Convertir fechas string a date
+            fecha_inicio_dt = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+            fecha_fin_dt = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
+
+            # Usar función del generador de reportes
+            depositos = generador.obtener_depositos_por_rango(fecha_inicio_dt, fecha_fin_dt)
+        else:
+            # Si no hay fechas, obtener todos los depósitos del tenant
+            depositos = DepositoBancario.query.filter_by(
+                panaderia_id=current_user.panaderia_id
+            ).order_by(DepositoBancario.fecha_deposito.desc()).all()
+
+        # Aplicar filtro de estado si se especificó
+        if estado:
+            depositos = [d for d in depositos if d.estado == estado]
+
+        # Formatear respuesta
+        depositos_list = []
+        for dep in depositos:
+            depositos_list.append({
+                'id': dep.id,
+                'fecha_deposito': dep.fecha_deposito.strftime('%Y-%m-%d'),
+                'monto': dep.monto,
+                'descripcion': dep.descripcion,
+                'referencia': dep.referencia,
+                'cuenta_bancaria': dep.cuenta_bancaria,
+                'metodo_deposito': dep.metodo_deposito,
+                'estado': dep.estado,
+                'fecha_conciliacion': dep.fecha_conciliacion.strftime('%Y-%m-%d') if dep.fecha_conciliacion else None,
+                'fecha_creacion': dep.fecha_creacion.strftime('%Y-%m-%d %H:%M:%S'),
+                'fecha_actualizacion': dep.fecha_actualizacion.strftime('%Y-%m-%d %H:%M:%S')
+            })
+
+        return jsonify({
+            'success': True,
+            'depositos': depositos_list,
+            'total': len(depositos_list)
+        })
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/depositos_bancarios/<int:deposito_id>', methods=['GET'])
+@tenant_required
+@login_required
+def obtener_deposito_bancario(deposito_id):
+    """Obtiene un depósito bancario específico por ID"""
+    try:
+        deposito = DepositoBancario.query.filter_by(
+            id=deposito_id,
+            panaderia_id=current_user.panaderia_id
+        ).first()
+
+        if not deposito:
+            return jsonify({
+                'success': False,
+                'error': 'Depósito no encontrado'
+            }), 404
+
+        return jsonify({
+            'success': True,
+            'deposito': {
+                'id': deposito.id,
+                'fecha_deposito': deposito.fecha_deposito.strftime('%Y-%m-%d') if deposito.fecha_deposito else None,
+                'monto': deposito.monto,
+                'descripcion': deposito.descripcion,
+                'referencia': deposito.referencia,
+                'cuenta_bancaria': deposito.cuenta_bancaria,
+                'metodo_deposito': deposito.metodo_deposito,
+                'estado': deposito.estado,
+                'fecha_conciliacion': deposito.fecha_conciliacion.strftime('%Y-%m-%d') if deposito.fecha_conciliacion else None,
+                'fecha_creacion': deposito.fecha_creacion.strftime('%Y-%m-%d %H:%M:%S') if deposito.fecha_creacion else None,
+                'fecha_actualizacion': deposito.fecha_actualizacion.strftime('%Y-%m-%d %H:%M:%S') if deposito.fecha_actualizacion else None
+            }
+        })
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/depositos_bancarios/crear', methods=['POST'])
+@tenant_required
+@login_required
+def crear_deposito_bancario():
+    """Crea un nuevo depósito bancario - VERSIÓN CORREGIDA"""
+    try:
+        # Verificar si es JSON o form data
+        if request.is_json:
+            data = request.get_json()
+        else:
+            # Obtener datos del formulario
+            data = {
+                'fecha_deposito': request.form.get('fecha_deposito'),
+                'monto': request.form.get('monto'),
+                'descripcion': request.form.get('descripcion', ''),
+                'referencia': request.form.get('referencia', ''),
+                'cuenta_bancaria': request.form.get('cuenta_bancaria', ''),
+                'metodo_deposito': request.form.get('metodo_deposito'),
+                'estado': request.form.get('estado', 'REGISTRADO')
+            }
+
+        print(f"📝 Datos recibidos: {data}")  # Debug
+
+        # Validar campos obligatorios
+        if not data.get('fecha_deposito'):
+            return jsonify({
+                'success': False,
+                'error': 'La fecha de depósito es obligatoria'
+            }), 400
+        
+        if not data.get('monto') or float(data['monto']) <= 0:
+            return jsonify({
+                'success': False,
+                'error': 'El monto debe ser mayor a 0'
+            }), 400
+
+        # Convertir fecha
+        try:
+            fecha_deposito = datetime.strptime(data['fecha_deposito'], '%Y-%m-%d').date()
+        except ValueError:
+            try:
+                # Intentar otro formato si falla
+                fecha_deposito = datetime.strptime(data['fecha_deposito'], '%d/%m/%Y').date()
+            except:
+                return jsonify({
+                    'success': False,
+                    'error': 'Formato de fecha inválido. Use YYYY-MM-DD'
+                }), 400
+
+        nuevo_deposito = DepositoBancario(
+            panaderia_id=current_user.panaderia_id,
+            fecha_deposito=fecha_deposito,
+            monto=float(data['monto']),
+            descripcion=data.get('descripcion', ''),
+            referencia=data.get('referencia', ''),
+            cuenta_bancaria=data.get('cuenta_bancaria', ''),
+            metodo_deposito=data.get('metodo_deposito', 'efectivo'),
+            estado=data.get('estado', 'REGISTRADO')
+        )
+
+        db.session.add(nuevo_deposito)
+        db.session.commit()
+
+        print(f"✅ Depósito creado exitosamente: ID {nuevo_deposito.id}")
+
+        return jsonify({
+            'success': True,
+            'message': 'Depósito creado exitosamente',
+            'deposito_id': nuevo_deposito.id
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Error al crear depósito: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': f'Error interno: {str(e)}'
+        }), 500
+
+
+@app.route('/depositos_bancarios/editar/<int:deposito_id>', methods=['POST'])
+@tenant_required
+@login_required
+def editar_deposito_bancario(deposito_id):
+    """Edita un depósito bancario existente"""
+    try:
+        data = request.get_json()
+
+        # Buscar depósito asegurándose de que pertenece al tenant actual
+        deposito = DepositoBancario.query.filter_by(
+            id=deposito_id,
+            panaderia_id=current_user.panaderia_id
+        ).first()
+
+        if not deposito:
+            return jsonify({
+                'success': False,
+                'error': 'Depósito no encontrado'
+            }), 404
+
+        # Actualizar campos permitidos
+        if 'fecha_deposito' in data:
+            deposito.fecha_deposito = datetime.strptime(data['fecha_deposito'], '%Y-%m-%d').date()
+        if 'monto' in data:
+            deposito.monto = float(data['monto'])
+        if 'descripcion' in data:
+            deposito.descripcion = data['descripcion']
+        if 'referencia' in data:
+            deposito.referencia = data['referencia']
+        if 'cuenta_bancaria' in data:
+            deposito.cuenta_bancaria = data['cuenta_bancaria']
+        if 'metodo_deposito' in data:
+            deposito.metodo_deposito = data['metodo_deposito']
+        if 'estado' in data:
+            deposito.estado = data['estado']
+            if data['estado'] == 'CONCILIADO' and not deposito.fecha_conciliacion:
+                deposito.fecha_conciliacion = datetime.utcnow().date()
+
+        deposito.fecha_actualizacion = datetime.utcnow()
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Depósito actualizado exitosamente'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/depositos_bancarios/eliminar/<int:deposito_id>', methods=['POST'])
+@tenant_required
+@login_required
+def eliminar_deposito_bancario(deposito_id):
+    """Elimina un depósito bancario (solo si está en estado REGISTRADO)"""
+    try:
+        deposito = DepositoBancario.query.filter_by(
+            id=deposito_id,
+            panaderia_id=current_user.panaderia_id
+        ).first()
+
+        if not deposito:
+            return jsonify({
+                'success': False,
+                'error': 'Depósito no encontrado'
+            }), 404
+
+        if deposito.estado != 'REGISTRADO':
+            return jsonify({
+                'success': False,
+                'error': 'Solo se pueden eliminar depósitos en estado REGISTRADO'
+            }), 400
+
+        db.session.delete(deposito)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Depósito eliminado exitosamente'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/depositos_bancarios/conciliar/<int:deposito_id>', methods=['POST'])
+@tenant_required
+@login_required
+def conciliar_deposito_bancario(deposito_id):
+    """Marca un depósito como conciliado"""
+    try:
+        from reportes import GeneradorReportes
+
+        generador = GeneradorReportes()
+        resultado = generador.conciliar_deposito(deposito_id)
+
+        if resultado:
+            return jsonify({
+                'success': True,
+                'message': 'Depósito conciliado exitosamente'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'No se pudo conciliar el depósito'
+            }), 400
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/depositos_bancarios/estadisticas', methods=['GET'])
+@tenant_required
+@login_required
+def estadisticas_depositos_bancarios():
+    """Obtiene estadísticas de depósitos bancarios"""
+    try:
+        # Obtener parámetros de filtro
+        fecha_inicio = request.args.get('fecha_inicio')
+        fecha_fin = request.args.get('fecha_fin')
+
+        # Construir consulta base
+        query = DepositoBancario.query.filter_by(panaderia_id=current_user.panaderia_id)
+
+        if fecha_inicio and fecha_fin:
+            fecha_inicio_dt = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+            fecha_fin_dt = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
+            query = query.filter(DepositoBancario.fecha_deposito.between(fecha_inicio_dt, fecha_fin_dt))
+
+        depositos = query.all()
+
+        # Calcular estadísticas
+        total_depositos = len(depositos)
+        total_monto = sum(d.monto for d in depositos)
+        depositos_conciliados = [d for d in depositos if d.estado == 'CONCILIADO']
+        total_conciliados = len(depositos_conciliados)
+        monto_conciliado = sum(d.monto for d in depositos_conciliados)
+
+        # Por método de depósito
+        por_metodo = {}
+        for d in depositos:
+            metodo = d.metodo_deposito or 'No especificado'
+            if metodo not in por_metodo:
+                por_metodo[metodo] = {'count': 0, 'monto': 0}
+            por_metodo[metodo]['count'] += 1
+            por_metodo[metodo]['monto'] += d.monto
+
+        return jsonify({
+            'success': True,
+            'estadisticas': {
+                'total_depositos': total_depositos,
+                'total_monto': total_monto,
+                'depositos_conciliados': total_conciliados,
+                'monto_conciliado': monto_conciliado,
+                'por_metodo': por_metodo,
+                'porcentaje_conciliacion': (total_conciliados / total_depositos * 100) if total_depositos > 0 else 0
+            }
+        })
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+    
+
 # ============================================ MODELO DE ACTIVOS FIJOS EN APP.PY ========================================================
 
 # === RUTAS DE ACTIVOS FIJOS ===

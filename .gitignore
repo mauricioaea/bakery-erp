@@ -1,5 +1,5 @@
 # ==========================================
-# .gitignore OPTIMIZADO - SISTEMA PANADERÖA
+# .gitignore OPTIMIZADO - SISTEMA PANADERï¿½A
 # ==========================================
 
 # Entorno virtual de Python
@@ -19,7 +19,7 @@ __pycache__/
 *.pyd
 .Python
 
-# Archivos de entorno y configuraci¢n sensible
+# Archivos de entorno y configuraciï¿½n sensible
 .env
 .env.local
 .env.production
@@ -42,7 +42,7 @@ ehthumbs.db
 *.swo
 *~
 
-# Logs y archivos de diagn¢stico
+# Logs y archivos de diagnï¿½stico
 *.log
 logs/
 pip-log.txt
@@ -73,3 +73,18 @@ tmp/
 *.tmp
 *_respaldo_*
 backups_ultra_seguros/ 
+# Backups y datos
+backup_antiguos/
+*.db
+instance/
+databases_tenants/
+
+# Archivos sensibles
+.env
+*.env
+config.py
+secrets.py"migrations/__pycache__/" 
+limpieza_super_segura.py 
+__pycache__/ 
+*.pyc 
+instance/ 

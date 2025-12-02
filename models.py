@@ -1868,6 +1868,54 @@ class SaldoBanco(db.Model):
     def __repr__(self):
         return f'<SaldoBanco ${self.saldo_actual}>'
     
+class DepositoBancario(db.Model):
+    """Modelo para registrar depósitos bancarios - 100% MULTI-TENANT"""
+    __tablename__ = 'depositos_bancarios'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # ✅ CRÍTICO: Aislamiento multi-tenant
+    panaderia_id = db.Column(db.Integer, db.ForeignKey('panaderias.id'), nullable=False)
+    
+    # Información básica del depósito
+    fecha_deposito = db.Column(db.Date, nullable=False)
+    monto = db.Column(db.Float, nullable=False)
+    descripcion = db.Column(db.String(200))
+    referencia = db.Column(db.String(50))
+    cuenta_bancaria = db.Column(db.String(100))
+    metodo_deposito = db.Column(db.String(50))  # 'efectivo', 'transferencia', 'cheque'
+    
+    # Estado del depósito
+    estado = db.Column(db.String(20), default='REGISTRADO')  # REGISTRADO, CONCILIADO, ANULADO
+    fecha_conciliacion = db.Column(db.Date)
+    
+    # Auditoría
+    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
+    fecha_actualizacion = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relaciones
+    panaderia = db.relationship('Panaderia', backref=db.backref('depositos_bancarios', lazy=True))
+    
+    def __repr__(self):
+        return f'<DepositoBancario {self.id}: ${self.monto} - {self.fecha_deposito}>'
+    
+    def to_dict(self):
+        """Convierte el modelo a diccionario para JSON"""
+        return {
+            'id': self.id,
+            'panaderia_id': self.panaderia_id,
+            'fecha_deposito': self.fecha_deposito.isoformat() if self.fecha_deposito else None,
+            'monto': self.monto,
+            'descripcion': self.descripcion,
+            'referencia': self.referencia,
+            'cuenta_bancaria': self.cuenta_bancaria,
+            'metodo_deposito': self.metodo_deposito,
+            'estado': self.estado,
+            'fecha_conciliacion': self.fecha_conciliacion.isoformat() if self.fecha_conciliacion else None,
+            'fecha_creacion': self.fecha_creacion.isoformat() if self.fecha_creacion else None,
+            'fecha_actualizacion': self.fecha_actualizacion.isoformat() if self.fecha_actualizacion else None
+        }
+    
 # === NUEVA CLASE PARA PAGOS INDIVIDUALES ===
 
 class PagoIndividual(db.Model): 

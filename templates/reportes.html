@@ -102,6 +102,11 @@
         .reporte-card.gerencial {
             border-left-color: #27ae60;
         }
+        .reporte-card.unificado {
+            border-left-color: #9b59b6;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e8f4fd 100%);
+            border: 2px solid #9b59b6;
+        }
         .reporte-card h3 {
             color: #2c3e50;
             margin-bottom: 10px;
@@ -137,6 +142,22 @@
         .btn-warning {
             background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
             color: white;
+        }
+        .btn-purple {
+            background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+            color: white;
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+        }
+        .btn-info {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
+        }
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.8em;
         }
         .btn:hover {
             transform: scale(1.05);
@@ -184,13 +205,209 @@
             grid-template-columns: 1fr 1fr;
             gap: 20px;
         }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        .bg-success { background: #27ae60; color: white; }
+        .bg-info { background: #3498db; color: white; }
+        .bg-warning { background: #f39c12; color: white; }
+        .bg-purple { background: #9b59b6; color: white; }
+        .bg-danger { background: #e74c3c; color: white; }
+        .bg-secondary { background: #6c757d; color: white; }
         
+        /* Select Styles */
+        select.form-control {
+            background: white;
+            cursor: pointer;
+        }
+        
+        /* Tabla de depósitos */
+        .table-container {
+            overflow-x: auto;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .depositos-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        .depositos-table th {
+            background: #34495e;
+            color: white;
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: bold;
+        }
+        .depositos-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .depositos-table tr:hover {
+            background: #f8f9fa;
+        }
+        .estado-registrado {
+            color: #f39c12;
+            font-weight: bold;
+        }
+        .estado-conciliado {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .estado-anulado {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .acciones-cell {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        
+        /* Filtros */
+        .filtros-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        .filtro-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .filtro-group label {
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        /* Estadísticas */
+        .estadisticas-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .estadistica-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .estadistica-valor {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 10px 0;
+        }
+        .estadistica-label {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        .modal-content {
+            position: relative;
+            background: white;
+            margin: 50px auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .modal-header h3 {
+            color: #2c3e50;
+            margin: 0;
+        }
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #7f8c8d;
+        }
+        .close-modal:hover {
+            color: #e74c3c;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .form-full-width {
+            grid-column: 1 / -1;
+        }
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #f0f0f0;
+        }
+        
+        /* Loader */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Responsive */
         @media (max-width: 768px) {
-            .date-grid {
+            .date-grid,
+            .form-grid {
                 grid-template-columns: 1fr;
             }
             .reporte-grid {
                 grid-template-columns: 1fr;
+            }
+            .filtros-container {
+                grid-template-columns: 1fr;
+            }
+            .modal-content {
+                margin: 20px auto;
+                padding: 20px;
             }
         }
     </style>
@@ -241,12 +458,44 @@
             </form>
         </div>
 
-        <!-- Reportes Contables -->
+        <!-- Reporte Unificado de Tesorería -->
+        <div class="card">
+            <h2>REPORTE UNIFICADO DE TESORERÍA</h2>
+            <p><strong>Consolidación Integral de Estados Financieros</strong><br/>
+            Documento unificado que integra el Libro Mayor con el Estado de Flujos de Efectivo para análisis financiero completo.</p>
+            
+            <div class="reporte-grid">
+                <div class="reporte-card unificado">
+                    <h3>Reporte Consolidado de Tesorería</h3>
+                    <p><strong>Integración de Estados Financieros</strong><br/>
+                    Combina el detalle transaccional del Libro Mayor con el análisis de flujos del Estado de Efectivo, proporcionando una visión integral de la posición de liquidez y gestión de tesorería.</p>
+                    
+                    <div class="form-group">
+                        <label for="nivel_detalle_tesoreria"><strong>Nivel de Detalle:</strong></label>
+                        <select id="nivel_detalle_tesoreria" class="form-control">
+                            <option value="resumen">Resumen Ejecutivo</option>
+                            <option value="completo" selected>Reporte Completo</option>
+                            <option value="detallado">Análisis Extendido</option>
+                        </select>
+                    </div>
+                    
+                    <button class="btn btn-purple" onclick="generarTesoreriaUnificado()">
+                        Generar Reporte Consolidado
+                    </button>
+                    
+                   
+                </div>
+            </div>
+        </div>
+
+   
+        <!-- Reportes Contables Profesionales -->
         <div class="card">
             <h2>🧮 Reportes Contables Profesionales</h2>
             <p>Documentos formales para presentación ante contador y autoridades fiscales</p>
             
             <div class="reporte-grid">
+                <!-- Tarjeta 1: Estado de Resultados (MANTENER) -->
                 <div class="reporte-card contable">
                     <h3>📈 Estado de Resultados</h3>
                     <p><strong>Pérdidas y Ganancias</strong><br/>
@@ -256,25 +505,7 @@
                     </button>
                 </div>
                 
-                <div class="reporte-card contable">
-                    <h3>💸 Flujo de Caja</h3>
-                    <p><strong>Estado de Flujos de Efectivo</strong><br/>
-                    Detalla entradas y salidas de efectivo diarias. Crucial para gestión de liquidez y planeación financiera.</p>
-                    <button class="btn btn-primary" onclick="generarReporte('flujo_caja')">
-                        📥 Descargar PDF
-                    </button>
-                </div>
-                
-                <div class="reporte-card contable">
-                    <h3>📋 Libro Diario Contable</h3>
-                    <p><strong>Registro Cronológico</strong><br/>
-                    Todos los movimientos financieros ordenados por fecha. Base para la contabilidad formal y auditorías.</p>
-                    <button class="btn btn-primary" onclick="generarReporte('libro_diario')">
-                        📥 Descargar PDF
-                    </button>
-                </div>
-                
-                <!-- Reemplaza la tarjeta de Conciliación Bancaria: -->
+                <!-- Tarjeta 2: Conciliación Bancaria (MANTENER) -->
                 <div class="reporte-card contable">
                     <h3>🏦 Conciliación Bancaria</h3>
                     <p><strong>Conciliación de Saldos</strong><br/>
@@ -283,35 +514,124 @@
                         📥 Generar Conciliación
                     </button>
                 </div>
-
-                <!-- Agrega este modal al final del body (antes del script): -->
-                <div id="modalConciliacion" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
-                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 15px; width: 90%; max-width: 500px;">
-                        <h3 style="margin-bottom: 20px;">🏦 Conciliación Bancaria</h3>
-                        
-                        <div class="form-group">
-                            <label>Fecha de Corte:</label>
-                            <input type="date" id="fecha_corte" class="form-control" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Saldo según Extracto Bancario:</label>
-                            <input type="number" step="0.01" id="saldo_extracto" class="form-control" placeholder="Ej: 1,500,000" required>
-                            <small>Ingresa el saldo que aparece en tu extracto bancario</small>
-                        </div>
-                        
-                        <div style="display: flex; gap: 10px; margin-top: 20px;">
-                            <button type="button" class="btn btn-primary" onclick="generarConciliacion()" style="flex: 1;">
-                                📊 Generar Conciliación
-                            </button>
-                            <button type="button" class="btn" onclick="cerrarModalConciliacion()" style="flex: 1; background: #95a5a6; color: white;">
-                                Cancelar
-                            </button>
-                        </div>
-                    </div>
-                </div>
+            </div>
+            
+            <!-- ✅ NOTA INFORMATIVA SOBRE LA CONSOLIDACIÓN -->
+            <div style="margin-top: 20px; padding: 15px; background: #e8f4fd; border-radius: 8px; border-left: 4px solid #3498db;">
+                <p style="margin: 0; color: #2c3e50; font-size: 0.9em;">
+                    <strong>💡 Nota:</strong> Los reportes de <strong>Flujo de Caja</strong> y <strong>Libro Diario Contable</strong> han sido consolidados en el nuevo 
+                    <strong>Reporte Unificado de Tesorería</strong> para ofrecer un análisis más completo e integrado.
+                </p>
             </div>
         </div>
+
+        <!-- ======================================== -->
+        <!-- SECCIÓN NUEVA: GESTIÓN DE DEPÓSITOS BANCARIOS -->
+        <!-- ======================================== -->
+        <div class="card">
+            <h2><i class="fas fa-piggy-bank"></i> Gestión de Depósitos Bancarios</h2>
+            <p>Administración y conciliación de depósitos bancarios para control de tesorería</p>
+            
+            <!-- Estadísticas Rápidas -->
+            <div class="estadisticas-container" id="estadisticasDepositos">
+                <!-- Se llenará con JavaScript -->
+                <div class="estadistica-card">
+                    <div class="estadistica-label">Total Depósitos</div>
+                    <div class="estadistica-valor">$0</div>
+                    <div class="estadistica-label">Periodo actual</div>
+                </div>
+                <div class="estadistica-card">
+                    <div class="estadistica-label">Conciliados</div>
+                    <div class="estadistica-valor">0%</div>
+                    <div class="estadistica-label">Tasa de conciliación</div>
+                </div>
+                <div class="estadistica-card">
+                    <div class="estadistica-label">Monto Pendiente</div>
+                    <div class="estadistica-valor">$0</div>
+                    <div class="estadistica-label">Por conciliar</div>
+                </div>
+            </div>
+            
+            <!-- Filtros -->
+            <div class="filtros-container">
+                <div class="filtro-group">
+                    <label>Estado:</label>
+                    <select id="filtroEstado" class="form-control" onchange="cargarDepositos()">
+                        <option value="">Todos los estados</option>
+                        <option value="REGISTRADO">Registrado</option>
+                        <option value="CONCILIADO">Conciliado</option>
+                        <option value="ANULADO">Anulado</option>
+                    </select>
+                </div>
+                <div class="filtro-group">
+                    <label>Método de depósito:</label>
+                    <select id="filtroMetodo" class="form-control" onchange="cargarDepositos()">
+                        <option value="">Todos los métodos</option>
+                        <option value="efectivo">Efectivo</option>
+                        <option value="transferencia">Transferencia</option>
+                        <option value="cheque">Cheque</option>
+                    </select>
+                </div>
+                <div class="filtro-group">
+                    <label>Mostrar:</label>
+                    <select id="filtroMostrar" class="form-control" onchange="cargarDepositos()">
+                        <option value="50">Últimos 50</option>
+                        <option value="100">Últimos 100</option>
+                        <option value="250">Últimos 250</option>
+                        <option value="todos">Todos</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Botones de Acción -->
+            <div style="text-align: center; margin: 20px 0;">
+                <button class="btn btn-success" onclick="abrirModalDeposito('crear')">
+                    <i class="fas fa-plus-circle"></i> Nuevo Depósito
+                </button>
+                <button class="btn btn-info" onclick="cargarEstadisticas()">
+                    <i class="fas fa-chart-bar"></i> Actualizar Estadísticas
+                </button>
+                <button class="btn btn-primary" onclick="cargarDepositos()">
+                    <i class="fas fa-sync-alt"></i> Refrescar Lista
+                </button>
+            </div>
+            
+            <!-- Tabla de Depósitos -->
+            <div class="table-container">
+                <div id="loaderDepositos" class="loader" style="display: none;"></div>
+                <table class="depositos-table" id="tablaDepositos">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Fecha</th>
+                            <th>Descripción</th>
+                            <th>Monto</th>
+                            <th>Método</th>
+                            <th>Cuenta</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Se llenará con JavaScript -->
+                        <tr id="sinDepositos">
+                            <td colspan="8" style="text-align: center; padding: 40px; color: #7f8c8d;">
+                                <i class="fas fa-search" style="font-size: 2em; margin-bottom: 10px; display: block;"></i>
+                                No hay depósitos para mostrar. <a href="#" onclick="abrirModalDeposito('crear')">Crear el primer depósito</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Paginación -->
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="btn btn-secondary" onclick="cargarMasDepositos()" id="btnCargarMas" style="display: none;">
+                    <i class="fas fa-chevron-down"></i> Cargar más depósitos
+                </button>
+            </div>
+        </div>
+        <!-- FIN SECCIÓN DEPÓSITOS BANCARIOS -->
 
         <!--------------------------------------- Reportes Gerenciales ------------------------------------------------------->
         <div class="card">
@@ -355,7 +675,7 @@
                     </button>
                 </div>
 
-                        <!-- 🚀 NUEVO REPORTE AVANZADO UNIFICADO -->
+                <!-- 🚀 NUEVO REPORTE AVANZADO UNIFICADO -->
                 <div class="reporte-card gerencial">
                     <h3><i class="fas fa-robot"></i> Reporte Avanzado Ventas + IA</h3>
                     <p><strong>Reporte Unificado Inteligente</strong><br/>
@@ -375,191 +695,806 @@
         </div>
     </div>
 
+    <!-- Modal Conciliación Bancaria -->
+    <div id="modalConciliacion" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 15px; width: 90%; max-width: 500px;">
+            <h3 style="margin-bottom: 20px;">🏦 Conciliación Bancaria</h3>
+            
+            <div class="form-group">
+                <label>Fecha de Corte:</label>
+                <input type="date" id="fecha_corte" class="form-control" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Saldo según Extracto Bancario:</label>
+                <input type="number" step="0.01" id="saldo_extracto" class="form-control" placeholder="Ej: 1,500,000" required>
+                <small>Ingresa el saldo que aparece en tu extracto bancario</small>
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="button" class="btn btn-primary" onclick="generarConciliacion()" style="flex: 1;">
+                    📊 Generar Conciliación
+                </button>
+                <button type="button" class="btn" onclick="cerrarModalConciliacion()" style="flex: 1; background: #95a5a6; color: white;">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Depósitos Bancarios (Crear/Editar) -->
+    <div id="modalDeposito" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalDepositoTitulo">Nuevo Depósito Bancario</h3>
+                <button class="close-modal" onclick="cerrarModalDeposito()">&times;</button>
+            </div>
+            <form id="formDeposito" onsubmit="guardarDeposito(event)">
+                <input type="hidden" id="depositoId" value="">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="fechaDeposito">Fecha de depósito: *</label>
+                        <input type="date" id="fechaDeposito" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="montoDeposito">Monto: *</label>
+                        <input type="number" step="0.01" id="montoDeposito" class="form-control" placeholder="0.00" required>
+                    </div>
+                    <div class="form-group form-full-width">
+                        <label for="descripcionDeposito">Descripción:</label>
+                        <input type="text" id="descripcionDeposito" class="form-control" placeholder="Ej: Depósito de cierre diario">
+                    </div>
+                    <div class="form-group">
+                        <label for="referenciaDeposito">Referencia:</label>
+                        <input type="text" id="referenciaDeposito" class="form-control" placeholder="Ej: TRANSF-001">
+                    </div>
+                    <div class="form-group">
+                        <label for="cuentaDeposito">Cuenta bancaria:</label>
+                        <input type="text" id="cuentaDeposito" class="form-control" placeholder="Ej: Cuenta Principal">
+                    </div>
+                    <div class="form-group">
+                        <label for="metodoDeposito">Método de depósito: *</label>
+                        <select id="metodoDeposito" class="form-control" required>
+                            <option value="">Seleccionar...</option>
+                            <option value="efectivo">Efectivo</option>
+                            <option value="transferencia">Transferencia</option>
+                            <option value="cheque">Cheque</option>
+                            <option value="otros">Otros</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="estadoDeposito">Estado:</label>
+                        <select id="estadoDeposito" class="form-control">
+                            <option value="REGISTRADO">Registrado</option>
+                            <option value="CONCILIADO">Conciliado</option>
+                            <option value="ANULADO">Anulado</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="cerrarModalDeposito()">Cancelar</button>
+                    <button type="submit" class="btn btn-success" id="btnGuardarDeposito">
+                        <i class="fas fa-save"></i> Guardar Depósito
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmación -->
+    <div id="modalConfirmacion" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3 id="modalConfirmacionTitulo">Confirmar acción</h3>
+                <button class="close-modal" onclick="cerrarModalConfirmacion()">&times;</button>
+            </div>
+            <div style="padding: 20px;">
+                <p id="modalConfirmacionMensaje">¿Estás seguro de realizar esta acción?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="cerrarModalConfirmacion()">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="btnConfirmarAccion">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-    // Establecer fechas por defecto (últimos 30 días)
-    function inicializarFechas() {
-        const hoy = new Date();
-        const hace30Dias = new Date();
-        hace30Dias.setDate(hoy.getDate() - 30);
-        
-        document.getElementById('fecha_inicio').value = formatearFecha(hace30Dias);
-        document.getElementById('fecha_fin').value = formatearFecha(hoy);
-    }
-    
-    function formatearFecha(fecha) {
-        return fecha.toISOString().split('T')[0];
-    }
-    
-    function establecerPeriodo(periodo) {
-        const hoy = new Date();
-        const fechaInicio = new Date();
-        
-        switch(periodo) {
-            case 'semana':
-                fechaInicio.setDate(hoy.getDate() - 7);
-                break;
-            case 'mes':
-                fechaInicio.setDate(hoy.getDate() - 30);
-                break;
-            case 'trimestre':
-                fechaInicio.setDate(hoy.getDate() - 90);
-                break;
+        // Variables globales
+        let paginaActual = 1;
+        const limitePorPagina = 50;
+        let hayMasDepositos = true;
+
+        // ========== FUNCIONES GENERALES ==========
+        function inicializarFechas() {
+            const hoy = new Date();
+            const hace30Dias = new Date();
+            hace30Dias.setDate(hoy.getDate() - 30);
+            
+            document.getElementById('fecha_inicio').value = formatearFecha(hace30Dias);
+            document.getElementById('fecha_fin').value = formatearFecha(hoy);
         }
         
-        document.getElementById('fecha_inicio').value = formatearFecha(fechaInicio);
-        document.getElementById('fecha_fin').value = formatearFecha(hoy);
-    }
-
-    // ========== FUNCIONES DE CONCILIACIÓN BANCARIA (EN ÁMBITO GLOBAL) ==========
-    
-    function abrirModalConciliacion() {
-        // Establecer fecha actual como fecha de corte por defecto
-        document.getElementById('fecha_corte').value = new Date().toISOString().split('T')[0];
-        document.getElementById('modalConciliacion').style.display = 'block';
-    }
-
-    function cerrarModalConciliacion() {
-        document.getElementById('modalConciliacion').style.display = 'none';
-    }
-
-    function generarConciliacion() {
-    const fechaCorte = document.getElementById('fecha_corte').value;
-    const saldoExtracto = document.getElementById('saldo_extracto').value;
-    
-    if (!fechaCorte || !saldoExtracto) {
-        alert('❌ Por favor completa todos los campos');
-        return;
-    }
-    
-    if (saldoExtracto <= 0) {
-        alert('❌ El saldo del extracto debe ser mayor a 0');
-        return;
-    }
-    
-    console.log('📤 Enviando solicitud de conciliación:', { fechaCorte, saldoExtracto });
-    
-    // Mostrar mensaje de carga
-    const boton = event.target;
-    const textoOriginal = boton.textContent;
-    boton.textContent = '⏳ Generando...';
-    boton.disabled = true;
-    
-    const url = `/generar_reporte_conciliacion?fecha_corte=${fechaCorte}&saldo_extracto=${saldoExtracto}`;
-    
-    // Usar fetch para mejor control
-    fetch(url)
-        .then(response => {
-            console.log('📥 Respuesta recibida, status:', response.status);
+        function formatearFecha(fecha) {
+            return fecha.toISOString().split('T')[0];
+        }
+        
+        function establecerPeriodo(periodo) {
+            const hoy = new Date();
+            const fechaInicio = new Date();
             
-            if (!response.ok) {
-                throw new Error(`Error HTTP: ${response.status}`);
+            switch(periodo) {
+                case 'semana':
+                    fechaInicio.setDate(hoy.getDate() - 7);
+                    break;
+                case 'mes':
+                    fechaInicio.setDate(hoy.getDate() - 30);
+                    break;
+                case 'trimestre':
+                    fechaInicio.setDate(hoy.getDate() - 90);
+                    break;
             }
-            return response.blob();
-        })
-        .then(blob => {
-            console.log('📄 Blob recibido:', {
-                size: blob.size,
-                type: blob.type
+            
+            document.getElementById('fecha_inicio').value = formatearFecha(fechaInicio);
+            document.getElementById('fecha_fin').value = formatearFecha(hoy);
+            
+            // Actualizar depósitos cuando se cambia el período
+            setTimeout(() => cargarDepositos(), 100);
+        }
+
+        // ========== FUNCIONES DE DEPÓSITOS BANCARIOS ==========
+        function cargarDepositos(resetear = true) {
+            if (resetear) {
+                paginaActual = 1;
+                hayMasDepositos = true;
+                const tbody = document.getElementById('tablaDepositos').querySelector('tbody');
+                if (tbody) tbody.innerHTML = '';
+            }
+            
+            if (!hayMasDepositos) return;
+            
+            const loader = document.getElementById('loaderDepositos');
+            const fechaInicio = document.getElementById('fecha_inicio').value;
+            const fechaFin = document.getElementById('fecha_fin').value;
+            const estado = document.getElementById('filtroEstado').value;
+            const metodo = document.getElementById('filtroMetodo').value;
+            const mostrar = document.getElementById('filtroMostrar').value;
+            
+            let url = `/depositos_bancarios?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+            if (estado) url += `&estado=${estado}`;
+            if (metodo) url += `&metodo=${metodo}`;
+            
+            if (loader) loader.style.display = 'block';
+            
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        if (response.status === 403) {
+                            mostrarError('No tienes permisos para acceder a esta sección');
+                            return null;
+                        }
+                        throw new Error('Error en la respuesta del servidor');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (!data) return;
+                    
+                    if (data.success) {
+                        renderizarDepositos(data.depositos);
+                        actualizarEstadisticas(data.depositos);
+                        
+                        // Controlar paginación
+                        if (data.depositos.length < limitePorPagina) {
+                            hayMasDepositos = false;
+                            const btnCargarMas = document.getElementById('btnCargarMas');
+                            if (btnCargarMas) btnCargarMas.style.display = 'none';
+                        } else {
+                            const btnCargarMas = document.getElementById('btnCargarMas');
+                            if (btnCargarMas) btnCargarMas.style.display = 'block';
+                        }
+                    } else {
+                        mostrarError('Error al cargar depósitos: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    mostrarError('Error de conexión al cargar depósitos');
+                })
+                .finally(() => {
+                    if (loader) loader.style.display = 'none';
+                });
+        }
+        
+        function cargarMasDepositos() {
+            paginaActual++;
+            cargarDepositos(false);
+        }
+        
+        function renderizarDepositos(depositos) {
+            const tbody = document.getElementById('tablaDepositos').querySelector('tbody');
+            if (!tbody) return;
+            
+            if (!depositos || depositos.length === 0) {
+                if (paginaActual === 1) {
+                    tbody.innerHTML = `
+                        <tr id="sinDepositos">
+                            <td colspan="8" style="text-align: center; padding: 40px; color: #7f8c8d;">
+                                <i class="fas fa-search" style="font-size: 2em; margin-bottom: 10px; display: block;"></i>
+                                No hay depósitos para mostrar. <a href="#" onclick="abrirModalDeposito('crear')">Crear el primer depósito</a>
+                            </td>
+                        </tr>
+                    `;
+                }
+                return;
+            }
+            
+            // Eliminar el mensaje de "sin depósitos" si existe
+            const sinDepositos = document.getElementById('sinDepositos');
+            if (sinDepositos) sinDepositos.remove();
+            
+            depositos.forEach(deposito => {
+                const fila = document.createElement('tr');
+                fila.setAttribute('data-id', deposito.id);
+                
+                const claseEstado = `estado-${deposito.estado ? deposito.estado.toLowerCase() : 'registrado'}`;
+                
+                // Formatear monto SIN decimales si es entero
+                const monto = parseFloat(deposito.monto);
+                const montoFormateado = monto % 1 === 0 ? 
+                    `$${monto.toLocaleString('es-CO')}` : 
+                    `$${monto.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+                
+                let acciones = '';
+                if (deposito.estado === 'REGISTRADO') {
+                    acciones = `
+                        <button class="btn btn-success btn-sm" onclick="conciliarDeposito(${deposito.id})" title="Marcar como conciliado">
+                            <i class="fas fa-check"></i> Conciliar
+                        </button>
+                        <button class="btn btn-info btn-sm" onclick="abrirModalDeposito('editar', ${deposito.id})" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="confirmarEliminarDeposito(${deposito.id})" title="Eliminar">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    `;
+                } else if (deposito.estado === 'CONCILIADO') {
+                    acciones = `
+                        <button class="btn btn-info btn-sm" onclick="abrirModalDeposito('editar', ${deposito.id})" title="Ver/Editar">
+                            <i class="fas fa-eye"></i> Ver
+                        </button>
+                    `;
+                } else {
+                    acciones = `
+                        <button class="btn btn-info btn-sm" onclick="abrirModalDeposito('editar', ${deposito.id})" title="Ver">
+                            <i class="fas fa-eye"></i> Ver
+                        </button>
+                    `;
+                }
+                
+                fila.innerHTML = `
+                    <td>${deposito.id}</td>
+                    <td>${deposito.fecha_deposito}</td>
+                    <td>${deposito.descripcion || 'Sin descripción'}</td>
+                    <td><strong>${montoFormateado}</strong></td>
+                    <td><span class="badge bg-info">${deposito.metodo_deposito || 'No especificado'}</span></td>
+                    <td>${deposito.cuenta_bancaria || 'No especificada'}</td>
+                    <td><span class="${claseEstado}">${deposito.estado}</span></td>
+                    <td>
+                        <div class="acciones-cell">
+                            ${acciones}
+                        </div>
+                    </td>
+                `;
+                
+                tbody.appendChild(fila);
+            });
+        }
+        
+        function cargarEstadisticas() {
+            const fechaInicio = document.getElementById('fecha_inicio').value;
+            const fechaFin = document.getElementById('fecha_fin').value;
+            
+            if (!fechaInicio || !fechaFin) {
+                mostrarError('Selecciona un período para ver estadísticas');
+                return;
+            }
+            
+            fetch(`/depositos_bancarios/estadisticas?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        actualizarEstadisticasUI(data.estadisticas);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error cargando estadísticas:', error);
+                    mostrarError('Error al cargar estadísticas');
+                });
+        }
+        
+        function actualizarEstadisticas(depositos) {
+            if (!depositos || depositos.length === 0) {
+                actualizarEstadisticasUI({
+                    total_depositos: 0,
+                    total_monto: 0,
+                    depositos_conciliados: 0,
+                    monto_conciliado: 0,
+                    porcentaje_conciliacion: 0
+                });
+                return;
+            }
+            
+            const totalDepositos = depositos.length;
+            const totalMonto = depositos.reduce((sum, d) => sum + parseFloat(d.monto), 0);
+            const depositosConciliados = depositos.filter(d => d.estado === 'CONCILIADO');
+            const totalConciliados = depositosConciliados.length;
+            const montoConciliado = depositosConciliados.reduce((sum, d) => sum + parseFloat(d.monto), 0);
+            const porcentajeConciliacion = totalDepositos > 0 ? (totalConciliados / totalDepositos * 100) : 0;
+            
+            actualizarEstadisticasUI({
+                total_depositos: totalDepositos,
+                total_monto: totalMonto,
+                depositos_conciliados: totalConciliados,
+                monto_conciliado: montoConciliado,
+                porcentaje_conciliacion: porcentajeConciliacion
+            });
+        }
+        
+        function actualizarEstadisticasUI(estadisticas) {
+            const container = document.getElementById('estadisticasDepositos');
+            if (!container) return;
+            
+            const cards = container.querySelectorAll('.estadistica-card');
+            
+            if (cards.length >= 3) {
+                // Formatear montos sin decimales
+                const formatMonto = (monto) => {
+                    const num = parseFloat(monto);
+                    return num % 1 === 0 ? 
+                        `$${num.toLocaleString('es-CO')}` : 
+                        `$${num.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+                };
+                
+                cards[0].querySelector('.estadistica-valor').textContent = formatMonto(estadisticas.total_monto);
+                cards[1].querySelector('.estadistica-valor').textContent = `${estadisticas.porcentaje_conciliacion.toFixed(0)}%`;
+                cards[2].querySelector('.estadistica-valor').textContent = formatMonto(estadisticas.total_monto - estadisticas.monto_conciliado);
+            }
+        }
+        
+        function abrirModalDeposito(accion, id = null) {
+            const modal = document.getElementById('modalDeposito');
+            const titulo = document.getElementById('modalDepositoTitulo');
+            const form = document.getElementById('formDeposito');
+            
+            if (!modal || !titulo || !form) {
+                mostrarError('Error: No se pudo abrir el modal');
+                return;
+            }
+            
+            if (accion === 'crear') {
+                titulo.textContent = 'Nuevo Depósito Bancario';
+                form.reset();
+                document.getElementById('depositoId').value = '';
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('fechaDeposito').value = today;
+                document.getElementById('estadoDeposito').value = 'REGISTRADO';
+            } else if (accion === 'editar' && id) {
+                titulo.textContent = 'Editar Depósito Bancario';
+                
+                // Cargar datos del depósito
+                fetch(`/depositos_bancarios/${id}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.deposito) {
+                            const d = data.deposito;
+                            document.getElementById('depositoId').value = d.id;
+                            document.getElementById('fechaDeposito').value = d.fecha_deposito;
+                            document.getElementById('montoDeposito').value = d.monto;
+                            document.getElementById('descripcionDeposito').value = d.descripcion || '';
+                            document.getElementById('referenciaDeposito').value = d.referencia || '';
+                            document.getElementById('cuentaDeposito').value = d.cuenta_bancaria || '';
+                            document.getElementById('metodoDeposito').value = d.metodo_deposito || 'efectivo';
+                            document.getElementById('estadoDeposito').value = d.estado || 'REGISTRADO';
+                        } else {
+                            mostrarError(data.error || 'Error al cargar el depósito');
+                            cerrarModalDeposito();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error cargando depósito:', error);
+                        mostrarError('Error de conexión al cargar el depósito');
+                        cerrarModalDeposito();
+                    });
+            }
+            
+            modal.style.display = 'block';
+        }
+        
+        function cerrarModalDeposito() {
+            const modal = document.getElementById('modalDeposito');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+            const form = document.getElementById('formDeposito');
+            if (form) {
+                form.reset();
+            }
+        }
+        
+        function formatearMonto(monto) {
+            const numero = parseFloat(monto);
+            // Si es un número entero, mostrar sin decimales
+            if (numero % 1 === 0) {
+                return numero.toLocaleString('es-CO'); // Formato colombiano sin decimales
+            } else {
+                // Si tiene decimales, mostrar con 2 decimales
+                return numero.toLocaleString('es-CO', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            }
+        }
+        function guardarDeposito(event) {
+            if (event) {
+                event.preventDefault();
+            }
+            
+            const id = document.getElementById('depositoId').value;
+            const esNuevo = !id;
+            const url = esNuevo ? '/depositos_bancarios/crear' : `/depositos_bancarios/editar/${id}`;
+            const metodo = 'POST';
+            
+            // Validar campos
+            const fecha = document.getElementById('fechaDeposito').value;
+            const monto = document.getElementById('montoDeposito').value;
+            const metodoDep = document.getElementById('metodoDeposito').value;
+            
+            if (!fecha) {
+                mostrarError('La fecha es obligatoria');
+                return false;
+            }
+            
+            if (!monto || parseFloat(monto) <= 0) {
+                mostrarError('El monto debe ser mayor a 0');
+                return false;
+            }
+            
+            if (!metodoDep) {
+                mostrarError('El método de depósito es obligatorio');
+                return false;
+            }
+            
+            const depositoData = {
+                fecha_deposito: fecha,
+                monto: parseFloat(monto),
+                descripcion: document.getElementById('descripcionDeposito').value,
+                referencia: document.getElementById('referenciaDeposito').value,
+                cuenta_bancaria: document.getElementById('cuentaDeposito').value,
+                metodo_deposito: metodoDep,
+                estado: document.getElementById('estadoDeposito').value
+            };
+            
+            const btnGuardar = document.getElementById('btnGuardarDeposito');
+            if (!btnGuardar) return false;
+            
+            const textoOriginal = btnGuardar.innerHTML;
+            btnGuardar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+            btnGuardar.disabled = true;
+            
+            fetch(url, {
+                method: metodo,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(depositoData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    mostrarExito(esNuevo ? 'Depósito creado exitosamente' : 'Depósito actualizado exitosamente');
+                    cerrarModalDeposito();
+                    cargarDepositos(true);
+                    cargarEstadisticas();
+                } else {
+                    mostrarError(data.error || 'Error al guardar el depósito');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                mostrarError('Error de conexión al guardar el depósito');
+            })
+            .finally(() => {
+                btnGuardar.innerHTML = textoOriginal;
+                btnGuardar.disabled = false;
             });
             
-            if (blob.size === 0) {
-                throw new Error('El archivo PDF está vacío');
-            }
-            
-            if (blob.type !== 'application/pdf') {
-                console.warn('⚠️ El tipo MIME no es PDF:', blob.type);
-            }
-            
-            // Crear enlace para descargar el PDF
-            const urlBlob = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = urlBlob;
-            a.download = `conciliacion_bancaria_${fechaCorte}.pdf`;
-            a.style.display = 'none';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            
-            // Limpiar después de 1 segundo
-            setTimeout(() => {
-                URL.revokeObjectURL(urlBlob);
-            }, 1000);
-            
-            // Cerrar modal
-            cerrarModalConciliacion();
-            
-            console.log('✅ PDF descargado exitosamente');
-        })
-        .catch(error => {
-            console.error('❌ Error al generar conciliación:', error);
-            alert('❌ Error al generar el reporte. Verifica la consola del navegador y del servidor.');
-            
-            // Redirigir a reportes para ver mensajes flash
-            window.location.href = '/reportes';
-        })
-        .finally(() => {
-            // Restaurar botón
-            boton.textContent = textoOriginal;
-            boton.disabled = false;
-        });
-}
-
-    // Cerrar modal al hacer clic fuera
-    document.addEventListener('click', function(event) {
-        const modal = document.getElementById('modalConciliacion');
-        if (event.target === modal) {
-            cerrarModalConciliacion();
+            return false;
         }
-    });
-    
-    // ========== FUNCIÓN GENERAR REPORTE ==========
-    
-    function generarReporte(tipo) {
-    const fechaInicio = document.getElementById('fecha_inicio').value;
-    const fechaFin = document.getElementById('fecha_fin').value;
-    
-    if (!fechaInicio || !fechaFin) {
-        alert('❌ Por favor selecciona ambas fechas');
-        return;
-    }
-    
-    if (fechaInicio > fechaFin) {
-        alert('❌ La fecha de inicio no puede ser mayor a la fecha fin');
-        return;
-    }
-    
-    let url = '';
-    switch(tipo) {
-        case 'estado_resultados':
-            url = `/generar_reporte_estado_resultados?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
-            break;
-        case 'flujo_caja':
-            url = `/generar_reporte_flujo_caja?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
-            break;
-        case 'libro_diario':
-            url = `/generar_reporte_libro_diario?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
-            break;
-        case 'analisis_gastos':  // ✅ NUEVO REPORTE
-            url = `/generar_reporte_analisis_gastos?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
-            break;
-        /* OBSOLETO: case 'tendencia_ventas': url = ... */
-            break;
-        /* OBSOLETO: case 'ia_predictivo': url = ... */
-            break;
-        case 'analisis_inventarios':
-            url = `/generar_reporte_analisis_inventarios?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
-            break;
-        default:
-            alert('Reporte en desarrollo');
-            return;
-    }
-    
-    // Abrir en nueva pestaña
-    window.open(url, '_blank');
-}
-    
-    // Inicializar al cargar la página
-    document.addEventListener('DOMContentLoaded', inicializarFechas);
-</script>
+        
+        function conciliarDeposito(id) {
+            mostrarConfirmacion(
+                'Conciliar Depósito',
+                '¿Estás seguro de marcar este depósito como conciliado? Esta acción no se puede deshacer.',
+                () => {
+                    fetch(`/depositos_bancarios/conciliar/${id}`, {
+                        method: 'POST'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            mostrarExito('Depósito conciliado exitosamente');
+                            cargarDepositos(true);
+                            cargarEstadisticas();
+                        } else {
+                            mostrarError(data.error || 'Error al conciliar el depósito');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        mostrarError('Error de conexión al conciliar el depósito');
+                    });
+                }
+            );
+        }
+        
+        function confirmarEliminarDeposito(id) {
+            mostrarConfirmacion(
+                'Eliminar Depósito',
+                '¿Estás seguro de eliminar este depósito? Esta acción no se puede deshacer.',
+                () => eliminarDeposito(id)
+            );
+        }
+        
+        function eliminarDeposito(id) {
+            fetch(`/depositos_bancarios/eliminar/${id}`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    mostrarExito('Depósito eliminado exitosamente');
+                    cargarDepositos(true);
+                    cargarEstadisticas();
+                } else {
+                    mostrarError(data.error || 'Error al eliminar el depósito');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                mostrarError('Error de conexión al eliminar el depósito');
+            });
+        }
+        
+        // ========== FUNCIONES DE CONFIRMACIÓN ==========
+        function mostrarConfirmacion(titulo, mensaje, callback) {
+            const modal = document.getElementById('modalConfirmacion');
+            const tituloElem = document.getElementById('modalConfirmacionTitulo');
+            const mensajeElem = document.getElementById('modalConfirmacionMensaje');
+            const btnConfirmar = document.getElementById('btnConfirmarAccion');
+            
+            if (!modal || !tituloElem || !mensajeElem || !btnConfirmar) {
+                if (callback) callback();
+                return;
+            }
+            
+            tituloElem.textContent = titulo;
+            mensajeElem.textContent = mensaje;
+            btnConfirmar.onclick = function() {
+                if (callback) callback();
+                cerrarModalConfirmacion();
+            };
+            modal.style.display = 'block';
+        }
+        
+        function cerrarModalConfirmacion() {
+            const modal = document.getElementById('modalConfirmacion');
+            if (modal) modal.style.display = 'none';
+        }
+        
+        // ========== FUNCIONES DE MENSAJES ==========
+        function mostrarMensaje(tipo, mensaje) {
+            // Crear elemento de mensaje
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${tipo}`;
+            alertDiv.textContent = mensaje;
+            
+            // Agregar al contenedor de mensajes
+            const container = document.querySelector('.flash-messages');
+            if (container) {
+                container.appendChild(alertDiv);
+                
+                // Eliminar después de 5 segundos
+                setTimeout(() => {
+                    if (alertDiv.parentNode === container) {
+                        container.removeChild(alertDiv);
+                    }
+                }, 5000);
+            }
+        }
+        
+        function mostrarError(mensaje) {
+            mostrarMensaje('error', mensaje);
+        }
+        
+        function mostrarExito(mensaje) {
+            mostrarMensaje('success', mensaje);
+        }
+        
+        // ========== FUNCIONES DE CONCILIACIÓN BANCARIA ==========
+        function abrirModalConciliacion() {
+            const modal = document.getElementById('modalConciliacion');
+            const fechaCorte = document.getElementById('fecha_corte');
+            if (modal && fechaCorte) {
+                fechaCorte.value = new Date().toISOString().split('T')[0];
+                modal.style.display = 'block';
+            }
+        }
+
+        function cerrarModalConciliacion() {
+            const modal = document.getElementById('modalConciliacion');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function generarConciliacion() {
+            const fechaCorte = document.getElementById('fecha_corte').value;
+            const saldoExtracto = document.getElementById('saldo_extracto').value;
+            
+            if (!fechaCorte || !saldoExtracto) {
+                mostrarError('Por favor completa todos los campos');
+                return;
+            }
+            
+            if (parseFloat(saldoExtracto) <= 0) {
+                mostrarError('El saldo del extracto debe ser mayor a 0');
+                return;
+            }
+            
+            const boton = event.target;
+            const textoOriginal = boton.textContent;
+            boton.textContent = '⏳ Generando...';
+            boton.disabled = true;
+            
+            const url = `/generar_reporte_conciliacion?fecha_corte=${fechaCorte}&saldo_extracto=${saldoExtracto}`;
+            
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Error HTTP: ${response.status}`);
+                    }
+                    return response.blob();
+                })
+                .then(blob => {
+                    if (blob.size === 0) {
+                        throw new Error('El archivo PDF está vacío');
+                    }
+                    
+                    const urlBlob = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = urlBlob;
+                    a.download = `conciliacion_bancaria_${fechaCorte}.pdf`;
+                    a.style.display = 'none';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    
+                    setTimeout(() => {
+                        URL.revokeObjectURL(urlBlob);
+                    }, 1000);
+                    
+                    cerrarModalConciliacion();
+                    mostrarExito('Reporte de conciliación generado exitosamente');
+                })
+                .catch(error => {
+                    console.error('Error al generar conciliación:', error);
+                    mostrarError('Error al generar el reporte. Verifica la consola del navegador.');
+                })
+                .finally(() => {
+                    boton.textContent = textoOriginal;
+                    boton.disabled = false;
+                });
+        }
+
+        // ========== FUNCIÓN GENERAR REPORTE ==========
+        function generarReporte(tipo) {
+            const fechaInicio = document.getElementById('fecha_inicio').value;
+            const fechaFin = document.getElementById('fecha_fin').value;
+            
+            if (!fechaInicio || !fechaFin) {
+                mostrarError('Por favor selecciona ambas fechas');
+                return;
+            }
+            
+            if (fechaInicio > fechaFin) {
+                mostrarError('La fecha de inicio no puede ser mayor a la fecha fin');
+                return;
+            }
+            
+            let url = '';
+            switch(tipo) {
+                case 'estado_resultados':
+                    url = `/generar_reporte_estado_resultados?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+                    break;
+                case 'analisis_gastos':
+                    url = `/generar_reporte_analisis_gastos?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+                    break;
+                case 'tendencia_ventas':
+                    url = `/generar_reporte_tendencia_ventas?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+                    break;
+                case 'ia_predictivo':
+                    url = `/generar_reporte_ia_predictivo?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+                    break;
+                case 'analisis_inventarios':
+                    url = `/generar_reporte_analisis_inventarios?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+                    break;
+                default:
+                    mostrarError('Reporte en desarrollo');
+                    return;
+            }
+            
+            window.open(url, '_blank');
+        }
+
+        // ========== NUEVA FUNCIÓN: REPORTE UNIFICADO DE TESORERÍA ==========
+        function generarTesoreriaUnificado() {
+            const fechaInicio = document.getElementById('fecha_inicio').value;
+            const fechaFin = document.getElementById('fecha_fin').value;
+            const nivelDetalle = document.getElementById('nivel_detalle_tesoreria').value;
+            
+            if (!fechaInicio || !fechaFin) {
+                mostrarError('Por favor selecciona ambas fechas');
+                return;
+            }
+            
+            if (fechaInicio > fechaFin) {
+                mostrarError('La fecha de inicio no puede ser mayor a la fecha fin');
+                return;
+            }
+            
+            const url = `/generar_reporte_tesoreria_unificado?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}&nivel_detalle=${nivelDetalle}`;
+            
+            const niveles = {
+                'resumen': 'Resumen Ejecutivo',
+                'completo': 'Reporte Completo', 
+                'detallado': 'Detalle Extendido'
+            };
+            
+            if (confirm(`🎯 ¿Generar Reporte Unificado de Tesorería?\n\n📅 Período: ${fechaInicio} a ${fechaFin}\n📊 Nivel: ${niveles[nivelDetalle]}`)) {
+                window.open(url, '_blank');
+            }
+        }
+
+        // ========== INICIALIZACIÓN ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            inicializarFechas();
+            
+            // Cargar depósitos al iniciar
+            setTimeout(() => {
+                cargarDepositos();
+                cargarEstadisticas();
+            }, 500);
+            
+            // Cerrar modales al hacer clic fuera
+            document.addEventListener('click', function(event) {
+                if (event.target === document.getElementById('modalConciliacion')) {
+                    cerrarModalConciliacion();
+                }
+                if (event.target === document.getElementById('modalDeposito')) {
+                    cerrarModalDeposito();
+                }
+                if (event.target === document.getElementById('modalConfirmacion')) {
+                    cerrarModalConfirmacion();
+                }
+            });
+            
+            // Cerrar modales con ESC
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') {
+                    cerrarModalConciliacion();
+                    cerrarModalDeposito();
+                    cerrarModalConfirmacion();
+                }
+            });
+        });
+    </script>
 </body>
 </html>
