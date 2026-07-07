@@ -175,7 +175,7 @@
             <strong>Vendedor:</strong> {{ venta.usuario_asociado.username }}
         </div>
         
-        <!-- Items -->
+<!-- Items -->
         <table class="items-table">
             <thead>
                 <tr>
@@ -189,7 +189,9 @@
                 {% for detalle in detalles %}
                 <tr>
                     <td>
-                        {% if detalle.producto %}
+                        {% if detalle.nombre_producto %}
+                            {{ detalle.nombre_producto }}
+                        {% elif detalle.producto %}
                             {{ detalle.producto.nombre }}
                         {% elif detalle.producto_externo %}
                             {{ detalle.producto_externo.nombre }}
@@ -255,7 +257,7 @@
         </button>
         
         {% if venta.tipo_documento == 'ELECTRONICA' %}
-        <button onclick="descargarXMLFactura({{ venta.id }})" class="btn btn-success">
+        <button onclick="descargarXMLFactura('{{ venta.id }}')" class="btn btn-success">
             <i class="fas fa-file-export"></i> Descargar XML
         </button>
         {% endif %}

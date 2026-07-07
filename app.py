@@ -8,15 +8,16 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 # =============================================
 
 def crear_tenant_saas(nombre_panaderia, subdominio, email_contacto=None):
-    # Importar módulos necesarios
-    import sqlite3
-    import os
-    import shutil
     """
     Crear un nuevo tenant SaaS cuando se crea un cliente
     Returns: (éxito, mensaje, tenant_id)
     """
     try:
+        # Importar módulos necesarios
+        import sqlite3
+        import os
+        import shutil
+        
         # 1. REGISTRAR EN BD MAESTRA
         conn_maestra = sqlite3.connect('tenant_master.db')
         cursor_maestra = conn_maestra.cursor()
@@ -28,7 +29,7 @@ def crear_tenant_saas(nombre_panaderia, subdominio, email_contacto=None):
             return False, f"El subdominio '{subdominio}' ya existe", None
         
         # Nombre del archivo de BD
-        nombre_bd = f"panaderia_{subdominio}.db"
+        nombre_bd = f"{subdominio}.db"  # Cambiado a formato más simple
         ruta_bd = os.path.join('databases_tenants', nombre_bd)
         
         # Insertar nuevo tenant
@@ -41,21 +42,44 @@ def crear_tenant_saas(nombre_panaderia, subdominio, email_contacto=None):
         
         # 2. CREAR BASE DE DATOS DEL TENANT
         if not os.path.exists(ruta_bd):
-            # Copiar estructura desde BD principal (sin datos)
-            shutil.copy2('databases_tenants/panaderia_principal.db', ruta_bd)
-            print(f"✅ BD creada para tenant: {ruta_bd}")
+            # Usar plantilla profesional
+            plantilla = 'databases_tenants/tenant_plantilla.db'
+            if os.path.exists(plantilla):
+                shutil.copy2(plantilla, ruta_bd)
+                print(f"✅ BD creada desde plantilla: {ruta_bd}")
+            else:
+                # Fallback a BD principal
+                shutil.copy2('databases_tenants/panaderia_principal.db', ruta_bd)
+                print(f"✅ BD creada desde principal: {ruta_bd}")
         
-        # 3. CREAR USUARIO ADMIN POR DEFECTO
-        if email_contacto:
-            cursor_maestra.execute(
-                "INSERT INTO usuarios_global (email, password_hash, nombre, tenant_id, rol_global) VALUES (?, ?, ?, ?, ?)",
-                (email_contacto, 'hash_temporal_actualizar', f"Admin {nombre_panaderia}", tenant_id, 'admin')
-            )
+        # 3. CONFIGURAR TENANT EN SU BD (REEMPLAZA usuarios_global)
+        # Ahora se configura directamente en la BD del tenant, no en tabla global
+        conn_tenant = sqlite3.connect(ruta_bd)
+        cursor_tenant = conn_tenant.cursor()
+        
+        # Configurar panadería en su propia BD
+        cursor_tenant.execute("DELETE FROM configuracion_panaderia")
+        cursor_tenant.execute(
+            "INSERT INTO configuracion_panaderia (panaderia_id, nombre_panaderia, fecha_creacion) VALUES (?, ?, datetime('now'))",
+            (tenant_id, nombre_panaderia)
+        )
+        
+        # Configurar consecutivo POS
+        cursor_tenant.execute("DELETE FROM consecutivos_pos")
+        cursor_tenant.execute(
+            "INSERT INTO consecutivos_pos (panaderia_id, numero_actual) VALUES (?, 0)",
+            (tenant_id,)
+        )
+        
+        conn_tenant.commit()
+        conn_tenant.close()
         
         conn_maestra.commit()
         conn_maestra.close()
         
         print(f"🎉 Nuevo tenant SaaS creado: {nombre_panaderia} (ID: {tenant_id})")
+        print(f"   📁 Archivo: {nombre_bd}")
+        print(f"   🔢 Consecutivo POS: 0")
         return True, f"Tenant {nombre_panaderia} creado exitosamente", tenant_id
         
     except Exception as e:
@@ -104,11 +128,12 @@ print("🚀 Middleware SaaS - Sistema multi-tenant activado")
 app.secret_key = '023431bcb986f0ebab954d4237dffb57f86d01e38107bfc16c839c717ba8b15f'
 app.config['SESSION_PERMANENT'] = False
 app.config['PERMANENT_SESSION_LIFETIME'] = 3600
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'panaderia.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///C:/Users/Mauricio/Desktop/panaderia_sistema/panaderia_profesional/databases_tenants/panaderia_principal.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # =============================================
 # IMPORTAR DB PRIMERO, LUEGO MODELOS
+
 # =============================================
 
 # 🆕 SOLO IMPORTAR db PRIMERO
@@ -124,6 +149,7 @@ from models import ConsecutivoPOS, ConfiguracionSistema, Cliente
 from models import calcular_rotacion_automatica, actualizar_rotaciones_automaticas
 from models import calcular_tendencia_ventas, analizar_productos_periodo, calcular_rotacion_automatica_por_nombre
 from models import calcular_proyeccion_ventas, generar_recomendacion_stock, generar_alertas_inteligentes
+from models import LogSistema, RegistroFinanciero
 from models import obtener_productos_sin_ventas_recientes, ActivoFijo, CATEGORIAS_ACTIVOS
 from facturacion.generador_xml import generar_xml_ubl_21
 
@@ -525,11 +551,30 @@ def login():
         print(f"🔍 [LOGIN] Buscando usuario: {username}")
         print(f"🔍 [LOGIN] URI de BD: {app.config['SQLALCHEMY_DATABASE_URI']}")
         
-        # VER TODOS LOS USUARIOS EN LA BD ACTUAL
-        todos_usuarios = Usuario.query.all()
-        print(f"🔍 [LOGIN] Usuarios en BD actual: {[u.username for u in todos_usuarios]}")
-        
-        user = Usuario.query.filter_by(username=username).first()
+        # 🔧 CORREGIDO: Buscar usuario en la BD del tenant
+        from flask import g
+        if hasattr(g, 'db_path') and g.db_path:
+            # Usar la BD del tenant detectada
+            import sqlite3
+            conn_tenant = sqlite3.connect(g.db_path)
+            cursor_tenant = conn_tenant.cursor()
+            cursor_tenant.execute("SELECT id, username, password_hash, panaderia_id, rol FROM usuarios WHERE username = ?", (username,))
+            user_data = cursor_tenant.fetchone()
+            conn_tenant.close()
+            
+            if user_data:
+                # Crear objeto Usuario a partir de los datos
+                user = Usuario()
+                user.id = user_data[0]
+                user.username = user_data[1]
+                user.password_hash = user_data[2]
+                user.panaderia_id = user_data[3]
+                user.rol = user_data[4]
+            else:
+                user = None
+        else:
+            # Fallback a BD principal
+            user = Usuario.query.filter_by(username=username).first()
         
         if user:
             print(f"✅ [LOGIN] USUARIO ENCONTRADO: {user.username}")
@@ -641,6 +686,7 @@ def dashboard():
 # Ruta para el punto de venta
 @app.route('/punto_venta')
 @login_required
+@tenant_required
 @modulo_requerido('punto_venta')
 def punto_venta():
     if 'user_id' not in session:
@@ -856,34 +902,76 @@ def debug_productos_punto_venta():
 
 
 def obtener_consecutivo_pos():
-    """
-    Obtiene y incrementa automáticamente el consecutivo POS
-    Si no existe, crea el registro inicial con valor 0
-    """
+    """Obtiene y incrementa el consecutivo POS DIRECTAMENTE desde la BD del tenant"""
     try:
-        consecutivo = ConsecutivoPOS.query.first()
-        if not consecutivo:
-            # 🆕 Crear registro inicial si no existe
-            consecutivo = ConsecutivoPOS(numero_actual=0)
-            db.session.add(consecutivo)
-            db.session.commit()
-            print("✅ Registro de consecutivo POS creado inicialmente")
+        import sqlite3
+        from flask import g
         
-        # Incrementar consecutivo
-        consecutivo.numero_actual += 1
-        consecutivo.updated_at = datetime.utcnow()
-        db.session.commit()
+        # 1. Obtener panaderia_id
+        panaderia_id = current_user.panaderia_id
+        print(f"🔢 [CONSECUTIVO] Panadería ID: {panaderia_id}")
         
-        print(f"✅ Consecutivo POS actualizado: {consecutivo.numero_actual}")
-        return consecutivo.numero_actual
+        # 2. Obtener la ruta de la BD del tenant
+        if hasattr(g, 'db_path') and g.db_path:
+            bd_tenant = g.db_path
+        else:
+            # Buscar en tenant_master.db
+            conn_master = sqlite3.connect('tenant_master.db')
+            cursor_master = conn_master.cursor()
+            cursor_master.execute("SELECT base_datos FROM tenants WHERE id = ?", (panaderia_id,))
+            tenant = cursor_master.fetchone()
+            conn_master.close()
+            if tenant:
+                bd_tenant = f"databases_tenants/{tenant[0]}"
+            else:
+                bd_tenant = f"databases_tenants/panaderia_sqlalchemy.db"
+        
+        print(f"📁 [CONSECUTIVO] BD: {bd_tenant}")
+        
+        # 3. Conectar DIRECTAMENTE a la BD del tenant
+        conn = sqlite3.connect(bd_tenant)
+        cursor = conn.cursor()
+        
+        # 4. Verificar tabla
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='consecutivos_pos'")
+        if not cursor.fetchone():
+            cursor.execute('''
+                CREATE TABLE consecutivos_pos (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    panaderia_id INTEGER NOT NULL,
+                    numero_actual INTEGER DEFAULT 0
+                )
+            ''')
+        
+        # 5. Obtener y actualizar consecutivo
+        cursor.execute("SELECT numero_actual FROM consecutivos_pos WHERE panaderia_id = ?", (panaderia_id,))
+        resultado = cursor.fetchone()
+        
+        if resultado:
+            nuevo_numero = resultado[0] + 1
+        else:
+            nuevo_numero = 1
+            cursor.execute("""
+                INSERT INTO consecutivos_pos (panaderia_id, numero_actual)
+                VALUES (?, ?)
+            """, (panaderia_id, 0))
+        
+        # Actualizar el consecutivo
+        cursor.execute("""
+            UPDATE consecutivos_pos 
+            SET numero_actual = ? 
+            WHERE panaderia_id = ?
+        """, (nuevo_numero, panaderia_id))
+        conn.commit()
+        conn.close()
+        
+        print(f"✅ [CONSECUTIVO] Nuevo: {nuevo_numero}")
+        return nuevo_numero
         
     except Exception as e:
-        print(f"❌ Error en obtener_consecutivo_pos: {e}")
-        db.session.rollback()
-        # 🆕 MEJORA: Usar timestamp como fallback más único
-        fallback = int(datetime.utcnow().timestamp() % 1000000)
-        print(f"🔄 Usando consecutivo fallback: {fallback}")
-        return fallback
+        print(f"❌ [CONSECUTIVO] Error: {e}")
+        return 1  # Fallback seguro
+
 
 def obtener_configuracion_sistema():
     """
@@ -922,7 +1010,7 @@ def reiniciar_consecutivo_pos():
     ⚠️ SOLO PARA PRUEBAS: Reinicia el consecutivo a 0
     """
     try:
-        consecutivo = ConsecutivoPOS.query.first()
+        consecutivo = ConsecutivoPOS.query.filter_by(panaderia_id=current_user.panaderia_id).first()
         if consecutivo:
             consecutivo.numero_actual = 0
             db.session.commit()
@@ -940,25 +1028,26 @@ def reiniciar_consecutivo_pos():
 @login_required
 @modulo_requerido('punto_venta')
 def registrar_venta():
+    """Registrar venta - VERSIÓN CORREGIDA MULTI-TENANT"""
     print("🛒 DEBUG - INICIANDO REGISTRO DE VENTA")
     print(f"👤 User ID en sesión: {session.get('user_id')}")
     
-    # 🎯 OBTENER USUARIO ACTUAL PARA panaderia_id
-    usuario_actual = Usuario.query.get(session['user_id'])
-    print(f"🏪 DEBUG - Panadería ID del usuario: {usuario_actual.panaderia_id}")
-    
-    """Registrar venta con productos mixtos (panadería + externos) - VERSIÓN MEJORADA CON CLIENTES Y DONACIONES"""
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'No autorizado'})
     
     try:
+        # 🎯 OBTENER USUARIO ACTUAL PARA panaderia_id
+        usuario_actual = Usuario.query.get(session['user_id'])
+        panaderia_id = usuario_actual.panaderia_id
+        print(f"🏪 DEBUG - Panadería ID del usuario: {panaderia_id}")
+        
         data = request.get_json()
         carrito = data.get('carrito', [])
         metodo_pago = data.get('metodo_pago', 'efectivo')
         cliente_id = data.get('cliente_id')
         tipo_documento_solicitado = data.get('tipo_documento')
         
-        # 🎁 NUEVO: CAPTURAR DATOS DE DONACIÓN
+        # 🎁 CAPTURAR DATOS DE DONACIÓN
         es_donacion = data.get('es_donacion', False)
         motivo_donacion = data.get('motivo_donacion', '')
         
@@ -988,18 +1077,16 @@ def registrar_venta():
             texto_legal = "Factura electrónica de venta - Régimen simplificado"
         else:
             tipo_documento = 'POS'
-            consecutivo_pos = obtener_consecutivo_pos()  # 🆕 OBTENER CONSECUTIVO
+            consecutivo_pos = obtener_consecutivo_pos()
             texto_legal = "Documento equivalente POS – No válido como factura electrónica de venta"
         
-        # 🎁 NUEVO: CALCULAR TOTAL (CERO SI ES DONACIÓN)
+        # 🎁 CALCULAR TOTAL (CERO SI ES DONACIÓN)
         total_venta = 0
         if not es_donacion:
-            # Calcular total normal sumando todos los productos
             for item in carrito:
                 producto_id = item['id']
                 cantidad = item['cantidad']
                 
-                # DETERMINAR SI ES PRODUCTO EXTERNO (ID > 10000)
                 if producto_id > 10000:
                     producto_externo_id = producto_id - 10000
                     producto = ProductoExterno.query.get(producto_externo_id)
@@ -1010,49 +1097,91 @@ def registrar_venta():
                     if producto:
                         total_venta += cantidad * producto.precio_venta
         else:
-            # 🎁 PARA DONACIONES: TOTAL = 0
             total_venta = 0
             print(f"🎁 REGISTRANDO DONACIÓN - Motivo: {motivo_donacion}")
-            print(f"🎁 Productos en donación: {[item.get('nombre', 'N/A') for item in carrito]}")
         
-        # 🎯 SOLUCIÓN DEFINITIVA - FECHA/HORA CON TIMEZONE CORRECTO
-        # Crear datetime con timezone de Colombia (UTC-5)
+        # 🎯 FECHA/HORA CON TIMEZONE CORRECTO (Colombia UTC-5)
         tz_colombia = timezone(timedelta(hours=-5))
         fecha_hora = datetime.now(tz_colombia)
         
-        # 🆕 CREAR VENTA CON FECHA CORREGIDA
+        # 🆕 CREAR VENTA
         nueva_venta = Venta(
             usuario_id=session['user_id'],
             total=total_venta,
             metodo_pago=metodo_pago,
             cliente_id=cliente_id,
-            panaderia_id=usuario_actual.panaderia_id,
+            panaderia_id=panaderia_id,
             tipo_documento=tipo_documento,
             consecutivo_pos=consecutivo_pos,
             texto_legal=texto_legal,
             es_donacion=es_donacion,
             motivo_donacion=motivo_donacion,
-            fecha_hora=fecha_hora  # ← FECHA CORREGIDA DEFINITIVAMENTE
+            fecha_hora=fecha_hora
         )
         db.session.add(nueva_venta)
-        db.session.flush()  # Para obtener el ID
+        db.session.flush()
         
         print(f"✅ Venta creada con panaderia_id: {nueva_venta.panaderia_id}")
         print(f"📅 Fecha registrada: {fecha_hora}")
         
+        # ⭐⭐⭐ CORRECCIÓN MULTI-TENANT: OBTENER DATOS DE PANADERÍA DESDE LA BD DEL TENANT ⭐⭐⭐
+        import sqlite3
+        import os
+        
+        nombre_panaderia = f"Panadería {panaderia_id}"
+        nit_panaderia = "NIT_NO_REGISTRADO"
+        direccion_panaderia = "Dirección no registrada"
+        telefono_panaderia = "Teléfono no registrado"
+        
+        # ✅ OBTENER DATOS DESDE tenant_master.db
+        try:
+            conn_master = sqlite3.connect('tenant_master.db')
+            cursor_master = conn_master.cursor()
+            cursor_master.execute("SELECT base_datos FROM tenants WHERE id = ?", (panaderia_id,))
+            tenant = cursor_master.fetchone()
+            conn_master.close()
+            
+            if tenant:
+                bd_tenant_path = os.path.join('databases_tenants', tenant[0])
+                print(f"🔍 Conectando a BD tenant: {bd_tenant_path}")
                 
-        print(f"✅ Venta creada con panaderia_id: {nueva_venta.panaderia_id}")
+                if os.path.exists(bd_tenant_path):
+                    conn_tenant = sqlite3.connect(bd_tenant_path)
+                    cursor_tenant = conn_tenant.cursor()
+                    
+                    cursor_tenant.execute("""
+                        SELECT nombre_panaderia, nit, direccion, telefono_contacto 
+                        FROM configuracion_panaderia 
+                        WHERE panaderia_id = ?
+                    """, (panaderia_id,))
+                    
+                    config_tenant = cursor_tenant.fetchone()
+                    conn_tenant.close()
+                    
+                    if config_tenant:
+                        nombre_panaderia = config_tenant[0] or f"Panadería {panaderia_id}"
+                        nit_panaderia = config_tenant[1] or "NIT_NO_REGISTRADO"
+                        direccion_panaderia = config_tenant[2] or "Dirección no registrada"
+                        telefono_panaderia = config_tenant[3] or "Teléfono no registrado"
+                        print(f"🏪 Datos obtenidos desde BD tenant: {nombre_panaderia}")
+                    else:
+                        print(f"⚠️ No hay configuración para panadería_id {panaderia_id}")
+                else:
+                    print(f"⚠️ BD del tenant no existe: {bd_tenant_path}")
+            else:
+                print(f"⚠️ No se encontró tenant con ID {panaderia_id}")
+                
+        except Exception as e:
+            print(f"⚠️ Error obteniendo datos del tenant: {e}")
         
         detalles_venta = []
         
-        # 🎁 PROCESAR CADA PRODUCTO DEL CARRITO (EL INVENTARIO SE DESCUENTA NORMALMENTE)
+        # 🎁 PROCESAR CADA PRODUCTO DEL CARRITO
         for item in carrito:
             producto_id = item['id']
             cantidad = item['cantidad']
             
-            # DETERMINAR SI ES PRODUCTO EXTERNO (ID > 10000)
             if producto_id > 10000:
-                # Es producto externo
                 producto_externo_id = producto_id - 10000
                 producto = ProductoExterno.query.get(producto_externo_id)
                 
@@ -1062,31 +1191,26 @@ def registrar_venta():
                         'error': f'Stock insuficiente: {producto.nombre if producto else "Producto"}'
                     })
                 
-                # 🎁 ACTUALIZAR STOCK EXTERNO (SE DESCUENTA NORMALMENTE TAMBIÉN EN DONACIONES)
                 producto.stock_actual -= cantidad
                 
-                # 🎁 ACTUALIZAR MÉTRICAS SOLO SI NO ES DONACIÓN
                 if not es_donacion:
                     producto.total_ventas += cantidad
                     producto.total_ingresos += cantidad * producto.precio_venta
                     producto.utilidad_total += cantidad * (producto.precio_venta - producto.precio_compra)
                     producto.fecha_ultima_venta = datetime.utcnow()
                 
-                # 🎁 PRECIO UNITARIO: para donaciones registramos el precio real pero total=0
                 precio_unitario = producto.precio_venta
                 
-                # Crear detalle de venta
                 detalle = DetalleVenta(
                     venta_id=nueva_venta.id,
-                    producto_id=None,  # No asociado a Producto tradicional
+                    producto_id=None,
                     producto_externo_id=producto_externo_id,
                     cantidad=cantidad,
-                    precio_unitario=precio_unitario  # 🎁 Registramos el precio real
+                    precio_unitario=precio_unitario
                 )
                 detalles_venta.append(detalle)
                 
             else:
-                # Es producto normal de panadería
                 producto = Producto.query.get(producto_id)
                 
                 if not producto or producto.stock_actual < cantidad:
@@ -1095,56 +1219,107 @@ def registrar_venta():
                         'error': f'Stock insuficiente: {producto.nombre if producto else "Producto"}'
                     })
                 
-                # 🎁 ACTUALIZAR STOCK PANADERÍA (SE DESCUENTA NORMALMENTE TAMBIÉN EN DONACIONES)
                 producto.stock_actual -= cantidad
-                
-                # 🎁 PRECIO UNITARIO: para donaciones registramos el precio real pero total=0
                 precio_unitario = producto.precio_venta
                 
-                # Crear detalle de venta
                 detalle = DetalleVenta(
                     venta_id=nueva_venta.id,
                     producto_id=producto_id,
                     producto_externo_id=None,
                     cantidad=cantidad,
-                    precio_unitario=precio_unitario  # 🎁 Registramos el precio real
+                    precio_unitario=precio_unitario
                 )
                 detalles_venta.append(detalle)
         
-        # Agregar todos los detalles
         for detalle in detalles_venta:
             db.session.add(detalle)
         
-        # 🆕 MODIFICAR: CREAR FACTURA O RECIBO SEGÚN CONFIGURACIÓN
+        
+        # 🆕 CREAR FACTURA O RECIBO SEGÚN CONFIGURACIÓN
+        # 1. PRIMERO: Definir numero_factura SIEMPRE
         if tipo_documento == 'ELECTRONICA':
-            # Para factura electrónica
             numero_factura = f"FE{datetime.now().strftime('%Y%m%d')}{nueva_venta.id:04d}"
             mensaje_exito = f'Factura electrónica #{numero_factura} generada'
-            
-            # 🎁 MENSAJE ESPECIAL PARA DONACIONES ELECTRÓNICAS
-            if es_donacion:
-                mensaje_exito = f'Donación registrada - Factura electrónica #{numero_factura}'
         else:
-            # Para recibo POS
-            numero_factura = f"POS{consecutivo_pos:06d}"  # Formato POS000001
+            # ✅ SIEMPRE usar POS como fallback
+            # Extraer el valor numérico del objeto consecutivo
+            if hasattr(consecutivo_pos, 'numero_actual'):
+                num_consecutivo = consecutivo_pos.numero_actual
+            else:
+                num_consecutivo = consecutivo_pos
+
+            # Asegurar que sea un entero
+            num_consecutivo = int(num_consecutivo)
+
+            numero_factura = f"POS-{panaderia_id}-{num_consecutivo:06d}"
             mensaje_exito = f'Recibo POS #{consecutivo_pos} generado correctamente'
-            
-            # 🎁 MENSAJE ESPECIAL PARA DONACIONES POS
-            if es_donacion:
-                mensaje_exito = f'Donación registrada - Comprobante POS #{consecutivo_pos}'
         
-        factura = Factura(
-            venta_id=nueva_venta.id,
-            numero_factura=numero_factura,
-            subtotal=total_venta,  # 🎁 Será 0 para donaciones
-            iva=0,
-            total=total_venta  # 🎁 Será 0 para donaciones
-        )
+        # 2. MENSAJE ESPECIAL PARA DONACIONES
+        if es_donacion:
+            mensaje_exito = f'Donación registrada - {mensaje_exito}'
         
-        db.session.add(factura)
+        # CREAR FACTURA CON SQLITE DIRECTO (EVITA BD PRINCIPAL)
+        import sqlite3
+        from flask import g
+        
+        # ✅ PRIMERO: Guardar la venta en la BD
         db.session.commit()
+        print(f"✅ Venta guardada en BD - ID: {nueva_venta.id}")
         
-        # 🆕 PREPARAR RESPUESTA CON INFORMACIÓN COMPLETA
+        # Obtener la ruta de la BD del tenant
+        if hasattr(g, 'db_path') and g.db_path:
+            bd_tenant = g.db_path
+        else:
+            # Buscar en tenant_master.db
+            conn_master = sqlite3.connect('tenant_master.db')
+            cursor_master = conn_master.cursor()
+            cursor_master.execute("SELECT base_datos FROM tenants WHERE id = ?", (panaderia_id,))
+            tenant = cursor_master.fetchone()
+            conn_master.close()
+            if tenant:
+                bd_tenant = f"databases_tenants/{tenant[0]}"
+            else:
+                bd_tenant = f"databases_tenants/panaderia_sqlalchemy.db"
+        
+        print(f"📁 [FACTURA] BD: {bd_tenant}")
+        
+        # Conectar DIRECTAMENTE a la BD del tenant
+        conn_tenant = sqlite3.connect(bd_tenant)
+        cursor_tenant = conn_tenant.cursor()
+        
+        # Insertar factura DIRECTAMENTE en la BD del tenant
+        cursor_tenant.execute("""
+            INSERT INTO facturas (
+                panaderia_id, venta_id, numero_factura, fecha_emision,
+                subtotal, iva, total, nombre_panaderia,
+                nit_panaderia, direccion_panaderia, telefono_panaderia
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            panaderia_id,
+            nueva_venta.id,
+            numero_factura,
+            datetime.now(),
+            total_venta,
+            0,
+            total_venta,
+            nombre_panaderia,
+            nit_panaderia,
+            direccion_panaderia,
+            telefono_panaderia
+        ))
+        
+        # Obtener el ID de la factura insertada
+        factura_id = cursor_tenant.lastrowid
+        conn_tenant.commit()
+        conn_tenant.close()
+        
+        print(f"✅ Factura creada: {numero_factura} (Panadería: {panaderia_id} - {nombre_panaderia})")
+        
+        # Crear objeto factura para la respuesta
+        factura = Factura()
+        factura.id = factura_id
+        factura.numero_factura = numero_factura
+        
         respuesta = {
             'success': True,
             'venta_id': nueva_venta.id,
@@ -1154,38 +1329,35 @@ def registrar_venta():
             'tipo_documento': tipo_documento,
             'total': total_venta,
             'mensaje': mensaje_exito,
-            # 🎁 NUEVO: INCLUIR INFORMACIÓN DE DONACIÓN EN LA RESPUESTA
+            'panaderia_id': panaderia_id,
+            'nombre_panaderia': nombre_panaderia,
             'es_donacion': es_donacion,
             'motivo_donacion': motivo_donacion
         }
         
-        print(f"✅ Venta creada con panaderia_id: {nueva_venta.panaderia_id}")
-        
-        # 🆕 AGREGAR INFORMACIÓN DEL CLIENTE SI EXISTE
         if cliente_id:
             cliente = Cliente.query.get(cliente_id)
             if cliente:
                 respuesta['cliente'] = cliente.to_dict()
-                print(f'✅ Cliente incluido en respuesta: {cliente.nombre}')
+                print(f'✅ Cliente incluido: {cliente.nombre}')
         
-        # 🆕 LIMPIAR CARRITO DESPUÉS DE VENTA EXITOSA
         if 'carrito' in session:
             session.pop('carrito')
             session.modified = True
         
-        # 🎁 LOG ESPECIAL PARA DONACIONES
         if es_donacion:
-            print(f'🎁 DONACIÓN REGISTRADA EXITOSAMENTE - ID: {nueva_venta.id}, Productos: {len(carrito)}, Motivo: {motivo_donacion}')
+            print(f'🎁 DONACIÓN REGISTRADA - ID: {nueva_venta.id}')
         else:
-            print(f'✅ Venta registrada exitosamente - ID: {nueva_venta.id}, Tipo: {tipo_documento}, Cliente: {cliente_id}, Total: ${total_venta}')
+            print(f'✅ Venta registrada - ID: {nueva_venta.id}, Total: ${total_venta}')
         
         return jsonify(respuesta)
         
     except Exception as e:
         db.session.rollback()
         print(f"❌ Error al registrar venta: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)})
-    
 # =============================================
 # 🆕 RUTAS API PARA GESTIÓN DE CLIENTES
 # =============================================
@@ -1498,11 +1670,160 @@ def imprimir_factura_electronica(venta_id):
 @modulo_requerido('punto_venta')
 def recibo_pos(venta_id):
     """
-    🆕 Genera el recibo POS para impresión térmica
+    Genera el recibo POS - BUSCA EN AMBAS BDs
     """
     try:
-        venta = Venta.query.get_or_404(venta_id)
-        detalles = DetalleVenta.query.filter_by(venta_id=venta_id).all()
+        import sqlite3
+        from flask import g
+        from datetime import datetime
+        
+        panaderia_id = current_user.panaderia_id
+        print(f"🔍 [RECIBO] Panadería ID: {panaderia_id}")
+        print(f"🔍 [RECIBO] Venta ID: {venta_id}")
+        
+        # Obtener la ruta de la BD del tenant
+        if hasattr(g, 'db_path') and g.db_path:
+            bd_tenant = g.db_path
+        else:
+            conn_master = sqlite3.connect('tenant_master.db')
+            cursor_master = conn_master.cursor()
+            cursor_master.execute("SELECT base_datos FROM tenants WHERE id = ?", (panaderia_id,))
+            tenant = cursor_master.fetchone()
+            conn_master.close()
+            if tenant:
+                bd_tenant = f"databases_tenants/{tenant[0]}"
+            else:
+                bd_tenant = f"databases_tenants/panaderia_sqlalchemy.db"
+        
+        bd_principal = "databases_tenants/panaderia_principal.db"
+        
+        venta_data = None
+        bd_usada = None
+        
+        # PRIMERO: Buscar en la BD del tenant
+        print(f"📁 [RECIBO] Buscando en BD tenant: {bd_tenant}")
+        conn = sqlite3.connect(bd_tenant)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT id, usuario_id, total, metodo_pago, cliente_id, 
+                   panaderia_id, tipo_documento, consecutivo_pos, 
+                   texto_legal, es_donacion, motivo_donacion, fecha_hora
+            FROM ventas 
+            WHERE id = ?
+        """, (venta_id,))
+        venta_data = cursor.fetchone()
+        conn.close()
+        
+        if venta_data:
+            bd_usada = bd_tenant
+            print(f"✅ [RECIBO] Venta encontrada en BD TENANT")
+        else:
+            # SEGUNDO: Buscar en la BD principal
+            print(f"📁 [RECIBO] Buscando en BD principal: {bd_principal}")
+            conn = sqlite3.connect(bd_principal)
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT id, usuario_id, total, metodo_pago, cliente_id, 
+                       panaderia_id, tipo_documento, consecutivo_pos, 
+                       texto_legal, es_donacion, motivo_donacion, fecha_hora
+                FROM ventas 
+                WHERE id = ?
+            """, (venta_id,))
+            venta_data = cursor.fetchone()
+            conn.close()
+            
+            if venta_data:
+                bd_usada = bd_principal
+                print(f"✅ [RECIBO] Venta encontrada en BD PRINCIPAL (panaderia_id: {venta_data['panaderia_id']})")
+            else:
+                print(f"❌ [RECIBO] Venta ID {venta_id} NO encontrada en ninguna BD")
+                flash('Venta no encontrada', 'error')
+                return redirect(url_for('punto_venta'))
+        
+        # Crear objeto venta
+        venta = Venta()
+        venta.id = venta_data['id']
+        venta.usuario_id = venta_data['usuario_id']
+        venta.total = venta_data['total']
+        venta.metodo_pago = venta_data['metodo_pago']
+        venta.cliente_id = venta_data['cliente_id']
+        venta.panaderia_id = venta_data['panaderia_id']
+        venta.tipo_documento = venta_data['tipo_documento']
+        venta.consecutivo_pos = venta_data['consecutivo_pos']
+        venta.texto_legal = venta_data['texto_legal']
+        venta.es_donacion = venta_data['es_donacion']
+        venta.motivo_donacion = venta_data['motivo_donacion']
+        
+        # ✅ CORREGIR: Convertir fecha_hora si es string
+        fecha_hora = venta_data['fecha_hora']
+        if isinstance(fecha_hora, str):
+            try:
+                venta.fecha_hora = datetime.strptime(fecha_hora, '%Y-%m-%d %H:%M:%S.%f')
+            except:
+                try:
+                    venta.fecha_hora = datetime.strptime(fecha_hora, '%Y-%m-%d %H:%M:%S')
+                except:
+                    venta.fecha_hora = datetime.now()
+            print(f"📅 [RECIBO] Fecha convertida: {venta.fecha_hora}")
+        else:
+            venta.fecha_hora = fecha_hora
+            print(f"📅 [RECIBO] Fecha original: {venta.fecha_hora}")
+        
+        # Obtener detalles de la venta (usando la BD donde se encontró)
+        conn = sqlite3.connect(bd_usada)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT id, venta_id, producto_id, producto_externo_id, 
+                   cantidad, precio_unitario
+            FROM detalle_venta 
+            WHERE venta_id = ?
+        """, (venta_id,))
+        detalles_data = cursor.fetchall()
+        
+        detalles = []
+        for d in detalles_data:
+            detalle = DetalleVenta()
+            detalle.id = d['id']
+            detalle.venta_id = d['venta_id']
+            detalle.producto_id = d['producto_id']
+            detalle.producto_externo_id = d['producto_externo_id']
+            detalle.cantidad = d['cantidad']
+            detalle.precio_unitario = d['precio_unitario']
+            
+            # ✅ OBTENER EL NOMBRE REAL DEL PRODUCTO (EXTERNO O PROPIO)
+            nombre_producto = "Producto"
+            
+            if detalle.producto_id:
+                # 📦 ES UN PRODUCTO PROPIO DE PANADERÍA
+                cursor2 = conn.cursor()
+                cursor2.execute("SELECT nombre FROM productos WHERE id = ?", (detalle.producto_id,))
+                prod = cursor2.fetchone()
+                cursor2.close()
+                if prod:
+                    nombre_producto = prod[0] if isinstance(prod, tuple) else prod['nombre']
+                else:
+                    nombre_producto = f"Producto propio #{detalle.producto_id}"
+                    
+            elif detalle.producto_externo_id:
+                # 📦 ES UN PRODUCTO EXTERNO
+                cursor2 = conn.cursor()
+                cursor2.execute("SELECT nombre FROM productos_externos WHERE id = ?", (detalle.producto_externo_id,))
+                prod = cursor2.fetchone()
+                cursor2.close()
+                if prod:
+                    nombre_producto = prod[0] if isinstance(prod, tuple) else prod['nombre']
+                else:
+                    nombre_producto = f"Producto externo #{detalle.producto_externo_id}"
+            
+            detalle.nombre_producto = nombre_producto
+            print(f"📝 [RECIBO] Producto: {nombre_producto} | Cant: {detalle.cantidad} | Precio: {detalle.precio_unitario}")
+            detalles.append(detalle)
+        
+        conn.close()
+        
         config = obtener_configuracion_sistema()
         
         return render_template('recibo_pos.html', 
@@ -1511,6 +1832,9 @@ def recibo_pos(venta_id):
                              config=config)
                              
     except Exception as e:
+        print(f"❌ [RECIBO] Error: {e}")
+        import traceback
+        traceback.print_exc()
         flash(f'Error al generar recibo: {str(e)}', 'error')
         return redirect(url_for('punto_venta'))
     
@@ -4181,6 +4505,7 @@ def crear_productos_prueba():
 # RUTAS PARA CIERRE DIARIO - AGREGAR ANTES DE LOS REPORTES PDF
 # =============================================
 
+@tenant_required
 @app.route('/api/cierre_diario/estado')
 @login_required
 @modulo_requerido('finanzas')
@@ -4197,7 +4522,7 @@ def estado_cierre_diario():
     total_hoy = sum(venta.total for venta in ventas_hoy)
     
     # Verificar si ya se hizo cierre hoy
-    cierre_hoy = CierreDiario.query.filter_by(fecha=hoy).first()
+    cierre_hoy = CierreDiario.query.filter_by(panaderia_id=current_user.panaderia_id, fecha=hoy).first()
     
     return jsonify({
         'fecha': hoy.isoformat(),
@@ -4208,6 +4533,7 @@ def estado_cierre_diario():
         'hora_actual': datetime.now().strftime('%H:%M')
     })
 
+@tenant_required
 @app.route('/api/cierre_diario/procesar', methods=['POST'])
 @login_required
 @modulo_requerido('finanzas')
@@ -4217,23 +4543,43 @@ def procesar_cierre_diario():
         return jsonify({'error': 'No autorizado'}), 401
     
     try:
-        cierre, mensaje = cerrar_jornada_actual()
+        # ✅ OBTENER RESPONSE DE REALIZAR_CIERRE (manejar tupla)
+        response_tuple = realizar_cierre()
         
-        if cierre:
+        # Si es tupla (response, status_code), tomar solo el response
+        if isinstance(response_tuple, tuple) and len(response_tuple) > 0:
+            response = response_tuple[0]
+        else:
+            response = response_tuple
+        
+        data = response.get_json()
+        
+        if data and data.get('success'):
+            # Obtener el cierre recién creado
+            from datetime import datetime
+            from models import CierreDiario
+            
+            cierre = CierreDiario.query.filter_by(
+                panaderia_id=current_user.panaderia_id,
+                fecha=datetime.now().date()
+            ).order_by(CierreDiario.id.desc()).first()
+            
+            mensaje = data.get('message', 'Cierre exitoso')
+            
             return jsonify({
                 'success': True,
                 'mensaje': mensaje,
                 'cierre': {
-                    'fecha': cierre.fecha.isoformat(),
-                    'total_ventas': cierre.total_ventas,
-                    'total_transacciones': cierre.total_transacciones,
-                    'tendencia': cierre.tendencia
+                    'fecha': cierre.fecha.isoformat() if cierre else datetime.now().date().isoformat(),
+                    'total_ventas': data.get('data', {}).get('total_ventas', 0),
+                    'total_transacciones': 0,  # Puedes calcularlo si es necesario
+                    'tendencia': 0
                 }
             })
         else:
             return jsonify({
                 'success': False,
-                'error': mensaje
+                'error': data.get('error', 'Error en el cierre') if data else 'Error desconocido'
             }), 400
             
     except Exception as e:
@@ -4242,6 +4588,7 @@ def procesar_cierre_diario():
             'error': f'Error al procesar cierre: {str(e)}'
         }), 500
 
+@tenant_required
 @app.route('/api/cierre_diario/historial')
 @login_required
 @modulo_requerido('finanzas')
@@ -4268,22 +4615,243 @@ def historial_cierres():
     
     return jsonify(resultado)
 
+# ============================================
+# SECCIÓN: CIERRE DIARIO - CORREGIDO CON MULTI-TENANT
+# ============================================
+
 @app.route('/cierre_diario')
 @login_required
+@tenant_required  # ✅ DECORADOR MULTI-TENANT AÑADIDO
 @modulo_requerido('finanzas')
 def pagina_cierre_diario():
-    """Página de cierre diario"""
+    """Página de cierre diario - AHORA MULTI-TENANT"""
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
     hoy = datetime.now().date()
-    cierre_hoy = CierreDiario.query.filter_by(fecha=hoy).first()
-    ventas_hoy = obtener_ventas_dia(hoy)
+    panaderia_id = current_user.panaderia_id  # ✅ OBTENER ID DE PANADERÍA ACTUAL
+    
+    # ✅ FILTRAR SOLO POR PANADERÍA DEL USUARIO ACTUAL
+    cierre_hoy = CierreDiario.query.filter_by(
+        panaderia_id=panaderia_id, 
+        fecha=hoy
+    ).first()
+    
+    # ✅ PASAR PANADERIA_ID A LA FUNCIÓN DE VENTAS
+    ventas_hoy = obtener_ventas_dia(hoy, panaderia_id)
     
     return render_template('cierre_diario.html',
                          cierre_hoy=cierre_hoy,
                          ventas_hoy=ventas_hoy,
                          hoy=hoy)
+
+
+@tenant_required
+@app.route('/realizar_cierre', methods=['POST'])
+@login_required
+@tenant_required
+@modulo_requerido('finanzas')
+def realizar_cierre():
+    """Realiza el cierre diario - VERSIÓN PROFESIONAL CON MODELOS COMPLETOS"""
+    try:
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'error': 'No autenticado'}), 401
+        
+        # ✅ OBTENER PANADERÍA ACTUAL DEL USUARIO
+        panaderia_id = current_user.panaderia_id
+        fecha_actual = datetime.now().date()
+        
+        # ✅ VERIFICAR SI YA EXISTE CIERRE PARA HOY
+        cierre_existente = CierreDiario.query.filter_by(
+            panaderia_id=panaderia_id,
+            fecha=fecha_actual
+        ).first()
+        
+        if cierre_existente:
+            return jsonify({
+                'success': False, 
+                'error': 'Ya se realizó el cierre diario para hoy en esta panadería'
+            }), 400
+        
+        # ✅ OBTENER VENTAS DEL DÍA
+        ventas_hoy = Venta.query.filter(
+            Venta.panaderia_id == panaderia_id,
+            func.date(Venta.fecha_hora) == fecha_actual,
+            
+        ).all()
+        
+        # ✅ CALCULAR TOTALES
+        total_ventas = sum(venta.total for venta in ventas_hoy)
+        total_efectivo = sum(venta.total for venta in ventas_hoy 
+                           if venta.metodo_pago == 'efectivo')
+        total_transferencias = sum(venta.total for venta in ventas_hoy 
+                                 if venta.metodo_pago == 'transferencia')
+        total_tarjetas = sum(venta.total for venta in ventas_hoy 
+                           if venta.metodo_pago == 'tarjeta')
+        
+        # ✅ CREAR REGISTRO DE CIERRE DIARIO
+        nuevo_cierre = CierreDiario(
+            panaderia_id=panaderia_id,
+            fecha=fecha_actual,
+            total_ventas=total_ventas,
+            total_efectivo=total_efectivo,
+            total_transferencia=total_transferencias,
+            total_tarjeta=total_tarjetas,
+            total_transacciones=len(ventas_hoy),
+            
+        )
+        
+        db.session.add(nuevo_cierre)
+        
+        # ✅ ACTUALIZAR CONFIGURACIÓN
+        configuracion = ConfiguracionPanaderia.query.filter_by(panaderia_id=panaderia_id).first()
+        if configuracion:
+            configuracion.ultimo_cierre = fecha_actual
+            configuracion.sistema_activo = False
+        else:
+            # Crear configuración si no existe
+                nueva_config = ConfiguracionPanaderia(
+                panaderia_id=panaderia_id,
+                nombre_panaderia=f"Panadería {panaderia_id}",
+                sistema_activo=False,
+                ultimo_cierre=fecha_actual
+            )
+                db.session.add(nueva_config)
+        
+        # ✅ CREAR DEPÓSITO AUTOMÁTICO PARA EFECTIVO
+        deposito_creado = False
+        deposito_id = None
+        
+        if total_efectivo > 0:
+            nuevo_deposito = DepositoBancario(
+                panaderia_id=panaderia_id,
+                fecha_deposito=fecha_actual,  # ✅ CORREGIDO: fecha → fecha_deposito
+                monto=total_efectivo,
+                descripcion=f'Depósito automático - Cierre diario {fecha_actual}',
+                metodo_deposito='efectivo',  # ✅ CORREGIDO: metodo → metodo_deposito
+                estado='REGISTRADO',  # ✅ CORREGIDO: 'registrado' → 'REGISTRADO' (mayúsculas)
+                referencia=f'CIERRE-{datetime.now().strftime("%Y%m%d%H%M%S")}',
+                cuenta_bancaria='Cuenta Principal',
+                # ❌ ELIMINAR: conciliado=False (campo no existe)
+                # fecha_conciliacion=None (se puede omitir, valor por defecto es None)
+            )
+            db.session.add(nuevo_deposito)
+            db.session.flush()  # Para obtener el ID
+            deposito_id = nuevo_deposito.id
+            deposito_creado = True
+        
+        # ✅ ACTUALIZAR REGISTRO FINANCIERO
+        registro_financiero = RegistroFinanciero.query.filter_by(
+            panaderia_id=panaderia_id
+        ).first()
+        
+        if registro_financiero:
+            # Sumar transferencias al saldo disponible (ya están en cuenta)
+            registro_financiero.saldo_disponible += total_transferencias
+            # Sumar tarjetas al saldo de tarjetas (por cobrar)
+            registro_financiero.saldo_tarjetas += total_tarjetas
+            # Sumar efectivo al saldo pendiente (por depositar)
+            registro_financiero.saldo_pendiente += total_efectivo
+            
+            registro_financiero.ultimo_cierre_fecha = fecha_actual
+            registro_financiero.ultimo_cierre_monto = total_ventas
+            registro_financiero.ventas_mes_actual += total_ventas
+            registro_financiero.actualizar_saldos()  # Actualiza saldo_total
+        else:
+            # Crear registro financiero si no existe
+            nuevo_registro = RegistroFinanciero(
+                panaderia_id=panaderia_id,
+                saldo_disponible=total_transferencias,
+                saldo_tarjetas=total_tarjetas,
+                saldo_pendiente=total_efectivo,
+                ultimo_cierre_fecha=fecha_actual,
+                ultimo_cierre_monto=total_ventas,
+                ventas_mes_actual=total_ventas
+            )
+            nuevo_registro.actualizar_saldos()
+            db.session.add(nuevo_registro)
+        
+        # ✅ REGISTRAR EN LOG DEL SISTEMA
+        log_cierre = LogSistema(
+            panaderia_id=panaderia_id,
+            usuario_id=current_user.id,
+            accion='cierre_diario',
+            modulo='finanzas',
+            descripcion=f'Cierre diario realizado - Ventas: ${total_ventas:,.2f}',
+            fecha_hora=datetime.utcnow(),
+            ip_address=request.remote_addr,
+            user_agent=request.user_agent.string,
+            datos_adicionales={ 
+                'total_ventas': total_ventas,
+                'efectivo': total_efectivo,
+                'transferencias': total_transferencias,
+                'tarjetas': total_tarjetas,
+                'deposito_id': deposito_id,
+                'fecha': fecha_actual.isoformat()
+            }
+        )
+        db.session.add(log_cierre)
+        
+        # ✅ COMMIT DE TODAS LAS TRANSACCIONES
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Cierre diario realizado con éxito para la panadería {panaderia_id}',
+            'data': {
+                'total_ventas': float(total_ventas),
+                'efectivo': float(total_efectivo),
+                'transferencias': float(total_transferencias),
+                'tarjetas': float(total_tarjetas),
+                'panaderia_id': panaderia_id,
+                'deposito_id': deposito_id,
+                'saldo_disponible': registro_financiero.saldo_disponible if registro_financiero else total_transferencias,
+                'saldo_pendiente': registro_financiero.saldo_pendiente if registro_financiero else total_efectivo,
+                'saldo_total': registro_financiero.saldo_total if registro_financiero else total_ventas
+            }
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error en realizar_cierre: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': f'Error al realizar cierre: {str(e)}'
+        }), 500
+
+
+# ============================================
+# FUNCIÓN AUXILIAR CORREGIDA - OBTENER VENTAS
+# ============================================
+
+def obtener_ventas_dia(fecha, panaderia_id=None):
+    """Obtiene ventas del día filtradas por panadería"""
+    try:
+        # ✅ SI NO SE ESPECIFICA PANADERÍA, USAR LA DEL USUARIO ACTUAL
+        if panaderia_id is None:
+            if current_user and hasattr(current_user, 'panaderia_id'):
+                panaderia_id = current_user.panaderia_id
+            else:
+                return []
+        
+        # ✅ CONVERTIR FECHA SI ES NECESARIO
+        if isinstance(fecha, str):
+            fecha = datetime.strptime(fecha, '%Y-%m-%d').date()
+        
+        # ✅ FILTRAR VENTAS SOLO DE ESTA PANADERÍA Y DÍA
+        ventas = Venta.query.filter(
+            Venta.panaderia_id == panaderia_id,
+            func.date(Venta.fecha_venta) == fecha,
+            Venta.estado == 'completada'
+        ).all()
+        
+        return ventas
+        
+    except Exception as e:
+        print(f"Error en obtener_ventas_dia: {str(e)}")
+        return []
 
 @app.route('/reporte/cierre_caja')
 @login_required
@@ -6151,7 +6719,7 @@ def eliminar_deposito_bancario(deposito_id):
 
 @app.route('/depositos_bancarios/conciliar/<int:deposito_id>', methods=['POST'])
 @tenant_required
-@login_required
+@modulo_requerido('tesoreria')
 def conciliar_deposito_bancario(deposito_id):
     """Marca un depósito como conciliado"""
     try:
@@ -6596,19 +7164,48 @@ def crear_usuario():
                 flash('❌ El nombre de usuario ya existe', 'error')
                 return redirect(url_for('crear_usuario'))
             
-            # 🆕 ASIGNAR PANADERÍA POR DEFECTO
+            # 🆕 ASIGNAR PANADERÍA POR DEFECTO (temporal)
             nuevo_usuario = Usuario(
                 username=username,
                 nombre_completo=nombre_completo,
                 email=email,
                 telefono=telefono,
                 rol=rol,
-                panaderia_id=1  # 🆕 ASIGNAR A PANADERÍA PRINCIPAL
+                panaderia_id=1  # Temporal - se actualizará si se crea BD tenant
             )
             nuevo_usuario.set_password(password)
             
             db.session.add(nuevo_usuario)
             db.session.commit()
+            
+            # ⭐⭐ NUEVO: CREACIÓN AUTOMÁTICA DE BD TENANT PARA CLIENTES ⭐⭐
+            if rol in ['cliente', 'admin_cliente']:
+                try:
+                    from middleware_saas import gestor_tenants
+                    import os
+                    
+                    print(f"\n" + "="*60)
+                    print(f"🔄 CREANDO BD TENANT PARA NUEVO CLIENTE: {username}")
+                    
+                    # Crear BD automáticamente
+                    tenant_info = gestor_tenants.obtener_tenant_desde_bd(username)
+                    
+                    if tenant_info:
+                        # Actualizar usuario con ID real de panadería
+                        nuevo_usuario.panaderia_id = tenant_info['id']
+                        db.session.commit()
+                        
+                        print(f"✅ BD creada: {tenant_info['base_datos']}")
+                        print(f"✅ ID asignado: {tenant_info['id']}")
+                        print(f"✅ Consecutivo POS inicializado: 0")
+                    else:
+                        print(f"⚠️  No se pudo crear BD para {username}")
+                        
+                except Exception as e:
+                    print(f"⚠️  Error creando BD tenant: {e}")
+            
+            print("="*60 + "\n")
+            # ⭐⭐ FIN DE CREACIÓN AUTOMÁTICA ⭐⭐
             
             # 🆕 ACTUALIZAR INFORMACIÓN DE LÍMITES
             limites = obtener_limites_panaderia()
@@ -6769,7 +7366,7 @@ def gestion_clientes():
     from models import ConfiguracionPanaderia
     
     # Obtener todas las configuraciones (clientes)
-    configuraciones = ConfiguracionPanaderia.query.all()
+    configuraciones = ConfiguracionPanaderia.query.filter_by(panaderia_id=current_user.panaderia_id).all()
     
     # Calcular métricas
     clientes_activos = sum(1 for c in configuraciones if c.suscripcion_activa)
@@ -6793,6 +7390,9 @@ def crear_cliente():
     from werkzeug.security import generate_password_hash
     import secrets
     import string
+    import sqlite3
+    import os
+    import shutil
     
     try:
         # Obtener datos del formulario
@@ -6806,8 +7406,28 @@ def crear_cliente():
         razon_social = request.form.get('razon_social')
         nit = request.form.get('nit')
         
-        # 1. Crear configuración de panadería
+        # Generar subdominio para la BD del tenant
+        subdominio = nombre_panaderia.lower().replace(' ', '_').replace('-', '_')[:20]
+        subdominio = ''.join(c for c in subdominio if c.isalnum() or c == '_')
+        email_admin = f"admin_{subdominio}@panaderias.com"
+        
+        # =============================================
+        # PASO 1: CREAR TENANT SAAS (OBTENER ID)
+        # =============================================
+        exito, mensaje, tenant_id = crear_tenant_saas(nombre_panaderia, subdominio, email_admin)
+        
+        if not exito:
+            flash(f'❌ Error al crear tenant SaaS: {mensaje}', 'error')
+            return redirect(url_for('gestion_clientes'))
+        
+        print(f"✅ SaaS: {mensaje} (ID: {tenant_id})")
+        
+        # =============================================
+        # PASO 2: CREAR CONFIGURACIÓN CON EL MISMO ID
+        # =============================================
         nueva_config = ConfiguracionPanaderia(
+            id=tenant_id,
+            tenant_id=tenant_id,
             nombre_panaderia=nombre_panaderia,
             telefono_contacto=telefono_contacto,
             direccion=direccion,
@@ -6815,7 +7435,8 @@ def crear_cliente():
             max_usuarios=max_usuarios,
             dias_gracia=dias_gracia,
             razon_social=razon_social,
-            nit=nit
+            nit=nit,
+            activo=1  # 👈 AGREGAR ESTA LÍNEA
         )
         
         # Solo agregar fecha de expiración para licencias en la nube
@@ -6823,19 +7444,20 @@ def crear_cliente():
             nueva_config.fecha_expiracion = datetime.strptime(fecha_expiracion, '%Y-%m-%d').date()
         
         db.session.add(nueva_config)
-        db.session.flush()  # Para obtener el ID
+        db.session.flush()
+        panaderia_id = nueva_config.id  # Ahora es igual a tenant_id
         
-        # 2. 🆕 CREAR USUARIOS AUTOMÁTICAMENTE
-        panaderia_id = nueva_config.id
+        print(f"✅ Configuración creada con ID: {panaderia_id} (tenant_id: {tenant_id})")
         
-        # Generar contraseña temporal segura
+        # =============================================
+        # PASO 3: CREAR USUARIOS AUTOMÁTICAMENTE
+        # =============================================
         def generar_contrasena_temporal():
             caracteres = string.ascii_letters + string.digits + "!@#$%"
             return ''.join(secrets.choice(caracteres) for _ in range(10))
         
         contrasena_temp = generar_contrasena_temporal()
         
-        # Usuarios a crear
         usuarios_base = [
             {
                 'username': f'admin_{panaderia_id}',
@@ -6856,73 +7478,108 @@ def crear_cliente():
         
         usuarios_creados = []
         
-        for user_data in usuarios_base:
-            usuario = Usuario(
-                username=user_data['username'],
-                password_hash=generate_password_hash(contrasena_temp),
-                nombre_completo=user_data['nombre'],
-                rol=user_data['rol'],
-                panaderia_id=panaderia_id
-            )
-            db.session.add(usuario)
-            usuarios_creados.append(user_data['username'])
+        # Construir la ruta de la BD del tenant
+        bd_tenant_path = os.path.join('databases_tenants', f'{subdominio}.db')
+        print(f"📁 Creando usuarios en: {bd_tenant_path}")
         
-        db.session.commit()
+        os.makedirs('databases_tenants', exist_ok=True)
         
-        # 🆕 =============================================
-        # 🆕 CREAR TENANT SAAS AUTOMÁTICAMENTE
-        # 🆕 =============================================
-        try:
-            # Generar subdominio único desde el nombre de la panadería
-            subdominio = nombre_panaderia.lower().replace(' ', '_').replace('-', '_')[:20]
-            subdominio = ''.join(c for c in subdominio if c.isalnum() or c == '_')
-            
-            # Email de contacto para el admin del tenant
-            email_admin = f"admin_{subdominio}@panaderias.com"
-            
-            # Crear tenant SaaS
-            exito, mensaje, tenant_id = crear_tenant_saas(nombre_panaderia, subdominio, email_admin)
-            
-            if exito:
-                print(f"✅ SaaS: {mensaje}")
-                # Añadir mensaje SaaS al flash existente
-                flash(
-                    f'✅ Cliente "{nombre_panaderia}" creado exitosamente | '
-                    f'👥 Usuarios: {", ".join(usuarios_creados)} | '
-                    f'🔑 Contraseña: {contrasena_temp} | '
-                    f'🏪 Tenant SaaS: {subdominio} | '
-                    f'💡 Cambiar contraseña al primer inicio',
-                    'success'
-                )
+        # Si la BD del tenant no existe, copiar desde plantilla
+        if not os.path.exists(bd_tenant_path):
+            plantilla_path = os.path.join('databases_tenants', 'tenant_plantilla.db')
+            if os.path.exists(plantilla_path):
+                shutil.copy2(plantilla_path, bd_tenant_path)
+                print(f"📋 Plantilla copiada a: {bd_tenant_path}")
             else:
-                print(f"⚠️  SaaS: {mensaje}")
-                # Mantener mensaje original + advertencia SaaS
-                flash(
-                    f'✅ Cliente "{nombre_panaderia}" creado exitosamente | '
-                    f'👥 Usuarios: {", ".join(usuarios_creados)} | '
-                    f'🔑 Contraseña: {contrasena_temp} | '
-                    f'⚠️ SaaS: {mensaje} | '
-                    f'💡 Cambiar contraseña al primer inicio',
-                    'warning'
+                print(f"⚠️ No se encontró plantilla en: {plantilla_path}")
+        
+        # Conectar a la BD del tenant
+        conn_tenant = sqlite3.connect(bd_tenant_path)
+        cursor_tenant = conn_tenant.cursor()
+        
+        # Verificar que la tabla usuarios existe
+        cursor_tenant.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='usuarios'")
+        if not cursor_tenant.fetchone():
+            print("⚠️ Tabla 'usuarios' no encontrada, creándola...")
+            cursor_tenant.execute('''
+                CREATE TABLE IF NOT EXISTS usuarios (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT UNIQUE NOT NULL,
+                    password_hash TEXT NOT NULL,
+                    nombre_completo TEXT,
+                    email TEXT,
+                    telefono TEXT,
+                    rol TEXT DEFAULT 'usuario',
+                    activo BOOLEAN DEFAULT 1,
+                    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    panaderia_id INTEGER DEFAULT 1
                 )
-                
+            ''')
+        
+        # Crear cada usuario en la BD del tenant
+        for user_data in usuarios_base:
+            cursor_tenant.execute("SELECT id FROM usuarios WHERE username = ?", (user_data['username'],))
+            if cursor_tenant.fetchone():
+                print(f"   ⚠️ Usuario ya existe: {user_data['username']}")
+                continue
+            
+            cursor_tenant.execute("""
+                INSERT INTO usuarios (username, password_hash, nombre_completo, rol, panaderia_id)
+                VALUES (?, ?, ?, ?, ?)
+            """, (
+                user_data['username'],
+                generate_password_hash(contrasena_temp),
+                user_data['nombre'],
+                user_data['rol'],
+                panaderia_id
+            ))
+            usuarios_creados.append(user_data['username'])
+            print(f"   ✅ Usuario creado: {user_data['username']}")
+        
+        conn_tenant.commit()
+        conn_tenant.close()
+        
+        # Registrar usuarios en BD principal
+        try:
+            for user_data in usuarios_base:
+                existing = Usuario.query.filter_by(username=user_data['username']).first()
+                if not existing:
+                    nuevo_usuario = Usuario(
+                        username=user_data['username'],
+                        password_hash=generate_password_hash(contrasena_temp),
+                        nombre_completo=user_data['nombre'],
+                        rol=user_data['rol'],
+                        panaderia_id=panaderia_id
+                    )
+                    db.session.add(nuevo_usuario)
+                    print(f"   Registrado en BD principal: {user_data['username']}")
+                else:
+                    print(f"   ⚠️ {user_data['username']} ya existe en BD principal")
+            
+            db.session.commit()
+            print(f"✅ Usuarios registrados en BD principal")
         except Exception as e:
-            print(f"⚠️  Error creando tenant SaaS: {e}")
-            # Mantener mensaje original + error SaaS
-            flash(
-                f'✅ Cliente "{nombre_panaderia}" creado exitosamente | '
-                f'👥 Usuarios: {", ".join(usuarios_creados)} | '
-                f'🔑 Contraseña: {contrasena_temp} | '
-                f'⚠️ Error SaaS: {str(e)} | '
-                f'💡 Cambiar contraseña al primer inicio',
-                'warning'
-            )
-        # 🆕 FIN INTEGRACIÓN SAAS
-        # 🆕 =============================================
+            db.session.rollback()
+            print(f"   Error registrando en BD principal: {e}")
+        
+        print(f"✅ {len(usuarios_creados)} usuarios creados en la BD del tenant")
+        
+        # Mensaje de éxito
+        flash(
+            f'✅ Cliente "{nombre_panaderia}" creado exitosamente | '
+            f'👥 Usuarios: {", ".join(usuarios_creados)} | '
+            f'🔑 Contraseña: {contrasena_temp} | '
+            f'🏪 Tenant SaaS: {subdominio} | '
+            f'💡 Cambiar contraseña al primer inicio',
+            'success'
+        )
         
     except Exception as e:
         db.session.rollback()
         flash(f'❌ Error al crear cliente: {str(e)}', 'error')
+        print(f"❌ Error en crear_cliente: {e}")
+        import traceback
+        traceback.print_exc()
     
     return redirect(url_for('gestion_clientes'))
 
@@ -7313,5 +7970,176 @@ def salir_acceso_remoto():
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
+
+
+# ============================================
+# ELIMINAR CLIENTE (TENANT) - Solo Super Admin
+# ============================================
+@app.route('/eliminar_cliente/<int:tenant_id>', methods=['POST'])
+@login_required
+def eliminar_cliente(tenant_id):
+    """Elimina un cliente - Busca por tenant_id en configuracion_panaderia"""
+    import sqlite3
+    import os
+    
+    print(f"🔍 [ELIMINAR] Iniciando eliminación del tenant ID: {tenant_id}")
+    try:
+        if session.get('rol') != 'super_admin':
+            return jsonify({'success': False, 'error': 'No tienes permiso'}), 403
+        
+        # =============================================
+        # 1. BUSCAR EN configuracion_panaderia POR tenant_id
+        # =============================================
+        conn_principal = sqlite3.connect('databases_tenants/panaderia_principal.db')
+        cursor_principal = conn_principal.cursor()
+        cursor_principal.execute(
+            "SELECT id, nombre_panaderia FROM configuracion_panaderia WHERE tenant_id = ?",
+            (tenant_id,)
+        )
+        config = cursor_principal.fetchone()
+        
+        if not config:
+            # Si no se encuentra por tenant_id, intentar por id (para compatibilidad)
+            cursor_principal.execute(
+                "SELECT id, nombre_panaderia FROM configuracion_panaderia WHERE id = ?",
+                (tenant_id,)
+            )
+            config = cursor_principal.fetchone()
+            
+        if not config:
+            conn_principal.close()
+            return jsonify({'success': False, 'error': 'Cliente no encontrado'}), 404
+        
+        config_id = config[0]
+        nombre_tenant = config[1]
+        print(f"✅ [ELIMINAR] Encontrado en configuracion: {nombre_tenant} (config_id: {config_id})")
+        
+        # =============================================
+        # 2. BUSCAR EN tenant_master POR tenant_id
+        # =============================================
+        conn_master = sqlite3.connect('tenant_master.db')
+        cursor_master = conn_master.cursor()
+        cursor_master.execute(
+            "SELECT id, nombre, subdominio FROM tenants WHERE id = ?",
+            (tenant_id,)
+        )
+        tenant = cursor_master.fetchone()
+        
+        if tenant:
+            master_id = tenant[0]
+            subdominio = tenant[2]
+            print(f"✅ [ELIMINAR] Encontrado en master: ID {master_id}")
+            
+            if master_id == 1:
+                conn_master.close()
+                conn_principal.close()
+                return jsonify({'success': False, 'error': 'No se puede eliminar el principal'}), 403
+            
+            # Eliminar de tenant_master
+            cursor_master.execute("DELETE FROM tenants WHERE id = ?", (master_id,))
+            conn_master.commit()
+            print(f"✅ [ELIMINAR] Eliminado de tenant_master")
+            
+            # Eliminar archivo de BD
+            db_file = f"databases_tenants/{subdominio}.db"
+            if os.path.exists(db_file):
+                os.remove(db_file)
+                print(f"✅ [ELIMINAR] BD eliminada: {db_file}")
+        else:
+            print(f"⚠️ [ELIMINAR] No encontrado en tenant_master (ya fue eliminado)")
+        
+        conn_master.close()
+        
+        # =============================================
+        # 3. ELIMINAR DE configuracion_panaderia
+        # =============================================
+        cursor_principal.execute(
+            "DELETE FROM configuracion_panaderia WHERE id = ?",
+            (config_id,)
+        )
+        conn_principal.commit()
+        conn_principal.close()
+        print(f"✅ [ELIMINAR] Eliminado de configuracion_panaderia")
+        
+        return jsonify({'success': True, 'message': f'Cliente "{nombre_tenant}" eliminado exitosamente'})
+        
+    except Exception as e:
+        print(f"❌ [ELIMINAR] Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+    
+# ============================================
+# ACTIVAR/DESACTIVAR CLIENTE (TOGGLE)
+# ============================================
+@app.route('/toggle_cliente/<int:tenant_id>', methods=['POST'])
+@login_required
+def toggle_cliente(tenant_id):
+    """Activa o desactiva un cliente (Solo super_admin)"""
+    try:
+        # Verificar permisos
+        if session.get('rol') != 'super_admin':
+            return jsonify({'success': False, 'error': 'No tienes permiso'}), 403
+        
+        import sqlite3
+        
+        print(f"🔍 [TOGGLE] Iniciando toggle del tenant ID: {tenant_id}")
+        
+        # 1. Obtener estado actual en tenant_master
+        conn_master = sqlite3.connect('tenant_master.db')
+        cursor_master = conn_master.cursor()
+        cursor_master.execute("SELECT activo FROM tenants WHERE id = ?", (tenant_id,))
+        resultado = cursor_master.fetchone()
+        
+        if not resultado:
+            conn_master.close()
+            return jsonify({'success': False, 'error': 'Cliente no encontrado'}), 404
+        
+        estado_actual = resultado[0] if resultado[0] is not None else 1
+        nuevo_estado = 0 if estado_actual == 1 else 1
+        
+        print(f"📊 Estado actual: {estado_actual} → Nuevo estado: {nuevo_estado}")
+        
+        # 2. Actualizar tenant_master
+        cursor_master.execute("UPDATE tenants SET activo = ? WHERE id = ?", (nuevo_estado, tenant_id))
+        conn_master.commit()
+        conn_master.close()
+        print(f"✅ Tenant actualizado en tenant_master.db")
+        
+        # 3. Actualizar configuracion_panaderia
+        conn_principal = sqlite3.connect('databases_tenants/panaderia_principal.db')
+        cursor_principal = conn_principal.cursor()
+        
+        # Actualizar por id o por tenant_id
+        cursor_principal.execute(
+            "UPDATE configuracion_panaderia SET activo = ? WHERE id = ? OR tenant_id = ?",
+            (nuevo_estado, tenant_id, tenant_id)
+        )
+        conn_principal.commit()
+        conn_principal.close()
+        print(f"✅ Configuración actualizada en panaderia_principal.db")
+        
+        estado_texto = "ACTIVADO" if nuevo_estado == 1 else "DESACTIVADO"
+        print(f"✅ Cliente ID {tenant_id} {estado_texto}")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Cliente {estado_texto} exitosamente',
+            'nuevo_estado': nuevo_estado
+        })
+        
+    except Exception as e:
+        print(f"❌ Error en toggle_cliente: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ============================================
+# INICIAR APLICACIÓN
+# ============================================
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True)
+    print("🚀 Iniciando Servidor...")
+    print("📂 Sistema Multi-Tenant para Panaderías")
+    print("🌐 http://localhost:5000")
+    print("=" * 50)
+    app.run(debug=True, host='0.0.0.0', port=5000)

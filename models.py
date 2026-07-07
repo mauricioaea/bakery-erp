@@ -235,43 +235,55 @@ class ConfiguracionPanaderia(db.Model):
     panaderia_id = db.Column(db.Integer, nullable=False, default=1)
     id = db.Column(db.Integer, primary_key=True)
     
-    # INFORMACIÓN BÁSICA DE LA PANADERÍA (YA EXISTENTE)
+    # 🆕 CAMPO PARA SINCRONIZAR CON TENANT_MASTER
+    tenant_id = db.Column(db.Integer, nullable=True)
+    
+    # 🆕 CAMPO PARA ACTIVAR/DESACTIVAR CLIENTE
+    activo = db.Column(db.Integer, default=1)
+    
+    # INFORMACIÓN BÁSICA DE LA PANADERÍA
     nombre_panaderia = db.Column(db.String(200), nullable=False, default='Mi Panadería')
     telefono_contacto = db.Column(db.String(20))
     direccion = db.Column(db.Text)
     
-    # 🆕 SISTEMA DE LICENCIAS Y LÍMITES (YA EXISTENTE)
-    tipo_licencia = db.Column(db.String(20), default='local')  # 'local', 'nube_basica'
+    # 🆕 SISTEMA DE LICENCIAS Y LÍMITES
+    tipo_licencia = db.Column(db.String(20), default='local')
     max_usuarios = db.Column(db.Integer, default=3)
     ventas_ilimitadas = db.Column(db.Boolean, default=True)
     
-    # 🆕 MEJORADO: CONTROL DE SUSCRIPCIÓN PARA NUBE
-    fecha_expiracion = db.Column(db.Date)  # Fecha de vencimiento
-    estado_suscripcion = db.Column(db.String(20), default='activa')  # 'activa', 'expirada', 'bloqueada'
-    dias_gracia = db.Column(db.Integer, default=7)  # Días de gracia después del vencimiento
+    # CONTROL DE SUSCRIPCIÓN PARA NUBE
+    fecha_expiracion = db.Column(db.Date)
+    estado_suscripcion = db.Column(db.String(20), default='activa')
+    dias_gracia = db.Column(db.Integer, default=7)
     
-    # 🆕 NUEVO: SISTEMA DE NOTIFICACIONES
-    ultima_notificacion = db.Column(db.DateTime)  # Cuándo se envió la última notificación
-    notificaciones_pendientes = db.Column(db.Integer, default=0)  # Número de notificaciones pendientes
+    # SISTEMA DE NOTIFICACIONES
+    ultima_notificacion = db.Column(db.DateTime)
+    notificaciones_pendientes = db.Column(db.Integer, default=0)
     
-    # 🆕 NUEVO: DATOS DE FACTURACIÓN CLIENTE NUBE
+    # DATOS DE FACTURACIÓN CLIENTE NUBE
     razon_social = db.Column(db.String(200))
     nit = db.Column(db.String(20))
     email_facturacion = db.Column(db.String(120))
     telefono_facturacion = db.Column(db.String(20))
     
-    # 🆕 NUEVO: DATOS DE PAGO
-    metodo_pago = db.Column(db.String(50), default='transferencia')  # 'transferencia', 'paypal', etc.
-    referencia_pago = db.Column(db.String(100))  # Número de referencia de pago
+    # DATOS DE PAGO
+    metodo_pago = db.Column(db.String(50), default='transferencia')
+    referencia_pago = db.Column(db.String(100))
     
-    # FECHAS DE CONTROL (YA EXISTENTE)
+    # FECHAS DE CONTROL
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
     fecha_actualizacion = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    ultimo_cierre = db.Column(db.Date)
+    sistema_activo = db.Column(db.Boolean, default=True)
     
     def __repr__(self):
         return f'<ConfiguracionPanaderia {self.nombre_panaderia} - {self.tipo_licencia}>'
     
-    # 🆕 MÉTODOS MEJORADOS PARA SUSCRIPCIONES NUBE
+    # =============================================
+    # MÉTODOS DE LA CLASE
+    # =============================================
+    
     @property
     def usuarios_activos_count(self):
         """Cuenta cuántos usuarios activos tiene la panadería"""
@@ -287,12 +299,11 @@ class ConfiguracionPanaderia(db.Model):
         """Calcula cuántos usuarios más se pueden crear"""
         return max(0, self.max_usuarios - self.usuarios_activos_count)
     
-    # 🆕 NUEVO: MÉTODOS ESPECÍFICOS PARA SUSCRIPCIONES NUBE
     @property
     def suscripcion_activa(self):
         """Verifica si la suscripción está activa (solo para nube)"""
         if self.tipo_licencia == 'local':
-            return True  # Las licencias locales siempre están activas
+            return True
         
         if self.estado_suscripcion == 'bloqueada':
             return False
@@ -308,7 +319,7 @@ class ConfiguracionPanaderia(db.Model):
     def dias_para_expiracion(self):
         """Calcula días restantes para expiración (solo nube)"""
         if self.tipo_licencia == 'local' or not self.fecha_expiracion:
-            return 999  # Nunca expira
+            return 999
         
         from datetime import datetime
         dias = (self.fecha_expiracion - datetime.now().date()).days
@@ -333,7 +344,6 @@ class ConfiguracionPanaderia(db.Model):
         else:
             return f"EN GRACIA - {abs(dias)} días de gracia 🚨"
     
-    # 🆕 NUEVO: MÉTODO PARA ACTUALIZAR ESTADO AUTOMÁTICAMENTE
     def actualizar_estado_suscripcion(self):
         """Actualiza el estado de suscripción basado en fechas"""
         if self.tipo_licencia == 'local':
@@ -352,14 +362,16 @@ class ConfiguracionPanaderia(db.Model):
         elif dias_restantes < 0:
             self.estado_suscripcion = 'expirada'
         else:
-            self.estado_suscripcion = 'activa'
-            
+            self.estado_suscripcion = 'activa'            
 
 class Panaderia(db.Model):
     __tablename__ = 'panaderias'
     
-    panaderia_id = db.Column(db.Integer, nullable=False, default=1)
-    id = db.Column(db.Integer, primary_key=True)
+    # SOLO DEBE TENER UN ID COMO PRIMARY KEY
+    id = db.Column(db.Integer, primary_key=True)  # ESTE es el que usan las foreign keys
+    
+    # ELIMINA esta línea: panaderia_id = db.Column(db.Integer, nullable=False, default=1)
+    
     nombre = db.Column(db.String(100), nullable=False)
     direccion = db.Column(db.String(200))
     telefono = db.Column(db.String(20))
@@ -374,8 +386,8 @@ class Panaderia(db.Model):
     
     # CONTROL
     activa = db.Column(db.Boolean, default=True)
-    fecha_creacion = db.Column(db.DateTime)  # Sin default por compatibilidad con SQLite
-    fecha_actualizacion = db.Column(db.DateTime)  # Sin default por compatibilidad
+    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)  # Añade default
+    fecha_actualizacion = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     def __repr__(self):
         return f'<Panaderia {self.nombre}>'
@@ -2037,7 +2049,7 @@ def obtener_configuracion_panaderia(panaderia_id=1):
     if not config:
         # Crear configuración por defecto si no existe
         config = ConfiguracionPanaderia(
-            id=panaderia_id,
+            id=panaderia_id,        
             nombre_panaderia="Panadería Principal",
             tipo_licencia="local"
         )
@@ -2061,3 +2073,67 @@ def obtener_limites_panaderia():
         'tipo_licencia': config.tipo_licencia,
         'suscripcion_activa': config.suscripcion_activa
     }
+    
+# ============================================
+# MODELO: LogSistema - REGISTRO DE ACTIVIDADES
+# ============================================
+
+class LogSistema(db.Model):
+    __tablename__ = 'logs_sistema'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    panaderia_id = db.Column(db.Integer, db.ForeignKey('panaderias.id'), nullable=False)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
+    accion = db.Column(db.String(50), nullable=False)  # 'cierre_diario', 'login', 'crear_venta', etc.
+    modulo = db.Column(db.String(30))  # 'finanzas', 'ventas', 'inventario', etc.
+    descripcion = db.Column(db.String(500))
+    fecha_hora = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    ip_address = db.Column(db.String(45))
+    user_agent = db.Column(db.String(500))
+    datos_adicionales = db.Column(db.JSON)    # Datos adicionales en formato JSON
+    
+    # Relaciones
+    panaderia = db.relationship('Panaderia', backref='logs_sistema', lazy=True)
+    usuario = db.relationship('Usuario', backref='logs_sistema', lazy=True)
+    def __repr__(self):
+        return f'<LogSistema {self.id}: {self.accion} - {self.fecha_hora}>'
+
+
+# ============================================
+# MODELO: RegistroFinanciero - CONTROL DE SALDOS
+# ============================================
+
+class RegistroFinanciero(db.Model):
+    __tablename__ = 'registros_financieros'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    panaderia_id = db.Column(db.Integer, db.ForeignKey('panaderias.id'), nullable=False, unique=True)
+    
+    # Saldos actuales
+    saldo_disponible = db.Column(db.Float, default=0.0)  # Dinero en cuentas bancarias
+    saldo_pendiente = db.Column(db.Float, default=0.0)   # Efectivo por depositar
+    saldo_tarjetas = db.Column(db.Float, default=0.0)    # Tarjetas por cobrar
+    saldo_total = db.Column(db.Float, default=0.0)       # Suma de todos los saldos
+    
+    # Control de cierres
+    ultimo_cierre_fecha = db.Column(db.Date)
+    ultimo_cierre_monto = db.Column(db.Float, default=0.0)
+    
+    # Estadísticas
+    ventas_mes_actual = db.Column(db.Float, default=0.0)
+    gastos_mes_actual = db.Column(db.Float, default=0.0)
+    
+    # Auditoría
+    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
+    fecha_actualizacion = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relación
+    panaderia = db.relationship('Panaderia', backref='registro_financiero', lazy=True)
+    
+    def actualizar_saldos(self):
+        """Actualiza automáticamente los saldos totales"""
+        self.saldo_total = self.saldo_disponible + self.saldo_pendiente + self.saldo_tarjetas
+        self.fecha_actualizacion = datetime.utcnow()
+    
+    def __repr__(self):
+        return f'<RegistroFinanciero Panadería {self.panaderia_id}: ${self.saldo_total}>'

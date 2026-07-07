@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestión de Clientes - Sistema Panadería</title>
@@ -27,6 +30,59 @@
         .badge-expired { background-color: #dc3545; }
         .badge-active { background-color: #28a745; }
         .badge-warning { background-color: #ffc107; color: #000; }
+
+        /* ============================================= */
+        /* TOGGLE SWITCH - Activar/Desactivar Cliente    */
+        /* ============================================= */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+            margin: 0 5px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #6c757d;
+            transition: .3s;
+            border-radius: 26px;
+        }
+
+        .toggle-slider::before {
+            content: "";
+            position: absolute;
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background-color: #28a745;
+        }
+
+        .toggle-switch input:checked + .toggle-slider::before {
+            transform: translateX(24px);
+        }
+
+        .toggle-switch:hover .toggle-slider {
+            opacity: 0.8;
+        }
     </style>
 </head>
 
@@ -206,7 +262,7 @@
                                             {% endif %}
                                         </td>
                                         <td>
-                                            <!-- 🆕 BOTÓN PARA VER USUARIOS - SOLO SUPER_ADMIN -->
+                                            <!-- BOTÓN PARA VER USUARIOS - SOLO SUPER_ADMIN -->
                                             {% if current_user.rol == 'super_admin' %}
                                             <button class="btn btn-info btn-sm" 
                                                     onclick="verUsuariosCliente({{ config.id }}, '{{ config.nombre_panaderia }}')"
@@ -235,6 +291,19 @@
                                                         title="Acceder a esta panadería">
                                                     <i class="fas fa-sign-in-alt"></i>
                                                 </button>
+                                                <!-- 🆕 Toggle Switch Activar/Desactivar -->
+                                                <label class="toggle-switch" title="Activar/Desactivar cliente">
+                                                    <input type="checkbox" 
+                                                        id="toggle-{{ config.id }}"
+                                                        {% if config.activo == 1 %}checked{% endif %}
+                                                        onchange="toggleCliente({{ config.id }}, this.checked)">
+                                                    <span class="toggle-slider"></span>
+                                                </label>
+                                                <button class="btn btn-outline-danger" 
+                                                        onclick="eliminarCliente({{ config.id }}, '{{ config.nombre_panaderia }}')"
+                                                        title="Eliminar Cliente">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
                                                 {% else %}
                                                 <span class="text-muted small">No disponible</span>
                                                 {% endif %}
@@ -259,10 +328,10 @@
     </div>
 
     <!-- ============================================= -->
-    <!-- 🆕 MODALES PARA LOS 3 BOTONES DE ACCIONES -->
+    <!-- MODALES PARA LOS BOTONES DE ACCIONES -->
     <!-- ============================================= -->
 
-    <!-- Modal 1: Agregar Nuevo Cliente (Existente) -->
+    <!-- Modal 1: Agregar Nuevo Cliente -->
     <div class="modal fade" id="modalCliente" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -284,14 +353,12 @@
                                 <input type="text" class="form-control" name="telefono_contacto">
                             </div>
                         </div>
-
                         <div class="row mb-3">
                             <div class="col-12">
                                 <label class="form-label">Dirección</label>
                                 <textarea class="form-control" name="direccion" rows="2"></textarea>
                             </div>
                         </div>
-
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label">Tipo Licencia *</label>
@@ -306,7 +373,6 @@
                                 <input type="number" class="form-control" name="max_usuarios" value="3" min="1" max="50" required>
                             </div>
                         </div>
-
                         <div class="row mb-3" id="fechaExpiracionGroup" style="display: none;">
                             <div class="col-md-6">
                                 <label class="form-label">Fecha Expiración *</label>
@@ -317,7 +383,6 @@
                                 <input type="number" class="form-control" name="dias_gracia" value="7" min="0" max="30">
                             </div>
                         </div>
-
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label">Razón Social</label>
@@ -353,7 +418,6 @@
                 <form id="formEditarCliente" method="POST">
                     <div class="modal-body">
                         <input type="hidden" id="editarClienteId" name="cliente_id">
-                        
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label">Nombre de la Panadería *</label>
@@ -364,14 +428,12 @@
                                 <input type="text" class="form-control" id="editarTelefono" name="telefono_contacto">
                             </div>
                         </div>
-
                         <div class="row mb-3">
                             <div class="col-12">
                                 <label class="form-label">Dirección</label>
                                 <textarea class="form-control" id="editarDireccion" name="direccion" rows="2"></textarea>
                             </div>
                         </div>
-
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label">Tipo de Licencia *</label>
@@ -386,7 +448,6 @@
                                 <input type="number" class="form-control" id="editarMaxUsuarios" name="max_usuarios" min="1" max="50" required>
                             </div>
                         </div>
-
                         <div class="row mb-3" id="editarFechaExpiracionGroup" style="display: none;">
                             <div class="col-md-6">
                                 <label class="form-label">Fecha de Expiración *</label>
@@ -397,7 +458,6 @@
                                 <input type="number" class="form-control" id="editarDiasGracia" name="dias_gracia" min="0" max="30">
                             </div>
                         </div>
-
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label">Razón Social</label>
@@ -433,8 +493,6 @@
                 <form id="formRenovarSuscripcion" method="POST">
                     <div class="modal-body">
                         <input type="hidden" id="renovarClienteId" name="cliente_id">
-                        
-                        <!-- Información Actual -->
                         <div class="alert alert-info">
                             <h6><i class="fas fa-info-circle me-2"></i>Información Actual</h6>
                             <div class="row small">
@@ -452,7 +510,6 @@
                                 </div>
                             </div>
                         </div>
-
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label">Nuevo Tipo de Licencia *</label>
@@ -467,8 +524,6 @@
                                 <input type="number" class="form-control" id="renovarMaxUsuarios" name="max_usuarios" min="1" max="50" required>
                             </div>
                         </div>
-
-                        <!-- Opciones de Renovación -->
                         <div class="row mb-3" id="renovarOpcionesGroup">
                             <div class="col-md-6">
                                 <label class="form-label">Período de Renovación *</label>
@@ -485,14 +540,12 @@
                                 <input type="date" class="form-control" id="renovarNuevaFecha" name="nueva_fecha_expiracion" required>
                             </div>
                         </div>
-
                         <div class="row mb-3" id="renovarDiasPersonalizados" style="display: none;">
                             <div class="col-md-12">
                                 <label class="form-label">Días Personalizados</label>
                                 <input type="number" class="form-control" id="renovarDiasCustom" name="dias_personalizados" min="1" max="730" placeholder="Ingresa número de días">
                             </div>
                         </div>
-
                         <div class="alert alert-warning">
                             <i class="fas fa-exclamation-triangle me-2"></i>
                             <strong>Nota:</strong> Al renovar, la nueva fecha de vencimiento reemplazará la fecha actual.
@@ -525,14 +578,12 @@
                         Estás a punto de acceder a la panadería:
                         <strong id="accederPanaderiaNombre"></strong>
                     </div>
-                    
                     <div class="mb-3">
                         <label class="form-label">Seleccionar Usuario:</label>
                         <select class="form-select" id="accederUsuarioSelect">
                             <option value="">Cargando usuarios...</option>
                         </select>
                     </div>
-
                     <div class="alert alert-warning">
                         <i class="fas fa-shield-alt me-2"></i>
                         <strong>Modo Super Admin:</strong> Podrás ver y gestionar esta panadería como si fueras uno de sus usuarios.
@@ -570,7 +621,12 @@
         </div>
     </div>
 
+    <!-- ============================================= -->
+    <!-- SCRIPTS - CORREGIDOS -->
+    <!-- ============================================= -->
+    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
     <script>
         // =============================================
         // FUNCIONES GENERALES
@@ -689,7 +745,6 @@
                     document.getElementById('renovarTipoLicencia').value = cliente.data.tipo_licencia;
                     document.getElementById('renovarMaxUsuarios').value = cliente.data.max_usuarios;
                     
-                    // Calcular nueva fecha por defecto
                     calcularNuevaFecha();
                     toggleRenovarOpciones();
                     
@@ -795,7 +850,6 @@
                 document.getElementById('accederPanaderiaNombre').textContent = nombrePanaderia;
                 document.getElementById('accederPanaderiaModal').dataset.panaderiaId = panaderiaId;
                 
-                // Cargar usuarios de la panadería
                 const response = await fetch(`/obtener_usuarios_panaderia/${panaderiaId}`);
                 const usuarios = await response.json();
                 
@@ -946,5 +1000,164 @@
         // Inicializar
         document.addEventListener('DOMContentLoaded', toggleFechaExpiracion);
     </script>
+
+    <!-- ============================================= -->
+    <!-- FUNCIÓN ELIMINAR CLIENTE - ÚNICA Y GLOBAL -->
+    <!-- ============================================= -->
+    <script>
+    async function eliminarCliente(clienteId, nombreCliente) {
+        console.log('🔍 Eliminando cliente:', {id: clienteId, nombre: nombreCliente});
+        if (!confirm('⚠️ ¿Estás seguro de eliminar el cliente "' + nombreCliente + '"?\n\nEsta acción eliminará TODOS los datos de la panadería.\n¡Esta operación NO se puede deshacer!')) {
+            return;
+        }
+        
+        try {
+            const response = await fetch('/eliminar_cliente/' + clienteId, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert('✅ ' + result.message);
+                window.location.reload(true);
+            } else {
+                alert('❌ Error: ' + result.error);
+            }
+        } catch (error) {
+            console.error('❌ Error:', error);
+            alert('❌ Error al eliminar cliente: ' + error.message);
+        }
+    }
+        
+        try {
+            const response = await fetch('/eliminar_cliente/' + clienteId, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert('✅ ' + result.message);
+                // FORZAR RECARGA DESDE EL SERVIDOR (sin caché)
+                window.location.reload(true);
+            } else {
+                alert('❌ Error: ' + result.error);
+            }
+        } catch (error) {
+            alert('❌ Error al eliminar cliente: ' + error.message);
+        }
+    }
+    </script>
+
+    <!-- ============================================= -->
+    <!-- JAVASCRIPT FINAL - VERSIÓN LIMPIA -->
+    <!-- ============================================= -->
+    <script>
+    // Función para eliminar cliente - DEFINIDA CORRECTAMENTE
+    async function eliminarCliente(clienteId, nombreCliente) {
+        console.log('🔍 Eliminando cliente:', clienteId, nombreCliente);
+        
+        if (!confirm('⚠️ ¿Estás seguro de eliminar el cliente "' + nombreCliente + '"?\n\nEsta acción eliminará TODOS los datos de la panadería.\n¡Esta operación NO se puede deshacer!')) {
+            return;
+        }
+        
+        try {
+            const response = await fetch('/eliminar_cliente/' + clienteId, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            
+            const result = await response.json();
+            console.log('📦 Respuesta:', result);
+            
+            if (result.success) {
+                alert('✅ ' + result.message);
+                window.location.reload(true);
+            } else {
+                alert('❌ Error: ' + result.error);
+            }
+        } catch (error) {
+            console.error('❌ Error:', error);
+            alert('❌ Error al eliminar cliente: ' + error.message);
+        }
+    }
+
+    // Asegurar que la función esté disponible globalmente
+    window.eliminarCliente = eliminarCliente;
+    console.log('✅ Función eliminarCliente registrada');
+
+    
+    // =============================================
+    // ACTIVAR/DESACTIVAR CLIENTE (TOGGLE SWITCH)
+    // =============================================
+    async function toggleCliente(clienteId, activado) {
+        console.log('🔄 toggleCliente llamado:', {clienteId, activado});
+        
+        // 👇 CORREGIDO: El mensaje usa 'activado' directamente
+        const mensaje = activado 
+            ? '✅ ¿Activar este cliente? Podrá acceder al sistema nuevamente.'
+            : '⚠️ ¿Desactivar este cliente? Los datos se conservarán pero NO podrá acceder al sistema.';
+        
+        const checkbox = document.getElementById('toggle-' + clienteId);
+        if (!checkbox) {
+            console.error('❌ No se encontró el checkbox:', 'toggle-' + clienteId);
+            return;
+        }
+        
+        const estadoAnterior = checkbox.checked;
+        console.log('📊 Estado anterior:', estadoAnterior);
+        
+        if (!confirm(mensaje)) {
+            checkbox.checked = estadoAnterior;
+            console.log('⏸️ Operación cancelada');
+            return;
+        }
+        
+        try {
+            console.log('📤 Enviando petición a /toggle_cliente/' + clienteId);
+            
+            const response = await fetch('/toggle_cliente/' + clienteId, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            
+            console.log('📥 Respuesta recibida:', response.status);
+            
+            const result = await response.json();
+            console.log('📦 Respuesta:', result);
+            
+            if (result.success) {
+                // 👇 CORREGIDO: Usar 'activado' para el mensaje (NO invertir)
+                const estadoTexto = activado ? 'ACTIVADO' : 'DESACTIVADO';
+                console.log('✅ Éxito: Cliente', estadoTexto);
+                alert('✅ Cliente ' + estadoTexto + ' exitosamente');
+            } else {
+                checkbox.checked = estadoAnterior;
+                console.error('❌ Error del servidor:', result.error);
+                alert('❌ Error: ' + result.error);
+            }
+        } catch (error) {
+            checkbox.checked = estadoAnterior;
+            console.error('❌ Error en fetch:', error);
+            alert('❌ Error al cambiar estado: ' + error.message);
+        }
+    }
+
+    // Asegurar que la función esté disponible globalmente
+    window.toggleCliente = toggleCliente;
+    console.log('✅ Función toggleCliente registrada');
+    </script>
+
 </body>
 </html>

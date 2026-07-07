@@ -88,3 +88,4 @@ limpieza_super_segura.py
 __pycache__/ 
 *.pyc 
 instance/ 
+backup_final_20260630/ 

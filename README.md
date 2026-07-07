@@ -133,7 +133,7 @@ python app.py
 ```
 
 ### Credenciales por Defecto
-- **Super Admin:** `dev_master` / `MasterSecure2025!`
+- **Super Admin:** `dev_master` / `dev_MasterSecure2025`
 - **Admin Demo:** `admin` / `admin123`
 
 ## 🏗️ Estructura del Proyecto
@@ -591,3 +591,43 @@ python scripts\backup_manager.py create manual "Fin dia - version funcional"
 11:00 AM → python scripts\backup_manager.py create manual "Antes de cambiar calculo inventario" 
 2:00 PM  → python scripts\backup_manager.py create manual "Antes de optimizar punto venta"
 5:00 PM  → python scripts\backup_manager.py create manual "Fin dia - todos los cambios funcionan"
+
+
+**avances a 28/junio/2026**
+despue de inicializar la aplicacion con python app.py abrir el navegador y pegar el siguiente link para arrancar a utilizar la aplicacion: http://localhost:5000/?tenant=panadería_sqlalchemy
+
+plan maestro logrado y en continuo avance hasta la fecha.
+
+
+## 📌 **RESUMEN GUARDADO PARA CUANDO REGRESES**
+
+### ✅ **ESTADO ACTUAL**
+- Backup creado antes de la limpieza
+- Script de limpieza ejecutándose, esperando confirmación para eliminar 4 tenants de prueba (IDs: 2, 7, 8, 9)
+- Los archivos de prueba y diagnóstico están listos para ser eliminados
+
+### 📋 **PLAN MAESTRO (GUARDADO)**
+
+**FASE 1: DEPURACIÓN** (En progreso)
+- [x] Backup completo creado
+- [x] Script de limpieza listo
+- [ ] Limpiar tenants de prueba (pendiente tu confirmación)
+- [ ] Verificar consultas SQL
+- [ ] Corregir advertencias de SQLAlchemy
+
+**FASE 2: FUNCIONALIDADES**
+- Dashboard por tenant
+- Reportes por tenant
+- Cierre diario multi-tenant
+- Módulo de clientes e inventario
+
+**FASE 3: PREPARACIÓN PARA LA NUBE**
+- Migrar a PostgreSQL
+- Dockerizar la aplicación
+- Configurar subdominios
+- Backups automáticos
+
+**FASE 4: SEGURIDAD Y MONETIZACIÓN**
+- HTTPS/SSL
+- Planes de suscripción
+- Pasarela de pagos
