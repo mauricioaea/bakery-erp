@@ -2195,3 +2195,145 @@ class RegistroFinanciero(db.Model):
     
     def __repr__(self):
         return f'<RegistroFinanciero Panadería {self.panaderia_id}: ${self.saldo_total}>'
+
+# =============================================
+# ANÁLISIS DE TENDENCIAS (NIVEL 2)
+# =============================================
+
+def analizar_tendencias_ventas(panaderia_id, dias_historial=30):
+    """
+    Analiza tendencias de ventas usando estadísticas básicas y patrones
+    Args:
+        panaderia_id: ID del tenant
+        dias_historial: Número de días a analizar
+    Returns:
+        dict: Información de tendencias y patrones
+    """
+    from datetime import datetime, timedelta
+    from sqlalchemy import func, extract
+    import statistics
+    
+    try:
+        # 1. Obtener ventas diarias del período
+        fecha_inicio = datetime.now() - timedelta(days=dias_historial)
+        
+        ventas_diarias = db.session.query(
+            func.date(Venta.fecha_hora).label('fecha'),
+            func.sum(Venta.total).label('total')
+        ).filter(
+            Venta.panaderia_id == panaderia_id,
+            Venta.fecha_hora >= fecha_inicio
+        ).group_by(
+            func.date(Venta.fecha_hora)
+        ).order_by(
+            func.date(Venta.fecha_hora)
+        ).all()
+        
+        # 2. Si no hay suficientes datos
+        if len(ventas_diarias) < 7:
+            return {
+                'tiene_datos_suficientes': False,
+                'mensaje': 'Se necesitan al menos 7 días de datos para analizar tendencias.',
+                'dias_analizados': len(ventas_diarias),
+                'tendencia': 'insuficiente_datos',
+                'recomendacion': 'Continúa registrando ventas para generar análisis más precisos.'
+            }
+        
+        # 3. Calcular métricas básicas
+        valores_ventas = [v.total for v in ventas_diarias]
+        promedio = statistics.mean(valores_ventas) if valores_ventas else 0
+        maximo = max(valores_ventas) if valores_ventas else 0
+        minimo = min(valores_ventas) if valores_ventas else 0
+        mediana = statistics.median(valores_ventas) if valores_ventas else 0
+        
+        # 4. Calcular tendencia (comparar última semana con semana anterior)
+        mitad = len(valores_ventas) // 2
+        primera_mitad = valores_ventas[:mitad]
+        segunda_mitad = valores_ventas[mitad:]
+        
+        promedio_primera = statistics.mean(primera_mitad) if primera_mitad else 0
+        promedio_segunda = statistics.mean(segunda_mitad) if segunda_mitad else 0
+        
+        cambio_porcentaje = ((promedio_segunda - promedio_primera) / promedio_primera * 100) if promedio_primera > 0 else 0
+        
+        # 5. Identificar días con mayor venta
+        dias_con_mayor_venta = []
+        for i, venta in enumerate(ventas_diarias):
+            if venta.total > promedio * 1.4:  # 40% por encima del promedio
+                dias_con_mayor_venta.append(i)
+        
+        # 6. Identificar días con menor venta
+        dias_con_menor_venta = []
+        for i, venta in enumerate(ventas_diarias):
+            if venta.total < promedio * 0.6:  # 40% por debajo del promedio
+                dias_con_menor_venta.append(i)
+        
+        # 7. Determinar tendencia general
+        if cambio_porcentaje > 10:
+            tendencia_general = 'creciente'
+            icono_tendencia = '📈'
+            color_tendencia = 'success'
+        elif cambio_porcentaje < -10:
+            tendencia_general = 'decreciente'
+            icono_tendencia = '📉'
+            color_tendencia = 'danger'
+        else:
+            tendencia_general = 'estable'
+            icono_tendencia = '➡️'
+            color_tendencia = 'warning'
+        
+        # 8. Generar recomendaciones
+        recomendaciones = []
+        if dias_con_mayor_venta:
+            recomendaciones.append(
+                f"Los días {', '.join([str(i+1) for i in dias_con_mayor_venta[:3]])} tuvieron ventas excepcionales. "
+                "Considera aumentar inventario para esos días."
+            )
+        if dias_con_menor_venta:
+            recomendaciones.append(
+                "Hay días con ventas por debajo del promedio. "
+                "Considera promociones especiales o descuentos para esos días."
+            )
+        if cambio_porcentaje > 15:
+            recomendaciones.append(
+                f"📈 Las ventas están creciendo un {cambio_porcentaje:.1f}%. "
+                "¡Excelente tendencia! Mantén el ritmo."
+            )
+        elif cambio_porcentaje < -15:
+            recomendaciones.append(
+                f"📉 Las ventas están disminuyendo un {abs(cambio_porcentaje):.1f}%. "
+                "Revisa estrategias de marketing o promociones."
+            )
+        
+        if not recomendaciones:
+            recomendaciones.append("✅ Las ventas se mantienen estables. Sigue así.")
+        
+        return {
+            'tiene_datos_suficientes': True,
+            'dias_analizados': len(ventas_diarias),
+            'promedio_diario': promedio,
+            'maximo_diario': maximo,
+            'minimo_diario': minimo,
+            'mediana_diaria': mediana,
+            'cambio_porcentaje': cambio_porcentaje,
+            'tendencia_general': tendencia_general,
+            'icono_tendencia': icono_tendencia,
+            'color_tendencia': color_tendencia,
+            'dias_pico': len(dias_con_mayor_venta),
+            'dias_bajos': len(dias_con_menor_venta),
+            'recomendaciones': recomendaciones,
+            'ventas_diarias': [{'fecha': v.fecha, 'total': v.total} for v in ventas_diarias],
+            'mensaje': f"📊 Análisis de {len(ventas_diarias)} días de actividad."
+        }
+        
+    except Exception as e:
+        print(f"Error en analizar_tendencias_ventas: {e}")
+        return {
+            'tiene_datos_suficientes': False,
+            'mensaje': f"Error al analizar tendencias: {str(e)}",
+            'tendencia': 'error'
+        }
+        
+# =============================================
+# FIN DE MODELS.PY
+# =============================================

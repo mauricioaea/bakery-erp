@@ -5784,6 +5784,12 @@ def reporte_ventas_avanzado():
         dias_actividad = (datetime.now() - primera_venta.fecha_hora).days
     else:
         dias_actividad = 0
+        
+    # =============================================
+    # 📊 ANÁLISIS DE TENDENCIAS (NIVEL 2)
+    # =============================================
+    from models import analizar_tendencias_ventas
+    analisis_tendencias = analizar_tendencias_ventas(panaderia_id)
     
     return render_template('ventas_avanzado.html',
                          # Fechas y período
@@ -5825,7 +5831,7 @@ def reporte_ventas_avanzado():
                          
                          # 🆕 DÍAS DE ACTIVIDAD PARA IA
                          dias_actividad=dias_actividad,
-                         
+                         analisis_tendencias=analisis_tendencias,
                          datetime=datetime)
 
 # Busca un lugar después de las otras rutas y agrega:
