@@ -4103,7 +4103,18 @@ def reporte_inventario_externo():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    productos = ProductoExterno.query.filter_by(activo=True).all()
+    # 👇 OBTENER EL TENANT ACTUAL (LA FUNCIÓN YA ESTÁ EN app.py)
+    panaderia_id = obtener_panaderia_actual()
+    
+    if not panaderia_id:
+        flash('No se pudo determinar la panadería', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # 👇 FILTRAR POR TENANT
+    productos = ProductoExterno.query.filter_by(
+        panaderia_id=panaderia_id,
+        activo=True
+    ).all()
     
     # Cálculos automáticos
     total_valor_inventario = 0
@@ -4122,11 +4133,14 @@ def reporte_inventario_externo():
         if producto.stock_actual <= producto.stock_minimo:
             productos_stock_bajo.append(producto)
     
+    # Obtener proveedores para el tenant actual
+    proveedores = Proveedor.query.filter_by(panaderia_id=panaderia_id).all()
+    
     return render_template('reporte_inventario_externo.html',
                          productos=productos,
                          total_valor_inventario=total_valor_inventario,
                          productos_stock_bajo=productos_stock_bajo,
-                         total_productos=len(productos))
+                         proveedores=proveedores)
 
 @app.route('/exportar_inventario_externo')
 @login_required
@@ -4213,13 +4227,21 @@ def reporte_ventas_externas():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
+    # 👇 OBTENER EL TENANT ACTUAL
+    panaderia_id = obtener_panaderia_actual()
+    
+    if not panaderia_id:
+        flash('No se pudo determinar la panadería', 'error')
+        return redirect(url_for('dashboard'))
+    
     # Parámetros de fecha (opcionales)
     fecha_inicio = request.args.get('fecha_inicio')
     fecha_fin = request.args.get('fecha_fin')
     
-    # Consulta base de detalles de venta de productos externos
-    query = DetalleVenta.query.join(ProductoExterno).filter(
-        DetalleVenta.producto_externo_id.isnot(None)
+    # 👇 CONSULTA BASE CON FILTRO POR TENANT
+    query = DetalleVenta.query.join(ProductoExterno).join(Venta).filter(
+        DetalleVenta.producto_externo_id.isnot(None),
+        Venta.panaderia_id == panaderia_id  # ✅ FILTRO POR TENANT
     )
     
     # Filtrar por fechas si se proporcionan
@@ -4227,7 +4249,7 @@ def reporte_ventas_externas():
         try:
             fecha_inicio = datetime.strptime(fecha_inicio, '%Y-%m-%d')
             fecha_fin = datetime.strptime(fecha_fin, '%Y-%m-%d')
-            query = query.join(Venta).filter(
+            query = query.filter(
                 Venta.fecha_hora.between(fecha_inicio, fecha_fin)
             )
         except ValueError:
@@ -4280,8 +4302,17 @@ def exportar_ventas_externas():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    detalles_venta = DetalleVenta.query.join(ProductoExterno).filter(
-        DetalleVenta.producto_externo_id.isnot(None)
+    # 👇 OBTENER EL TENANT ACTUAL
+    panaderia_id = obtener_panaderia_actual()
+    
+    if not panaderia_id:
+        flash('No se pudo determinar la panadería', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # 👇 CONSULTA CON FILTRO POR TENANT
+    detalles_venta = DetalleVenta.query.join(ProductoExterno).join(Venta).filter(
+        DetalleVenta.producto_externo_id.isnot(None),
+        Venta.panaderia_id == panaderia_id  # ✅ FILTRO POR TENANT
     ).all()
     
     from reportlab.lib.pagesizes import letter
@@ -4289,6 +4320,7 @@ def exportar_ventas_externas():
     from reportlab.lib import colors
     from reportlab.lib.styles import getSampleStyleSheet
     from io import BytesIO
+    from flask import Response
     
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter)
@@ -4319,14 +4351,14 @@ def exportar_ventas_externas():
         ventas_por_producto[producto.id]['ingresos'] += detalle.cantidad * detalle.precio_unitario
         ventas_por_producto[producto.id]['costo'] += detalle.cantidad * producto.precio_compra
     
-    # Preparar datos de la tabla - CORREGIDO (cambiar nombre de variable)
-    table_data = [['Producto', 'Categoría', 'Unidades', 'Ingresos', 'Costo', 'Utilidad', 'Margen %']]  # ← Cambié 'data' por 'table_data'
+    # Preparar datos de la tabla
+    table_data = [['Producto', 'Categoría', 'Unidades', 'Ingresos', 'Costo', 'Utilidad', 'Margen %']]
     
-    for venta_data in ventas_por_producto.values():  # ← Cambié 'data' por 'venta_data'
+    for venta_data in ventas_por_producto.values():
         utilidad = venta_data['ingresos'] - venta_data['costo']
         margen = (utilidad / venta_data['ingresos'] * 100) if venta_data['ingresos'] > 0 else 0
         
-        table_data.append([  # ← Usar 'table_data' en lugar de 'data'
+        table_data.append([
             venta_data['producto'].nombre,
             venta_data['producto'].categoria,
             str(venta_data['cantidad']),
@@ -4337,7 +4369,7 @@ def exportar_ventas_externas():
         ])
     
     # Crear tabla
-    table = Table(table_data)  # ← Usar 'table_data'
+    table = Table(table_data)
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
@@ -4371,15 +4403,30 @@ def dashboard_externos():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    # Métricas generales
-    total_productos = ProductoExterno.query.filter_by(activo=True).count()
+    # 👇 OBTENER EL TENANT ACTUAL
+    panaderia_id = obtener_panaderia_actual()
+    
+    if not panaderia_id:
+        flash('No se pudo determinar la panadería', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # 👇 FILTRAR POR TENANT
+    total_productos = ProductoExterno.query.filter_by(
+        panaderia_id=panaderia_id,
+        activo=True
+    ).count()
+    
     productos_stock_bajo = ProductoExterno.query.filter(
+        ProductoExterno.panaderia_id == panaderia_id,
         ProductoExterno.stock_actual <= ProductoExterno.stock_minimo,
         ProductoExterno.activo == True
     ).count()
     
     # Valor total del inventario
-    productos = ProductoExterno.query.filter_by(activo=True).all()
+    productos = ProductoExterno.query.filter_by(
+        panaderia_id=panaderia_id,
+        activo=True
+    ).all()
     valor_inventario = sum(p.stock_actual * p.precio_compra for p in productos)
     
     # Ventas del último mes
@@ -4387,21 +4434,23 @@ def dashboard_externos():
 
     ventas_recientes = DetalleVenta.query.join(ProductoExterno).join(Venta).filter(
         DetalleVenta.producto_externo_id.isnot(None),
+        Venta.panaderia_id == panaderia_id,  # ✅ FILTRO POR TENANT
         Venta.fecha_hora >= un_mes_atras
     ).all()
 
     ingresos_ultimo_mes = sum(d.cantidad * d.precio_unitario for d in ventas_recientes)
     utilidad_ultimo_mes = sum(d.cantidad * (d.producto_externo.precio_venta - d.producto_externo.precio_compra) for d in ventas_recientes)
 
-    # ← AGREGA ESTA LÍNEA FALTANTE ↓
     margen_promedio = (utilidad_ultimo_mes / ingresos_ultimo_mes * 100) if ingresos_ultimo_mes > 0 else 0
 
-    # Productos más vendidos (top 5) - CORREGIDO
+    # 👇 PRODUCTOS MÁS VENDIDOS CON FILTRO POR TENANT
     top_productos = db.session.query(
         ProductoExterno,
         db.func.sum(DetalleVenta.cantidad).label('total_vendido')
-    ).join(DetalleVenta).filter(
-        DetalleVenta.producto_externo_id.isnot(None)
+    ).join(DetalleVenta).join(Venta).filter(
+        DetalleVenta.producto_externo_id.isnot(None),
+        Venta.panaderia_id == panaderia_id,  # ✅ FILTRO POR TENANT
+        Venta.fecha_hora >= un_mes_atras
     ).group_by(ProductoExterno.id).order_by(
         db.desc('total_vendido')
     ).limit(5).all()
@@ -5517,6 +5566,8 @@ def reporte_analisis_predictivo():
 @modulo_requerido('reportes')
 def reporte_ventas_avanzado():
     """Reporte unificado: Ventas por período + Análisis Predictivo + ML"""
+    # 📦 IMPORTAR DATETIME AL INICIO
+    from datetime import datetime, timedelta
     
     # 🎯 VERIFICAR SESIÓN
     if 'user_id' not in session:
@@ -5720,6 +5771,20 @@ def reporte_ventas_avanzado():
     # =====================================================================
     # 🎯 RENDERIZAR TEMPLATE UNIFICADO CON TODOS LOS DATOS
     # =====================================================================
+    
+    # =============================================
+    # 📊 CALCULAR DÍAS DE ACTIVIDAD PARA IA
+    # =============================================
+    from datetime import datetime
+    primera_venta = Venta.query.filter_by(
+        panaderia_id=panaderia_id
+    ).order_by(Venta.fecha_hora.asc()).first()
+
+    if primera_venta:
+        dias_actividad = (datetime.now() - primera_venta.fecha_hora).days
+    else:
+        dias_actividad = 0
+    
     return render_template('ventas_avanzado.html',
                          # Fechas y período
                          periodo=periodo,
@@ -5758,8 +5823,10 @@ def reporte_ventas_avanzado():
                          productos_vendidos=productos_vendidos,
                          recomendaciones=recomendaciones,
                          
+                         # 🆕 DÍAS DE ACTIVIDAD PARA IA
+                         dias_actividad=dias_actividad,
+                         
                          datetime=datetime)
-    
 
 # Busca un lugar después de las otras rutas y agrega:
 

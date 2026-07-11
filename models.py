@@ -1593,62 +1593,119 @@ def generar_recomendacion_stock(producto_id, proyeccion):
     else:
         return "✅ Stock adecuado - Monitorear"
 
-def generar_alertas_inteligentes():
-    """Genera alertas inteligentes basadas en análisis ML"""
+def generar_alertas_inteligentes(panaderia_id=None):
+    """
+    Genera alertas inteligentes basadas en análisis ML
+    Args:
+        panaderia_id: ID del tenant (si no se pasa, se intenta obtener del contexto)
+    """
     alertas = []
     
+    # 🔍 Si no se pasa panaderia_id, intentar obtener del contexto
+    if panaderia_id is None:
+        from flask import session
+        if 'panaderia_id' in session:
+            panaderia_id = session['panaderia_id']
+        else:
+            # Si no hay contexto, retornar lista vacía
+            return alertas
+    
     try:
-        # Alertas de stock crítico
+        # 📊 1. Alertas de stock crítico (SOLO del tenant actual)
         productos_bajo_stock = Producto.query.filter(
+            Producto.panaderia_id == panaderia_id,
             Producto.stock_actual <= Producto.stock_minimo
         ).all()
         
         for producto in productos_bajo_stock:
             alertas.append({
                 'tipo': 'STOCK_CRITICO',
-                'mensaje': f'Stock crítico: {producto.nombre} ({producto.stock_actual} unidades)',
-                'prioridad': 'ALTA'
+                'mensaje': f'🔴 Stock crítico: {producto.nombre} ({producto.stock_actual} unidades)',
+                'prioridad': 'ALTA',
+                'producto': producto.nombre,
+                'stock_actual': producto.stock_actual,
+                'stock_minimo': producto.stock_minimo
             })
         
-        # Alertas de productos sin movimiento (con manejo de errores)
+        # 📊 2. Alertas de productos sin movimiento (SOLO del tenant actual)
         try:
-            productos_sin_ventas = obtener_productos_sin_ventas_recientes()
+            productos_sin_ventas = obtener_productos_sin_ventas_recientes(panaderia_id)
             for producto in productos_sin_ventas:
                 alertas.append({
                     'tipo': 'SIN_MOVIMIENTO',
-                    'mensaje': f'Sin ventas recientes: {producto.nombre}',
-                    'prioridad': 'MEDIA'
+                    'mensaje': f'🟡 Sin ventas recientes: {producto.nombre}',
+                    'prioridad': 'MEDIA',
+                    'producto': producto.nombre
                 })
         except Exception as e:
             print(f"Error generando alertas de productos sin movimiento: {e}")
             # Continuar sin estas alertas en lugar de fallar completamente
         
+        # 📊 3. Resumen (para mostrar en el dashboard)
+        if alertas:
+            # Agregar resumen al inicio
+            total_criticas = sum(1 for a in alertas if a.get('prioridad') == 'ALTA')
+            total_media = sum(1 for a in alertas if a.get('prioridad') == 'MEDIA')
+            alertas.insert(0, {
+                'tipo': 'RESUMEN',
+                'mensaje': f'📋 {len(alertas)} alertas activas ({total_criticas} críticas, {total_media} media)',
+                'prioridad': 'INFO'
+            })
+        else:
+            alertas.append({
+                'tipo': 'EXITO',
+                'mensaje': '✅ Todo en orden. No hay alertas activas para esta panadería.',
+                'prioridad': 'INFO'
+            })
+        
         return alertas
         
     except Exception as e:
         print(f"Error general en generar_alertas_inteligentes: {e}")
-        return []  # Retornar lista vacía en lugar de fallar
+        return [{
+            'tipo': 'ERROR',
+            'mensaje': '⚠️ Error al generar alertas. Intenta nuevamente.',
+            'prioridad': 'INFO'
+        }]
     
 
-def obtener_productos_sin_ventas_recientes(dias=7):
-    """Identifica productos sin ventas en los últimos días - Versión segura"""
+def obtener_productos_sin_ventas_recientes(panaderia_id=None, dias=7):
+    """
+    Identifica productos sin ventas en los últimos días - Versión segura
+    Args:
+        panaderia_id: ID del tenant (obligatorio para filtrar)
+        dias: Número de días a considerar
+    """
     from datetime import datetime, timedelta
+    
+    # 🔍 Si no se pasa panaderia_id, intentar obtener del contexto
+    if panaderia_id is None:
+        from flask import session
+        if 'panaderia_id' in session:
+            panaderia_id = session['panaderia_id']
+        else:
+            # Si no hay contexto, retornar lista vacía
+            return []
     
     fecha_limite = datetime.now() - timedelta(days=dias)
     
     try:
-        # Obtener todos los IDs de ventas recientes
+        # 🔍 Obtener todos los IDs de ventas recientes del tenant actual
         ventas_recientes = Venta.query.filter(
+            Venta.panaderia_id == panaderia_id,  # ✅ FILTRO POR TENANT
             Venta.fecha_hora >= fecha_limite
         ).with_entities(Venta.id).all()
         
         venta_ids = [vr[0] for vr in ventas_recientes]
         
         if not venta_ids:
-            # Si no hay ventas recientes, todos los productos están sin ventas
-            return Producto.query.filter_by(activo=True).all()
+            # Si no hay ventas recientes, todos los productos del tenant están sin ventas
+            return Producto.query.filter(
+                Producto.panaderia_id == panaderia_id,  # ✅ FILTRO POR TENANT
+                Producto.activo == True
+            ).all()
         
-        # Obtener productos que SÍ tienen ventas recientes
+        # 🔍 Obtener productos que SÍ tienen ventas recientes (del tenant actual)
         productos_con_ventas = DetalleVenta.query.filter(
             DetalleVenta.venta_id.in_(venta_ids),
             DetalleVenta.producto_id.isnot(None)
@@ -1656,10 +1713,11 @@ def obtener_productos_sin_ventas_recientes(dias=7):
         
         ids_con_ventas = [pcv[0] for pcv in productos_con_ventas if pcv[0] is not None]
         
-        # Productos activos que NO están en la lista de con ventas
+        # 🔍 Productos activos del tenant que NO están en la lista de con ventas
         productos_sin_ventas = Producto.query.filter(
+            Producto.panaderia_id == panaderia_id,  # ✅ FILTRO POR TENANT
             Producto.activo == True,
-            ~Producto.id.in_(ids_con_ventas)
+            ~Producto.id.in_(ids_con_ventas) if ids_con_ventas else True
         ).all()
         
         return productos_sin_ventas
