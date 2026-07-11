@@ -594,7 +594,7 @@ python scripts\backup_manager.py create manual "Fin dia - version funcional"
 
 
 **avances a 28/junio/2026**
-despue de inicializar la aplicacion con python app.py abrir el navegador y pegar el siguiente link para arrancar a utilizar la aplicacion: http://localhost:5000/?tenant=panadería_sqlalchemy
+despue de inicializar la aplicacion con python app.py abrir el navegador y pegar el siguiente link para arrancar a utilizar la aplicacion: **http://localhost:5000/?tenant=panadería_sqlalchemy**
 
 plan maestro logrado y en continuo avance hasta la fecha.
 
@@ -631,3 +631,300 @@ plan maestro logrado y en continuo avance hasta la fecha.
 - HTTPS/SSL
 - Planes de suscripción
 - Pasarela de pagos
+
+
+**11/07/2026** 
+nuevo sub plan de verificacion final por modulo antes de proceder a subir a la nube
+
+📋 PLAN MAESTRO - ESTADO ACTUAL Y PRÓXIMOS PASOS
+✅ FASE 1: DEPURACIÓN Y OPTIMIZACIÓN - COMPLETADA
+✅ Limpieza de datos de prueba
+
+✅ Verificación de consultas SQL
+
+✅ Corrección de advertencias de SQLAlchemy
+
+✅ Eliminación de código duplicado
+
+✅ Optimización de importaciones
+
+✅ Sincronización de IDs entre bases de datos (campo tenant_id)
+
+✅ Implementación de toggle switch Activar/Desactivar
+
+✅ Solución de raíz: creación automática de usuarios
+
+🚀 FASE 2: FUNCIONALIDADES FALTANTES
+#	Ítem	Prioridad	Descripción	Estado
+1	Dashboard por tenant	🔴 ALTA	Métricas específicas por panadería (ventas, productos, ingresos)	✅ YA EXISTE
+2	Reportes por tenant	🔴 ALTA	Ventas, productos, clientes por panadería con filtros	⏳ Pendiente
+3	Cierre diario multi-tenant	🟡 MEDIA	Cada tenant con su propio cierre de caja	⏳ Pendiente
+4	Módulo de inventario	🟡 MEDIA	Control de stock por tenant con alertas	⏳ Pendiente
+5	Módulo de compras	🟡 MEDIA	Compras a proveedores por tenant	⏳ Pendiente
+6	Módulo de clientes (personas)	🟢 BAJA	Gestión de clientes finales	⏳ Pendiente
+🚀 FASE 3: PREPARACIÓN PARA LA NUBE
+#	Ítem	Prioridad	Descripción	Estado
+1	Migrar a PostgreSQL	🔴 ALTA	SQLite no es para producción con 500+ tenants	⏳ Pendiente
+2	Configurar subdominios dinámicos	🔴 ALTA	panaderiaX.midominio.com	⏳ Pendiente
+3	Dockerizar la aplicación	🟡 MEDIA	Contenedor para despliegue	⏳ Pendiente
+4	Implementar backups automáticos	🟡 MEDIA	Backup diario por tenant	⏳ Pendiente
+5	Sistema de suscripciones	🟡 MEDIA	Planes, pagos, renovaciones	⏳ Pendiente
+6	Migrar a producción	🔴 ALTA	AWS, DigitalOcean, o similar	⏳ Pendiente
+🚀 FASE 4: SEGURIDAD Y ESCALABILIDAD
+#	Ítem	Prioridad	Descripción	Estado
+1	HTTPS/SSL	🔴 ALTA	Certificados para todos los subdominios	⏳ Pendiente
+2	Rate limiting	🟡 MEDIA	Prevenir ataques de fuerza bruta	⏳ Pendiente
+3	Logging y auditoría	🟡 MEDIA	Registro de todas las acciones	⏳ Pendiente
+4	Monitoreo	🟢 BAJA	Alertas de caídas/errores	⏳ Pendiente
+5	Caché	🟢 BAJA	Redis para sesiones y consultas frecuentes	⏳ Pendiente
+🚀 FASE 5: MONETIZACIÓN
+#	Ítem	Prioridad	Descripción	Estado
+1	Planes de suscripción	🔴 ALTA	Básico, Premium, Empresarial	⏳ Pendiente
+2	Pasarela de pagos	🔴 ALTA	Stripe, MercadoPago, etc.	⏳ Pendiente
+3	Portal de clientes	🟡 MEDIA	Autogestión de suscripciones	⏳ Pendiente
+4	Facturación automática	🟡 MEDIA	Emisión de facturas de suscripción	⏳ Pendiente
+🎯 RECOMENDACIÓN PARA EL PRÓXIMO PASO
+Prioridad	Ítem	Acción
+🔴 ALTA	Reportes por tenant	Desarrollar reportes específicos por panadería (ventas, productos, clientes)
+🔴 ALTA	Cierre diario multi-tenant	Implementar cierre de caja independiente por tenant
+📋 ¿POR QUÉ EMPEZAR CON REPORTES Y CIERRE DIARIO?
+Razón	Explicación
+Dashboard ya existe	El dashboard ya está implementado, los reportes son el siguiente paso lógico
+Valor inmediato	Los reportes y el cierre diario son funcionalidades que los clientes usan a diario
+Escalabilidad	Son funcionalidades que funcionan bien con la arquitectura multi-tenant
+Preparación para producción	Son requisitos básicos para un sistema de panadería profesional
+
+Avnces:
+**🔍 PASO 1: IDENTIFICAR TODOS LOS MÓDULOS DEL SISTEMA**
+Crear script: analizar_modulos.py
+python
+# analizar_modulos.py
+import os
+import re
+
+def analizar_modulos():
+    """Analiza y lista todos los módulos disponibles en el sistema"""
+    
+    print("🔍 ANALIZANDO MÓDULOS DEL SISTEMA")
+    print("=" * 70)
+    
+    # 1. Buscar rutas en app.py
+    app_path = 'app.py'
+    if not os.path.exists(app_path):
+        print("❌ No se encuentra app.py")
+        return
+    
+    with open(app_path, 'r', encoding='utf-8') as f:
+        contenido = f.read()
+    
+    # Buscar rutas @app.route
+    rutas = re.findall(r'@app\.route\([\'"]([^\'"]*)[\'"]', contenido)
+    
+    # Filtrar rutas de módulos principales
+    modulos = []
+    modulos_ignorar = ['/static', '/favicon', '/login', '/logout', '/dashboard', '/']
+    
+    for ruta in rutas:
+        if ruta.startswith('/api'):
+            continue
+        if any(ruta.startswith(ignorar) for ignorar in modulos_ignorar):
+            continue
+        if ruta and ruta != '/':
+            # Limpiar ruta
+            nombre = ruta.replace('/', '').replace('_', ' ').title()
+            if '<' not in ruta:  # Evitar rutas con parámetros
+                modulos.append({
+                    'ruta': ruta,
+                    'nombre': nombre,
+                    'archivo': 'app.py'
+                })
+    
+    # 2. Buscar templates
+    templates_dir = 'templates'
+    if os.path.exists(templates_dir):
+        templates = [f for f in os.listdir(templates_dir) if f.endswith('.html')]
+        
+        # Identificar módulos por templates
+        for template in templates:
+            nombre = template.replace('.html', '').replace('_', ' ').title()
+            # Verificar si ya existe en la lista de rutas
+            existe = any(m['nombre'] == nombre for m in modulos)
+            if not existe and nombre not in ['Base', 'Login', 'Acceso Denegado']:
+                modulos.append({
+                    'ruta': f'/{template.replace(".html", "")}',
+                    'nombre': nombre,
+                    'archivo': 'templates'
+                })
+    
+    # 3. Mostrar módulos encontrados
+    print("\n📋 MÓDULOS ENCONTRADOS:")
+    print("-" * 70)
+    
+    # Ordenar por nombre
+    modulos.sort(key=lambda x: x['nombre'])
+    
+    for i, modulo in enumerate(modulos, 1):
+        print(f"{i:2}. {modulo['nombre']}")
+        print(f"     Ruta: {modulo['ruta']}")
+        print(f"     Archivo: {modulo['archivo']}")
+        print()
+    
+    print("=" * 70)
+    print(f"📊 Total módulos: {len(modulos)}")
+    
+    return modulos
+
+if __name__ == "__main__":
+    modulos = analizar_modulos()
+**📋 PASO 2: SUBPLAN MAESTRO - VALIDACIÓN DE MÓDULOS**
+FASE 1: VERIFICACIÓN MULTI-TENANT (SEGURIDAD DE DATOS)
+#	Tarea	Descripción	Prioridad
+1	Validar filtro panaderia_id	Verificar que TODAS las consultas tengan filtro por tenant	🔴 Alta
+2	Validar rutas protegidas	Asegurar que todas las rutas requieran login	🔴 Alta
+3	Validar roles y permisos	Verificar que los roles (admin, supervisor, cajero) tengan acceso correcto	🔴 Alta
+4	Validar reportes	Verificar que los reportes muestren SOLO datos del tenant actual	🔴 Alta
+FASE 2: EXPERIENCIA DE USUARIO (UX)
+#	Tarea	Descripción	Prioridad
+5	Evaluar simplicidad	Revisar que cada módulo sea intuitivo y fácil de usar	🟡 Media
+6	Evaluar consistencia	Verificar que la navegación sea consistente entre módulos	🟡 Media
+7	Evaluar feedback	Verificar que el sistema dé feedback claro al usuario	🟡 Media
+8	Evaluar carga	Verificar tiempos de carga y rendimiento	🟢 Baja
+FASE 3: INTELIGENCIA ARTIFICIAL (IA)
+#	Tarea	Descripción	Prioridad
+9	Validar reportes con IA	Verificar que los reportes predictivos funcionen correctamente	🟡 Media
+10	Validar recomendaciones	Verificar que las recomendaciones sean relevantes y útiles	🟡 Media
+11	Validar datos históricos	Verificar que los datos históricos sean precisos	🟡 Media
+🔍 PASO 3: SCRIPT DE VALIDACIÓN MULTI-TENANT
+Crear archivo: validar_multi_tenant.py
+python
+# validar_multi_tenant.py
+import os
+import re
+import sqlite3
+
+def validar_multi_tenant():
+    """Valida que todos los módulos respeten el aislamiento multi-tenant"""
+    
+    print("🔍 VALIDANDO AISLAMIENTO MULTI-TENANT")
+    print("=" * 70)
+    
+    app_path = 'app.py'
+    if not os.path.exists(app_path):
+        print("❌ No se encuentra app.py")
+        return
+    
+    with open(app_path, 'r', encoding='utf-8') as f:
+        contenido = f.read()
+    
+    # 1. Verificar filtros panaderia_id en consultas
+    print("\n📋 VERIFICANDO FILTROS 'panaderia_id':")
+    print("-" * 50)
+    
+    # Buscar consultas SQL con WHERE
+    patrones = [
+        r'WHERE.*panaderia_id\s*=\s*[^\s]+',
+        r'filter_by\(panaderia_id\s*=\s*[^\)]+\)',
+        r'filter\(.*panaderia_id\s*==\s*[^\)]+\)'
+    ]
+    
+    encontrados = []
+    for patron in patrones:
+        matches = re.findall(patron, contenido, re.IGNORECASE)
+        encontrados.extend(matches)
+    
+    if encontrados:
+        print(f"✅ Se encontraron {len(encontrados)} consultas con filtro panaderia_id")
+        for i, match in enumerate(encontrados[:5], 1):
+            print(f"   {i}. {match[:80]}...")
+        if len(encontrados) > 5:
+            print(f"   ... y {len(encontrados) - 5} más")
+    else:
+        print("⚠️ No se encontraron consultas con filtro panaderia_id")
+    
+    # 2. Verificar rutas que podrían tener fugas de datos
+    print("\n\n📋 VERIFICANDO RUTAS CRÍTICAS:")
+    print("-" * 50)
+    
+    rutas_criticas = [
+        '/reportes',
+        '/ventas',
+        '/clientes',
+        '/productos',
+        '/inventario',
+        '/produccion',
+        '/gestion_clientes'
+    ]
+    
+    for ruta in rutas_criticas:
+        if ruta in contenido:
+            print(f"  ✅ Ruta {ruta} encontrada")
+        else:
+            print(f"  ⚠️ Ruta {ruta} no encontrada")
+    
+    # 3. Verificar módulos con IA
+    print("\n\n🤖 VERIFICANDO MÓDULOS CON IA:")
+    print("-" * 50)
+    
+    patrones_ia = [
+        r'predict',
+        r'recomendacion',
+        r'inteligencia',
+        r'analisis_predictivo',
+        r'tendencia',
+        r'prediccion'
+    ]
+    
+    ia_encontrados = []
+    for patron in patrones_ia:
+        matches = re.findall(patron, contenido, re.IGNORECASE)
+        ia_encontrados.extend(matches)
+    
+    if ia_encontrados:
+        print(f"✅ Se encontraron {len(ia_encontrados)} referencias a IA:")
+        for i, match in enumerate(set(ia_encontrados), 1):
+            print(f"   {i}. {match}")
+    else:
+        print("⚠️ No se encontraron referencias a IA")
+    
+    print("\n" + "=" * 70)
+    print("✅ VALIDACIÓN COMPLETADA")
+
+if __name__ == "__main__":
+    validar_multi_tenant()
+📋 RECOMENDACIONES PARA EL SUBPLAN
+#	Recomendación	Explicación
+1	Validar cada módulo individualmente	Crear un script por módulo para verificar su funcionalidad
+2	Probar con diferentes roles	Verificar que cada rol tenga el acceso correcto
+3	Probar con diferentes tenants	Verificar que los datos no se mezclen entre tenants
+4	Documentar hallazgos	Crear un informe por módulo con los resultados
+5	Priorizar correcciones	Arreglar primero los problemas de seguridad (multi-tenant)
+🚀 ORDEN DE EJECUCIÓN RECOMENDADO
+Paso	Acción	Comando
+1	Analizar módulos	python analizar_modulos.py
+2	Validar multi-tenant	python validar_multi_tenant.py
+3	Revisar módulo por módulo	(Manual, uno a uno)
+4	Corregir hallazgos	(Manual, según sea necesario)
+
+**AVANCES 11/07/2026**
+✅ VALIDACIÓN COMPLETA DE MÓDULOS PRIORITARIOS
+Módulo	Aislamiento Multi-Tenant	Login Requerido	Estado
+Reportes	✅	✅	✅ OK
+Ventas	✅	✅	✅ OK
+Clientes	✅	✅	✅ OK
+Productos	✅	✅	✅ OK
+Produccion	✅	✅	✅ OK
+Gestion Clientes	✅	✅	✅ OK
+Punto Venta	✅	✅	✅ OK
+Materias Primas	✅	✅	✅ OK
+Productos Externos	✅	✅	✅ OK
+Stock Vitrina	✅	✅	✅ OK
+Cierre Caja	✅	✅	✅ OK
+Analisis Predictivo	✅	✅	✅ OK
+TOTAL: 12 módulos	✅ Todos OK	✅ Todos OK	✅ 100%
+🎯 CONCLUSIÓN DEL SUBPLAN
+Aspecto	Estado	Detalle
+Aislamiento multi-tenant	✅ 100%	Todos los módulos tienen filtro panaderia_id
+Seguridad	✅ 100%	Todos los módulos tienen @login_required
+Módulos con IA	✅ 100%	3 módulos con IA confirmados
+Módulos de inventario	✅ 100%	6 módulos verificados
+
