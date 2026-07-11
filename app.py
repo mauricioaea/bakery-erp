@@ -85,6 +85,83 @@ def crear_tenant_saas(nombre_panaderia, subdominio, email_contacto=None):
     except Exception as e:
         print(f"❌ Error creando tenant SaaS: {e}")
         return False, f"Error creando tenant: {str(e)}", None
+    
+# =============================================
+# CREAR USUARIOS PARA UN TENANT (SIEMPRE)
+# =============================================
+def crear_usuarios_tenant_siempre(tenant_id, tenant_db_path, nombre_panaderia):
+    """
+    Crea los usuarios admin, super y cajero para un tenant
+    Args:
+        tenant_id: ID del tenant
+        tenant_db_path: Ruta a la BD del tenant
+        nombre_panaderia: Nombre de la panadería
+    Returns:
+        str: Contraseña temporal generada, o None si hay error
+    """
+    import sqlite3
+    from werkzeug.security import generate_password_hash
+    import secrets
+    import string
+    
+    try:
+        # Generar contraseña temporal
+        caracteres = string.ascii_letters + string.digits + "!@#$%"
+        contrasena_temp = ''.join(secrets.choice(caracteres) for _ in range(10))
+        
+        conn = sqlite3.connect(tenant_db_path)
+        cursor = conn.cursor()
+        
+        # Verificar si ya existen usuarios
+        cursor.execute("SELECT COUNT(*) FROM usuarios")
+        count = cursor.fetchone()[0]
+        
+        if count > 0:
+            print(f"   ℹ️ Ya existen {count} usuarios en el tenant")
+            conn.close()
+            return contrasena_temp
+        
+        # Crear usuarios
+        usuarios_base = [
+            {
+                'username': f'admin_{tenant_id}',
+                'rol': 'admin_cliente',
+                'nombre': f'Administrador {nombre_panaderia}'
+            },
+            {
+                'username': f'super_{tenant_id}',
+                'rol': 'supervisor', 
+                'nombre': f'Supervisor {nombre_panaderia}'
+            },
+            {
+                'username': f'cajero_{tenant_id}',
+                'rol': 'cajero',
+                'nombre': f'Cajero Principal {nombre_panaderia}'
+            }
+        ]
+        
+        for user_data in usuarios_base:
+            cursor.execute("""
+                INSERT INTO usuarios (username, password_hash, nombre_completo, rol, activo, panaderia_id)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (
+                user_data['username'],
+                generate_password_hash(contrasena_temp),
+                user_data['nombre'],
+                user_data['rol'],
+                1,  # Siempre activo
+                tenant_id
+            ))
+            print(f"   ✅ Usuario creado: {user_data['username']} ({user_data['rol']})")
+        
+        conn.commit()
+        conn.close()
+        
+        return contrasena_temp
+        
+    except Exception as e:
+        print(f"   ❌ Error creando usuarios: {e}")
+        return None
 
 from tenant_decorators import tenant_required, with_tenant_context, tenant_query, get_current_tenant_id
 from tenant_context import TenantContext
@@ -7436,7 +7513,7 @@ def crear_cliente():
             dias_gracia=dias_gracia,
             razon_social=razon_social,
             nit=nit,
-            activo=1  # 👈 AGREGAR ESTA LÍNEA
+            activo=1
         )
         
         # Solo agregar fecha de expiración para licencias en la nube
@@ -7445,7 +7522,7 @@ def crear_cliente():
         
         db.session.add(nueva_config)
         db.session.flush()
-        panaderia_id = nueva_config.id  # Ahora es igual a tenant_id
+        panaderia_id = nueva_config.id
         
         print(f"✅ Configuración creada con ID: {panaderia_id} (tenant_id: {tenant_id})")
         
@@ -7516,21 +7593,32 @@ def crear_cliente():
                 )
             ''')
         
-        # Crear cada usuario en la BD del tenant
+        # Crear cada usuario en la BD del tenant (SIEMPRE, incluso si ya existen)
         for user_data in usuarios_base:
-            cursor_tenant.execute("SELECT id FROM usuarios WHERE username = ?", (user_data['username'],))
-            if cursor_tenant.fetchone():
-                print(f"   ⚠️ Usuario ya existe: {user_data['username']}")
+            # Verificar si el usuario ya existe
+            cursor_tenant.execute("SELECT id, activo FROM usuarios WHERE username = ?", (user_data['username'],))
+            existing = cursor_tenant.fetchone()
+            
+            if existing:
+                # Si existe pero está inactivo, activarlo
+                if existing[1] == 0:
+                    cursor_tenant.execute("UPDATE usuarios SET activo = 1 WHERE username = ?", (user_data['username'],))
+                    print(f"   ✅ Usuario reactivado: {user_data['username']}")
+                    usuarios_creados.append(user_data['username'])
+                else:
+                    print(f"   ⚠️ Usuario ya existe y está activo: {user_data['username']}")
                 continue
             
+            # Crear nuevo usuario (siempre activo)
             cursor_tenant.execute("""
-                INSERT INTO usuarios (username, password_hash, nombre_completo, rol, panaderia_id)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO usuarios (username, password_hash, nombre_completo, rol, activo, panaderia_id)
+                VALUES (?, ?, ?, ?, ?, ?)
             """, (
                 user_data['username'],
                 generate_password_hash(contrasena_temp),
                 user_data['nombre'],
                 user_data['rol'],
+                1,  # Siempre activo
                 panaderia_id
             ))
             usuarios_creados.append(user_data['username'])
@@ -7539,7 +7627,7 @@ def crear_cliente():
         conn_tenant.commit()
         conn_tenant.close()
         
-        # Registrar usuarios en BD principal
+        # Registrar usuarios en BD principal (solo si no existen)
         try:
             for user_data in usuarios_base:
                 existing = Usuario.query.filter_by(username=user_data['username']).first()
@@ -7549,12 +7637,16 @@ def crear_cliente():
                         password_hash=generate_password_hash(contrasena_temp),
                         nombre_completo=user_data['nombre'],
                         rol=user_data['rol'],
-                        panaderia_id=panaderia_id
+                        panaderia_id=panaderia_id,
+                        activo=1
                     )
                     db.session.add(nuevo_usuario)
                     print(f"   Registrado en BD principal: {user_data['username']}")
                 else:
-                    print(f"   ⚠️ {user_data['username']} ya existe en BD principal")
+                    # Si existe pero está inactivo, activarlo
+                    if existing.activo == 0:
+                        existing.activo = 1
+                        print(f"   Reactivado en BD principal: {user_data['username']}")
             
             db.session.commit()
             print(f"✅ Usuarios registrados en BD principal")
@@ -7562,7 +7654,7 @@ def crear_cliente():
             db.session.rollback()
             print(f"   Error registrando en BD principal: {e}")
         
-        print(f"✅ {len(usuarios_creados)} usuarios creados en la BD del tenant")
+        print(f"✅ {len(usuarios_creados)} usuarios creados/activados en la BD del tenant")
         
         # Mensaje de éxito
         flash(
