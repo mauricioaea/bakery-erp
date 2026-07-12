@@ -14,57 +14,134 @@
             align-items: center;
             justify-content: center;
             padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         
         .error-container {
             background: white;
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            max-width: 500px;
+            max-width: 550px;
             width: 100%;
             overflow: hidden;
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
         .error-header {
             background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
             color: white;
-            padding: 30px;
+            padding: 30px 30px 20px;
             text-align: center;
         }
         
+        .error-header .code {
+            font-size: 5rem;
+            font-weight: 800;
+            line-height: 1;
+            opacity: 0.3;
+            position: absolute;
+            right: 30px;
+            top: 10px;
+        }
+        
         .error-icon {
-            font-size: 4rem;
-            margin-bottom: 20px;
+            font-size: 3.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .error-header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin: 0;
+        }
+        
+        .error-header p {
+            opacity: 0.9;
+            margin: 5px 0 0;
+            font-size: 0.95rem;
         }
         
         .error-body {
-            padding: 40px;
+            padding: 35px 30px 25px;
             text-align: center;
         }
         
         .error-title {
             color: #2c3e50;
-            margin-bottom: 20px;
-            font-size: 1.8rem;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+            font-weight: 600;
         }
         
         .error-message {
             color: #7f8c8d;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             line-height: 1.6;
+            font-size: 1rem;
+        }
+        
+        .error-code {
+            display: inline-block;
+            background: #f8f9fa;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: #6c757d;
+            border: 1px solid #e9ecef;
+            margin-bottom: 15px;
         }
         
         .error-details {
             background: #f8f9fa;
-            border-radius: 10px;
+            border-radius: 12px;
             padding: 20px;
             margin: 20px 0;
             text-align: left;
+            border-left: 4px solid #3498db;
         }
         
         .error-details h6 {
             color: #3498db;
             margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .error-details ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .error-details ul li {
+            margin-bottom: 5px;
+            color: #555;
+            font-size: 0.9rem;
+        }
+        
+        .contact-info {
+            background: #e8f4fd;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .contact-info a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .contact-info a:hover {
+            text-decoration: underline;
         }
         
         .btn-group {
@@ -72,58 +149,141 @@
             gap: 10px;
             justify-content: center;
             flex-wrap: wrap;
+            margin-top: 20px;
         }
         
         .btn {
             padding: 12px 25px;
-            border-radius: 10px;
-            font-weight: bold;
+            border-radius: 12px;
+            font-weight: 600;
             transition: all 0.3s ease;
+            font-size: 0.95rem;
         }
         
         .btn:hover {
             transform: translateY(-3px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #5a7de0 0%, #6a4295 100%);
+        }
+        
+        .btn-outline-danger {
+            border: 2px solid #dc3545;
+            color: #dc3545;
+            background: transparent;
+        }
+        
+        .btn-outline-danger:hover {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-outline-secondary {
+            border: 2px solid #6c757d;
+            color: #6c757d;
+            background: transparent;
+        }
+        
+        .btn-outline-secondary:hover {
+            background: #6c757d;
+            color: white;
         }
         
         .error-footer {
             background: #f8f9fa;
-            padding: 20px;
+            padding: 15px 20px;
             text-align: center;
             color: #95a5a6;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             border-top: 1px solid #e9ecef;
+        }
+        
+        .error-footer .badge {
+            background: #667eea;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+        }
+        
+        @media (max-width: 576px) {
+            .error-container {
+                max-width: 100%;
+            }
+            .error-header .code {
+                font-size: 3rem;
+                right: 15px;
+                top: 15px;
+            }
+            .error-body {
+                padding: 25px 20px;
+            }
+            .contact-info {
+                flex-direction: column;
+                text-align: center;
+            }
         }
     </style>
 </head>
 <body>
     <div class="error-container">
+        <!-- Header -->
         <div class="error-header">
             <div class="error-icon">
                 <i class="bi bi-shield-exclamation"></i>
             </div>
             <h1><i class="bi bi-lock"></i> Acceso Denegado</h1>
+            <p>No tienes permisos para acceder a esta sección</p>
+            <span class="code">403</span>
         </div>
         
+        <!-- Body -->
         <div class="error-body">
-            <h2 class="error-title">No tienes permisos para acceder a esta sección</h2>
+            <span class="error-code"><i class="bi bi-lock me-1"></i> Error 403 - Permisos insuficientes</span>
+            
+            <h2 class="error-title">⛔ No tienes autorización</h2>
             
             <p class="error-message">
                 Tu usuario no tiene los permisos necesarios para acceder a esta funcionalidad.
                 Contacta al administrador del sistema si necesitas acceso a esta sección.
             </p>
             
+            <!-- Detalles de ayuda -->
             <div class="error-details">
-                <h6><i class="bi bi-info-circle"></i> Información del sistema:</h6>
-                <p class="mb-0">
-                    Esta es una aplicación multi-tenant. Asegúrate de que tu usuario esté asociado 
-                    correctamente a una panadería y tengas los permisos adecuados para el módulo solicitado.
-                </p>
+                <h6><i class="bi bi-lightbulb me-2"></i>¿Qué puedo hacer?</h6>
+                <ul>
+                    <li><i class="bi bi-check-circle text-success me-2"></i>Verifica que estás usando el usuario correcto</li>
+                    <li><i class="bi bi-check-circle text-success me-2"></i>Asegúrate de que tu usuario tenga el rol adecuado</li>
+                    <li><i class="bi bi-check-circle text-success me-2"></i>Contacta al administrador para solicitar acceso</li>
+                    <li><i class="bi bi-check-circle text-success me-2"></i>Intenta acceder desde el dashboard principal</li>
+                </ul>
             </div>
             
+            <!-- Contacto de soporte -->
+            <div class="contact-info">
+                <i class="bi bi-headset text-primary" style="font-size: 1.2rem;"></i>
+                <span>¿Necesitas ayuda? Contacta a:</span>
+                <a href="mailto:mauricioandreserazo@outlook.com">
+                    <i class="bi bi-envelope"></i> Soporte
+                </a>
+                <span class="text-muted">|</span>
+                <span><i class="bi bi-phone"></i> +57 310 2482881</span>
+            </div>
+            
+            <!-- Botones -->
             <div class="btn-group">
                 <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
                     <i class="bi bi-house-door"></i> Volver al Dashboard
+                </a>
+                <a href="#" class="btn btn-outline-secondary" onclick="window.location.reload();">
+                    <i class="bi bi-arrow-repeat"></i> Reintentar
                 </a>
                 <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">
                     <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
@@ -131,9 +291,13 @@
             </div>
         </div>
         
+        <!-- Footer -->
         <div class="error-footer">
             <p class="mb-0">
-                <i class="bi bi-shield-check"></i> Sistema de Gestión Panadería Profesional - Multi-tenant SaaS
+                <i class="bi bi-shield-check"></i> Sistema de Gestión Panadería Profesional 
+                <span class="badge">Multi-tenant SaaS</span>
+                <br>
+                <small>🔒 Acceso restringido - Solo usuarios autorizados</small>
             </p>
         </div>
     </div>

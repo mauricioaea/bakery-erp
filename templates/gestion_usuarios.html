@@ -125,11 +125,11 @@
                                                 <i class="fas fa-key"></i> Resetear
                                             </button>
                                             
-                                            <button class="btn btn-outline-primary btn-sm" 
-                                                    onclick="editarUsuario({{ usuario.id }})"
-                                                    title="Editar información">
-                                                <i class="fas fa-edit"></i> Editar
-                                            </button>
+                                            <a href="{{ url_for('editar_usuario', usuario_id=usuario.id) }}" 
+                                                class="btn btn-outline-primary btn-sm" 
+                                                title="Editar información">
+                                                    <i class="fas fa-edit"></i> Editar
+                                            </a>
                                             
                                             {% if usuario.id != current_user.id %}
                                             <button class="btn btn-outline-danger btn-sm" 

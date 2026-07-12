@@ -167,6 +167,7 @@ ROLES_PERMISOS = {
         'configuracion': ['ver', 'editar_parametros'],
         'activos': ['ver', 'gestionar'],
         'usuarios': ['gestionar', 'ver_perfil'],
+        'gestion_usuarios': ['gestionar', 'ver_perfil'],
         'sistema': ['diagnosticar']
         # ❌ NO incluye: 'gestion_clientes' (gestión de múltiples clientes)
     },
@@ -287,7 +288,11 @@ class ConfiguracionPanaderia(db.Model):
     @property
     def usuarios_activos_count(self):
         """Cuenta cuántos usuarios activos tiene la panadería"""
-        return Usuario.query.filter_by(activo=True).count()
+        # ✅ FILTRAR POR panaderia_id
+        return Usuario.query.filter_by(
+            panaderia_id=self.panaderia_id,
+            activo=True
+        ).count()
     
     @property
     def puede_crear_usuario(self):
@@ -327,22 +332,31 @@ class ConfiguracionPanaderia(db.Model):
     
     @property
     def estado_suscripcion_detallado(self):
-        """Estado detallado de la suscripción"""
+        """Estado detallado de la suscripción - ACTUALIZADO AUTOMÁTICAMENTE"""
+        # 🔄 Actualizar estado antes de mostrarlo
+        self.actualizar_estado_suscripcion()
+        
         if self.tipo_licencia == 'local':
             return "Licencia Local - Permanente"
         
-        if not self.suscripcion_activa:
-            return "SUSPENDIDA - Contactar soporte"
+        if self.estado_suscripcion == 'bloqueada':
+            return "🔴 BLOQUEADA - Contactar soporte"
         
-        dias = self.dias_para_expiracion
-        if dias > 30:
-            return f"ACTIVA - {dias} días restantes"
-        elif dias > 7:
-            return f"ACTIVA - {dias} días restantes ⚠️"
-        elif dias > 0:
-            return f"POR VENCER - {dias} días ⚠️⚠️"
-        else:
-            return f"EN GRACIA - {abs(dias)} días de gracia 🚨"
+        if self.estado_suscripcion == 'expirada':
+            return "🔴 EXPIRADA - Renovar para continuar"
+        
+        if self.estado_suscripcion == 'activa':
+            dias = self.dias_para_expiracion
+            if dias > 30:
+                return f"🟢 ACTIVA - {dias} días restantes"
+            elif dias > 7:
+                return f"🟡 ACTIVA - {dias} días restantes ⚠️"
+            elif dias > 0:
+                return f"🟠 POR VENCER - {dias} días ⚠️⚠️"
+            else:
+                return f"🟢 ACTIVA - Sin fecha de vencimiento"
+        
+        return "Estado desconocido"
     
     def actualizar_estado_suscripcion(self):
         """Actualiza el estado de suscripción basado en fechas"""
@@ -362,7 +376,7 @@ class ConfiguracionPanaderia(db.Model):
         elif dias_restantes < 0:
             self.estado_suscripcion = 'expirada'
         else:
-            self.estado_suscripcion = 'activa'            
+            self.estado_suscripcion = 'activa'           
 
 class Panaderia(db.Model):
     __tablename__ = 'panaderias'

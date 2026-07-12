@@ -419,7 +419,7 @@ def antes_de_cada_peticion():
                     config.actualizar_estado_suscripcion()
 
                     if config.tipo_licencia != 'local' and not config.suscripcion_activa:
-                        rutas_permitidas = ['logout', 'static', 'suscripcion_vencida']
+                        rutas_permitidas = ['logout', 'static', 'suscripcion_vencida', 'login']
                         if request.endpoint and not any(ruta in request.endpoint for ruta in rutas_permitidas):
                             return redirect(url_for('suscripcion_vencida'))
             except Exception as e:
@@ -3852,16 +3852,27 @@ def reporte_produccion_diaria():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
+    # 🔍 OBTENER TENANT ACTUAL
+    panaderia_id = obtener_panaderia_actual()
+    if not panaderia_id:
+        flash('No se pudo determinar la panadería', 'error')
+        return redirect(url_for('dashboard'))
+    
     hoy = datetime.now().date()
     
-    # Órdenes completadas hoy
+    # ✅ Órdenes completadas hoy (CON FILTRO POR TENANT)
     ordenes_hoy = OrdenProduccion.query.filter(
         OrdenProduccion.estado == 'COMPLETADA',
-        db.func.date(OrdenProduccion.fecha_fin) == hoy
+        db.func.date(OrdenProduccion.fecha_fin) == hoy,
+        OrdenProduccion.panaderia_id == panaderia_id  # ✅ FILTRO MULTI-TENANT
     ).all()
     
-    # Stock actual
-    recetas_activas = Receta.query.filter_by(activo=True).all()
+    # ✅ Stock actual (CON FILTRO POR TENANT)
+    recetas_activas = Receta.query.filter_by(
+        panaderia_id=panaderia_id,  # ✅ FILTRO MULTI-TENANT
+        activo=True
+    ).all()
+    
     stock_actual = []
     for receta in recetas_activas:
         stock = calcular_stock_vitrina(receta.id)
@@ -7547,8 +7558,11 @@ def gestion_clientes():
     """Panel de gestión de clientes/suscripciones"""
     from models import ConfiguracionPanaderia
     
-    # Obtener todas las configuraciones (clientes)
+    # 🔄 ACTUALIZAR ESTADOS DE SUSCRIPCIÓN ANTES DE MOSTRAR
     configuraciones = ConfiguracionPanaderia.query.filter_by(panaderia_id=current_user.panaderia_id).all()
+    for config in configuraciones:
+        config.actualizar_estado_suscripcion()
+    db.session.commit()
     
     # Calcular métricas
     clientes_activos = sum(1 for c in configuraciones if c.suscripcion_activa)
