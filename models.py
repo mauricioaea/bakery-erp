@@ -2622,6 +2622,27 @@ def generar_recomendaciones_personalizadas(panaderia_id, dias_historial=30):
             'recomendaciones': [],
             'sugerencia': 'Intenta nuevamente más tarde.'
         }
+# =============================================
+# HELPER PARA FILTRAR POR TENANT
+# =============================================
+
+def filtrar_por_tenant(query, panaderia_id):
+    """
+    Filtra una consulta por panaderia_id si el modelo tiene ese campo
+    Args:
+        query: Consulta de SQLAlchemy
+        panaderia_id: ID del tenant
+    Returns:
+        Consulta filtrada
+    """
+    if panaderia_id is None:
+        return query
+    
+    # Verificar si el modelo tiene la columna panaderia_id
+    model = query.column_descriptions[0]['entity']
+    if hasattr(model, 'panaderia_id'):
+        return query.filter(model.panaderia_id == panaderia_id)
+    return query
         
 # =============================================
 # FIN DE MODELS.PY

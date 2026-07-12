@@ -783,16 +783,9 @@ def punto_venta():
     # ✅ ✅ ✅ FIN BLOQUE SUPER USUARIO ✅ ✅ ✅
     
     # ✅ OBTENER PRODUCTOS FILTRADOS POR PANADERÍA
-    productos_internos = Producto.query.filter_by(
-        activo=True, 
-        panaderia_id=panaderia_actual,
-        tipo_producto='produccion'
-    ).all()
+    productos_internos = Producto.query.filter_by(panaderia_id=panaderia_actual, activo=True).all()
     
-    productos_externos = ProductoExterno.query.filter_by(
-        activo=True, 
-        panaderia_id=panaderia_actual
-    ).all()
+    productos_externos = ProductoExterno.query.filter_by(panaderia_id=panaderia_actual, activo=True).all()
     
     # ✅ OBTENER CATEGORÍAS PARA ORGANIZAR PRODUCTOS
     categorias = Categoria.query.filter_by(panaderia_id=panaderia_actual).all()
@@ -5009,7 +5002,8 @@ def reporte_cierre_caja():
         
         # 🆕 DEBUG: VER TODAS LAS VENTAS EN LA BD (SIN FILTROS)
         print("🔎 DEBUG - TODAS las ventas en la BD:")
-        todas_ventas = Venta.query.all()
+        panaderia_id = obtener_panaderia_actual()
+        todas_ventas = Venta.query.filter_by(panaderia_id=panaderia_id).all()
         for v in todas_ventas:
             print(f"   Venta ID: {v.id}, Fecha: {v.fecha_hora}, Panadería: {v.panaderia_id}, Total: ${v.total}")
         
@@ -5350,59 +5344,59 @@ def reporte_ventas():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
+    # 🔍 OBTENER TENANT ACTUAL
+    panaderia_id = obtener_panaderia_actual()
+    if not panaderia_id:
+        flash('No se pudo determinar la panadería', 'error')
+        return redirect(url_for('dashboard'))
+    
     # Obtener parámetros de fecha o usar valores por defecto
     fecha_inicio_str = request.args.get('fecha_inicio')
     fecha_fin_str = request.args.get('fecha_fin')
-    periodo = request.args.get('periodo', 'semana')  # Cambiado a 'semana' como default
+    periodo = request.args.get('periodo', 'semana')
     
     hoy = datetime.now().date()
     
     if fecha_inicio_str and fecha_fin_str:
-        # Usar fechas proporcionadas por el usuario
         fecha_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d').date()
         fecha_fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d').date()
         periodo = 'personalizado'
     else:
-        # Valores por defecto (últimos 7 días)
         fecha_fin = hoy
         fecha_inicio = fecha_fin - timedelta(days=7)
         periodo = 'semana'
     
-    # Validar que fecha_inicio no sea mayor que fecha_fin
     if fecha_inicio > fecha_fin:
         flash('La fecha de inicio no puede ser mayor que la fecha fin', 'error')
         fecha_inicio = fecha_fin - timedelta(days=7)
     
-    # Obtener ventas del período (INCLUYENDO DONACIONES)
+    # ✅ Obtener ventas del período (CON FILTRO POR TENANT)
     ventas_periodo = Venta.query.filter(
         db.func.date(Venta.fecha_hora) >= fecha_inicio,
-        db.func.date(Venta.fecha_hora) <= fecha_fin
+        db.func.date(Venta.fecha_hora) <= fecha_fin,
+        Venta.panaderia_id == panaderia_id  # ✅ FILTRO MULTI-TENANT
     ).all()
     
-    # 🎁 SEPARAR VENTAS NORMALES VS DONACIONES
     ventas_normales = [v for v in ventas_periodo if not v.es_donacion]
     donaciones = [v for v in ventas_periodo if v.es_donacion]
     
-    # 🎁 CALCULAR MÉTRICAS SEPARADAS
     total_ventas_normales = sum(venta.total for venta in ventas_normales)
-    total_transacciones = len(ventas_periodo)  # Incluye donaciones
+    total_transacciones = len(ventas_periodo)
     
-    # Calcular métricas avanzadas (SOLO VENTAS NORMALES)
     total_ventas = total_ventas_normales
     promedio_venta = total_ventas_normales / len(ventas_normales) if ventas_normales else 0
     
-    # Análisis de tendencia usando ML (SOLO VENTAS NORMALES)
     tendencia = calcular_tendencia_ventas(fecha_inicio, fecha_fin)
     
-    # Productos más vendidos del período (INCLUYENDO DONACIONES)
+    # ✅ Productos más vendidos del período (CON FILTRO POR TENANT)
     detalles_periodo = DetalleVenta.query.join(Venta).filter(
         db.func.date(Venta.fecha_hora) >= fecha_inicio,
-        db.func.date(Venta.fecha_hora) <= fecha_fin
+        db.func.date(Venta.fecha_hora) <= fecha_fin,
+        Venta.panaderia_id == panaderia_id  # ✅ FILTRO MULTI-TENANT
     ).all()
     
     productos_analisis = analizar_productos_periodo(detalles_periodo)
     
-    # 🎁 DATOS DE DONACIONES PARA EL TEMPLATE
     total_donaciones = len(donaciones)
     productos_donados = sum(len(v.detalles) for v in donaciones)
     
@@ -5410,13 +5404,12 @@ def reporte_ventas():
                          periodo=periodo,
                          fecha_inicio=fecha_inicio,
                          fecha_fin=fecha_fin,
-                         total_ventas=total_ventas_normales,  # Solo ventas normales
+                         total_ventas=total_ventas_normales,
                          promedio_venta=promedio_venta,
                          tendencia=tendencia,
                          productos_analisis=productos_analisis,
                          total_transacciones=total_transacciones,
-                         datetime=datetime,  # Añadido para usar en templates
-                         # 🎁 NUEVOS DATOS
+                         datetime=datetime,
                          total_donaciones=total_donaciones,
                          productos_donados=productos_donados)
 
@@ -5428,29 +5421,34 @@ def reporte_productos_populares():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
+    # 🔍 OBTENER TENANT ACTUAL
+    panaderia_id = obtener_panaderia_actual()
+    if not panaderia_id:
+        flash('No se pudo determinar la panadería', 'error')
+        return redirect(url_for('dashboard'))
+    
     # Obtener parámetros de fecha o usar valores por defecto
     fecha_inicio_str = request.args.get('fecha_inicio')
     fecha_fin_str = request.args.get('fecha_fin')
     
     if fecha_inicio_str and fecha_fin_str:
-        # Usar fechas proporcionadas por el usuario
         fecha_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d').date()
         fecha_fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d').date()
     else:
-        # Valores por defecto (últimos 30 días)
         fecha_fin = datetime.now().date()
         fecha_inicio = fecha_fin - timedelta(days=30)
     
     # Actualizar rotaciones automáticas antes de generar reporte
     actualizaciones = actualizar_rotaciones_automaticas()
     
-    # Obtener productos más vendidos del período (INCLUYENDO DONACIONES)
+    # ✅ Obtener productos más vendidos del período (CON FILTRO POR TENANT)
     detalles = DetalleVenta.query.join(Venta).filter(
         Venta.fecha_hora >= fecha_inicio,
-        Venta.fecha_hora <= fecha_fin
+        Venta.fecha_hora <= fecha_fin,
+        Venta.panaderia_id == panaderia_id  # ✅ FILTRO MULTI-TENANT
     ).all()
     
-    # Analizar productos (INCLUYENDO DONACIONES)
+    # Analizar productos
     analisis_productos = {}
     
     for detalle in detalles:
@@ -5475,7 +5473,6 @@ def reporte_productos_populares():
             }
         
         analisis_productos[producto_id]['cantidad_vendida'] += detalle.cantidad
-        # 🎁 LOS INGRESOS SE CALCULAN NORMALMENTE (las donaciones ya tienen total=0)
         analisis_productos[producto_id]['ingresos_totales'] += detalle.cantidad * detalle.precio_unitario
     
     # Ordenar por cantidad vendida
@@ -5484,14 +5481,15 @@ def reporte_productos_populares():
                                reverse=True)
     
     # Agregar datos de rotación automática
-    for producto in productos_ordenados[:20]:  # Top 20
+    for producto in productos_ordenados[:20]:
         rotacion = calcular_rotacion_automatica_por_nombre(producto['nombre'])
         producto['rotacion_promedio'] = rotacion
     
-    # 🎁 OBTENER DATOS DE DONACIONES PARA EL PERÍODO
+    # ✅ OBTENER DATOS DE DONACIONES (CON FILTRO POR TENANT)
     ventas_periodo = Venta.query.filter(
         Venta.fecha_hora >= fecha_inicio,
-        Venta.fecha_hora <= fecha_fin
+        Venta.fecha_hora <= fecha_fin,
+        Venta.panaderia_id == panaderia_id  # ✅ FILTRO MULTI-TENANT
     ).all()
     
     donaciones = [v for v in ventas_periodo if v.es_donacion]
@@ -5503,8 +5501,7 @@ def reporte_productos_populares():
                          fecha_inicio=fecha_inicio,
                          fecha_fin=fecha_fin,
                          actualizaciones_ml=actualizaciones,
-                         datetime=datetime,  # ← ¡ESTO ES LO QUE FALTA!
-                         # 🎁 NUEVOS DATOS
+                         datetime=datetime,
                          total_donaciones=total_donaciones,
                          productos_donados=productos_donados)
 
@@ -5516,9 +5513,20 @@ def reporte_analisis_predictivo():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
+    # 🔍 OBTENER TENANT ACTUAL
+    panaderia_id = obtener_panaderia_actual()
+    if not panaderia_id:
+        flash('No se pudo determinar la panadería', 'error')
+        return redirect(url_for('dashboard'))
+    
     # Obtener datos para análisis predictivo
     productos_analisis = []
-    recetas_activas = Receta.query.filter_by(activo=True).all()
+    
+    # ✅ FILTRAR RECETAS POR TENANT
+    recetas_activas = Receta.query.filter_by(
+        panaderia_id=panaderia_id,  # ✅ FILTRO MULTI-TENANT
+        activo=True
+    ).all()
     
     for receta in recetas_activas:
         if receta.producto:
@@ -5534,14 +5542,15 @@ def reporte_analisis_predictivo():
                 'nivel_riesgo': proyeccion.get('nivel_riesgo', 'BAJO')
             })
     
-    # Alertas inteligentes
-    alertas = generar_alertas_inteligentes()
+    # Alertas inteligentes (YA FILTRAN POR TENANT)
+    alertas = generar_alertas_inteligentes(panaderia_id)
     
-    # 🎁 OBTENER DATOS DE DONACIONES RECIENTES (ÚLTIMOS 30 DÍAS)
+    # ✅ OBTENER DATOS DE DONACIONES RECIENTES (CON FILTRO POR TENANT)
     fecha_inicio = datetime.now().date() - timedelta(days=30)
     donaciones_recientes = Venta.query.filter(
         Venta.fecha_hora >= fecha_inicio,
-        Venta.es_donacion == True
+        Venta.es_donacion == True,
+        Venta.panaderia_id == panaderia_id  # ✅ FILTRO MULTI-TENANT
     ).all()
     
     total_donaciones_30dias = len(donaciones_recientes)
@@ -5551,8 +5560,7 @@ def reporte_analisis_predictivo():
                      productos_analisis=productos_analisis,
                      alertas=alertas,
                      fecha_analisis=datetime.now().date(),
-                     datetime=datetime,  # ¡Importante! Pasar datetime al template
-                     # 🎁 NUEVOS DATOS
+                     datetime=datetime,
                      total_donaciones=total_donaciones_30dias,
                      productos_donados=productos_donados_30dias)
     
@@ -7261,6 +7269,7 @@ def api_activos_metrics():
 #========================================= 🆕 RUTAS PARA GESTIÓN DE USUARIOS==================================================
 @app.route('/gestion_usuarios')
 @login_required
+@modulo_requerido('gestion_usuarios')  # ✅ AGREGAR DECORADOR
 def gestion_usuarios():
     """Gestión de usuarios de la panadería actual - SOLO para admin_cliente"""
     try:
@@ -7533,7 +7542,7 @@ def guardar_permisos(usuario_id):
 
 @app.route('/gestion_clientes')
 @login_required
-@modulo_requerido('sistema')
+@modulo_requerido('gestion_clientes')  # ✅ CORREGIDO: 'sistema' → 'gestion_clientes'
 def gestion_clientes():
     """Panel de gestión de clientes/suscripciones"""
     from models import ConfiguracionPanaderia
