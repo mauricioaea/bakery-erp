@@ -2450,6 +2450,178 @@ def predecir_ventas_futuras(panaderia_id, dias_a_predecir=7, dias_historial=30):
             'mensaje': f"Error al generar predicciones: {str(e)}",
             'tendencia': 'error'
         }
+# =============================================
+# RECOMENDACIONES PERSONALIZADAS (NIVEL 4)
+# =============================================
+
+def generar_recomendaciones_personalizadas(panaderia_id, dias_historial=30):
+    """
+    Genera recomendaciones personalizadas basadas en análisis de datos
+    Args:
+        panaderia_id: ID del tenant
+        dias_historial: Número de días a analizar
+    Returns:
+        dict: Recomendaciones personalizadas por categoría
+    """
+    from datetime import datetime, timedelta
+    from sqlalchemy import func
+    
+    try:
+        fecha_inicio = datetime.now() - timedelta(days=dias_historial)
+        recomendaciones = []
+        tiene_datos = False
+        
+        # 1. RECOMENDACIÓN: Productos con stock crítico
+        productos_criticos = Producto.query.filter(
+            Producto.panaderia_id == panaderia_id,
+            Producto.stock_actual <= Producto.stock_minimo,
+            Producto.activo == True
+        ).all()
+        
+        if productos_criticos:
+            tiene_datos = True
+            recomendaciones.append({
+                'categoria': 'stock_critico',
+                'titulo': '🔴 Stock Crítico',
+                'mensaje': f'Tienes {len(productos_criticos)} productos con stock por debajo del mínimo.',
+                'accion': 'Revisa y reabastece estos productos urgentemente.',
+                'productos': [p.nombre for p in productos_criticos[:5]],
+                'prioridad': 'alta'
+            })
+        
+        # 2. RECOMENDACIÓN: Productos más rentables
+        productos_rentables = db.session.query(
+            Producto,
+            db.func.sum(DetalleVenta.cantidad).label('total_vendido')
+        ).join(DetalleVenta).join(Venta).filter(
+            Venta.panaderia_id == panaderia_id,
+            Venta.fecha_hora >= fecha_inicio,
+            DetalleVenta.producto_id.isnot(None)
+        ).group_by(Producto.id).order_by(
+            db.desc('total_vendido')
+        ).limit(5).all()
+        
+        if productos_rentables:
+            tiene_datos = True
+            recomendaciones.append({
+                'categoria': 'productos_populares',
+                'titulo': '📈 Productos Más Vendidos',
+                'mensaje': 'Estos productos generan la mayoría de tus ingresos.',
+                'accion': 'Asegura suficiente stock y considera promociones cruzadas.',
+                'productos': [p.nombre for p, total in productos_rentables[:3]],
+                'prioridad': 'media'
+            })
+        
+        # 3. RECOMENDACIÓN: Productos sin ventas recientes
+        productos_olvidados = Producto.query.filter(
+            Producto.panaderia_id == panaderia_id,
+            Producto.activo == True
+        ).all()
+        
+        productos_sin_ventas = []
+        for producto in productos_olvidados:
+            ventas_recientes = DetalleVenta.query.join(Venta).filter(
+                Venta.panaderia_id == panaderia_id,
+                DetalleVenta.producto_id == producto.id,
+                Venta.fecha_hora >= fecha_inicio
+            ).count()
+            if ventas_recientes == 0 and producto.stock_actual > 0:
+                productos_sin_ventas.append(producto)
+        
+        if productos_sin_ventas:
+            tiene_datos = True
+            recomendaciones.append({
+                'categoria': 'productos_inactivos',
+                'titulo': '📉 Productos Sin Movimiento',
+                'mensaje': f'Tienes {len(productos_sin_ventas)} productos que no han vendido en {dias_historial} días.',
+                'accion': 'Considera promociones especiales o descuentos para reactivarlos.',
+                'productos': [p.nombre for p in productos_sin_ventas[:3]],
+                'prioridad': 'media'
+            })
+        
+        # 4. RECOMENDACIÓN: Días de mayor venta (basado en tendencias)
+        ventas_por_dia = db.session.query(
+            func.strftime('%w', Venta.fecha_hora).label('dia_semana'),
+            func.sum(Venta.total).label('total')
+        ).filter(
+            Venta.panaderia_id == panaderia_id,
+            Venta.fecha_hora >= fecha_inicio
+        ).group_by(
+            func.strftime('%w', Venta.fecha_hora)
+        ).order_by(
+            func.sum(Venta.total).desc()
+        ).all()
+        
+        if ventas_por_dia:
+            dias_semana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+            mejores_dias = []
+            for dia, total in ventas_por_dia[:3]:
+                if total > 0:
+                    mejores_dias.append(dias_semana[int(dia)])
+            
+            if mejores_dias:
+                tiene_datos = True
+                recomendaciones.append({
+                    'categoria': 'mejores_dias',
+                    'titulo': '📅 Mejores Días de Ventas',
+                    'mensaje': f'Los mejores días para tus ventas son: {", ".join(mejores_dias)}.',
+                    'accion': 'Aumenta inventario y personal en estos días clave.',
+                    'productos': mejores_dias,
+                    'prioridad': 'baja'
+                })
+        
+        # 5. RECOMENDACIÓN: Análisis de tendencia general
+        if len(productos_rentables) > 0 or len(productos_sin_ventas) > 0:
+            tendencia_recomendacion = {
+                'categoria': 'tendencia_general',
+                'titulo': '📊 Resumen de Análisis',
+                'mensaje': 'Basado en el análisis de tus datos, te recomendamos:',
+                'accion': 'Mantén el enfoque en productos populares y reactiva productos inactivos.',
+                'productos': [],
+                'prioridad': 'media'
+            }
+            
+            if productos_rentables:
+                tendencia_recomendacion['productos'].append(
+                    f'✅ Mantén stock de: {", ".join([p.nombre for p, _ in productos_rentables[:2]])}'
+                )
+            if productos_sin_ventas:
+                tendencia_recomendacion['productos'].append(
+                    f'⚠️ Revisa promociones para: {", ".join([p.nombre for p in productos_sin_ventas[:2]])}'
+                )
+            if productos_criticos:
+                tendencia_recomendacion['productos'].append(
+                    f'🔴 Urgente: Reabastece {", ".join([p.nombre for p in productos_criticos[:2]])}'
+                )
+            
+            if len(tendencia_recomendacion['productos']) > 0:
+                tiene_datos = True
+                recomendaciones.append(tendencia_recomendacion)
+        
+        # 6. RECOMENDACIÓN: Si no hay datos suficientes
+        if not tiene_datos:
+            return {
+                'disponible': False,
+                'mensaje': 'No hay suficientes datos para generar recomendaciones personalizadas.',
+                'recomendaciones': [],
+                'sugerencia': 'Continúa registrando ventas y productos para recibir recomendaciones.'
+            }
+        
+        return {
+            'disponible': True,
+            'recomendaciones': recomendaciones,
+            'total_recomendaciones': len(recomendaciones),
+            'mensaje': f'📊 {len(recomendaciones)} recomendaciones generadas para tu negocio.'
+        }
+        
+    except Exception as e:
+        print(f"Error en generar_recomendaciones_personalizadas: {e}")
+        return {
+            'disponible': False,
+            'mensaje': f"Error al generar recomendaciones: {str(e)}",
+            'recomendaciones': [],
+            'sugerencia': 'Intenta nuevamente más tarde.'
+        }
         
 # =============================================
 # FIN DE MODELS.PY

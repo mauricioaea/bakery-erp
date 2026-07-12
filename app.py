@@ -5797,6 +5797,12 @@ def reporte_ventas_avanzado():
     from models import predecir_ventas_futuras
     predicciones_ml = predecir_ventas_futuras(panaderia_id)
     
+    # =============================================
+    # 💡 RECOMENDACIONES PERSONALIZADAS (NIVEL 4)
+    # =============================================
+    from models import generar_recomendaciones_personalizadas
+    recomendaciones_personalizadas = generar_recomendaciones_personalizadas(panaderia_id)
+    
     # =====================================================================
     # 🎯 RENDERIZAR TEMPLATE UNIFICADO CON TODOS LOS DATOS
     # =====================================================================
@@ -5846,6 +5852,8 @@ def reporte_ventas_avanzado():
                          
                          # 🆕 PREDICCIONES CON ML (NIVEL 3)
                          predicciones_ml=predicciones_ml,
+                         
+                         recomendaciones_personalizadas=recomendaciones_personalizadas,
                          
                          datetime=datetime)
 
