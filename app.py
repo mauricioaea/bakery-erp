@@ -5785,12 +5785,21 @@ def reporte_ventas_avanzado():
     else:
         dias_actividad = 0
         
-    # =============================================
+        # =============================================
     # 📊 ANÁLISIS DE TENDENCIAS (NIVEL 2)
     # =============================================
     from models import analizar_tendencias_ventas
     analisis_tendencias = analizar_tendencias_ventas(panaderia_id)
     
+    # =============================================
+    # 🔮 PREDICCIONES CON ML (NIVEL 3)
+    # =============================================
+    from models import predecir_ventas_futuras
+    predicciones_ml = predecir_ventas_futuras(panaderia_id)
+    
+    # =====================================================================
+    # 🎯 RENDERIZAR TEMPLATE UNIFICADO CON TODOS LOS DATOS
+    # =====================================================================
     return render_template('ventas_avanzado.html',
                          # Fechas y período
                          periodo=periodo,
@@ -5831,7 +5840,13 @@ def reporte_ventas_avanzado():
                          
                          # 🆕 DÍAS DE ACTIVIDAD PARA IA
                          dias_actividad=dias_actividad,
+                         
+                         # 🆕 ANÁLISIS DE TENDENCIAS (NIVEL 2)
                          analisis_tendencias=analisis_tendencias,
+                         
+                         # 🆕 PREDICCIONES CON ML (NIVEL 3)
+                         predicciones_ml=predicciones_ml,
+                         
                          datetime=datetime)
 
 # Busca un lugar después de las otras rutas y agrega:

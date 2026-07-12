@@ -2335,5 +2335,122 @@ def analizar_tendencias_ventas(panaderia_id, dias_historial=30):
         }
         
 # =============================================
-# FIN DE MODELS.PY
+# PREDICCIONES CON ML (NIVEL 3)
 # =============================================
+
+def predecir_ventas_futuras(panaderia_id, dias_a_predecir=7, dias_historial=30):
+    """
+    Predice ventas futuras usando regresión lineal simple
+    Args:
+        panaderia_id: ID del tenant
+        dias_a_predecir: Número de días a predecir
+        dias_historial: Número de días de historial a usar
+    Returns:
+        dict: Predicciones y métricas de confianza
+    """
+    from datetime import datetime, timedelta
+    from sqlalchemy import func
+    import statistics
+    import math
+    
+    try:
+        # 1. Obtener ventas diarias del historial
+        fecha_inicio = datetime.now() - timedelta(days=dias_historial)
+        
+        ventas_historial = db.session.query(
+            func.date(Venta.fecha_hora).label('fecha'),
+            func.sum(Venta.total).label('total')
+        ).filter(
+            Venta.panaderia_id == panaderia_id,
+            Venta.fecha_hora >= fecha_inicio
+        ).group_by(
+            func.date(Venta.fecha_hora)
+        ).order_by(
+            func.date(Venta.fecha_hora)
+        ).all()
+        
+        # 2. Verificar suficiencia de datos
+        if len(ventas_historial) < 7:
+            return {
+                'disponible': False,
+                'mensaje': 'Se necesitan al menos 7 días de datos para hacer predicciones.',
+                'dias_historial': len(ventas_historial)
+            }
+        
+        # 3. Preparar datos para regresión lineal
+        valores = [v.total for v in ventas_historial]
+        dias = list(range(len(valores)))
+        
+        # 4. Calcular regresión lineal simple
+        n = len(dias)
+        sum_x = sum(dias)
+        sum_y = sum(valores)
+        sum_xy = sum(dias[i] * valores[i] for i in range(n))
+        sum_x2 = sum(x**2 for x in dias)
+        
+        # Pendiente (m) e intercepto (b)
+        m = (n * sum_xy - sum_x * sum_y) / (n * sum_x2 - sum_x**2) if (n * sum_x2 - sum_x**2) != 0 else 0
+        b = (sum_y - m * sum_x) / n if n > 0 else 0
+        
+        # 5. Calcular error estándar (confianza)
+        if n > 2:
+            predicciones_historial = [m * x + b for x in dias]
+            errores = [valores[i] - predicciones_historial[i] for i in range(n)]
+            mse = sum(e**2 for e in errores) / (n - 2) if n > 2 else 0
+            std_error = math.sqrt(mse) if mse > 0 else 0
+        else:
+            std_error = 0
+        
+        # 6. Generar predicciones
+        predicciones = []
+        for i in range(1, dias_a_predecir + 1):
+            dia = len(valores) + i
+            valor_predicho = max(0, round(m * dia + b, 0))  # No puede ser negativo
+            
+            # Calcular intervalo de confianza (68-95-99.7 rule)
+            if std_error > 0:
+                intervalo_inferior = max(0, round(valor_predicho - std_error, 0))
+                intervalo_superior = round(valor_predicho + std_error, 0)
+            else:
+                intervalo_inferior = round(valor_predicho * 0.8, 0)
+                intervalo_superior = round(valor_predicho * 1.2, 0)
+            
+            fecha_predicha = datetime.now() + timedelta(days=i)
+            
+            predicciones.append({
+                'dia': i,
+                'fecha': fecha_predicha.strftime('%d/%m/%Y'),
+                'prediccion': valor_predicho,
+                'intervalo_inferior': intervalo_inferior,
+                'intervalo_superior': intervalo_superior,
+                'confianza': 'Alta' if std_error < valor_predicho * 0.1 else 'Media' if std_error < valor_predicho * 0.2 else 'Baja'
+            })
+        
+        # 7. Determinar tendencia general
+        tendencia = 'creciente' if m > 5 else 'decreciente' if m < -5 else 'estable'
+        mensaje_tendencia = '📈 Tendencia creciente' if tendencia == 'creciente' else '📉 Tendencia decreciente' if tendencia == 'decreciente' else '➡️ Tendencia estable'
+        
+        return {
+            'disponible': True,
+            'predicciones': predicciones,
+            'tendencia': tendencia,
+            'mensaje_tendencia': mensaje_tendencia,
+            'dias_historial': len(ventas_historial),
+            'pendiente': m,
+            'intercepto': b,
+            'error_estandar': std_error,
+            'promedio_historico': statistics.mean(valores) if valores else 0,
+            'mensaje': f"📊 Predicciones basadas en {len(ventas_historial)} días de datos históricos."
+        }
+        
+    except Exception as e:
+        print(f"Error en predecir_ventas_futuras: {e}")
+        return {
+            'disponible': False,
+            'mensaje': f"Error al generar predicciones: {str(e)}",
+            'tendencia': 'error'
+        }
+        
+# =============================================
+# FIN DE MODELS.PY
+# ============================================= 

@@ -147,21 +147,42 @@
 {% endif %}
 
 <!-- SECCIÓN DE PROYECCIONES -->
-{% if proyecciones %}
+{% if predicciones_ml and predicciones_ml.disponible %}
 <div class="row mt-4 no-break">
     <div class="col-12">
         <div class="metric-card metric-card-ml">
-            <h4><i class="fas fa-chart-line"></i> Proyecciones IA - Próximos 7 Días</h4>
-            <p class="text-muted">Basado en análisis de tendencias históricas y patrones de venta</p>
+            <h4><i class="fas fa-robot"></i> 🔮 Predicciones IA - Próximos 7 Días</h4>
+            <p class="text-muted">{{ predicciones_ml.mensaje }}</p>
+            <p class="text-muted">
+                <span class="badge bg-{{ 'success' if predicciones_ml.tendencia == 'creciente' else 'danger' if predicciones_ml.tendencia == 'decreciente' else 'warning' }}">
+                    {{ predicciones_ml.mensaje_tendencia }}
+                </span>
+            </p>
+            
             <div class="row mt-3">
-                {% for proyeccion in proyecciones %}
+                {% for prediccion in predicciones_ml.predicciones %}
                 <div class="col-md-3 col-6 mb-3">
-                    <div class="text-center">
-                        <h5>{{ proyeccion.dia }}</h5>
-                        <p class="h4 text-primary">{{ proyeccion.valor }}</p>
+                    <div class="text-center p-2 border rounded">
+                        <h6>📅 {{ prediccion.fecha }}</h6>
+                        <p class="h4 text-primary">${{ "%.0f"|format(prediccion.prediccion) }}</p>
+                        <small class="text-muted">
+                            {{ prediccion.intervalo_inferior }} - {{ prediccion.intervalo_superior }}
+                        </small>
+                        <br>
+                        <span class="badge bg-{{ 'success' if prediccion.confianza == 'Alta' else 'warning' if prediccion.confianza == 'Media' else 'danger' }}">
+                            {{ prediccion.confianza }} confianza
+                        </span>
                     </div>
                 </div>
                 {% endfor %}
+            </div>
+            
+            <div class="mt-3 alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                <small>
+                    📊 Basado en {{ predicciones_ml.dias_historial }} días de datos históricos.
+                    El intervalo muestra el rango esperado de ventas.
+                </small>
             </div>
         </div>
     </div>
@@ -170,12 +191,12 @@
 <div class="row mt-4 no-break">
     <div class="col-12">
         <div class="metric-card metric-card-ml">
-            <h4><i class="fas fa-chart-line"></i> Proyecciones IA - Próximos 7 Días</h4>
+            <h4><i class="fas fa-robot"></i> 🔮 Predicciones IA - Próximos 7 Días</h4>
             <div class="alert alert-info mt-3">
-                <i class="fas fa-robot me-2"></i>
-                <strong>Análisis IA no disponible</strong><br>
-                <small>Los datos de análisis predictivo se cargarán en el siguiente paso.<br>
-                Se necesitan al menos <strong>30 días de actividad</strong> para generar proyecciones precisas.</small>
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>{{ predicciones_ml.mensaje if predicciones_ml else 'Predicciones no disponibles' }}</strong>
+                <br>
+                <small>Se necesitan al menos 7 días de datos históricos para generar predicciones precisas.</small>
             </div>
         </div>
     </div>
