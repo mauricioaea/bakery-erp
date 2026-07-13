@@ -166,10 +166,7 @@
                 background: #fffdf6 !important;
             }
             
-            .tarjeta-metodos {
-                border-left: 3px solid #007bff !important;
-                background: #f8fbff !important;
-            }
+            
             
             .tarjeta-resumen {
                 border-left: 3px solid #28a745 !important;
@@ -600,8 +597,6 @@
                         <div class="metodo-item">
                             {% if metodo == 'efectivo' %}
                                 <i class="fas fa-money-bill me-1"></i>Efectivo:
-                            {% elif metodo == 'tarjeta' %}
-                                <i class="fas fa-credit-card me-1"></i>Tarjeta:
                             {% elif metodo == 'transferencia' %}
                                 <i class="fas fa-university me-1"></i>Transferencia:
                             {% else %}
@@ -748,8 +743,6 @@
                                         <div class="badge-metodo bg-primary w-100 p-2 text-center">
                                             {% if metodo == 'efectivo' %}
                                                 <i class="fas fa-money-bill me-1"></i>
-                                            {% elif metodo == 'tarjeta' %}
-                                                <i class="fas fa-credit-card me-1"></i>
                                             {% elif metodo == 'transferencia' %}
                                                 <i class="fas fa-university me-1"></i>
                                             {% else %}

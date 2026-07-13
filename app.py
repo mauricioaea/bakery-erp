@@ -5043,11 +5043,18 @@ def reporte_cierre_caja():
         print(f"🔢 Total transacciones: {total_transacciones}")
         
         # Calcular métricas por método de pago (SOLO VENTAS NORMALES)
+                # Calcular métricas por método de pago (SOLO VENTAS NORMALES)
+                # Calcular métricas por método de pago (SOLO VENTAS NORMALES)
         ventas_por_metodo = {}
         for venta in ventas_normales:
-            if venta.metodo_pago not in ventas_por_metodo:
-                ventas_por_metodo[venta.metodo_pago] = 0
-            ventas_por_metodo[venta.metodo_pago] += venta.total
+            metodo = venta.metodo_pago
+            # ✅ CONVERTIR 'tarjeta' a 'transferencia' (unificar métodos)
+            if metodo == 'tarjeta':
+                metodo = 'transferencia'
+            
+            if metodo not in ventas_por_metodo:
+                ventas_por_metodo[metodo] = 0
+            ventas_por_metodo[metodo] += venta.total
         
         print(f"💳 Ventas por método: {ventas_por_metodo}")
         

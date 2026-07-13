@@ -935,7 +935,7 @@ class Venta(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     fecha_hora = db.Column(db.DateTime, default=datetime.now) 
     total = db.Column(db.Float, nullable=False)
-    metodo_pago = db.Column(db.String(20), nullable=False)  # 'efectivo', 'tarjeta', 'transferencia'
+    metodo_pago = db.Column(db.String(20), nullable=False)  # 'efectivo', 'transferencia'
     usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
     cliente_id = db.Column(db.Integer, db.ForeignKey('clientes.id'), nullable=True) 
     
@@ -1334,7 +1334,7 @@ class JornadaVentas(db.Model):
     total_ventas = db.Column(db.Float, default=0)
     total_efectivo = db.Column(db.Float, default=0)
     total_transferencia = db.Column(db.Float, default=0)
-    total_tarjeta = db.Column(db.Float, default=0)
+    
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     cerrada_at = db.Column(db.DateTime)
     
@@ -1354,7 +1354,7 @@ class CierreDiario(db.Model):
     total_ventas = db.Column(db.Float, nullable=False)
     total_efectivo = db.Column(db.Float, nullable=False)
     total_transferencia = db.Column(db.Float, nullable=False)
-    total_tarjeta = db.Column(db.Float, nullable=False)
+    
     total_transacciones = db.Column(db.Integer, nullable=False)
     
     # PRODUCTOS MÁS VENDIDOS (serializado como JSON)
@@ -1781,7 +1781,7 @@ def cerrar_jornada_actual():
         total_ventas = sum(venta.total for venta in ventas_dia)
         total_efectivo = sum(v.total for v in ventas_dia if v.metodo_pago == 'efectivo')
         total_transferencia = sum(v.total for v in ventas_dia if v.metodo_pago == 'transferencia')
-        total_tarjeta = sum(v.total for v in ventas_dia if v.metodo_pago == 'tarjeta')
+        
         
         # Obtener productos más vendidos
         detalles_dia = DetalleVenta.query.join(Venta).filter(
@@ -1821,8 +1821,7 @@ def cerrar_jornada_actual():
             jornada_id=jornada.id,
             total_ventas=total_ventas,
             total_efectivo=total_efectivo,
-            total_transferencia=total_transferencia,
-            total_tarjeta=total_tarjeta,
+            
             total_transacciones=len(ventas_dia),
             productos_top=json.dumps(productos_top),
             ventas_dia_anterior=total_anterior,
@@ -1835,7 +1834,7 @@ def cerrar_jornada_actual():
         jornada.total_ventas = total_ventas
         jornada.total_efectivo = total_efectivo
         jornada.total_transferencia = total_transferencia
-        jornada.total_tarjeta = total_tarjeta
+        
         
         db.session.add(cierre)
         db.session.commit()
@@ -1878,7 +1877,7 @@ class RegistroDiario(db.Model):
     venta_total = db.Column(db.Float, default=0)
     efectivo = db.Column(db.Float, default=0)
     transferencias = db.Column(db.Float, default=0)
-    tarjetas = db.Column(db.Float, default=0)
+    
     
     # EGRESOS
     gasto_proveedores = db.Column(db.Float, default=0)

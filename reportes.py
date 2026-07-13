@@ -314,18 +314,15 @@ class GeneradorReportes:
             
             total_efectivo_cierre = 0
             total_transferencias_cierre = 0
-            total_tarjetas_cierre = 0
             
             for registro in registros_cierre:
                 efectivo = registro.efectivo or 0
                 transferencias = registro.transferencias or 0
-                tarjetas = registro.tarjetas or 0
                 
                 total_efectivo_cierre += efectivo
                 total_transferencias_cierre += transferencias
-                total_tarjetas_cierre += tarjetas
             
-            total_cierre = total_efectivo_cierre + total_transferencias_cierre + total_tarjetas_cierre
+            total_cierre = total_efectivo_cierre + total_transferencias_cierre
             
             # ✅ FILTRAR VENTAS POR TENANT
             ventas_normales = Venta.query.filter(
@@ -336,7 +333,6 @@ class GeneradorReportes:
             
             ventas_efectivo = 0
             ventas_transferencia = 0
-            ventas_tarjeta = 0
             total_ventas_directas = 0
             
             for venta in ventas_normales:
@@ -345,20 +341,16 @@ class GeneradorReportes:
                     ventas_efectivo += venta.total or 0
                 elif venta.metodo_pago == 'transferencia':
                     ventas_transferencia += venta.total or 0
-                elif venta.metodo_pago == 'tarjeta':
-                    ventas_tarjeta += venta.total or 0
             
             # ✅ ESTRATEGIA: Priorizar cierres de caja
             if total_cierre > 0:
                 efectivo_final = total_efectivo_cierre
                 transferencias_final = total_transferencias_cierre
-                tarjetas_final = total_tarjetas_cierre
                 total_ventas_final = total_cierre
                 fuente_datos = "Cierres de Caja"
             else:
                 efectivo_final = ventas_efectivo
                 transferencias_final = ventas_transferencia
-                tarjetas_final = ventas_tarjeta
                 total_ventas_final = total_ventas_directas
                 fuente_datos = "Ventas Directas"
             
@@ -372,14 +364,16 @@ class GeneradorReportes:
             total_donaciones = sum(v.total for v in ventas_donaciones) if ventas_donaciones else 0
             
             ingresos = {
-                'Ventas Normales': total_ventas_final,
-                'Efectivo': efectivo_final,
-                'Transferencias': transferencias_final,
-                'Ventas con Tarjeta': tarjetas_final,
+            'Ventas Normales': total_ventas_final,
             }
             
+            # Solo incluir donaciones si hay alguna
             if total_donaciones > 0:
                 ingresos['Donaciones'] = total_donaciones
+            
+            print(f"✅ INGRESOS CALCULADOS EXITOSAMENTE:")
+            for concepto, monto in ingresos.items():
+                print(f"   📈 {concepto}: ${monto:,}")
             
             return ingresos
             
@@ -392,7 +386,6 @@ class GeneradorReportes:
                 'Ventas Normales': 0,
                 'Efectivo': 0,
                 'Transferencias': 0,
-                'Ventas con Tarjeta': 0,
                 'Donaciones': 0
             }
     
@@ -427,7 +420,7 @@ class GeneradorReportes:
             
             flujo_data = []
             for registro in registros:
-                ingresos = (registro.efectivo or 0) + (registro.transferencias or 0) + (registro.tarjetas or 0)
+                ingresos = (registro.efectivo or 0) + (registro.transferencias or 0)
                 gastos = registro.total_egresos or 0
                 flujo_data.append((registro.fecha, ingresos, gastos))
             
@@ -573,16 +566,7 @@ class GeneradorReportes:
                     ))
                     print(f"   💰 INGRESO TRANSFERENCIA: ${registro.transferencias:,}")
                 
-                if registro.tarjetas and registro.tarjetas > 0:
-                    movimientos.append((
-                        registro.fecha,
-                        "VENTAS CON TARJETA",
-                        f"CIERRE {registro.fecha}",
-                        registro.tarjetas,
-                        0,
-                        'INGRESO'
-                    ))
-                    print(f"   💰 INGRESO TARJETA: ${registro.tarjetas:,}")
+                
             
             # ✅ FILTRAR PAGOS POR TENANT
             pagos = PagoIndividual.query.filter(
