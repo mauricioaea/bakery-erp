@@ -6210,9 +6210,14 @@ from io import BytesIO
 @app.route('/reportes')
 @login_required
 @modulo_requerido('reportes')
-@tenant_required
 def reportes():
     """Vista principal de reportes"""
+    # 🔍 Verificar tenant
+    panaderia_id = obtener_panaderia_actual()
+    if not panaderia_id:
+        flash('No se pudo determinar la panadería', 'error')
+        return redirect(url_for('dashboard'))
+    
     return render_template('reportes.html')
 
 @app.route('/generar_reporte_estado_resultados')
@@ -7141,9 +7146,15 @@ def lista_activos():
 
 @app.route('/reporte_activos')
 @login_required
-@tenant_required
 @modulo_requerido('activos')
 def reporte_activos():
+    """Reporte de activos fijos"""
+    # 🔍 OBTENER TENANT ACTUAL
+    panaderia_id = obtener_panaderia_actual()
+    if not panaderia_id:
+        flash('No se pudo determinar la panadería', 'error')
+        return redirect(url_for('dashboard'))
+    
     # 🆕 VERIFICACIÓN SEGURA PARA SUPER ADMINISTRADOR
     es_super_admin = False
     try:
@@ -7165,7 +7176,8 @@ def reporte_activos():
         flash('Modo demostración: Reportes vacíos para super administrador', 'info')
         graph_path = None
     else:
-        activos = ActivoFijo.query.filter_by(panaderia_id=current_user.panaderia_id).all()
+        # ✅ FILTRAR POR TENANT
+        activos = ActivoFijo.query.filter_by(panaderia_id=panaderia_id).all()
     
         # Generar gráficos si hay activos
         if activos:

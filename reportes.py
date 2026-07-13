@@ -42,8 +42,8 @@ class GeneradorReportes:
             textColor=colors.HexColor('#34495e')
         )
     
-    def generar_reporte_estado_resultados(self, fecha_inicio, fecha_fin):
-        """Genera reporte de Estado de Resultados (Pérdidas y Ganancias) - CORREGIDO Y OPTIMIZADO"""
+    def generar_reporte_estado_resultados(self, panaderia_id, fecha_inicio, fecha_fin):
+        """Genera reporte de Estado de Resultados (Pérdidas y Ganancias) - CON FILTRO MULTI-TENANT"""
         buffer = BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=1*inch)
         elements = []
@@ -54,15 +54,13 @@ class GeneradorReportes:
         elements.append(Paragraph(f"Período: {fecha_inicio} a {fecha_fin}", self.styles['Normal']))
         elements.append(Spacer(1, 20))
         
-        # Obtener datos
-        ingresos = self._obtener_ingresos_periodo(fecha_inicio, fecha_fin)
-        gastos = self._obtener_gastos_periodo(fecha_inicio, fecha_fin)
+        # ✅ FILTRAR POR TENANT
+        ingresos = self._obtener_ingresos_periodo(panaderia_id, fecha_inicio, fecha_fin)
+        gastos = self._obtener_gastos_periodo(panaderia_id, fecha_inicio, fecha_fin)
         
-        # ✅ CORRECCIÓN: Validar que hay datos antes de procesar
         total_ingresos = sum(ingresos.values()) if ingresos else 0
         total_gastos = sum(gastos.values()) if gastos else 0
         
-        # ✅ MEJORA: Manejo robusto de caso sin datos
         if total_ingresos == 0 and total_gastos == 0:
             elements.append(Paragraph("📊 SIN DATOS PARA EL PERÍODO", self.estilo_subtitulo))
             elements.append(Paragraph("No se encontraron registros de ingresos o gastos para las fechas seleccionadas.", self.styles['Normal']))
@@ -72,7 +70,6 @@ class GeneradorReportes:
             elements.append(Paragraph("• Confirme que existan ventas registradas en el período", self.styles['Normal']))
             elements.append(Paragraph("• Verifique los cierres de caja del período", self.styles['Normal']))
             
-            # Pie de página
             elements.append(Spacer(1, 30))
             elements.append(Paragraph(f"Generado el: {datetime.now().strftime('%d/%m/%Y %H:%M')}", 
                                     ParagraphStyle('Footer', parent=self.styles['Normal'], fontSize=8, textColor=colors.gray)))
@@ -87,11 +84,10 @@ class GeneradorReportes:
         total_ingresos = 0
         
         for concepto, monto in ingresos.items():
-            if monto > 0:  # Solo mostrar conceptos con montos positivos
+            if monto > 0:
                 data_ingresos.append([concepto, f"${monto:,.0f}"])
                 total_ingresos += monto
         
-        # CORREGIDO: Sin etiquetas HTML
         data_ingresos.append(['TOTAL INGRESOS', f"${total_ingresos:,.0f}"])
         
         tabla_ingresos = Table(data_ingresos, colWidths=[4*inch, 2*inch])
@@ -119,12 +115,10 @@ class GeneradorReportes:
         
         for categoria, monto in gastos.items():
             if monto > 0:
-                # ✅ MEJORA: Formatear nombres de categorías más legibles
                 categoria_formateada = categoria.replace('_', ' ').title()
                 data_gastos.append([categoria_formateada, f"${monto:,.0f}"])
                 total_gastos += monto
         
-        # CORREGIDO: Sin etiquetas HTML
         data_gastos.append(['TOTAL GASTOS', f"${total_gastos:,.0f}"])
         
         tabla_gastos = Table(data_gastos, colWidths=[4*inch, 2*inch])
@@ -149,7 +143,6 @@ class GeneradorReportes:
         resultado_neto = total_ingresos - total_gastos
         color_resultado = colors.HexColor('#27ae60') if resultado_neto >= 0 else colors.HexColor('#c0392b')
         
-        # CORREGIDO: Sin etiquetas HTML
         data_resultado = [['RESULTADO NETO DEL PERÍODO', f"${resultado_neto:,.0f}"]]
         tabla_resultado = Table(data_resultado, colWidths=[4*inch, 2*inch])
         tabla_resultado.setStyle(TableStyle([
@@ -163,11 +156,10 @@ class GeneradorReportes:
         ]))
         elements.append(tabla_resultado)
         
-        # Análisis de Rentabilidad (mantener el HTML aquí porque Paragraph sí lo interpreta)
+        # Análisis de Rentabilidad
         elements.append(Spacer(1, 30))
         elements.append(Paragraph("ANÁLISIS DE RENTABILIDAD", self.estilo_subtitulo))
         
-        # ✅ CORRECCIÓN CRÍTICA: Evitar división por cero
         if total_ingresos > 0:
             margen_ganancia = (resultado_neto / total_ingresos * 100)
             relacion_gastos_ingresos = (total_gastos / total_ingresos * 100)
@@ -175,7 +167,6 @@ class GeneradorReportes:
             margen_ganancia = 0
             relacion_gastos_ingresos = 0
         
-        # ✅ MEJORA: Análisis más descriptivo
         analisis_texto = f"""
         <b>Margen de Ganancia Neto:</b> {margen_ganancia:.1f}%<br/>
         <b>Relación Gastos/Ingresos:</b> {relacion_gastos_ingresos:.1f}%<br/>
@@ -185,7 +176,7 @@ class GeneradorReportes:
         """
         elements.append(Paragraph(analisis_texto, self.styles['Normal']))
         
-        # ✅ NUEVO: Recomendaciones automáticas basadas en resultados
+        # Recomendaciones
         elements.append(Spacer(1, 20))
         elements.append(Paragraph("RECOMENDACIONES", self.estilo_subtitulo))
         
@@ -216,8 +207,8 @@ class GeneradorReportes:
         buffer.seek(0)
         return buffer
     
-    def generar_reporte_flujo_caja(self, fecha_inicio, fecha_fin):
-        """Genera reporte de Flujo de Caja"""
+    def generar_reporte_flujo_caja(self, panaderia_id, fecha_inicio, fecha_fin):
+        """Genera reporte de Flujo de Caja - CON FILTRO MULTI-TENANT"""
         buffer = BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=1*inch)
         elements = []
@@ -227,8 +218,8 @@ class GeneradorReportes:
         elements.append(Paragraph(f"Período: {fecha_inicio} a {fecha_fin}", self.styles['Normal']))
         elements.append(Spacer(1, 20))
 
-        # Obtener datos de flujo de caja
-        flujo_data = self._obtener_flujo_caja_periodo(fecha_inicio, fecha_fin)
+        # ✅ FILTRAR POR TENANT
+        flujo_data = self._obtener_flujo_caja_periodo(panaderia_id, fecha_inicio, fecha_fin)
 
         if not flujo_data:
             elements.append(Paragraph("No hay datos de flujo de caja para el período seleccionado.", self.styles['Normal']))
@@ -247,7 +238,6 @@ class GeneradorReportes:
                     f"${saldo_acumulado:,.0f}"
                 ])
 
-            # Agregar totales - CORREGIDO: Sin etiquetas HTML
             total_ingresos = sum(item[1] for item in flujo_data)
             total_gastos = sum(item[2] for item in flujo_data)
             data.append([
@@ -267,13 +257,10 @@ class GeneradorReportes:
                 ('FONTSIZE', (0, 0), (-1, -1), 8),
                 ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
                 ('BACKGROUND', (0, 1), (-1, -2), colors.HexColor('#f8f9fa')),
-                
-                # ESTILOS MEJORADOS PARA LA FILA DE TOTALES
                 ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#2c3e50')),
                 ('TEXTCOLOR', (0, -1), (-1, -1), colors.white),
                 ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
                 ('FONTSIZE', (0, -1), (-1, -1), 9),
-                
                 ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ]))
@@ -304,25 +291,23 @@ class GeneradorReportes:
         buffer.seek(0)
         return buffer
     
-    def _obtener_ingresos_periodo(self, fecha_inicio, fecha_fin):
-        """Obtiene ingresos combinando ventas directas y registros diarios - CORREGIDO Y OPTIMIZADO"""
+    def _obtener_ingresos_periodo(self, panaderia_id, fecha_inicio, fecha_fin):
+        """Obtiene ingresos combinando ventas directas y registros diarios - CON FILTRO MULTI-TENANT"""
         try:
-            # ✅ CORRECCIÓN: Asegurar formato correcto de fechas
             from datetime import datetime
             
-            # Convertir strings a date si es necesario
             if isinstance(fecha_inicio, str):
                 fecha_inicio = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
             if isinstance(fecha_fin, str):
                 fecha_fin = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
             
             print(f"🔍 BUSCANDO INGRESOS ENTRE: {fecha_inicio} Y {fecha_fin}")
-            print(f"🔍 PANADERÍA ID: {current_user.panaderia_id}")
+            print(f"🔍 PANADERÍA ID: {panaderia_id}")
             
-            # ✅ CORRECCIÓN 1: OBTENER DATOS DE REGISTROS DIARIOS (CIERRES DE CAJA)
+            # ✅ FILTRAR POR TENANT
             registros_cierre = RegistroDiario.query.filter(
                 RegistroDiario.fecha.between(fecha_inicio, fecha_fin),
-                RegistroDiario.panaderia_id == current_user.panaderia_id
+                RegistroDiario.panaderia_id == panaderia_id
             ).all()
             
             print(f"📊 REGISTROS DE CIERRE ENCONTRADOS: {len(registros_cierre)}")
@@ -339,20 +324,15 @@ class GeneradorReportes:
                 total_efectivo_cierre += efectivo
                 total_transferencias_cierre += transferencias
                 total_tarjetas_cierre += tarjetas
-                
-                print(f"   📅 {registro.fecha}: Efectivo=${efectivo:,}, Transferencias=${transferencias:,}, Tarjetas=${tarjetas:,}")
             
             total_cierre = total_efectivo_cierre + total_transferencias_cierre + total_tarjetas_cierre
-            print(f"💰 TOTAL CIERRES: ${total_cierre:,}")
             
-            # ✅ CORRECCIÓN 2: OBTENER DATOS DE VENTAS DIRECTAS
+            # ✅ FILTRAR VENTAS POR TENANT
             ventas_normales = Venta.query.filter(
                 Venta.fecha_hora.between(fecha_inicio, fecha_fin),
                 Venta.es_donacion == False,
-                Venta.panaderia_id == current_user.panaderia_id
+                Venta.panaderia_id == panaderia_id
             ).all()
-            
-            print(f"📊 VENTAS NORMALES ENCONTRADAS: {len(ventas_normales)}")
             
             ventas_efectivo = 0
             ventas_transferencia = 0
@@ -368,42 +348,29 @@ class GeneradorReportes:
                 elif venta.metodo_pago == 'tarjeta':
                     ventas_tarjeta += venta.total or 0
             
-            print(f"💰 VENTAS DIRECTAS: Efectivo=${ventas_efectivo:,}, Transferencias=${ventas_transferencia:,}, Tarjetas=${ventas_tarjeta:,}")
-            print(f"💰 TOTAL VENTAS DIRECTAS: ${total_ventas_directas:,}")
-            
-            # ✅ CORRECCIÓN 3: ESTRATEGIA INTELIGENTE DE COMBINACIÓN
-            # Priorizar RegistrosDiario (cierres de caja) sobre Ventas directas
-            # porque los cierres representan el dinero real que entró a caja
-            
+            # ✅ ESTRATEGIA: Priorizar cierres de caja
             if total_cierre > 0:
-                # ✅ USAR DATOS DE CIERRE DE CAJA (más confiables para ingresos reales)
                 efectivo_final = total_efectivo_cierre
                 transferencias_final = total_transferencias_cierre
                 tarjetas_final = total_tarjetas_cierre
                 total_ventas_final = total_cierre
                 fuente_datos = "Cierres de Caja"
             else:
-                # ✅ USAR DATOS DE VENTAS DIRECTAS (como respaldo)
                 efectivo_final = ventas_efectivo
                 transferencias_final = ventas_transferencia
                 tarjetas_final = ventas_tarjeta
                 total_ventas_final = total_ventas_directas
                 fuente_datos = "Ventas Directas"
             
-            print(f"🎯 FUENTE DE DATOS SELECCIONADA: {fuente_datos}")
-            print(f"🎯 TOTAL FINAL CALCULADO: ${total_ventas_final:,}")
-            
-            # ✅ CORRECCIÓN 4: OBTENER DONACIONES (solo informativo)
+            # ✅ FILTRAR DONACIONES POR TENANT
             ventas_donaciones = Venta.query.filter(
                 Venta.fecha_hora.between(fecha_inicio, fecha_fin),
                 Venta.es_donacion == True,
-                Venta.panaderia_id == current_user.panaderia_id
+                Venta.panaderia_id == panaderia_id
             ).all()
             
             total_donaciones = sum(v.total for v in ventas_donaciones) if ventas_donaciones else 0
-            print(f"🎁 DONACIONES ENCONTRADAS: {len(ventas_donaciones)} - Total: ${total_donaciones:,}")
             
-            # ✅ CORRECCIÓN 5: ESTRUCTURA COMPLETA DE INGRESOS (SOLO DATOS NUMÉRICOS)
             ingresos = {
                 'Ventas Normales': total_ventas_final,
                 'Efectivo': efectivo_final,
@@ -411,32 +378,16 @@ class GeneradorReportes:
                 'Ventas con Tarjeta': tarjetas_final,
             }
             
-            # Solo incluir donaciones si hay alguna
             if total_donaciones > 0:
                 ingresos['Donaciones'] = total_donaciones
-            
-            # ✅ CORRECCIÓN CRÍTICA: ELIMINAR DIAGNÓSTICO DEL DICCIONARIO PRINCIPAL
-            # El diagnóstico ahora se maneja solo en los prints, no en el diccionario de retorno
-            print(f"📋 DIAGNÓSTICO INTERNO:")
-            print(f"   - Fuente de datos: {fuente_datos}")
-            print(f"   - Total cierre: ${total_cierre:,}")
-            print(f"   - Total ventas directas: ${total_ventas_directas:,}")
-            print(f"   - Registros encontrados: {len(registros_cierre)}")
-            print(f"   - Ventas encontradas: {len(ventas_normales)}")
-            print(f"   - Donaciones encontradas: {len(ventas_donaciones)}")
-            
-            print(f"✅ INGRESOS CALCULADOS EXITOSAMENTE:")
-            for concepto, monto in ingresos.items():
-                print(f"   📈 {concepto}: ${monto:,}")
             
             return ingresos
             
         except Exception as e:
-            print(f"❌ ERROR CRÍTICO al obtener ingresos: {str(e)}")
+            print(f"⚠️ Error al obtener ingresos: {str(e)}")
             import traceback
             traceback.print_exc()
             
-            # ✅ CORRECCIÓN: Retornar estructura vacía pero válida en caso de error
             return {
                 'Ventas Normales': 0,
                 'Efectivo': 0,
@@ -445,13 +396,13 @@ class GeneradorReportes:
                 'Donaciones': 0
             }
     
-    def _obtener_gastos_periodo(self, fecha_inicio, fecha_fin):
-        """Obtiene gastos agrupados por categoría - CORREGIDO MULTI-TENANT"""
+    def _obtener_gastos_periodo(self, panaderia_id, fecha_inicio, fecha_fin):
+        """Obtiene gastos agrupados por categoría - CON FILTRO MULTI-TENANT"""
         try:
-            # ✅ CORREGIDO: Añadido filtro panaderia_id
+            # ✅ FILTRAR POR TENANT
             pagos = PagoIndividual.query.filter(
                 PagoIndividual.fecha_pago.between(fecha_inicio, fecha_fin),
-                PagoIndividual.panaderia_id == current_user.panaderia_id  # ✅ NUEVO FILTRO MULTI-TENANT
+                PagoIndividual.panaderia_id == panaderia_id
             ).all()
             
             gastos = {}
@@ -465,13 +416,13 @@ class GeneradorReportes:
             print(f"Error al obtener gastos: {e}")
             return {}
     
-    def _obtener_flujo_caja_periodo(self, fecha_inicio, fecha_fin):
-        """Obtiene datos para flujo de caja diario - CORREGIDO MULTI-TENANT"""
+    def _obtener_flujo_caja_periodo(self, panaderia_id, fecha_inicio, fecha_fin):
+        """Obtiene datos para flujo de caja diario - CON FILTRO MULTI-TENANT"""
         try:
-            # ✅ CORREGIDO: Añadido filtro panaderia_id
+            # ✅ FILTRAR POR TENANT
             registros = RegistroDiario.query.filter(
                 RegistroDiario.fecha.between(fecha_inicio, fecha_fin),
-                RegistroDiario.panaderia_id == current_user.panaderia_id  # ✅ NUEVO FILTRO MULTI-TENANT
+                RegistroDiario.panaderia_id == panaderia_id
             ).order_by(RegistroDiario.fecha).all()
             
             flujo_data = []
@@ -486,25 +437,23 @@ class GeneradorReportes:
             return []
         
     #=======================================libro contable=================================================
-    def generar_reporte_libro_diario(self, fecha_inicio, fecha_fin):
-        """Genera reporte de Libro Mayor de Caja - VERSIÓN SIMPLIFICADA"""
+    def generar_reporte_libro_diario(self, panaderia_id, fecha_inicio, fecha_fin):
+        """Genera reporte de Libro Mayor de Caja - CON FILTRO MULTI-TENANT"""
         buffer = BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=1*inch)
         elements = []
 
-        # ✅ CAMBIO: Nuevo título
         elements.append(Paragraph("PANADERÍA-POS", self.estilo_titulo))
         elements.append(Paragraph("LIBRO MAYOR DE CAJA", self.estilo_titulo))
         elements.append(Paragraph(f"Período: {fecha_inicio} a {fecha_fin}", self.styles['Normal']))
         elements.append(Spacer(1, 15))
 
-        # Obtener todos los movimientos del período
-        movimientos = self._obtener_movimientos_periodo(fecha_inicio, fecha_fin)
+        # ✅ FILTRAR POR TENANT
+        movimientos = self._obtener_movimientos_periodo(panaderia_id, fecha_inicio, fecha_fin)
 
         if not movimientos:
             elements.append(Paragraph("No hay movimientos de caja para el período seleccionado.", self.styles['Normal']))
         else:
-            # ✅ CAMBIO: Nuevas columnas - Ingresos y Egresos
             data = [['Fecha', 'Concepto', 'Referencia', 'Ingresos', 'Egresos', 'Saldo']]
             
             saldo_acumulado = 0
@@ -514,7 +463,6 @@ class GeneradorReportes:
             for movimiento in movimientos:
                 fecha, concepto, referencia, ingresos, egresos, tipo = movimiento
                 
-                # Actualizar saldo
                 saldo_acumulado += ingresos - egresos
                 total_ingresos += ingresos
                 total_egresos += egresos
@@ -528,7 +476,6 @@ class GeneradorReportes:
                     f"${saldo_acumulado:,.0f}"
                 ])
 
-            # ✅ CAMBIO: Totales con nuevas etiquetas
             data.append([
                 'TOTALES',
                 '',
@@ -538,28 +485,20 @@ class GeneradorReportes:
                 f"${saldo_acumulado:,.0f}"
             ])
 
-            # Crear tabla
             tabla = Table(data, colWidths=[0.8*inch, 2.2*inch, 1.2*inch, 1.0*inch, 1.0*inch, 1.2*inch])
             tabla.setStyle(TableStyle([
-                # Encabezado
                 ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2c3e50')),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
                 ('FONTSIZE', (0, 0), (-1, 0), 8),
                 ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
-                
-                # Datos
                 ('FONTNAME', (0, 1), (-1, -2), 'Helvetica'),
                 ('FONTSIZE', (0, 1), (-1, -1), 7),
                 ('ALIGN', (0, 1), (2, -1), 'LEFT'),
                 ('ALIGN', (3, 1), (-1, -1), 'RIGHT'),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                
-                # Grid
                 ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
                 ('BACKGROUND', (0, 1), (-1, -2), colors.HexColor('#f8f9fa')),
-                
-                # Totales
                 ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#34495e')),
                 ('TEXTCOLOR', (0, -1), (-1, -1), colors.white),
                 ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
@@ -569,7 +508,6 @@ class GeneradorReportes:
             elements.append(tabla)
             elements.append(Spacer(1, 20))
 
-            # ✅ CAMBIO: Nuevo resumen de caja
             elements.append(Paragraph("RESUMEN DE CAJA", self.estilo_subtitulo))
             
             saldo_caja = total_ingresos - total_egresos
@@ -582,7 +520,6 @@ class GeneradorReportes:
             """
             elements.append(Paragraph(resumen_texto, self.styles['Normal']))
 
-        # Pie de página
         elements.append(Spacer(1, 30))
         elements.append(Paragraph(f"Generado el: {datetime.now().strftime('%d/%m/%Y %H:%M')}", 
                                 ParagraphStyle('Footer', parent=self.styles['Normal'], fontSize=8, textColor=colors.gray)))
@@ -591,12 +528,11 @@ class GeneradorReportes:
         buffer.seek(0)
         return buffer
 
-    def _obtener_movimientos_periodo(self, fecha_inicio, fecha_fin):
-        """Obtiene movimientos de caja (ingresos y egresos) para el libro mayor de caja - VERSIÓN SIMPLIFICADA"""
+    def _obtener_movimientos_periodo(self, panaderia_id, fecha_inicio, fecha_fin):
+        """Obtiene movimientos de caja (ingresos y egresos) para el libro mayor de caja - CON FILTRO MULTI-TENANT"""
         try:
             movimientos = []
             
-            # ✅ CORRECCIÓN: Asegurar formato correcto de fechas
             from datetime import datetime
             if isinstance(fecha_inicio, str):
                 fecha_inicio = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
@@ -604,83 +540,75 @@ class GeneradorReportes:
                 fecha_fin = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
             
             print(f"🔍 BUSCANDO MOVIMIENTOS DE CAJA ENTRE: {fecha_inicio} Y {fecha_fin}")
+            print(f"🔍 PANADERÍA ID: {panaderia_id}")
             
-            # 1. Obtener ingresos de cierre de caja - ✅ CORREGIDO: Añadido filtro panaderia_id
+            # ✅ FILTRAR POR TENANT
             registros = RegistroDiario.query.filter(
                 RegistroDiario.fecha.between(fecha_inicio, fecha_fin),
-                RegistroDiario.panaderia_id == current_user.panaderia_id
+                RegistroDiario.panaderia_id == panaderia_id
             ).order_by(RegistroDiario.fecha).all()
             
             print(f"📊 REGISTROS DE CIERRE ENCONTRADOS: {len(registros)}")
             
             for registro in registros:
-                # ✅ INGRESOS: Efectivo, transferencias, tarjetas
-                # Cada uno se registra como un ingreso individual
-                
-                # Efectivo
                 if registro.efectivo and registro.efectivo > 0:
                     movimientos.append((
                         registro.fecha,
                         "VENTAS EN EFECTIVO",
                         f"CIERRE {registro.fecha}",
-                        registro.efectivo,  # INGRESO
-                        0,                  # EGRESO
+                        registro.efectivo,
+                        0,
                         'INGRESO'
                     ))
                     print(f"   💰 INGRESO EFECTIVO: ${registro.efectivo:,}")
                 
-                # Transferencias
                 if registro.transferencias and registro.transferencias > 0:
                     movimientos.append((
                         registro.fecha,
                         "TRANSFERENCIAS RECIBIDAS",
                         f"CIERRE {registro.fecha}",
-                        registro.transferencias,  # INGRESO
-                        0,                       # EGRESO
+                        registro.transferencias,
+                        0,
                         'INGRESO'
                     ))
                     print(f"   💰 INGRESO TRANSFERENCIA: ${registro.transferencias:,}")
                 
-                # Tarjetas
                 if registro.tarjetas and registro.tarjetas > 0:
                     movimientos.append((
                         registro.fecha,
                         "VENTAS CON TARJETA",
                         f"CIERRE {registro.fecha}",
-                        registro.tarjetas,  # INGRESO
-                        0,                  # EGRESO
+                        registro.tarjetas,
+                        0,
                         'INGRESO'
                     ))
                     print(f"   💰 INGRESO TARJETA: ${registro.tarjetas:,}")
             
-            # 2. Obtener pagos (egresos) - ✅ CORREGIDO: Añadido filtro panaderia_id
+            # ✅ FILTRAR PAGOS POR TENANT
             pagos = PagoIndividual.query.filter(
                 PagoIndividual.fecha_pago.between(fecha_inicio, fecha_fin),
-                PagoIndividual.panaderia_id == current_user.panaderia_id
+                PagoIndividual.panaderia_id == panaderia_id
             ).order_by(PagoIndividual.fecha_pago).all()
             
             print(f"📊 PAGOS ENCONTRADOS: {len(pagos)}")
             
             for pago in pagos:
-                # ✅ EGRESOS: Pagos realizados
                 categoria_formateada = pago.categoria.replace('_', ' ').title()
                 
                 movimientos.append((
                     pago.fecha_pago,
                     f"PAGO - {categoria_formateada}",
                     pago.referencia or pago.numero_factura or f"PAGO#{pago.id}",
-                    0,           # INGRESO
-                    pago.monto,  # EGRESO
+                    0,
+                    pago.monto,
                     'EGRESO'
                 ))
                 print(f"   💸 EGRESO {categoria_formateada}: ${pago.monto:,}")
             
-            # 3. Ordenar todos los movimientos por fecha
             movimientos.sort(key=lambda x: x[0])
             
             print(f"✅ TOTAL MOVIMIENTOS DE CAJA GENERADOS: {len(movimientos)}")
             
-            # ✅ VERIFICAR TOTALES
             total_ingresos = sum(m[3] for m in movimientos)
             total_egresos = sum(m[4] for m in movimientos)
             saldo_caja = total_ingresos - total_egresos
@@ -1006,23 +934,23 @@ class GeneradorReportes:
             db.session.rollback()
             return False
     
-    def generar_reporte_tesoreria_unificado(self, fecha_inicio, fecha_fin, nivel_detalle='completo'):
-        """Genera reporte unificado de Tesorería (Libro Mayor + Flujo de Caja) - VERSIÓN UNIFICADA"""
+    def generar_reporte_tesoreria_unificado(self, panaderia_id, fecha_inicio, fecha_fin, nivel_detalle='completo'):
+        """Genera reporte unificado de Tesorería (Libro Mayor + Flujo de Caja) - CON FILTRO MULTI-TENANT"""
         try:
             print(f"🎯 Generando Reporte Unificado de Tesorería - Nivel: {nivel_detalle}")
+            print(f"🔍 PANADERÍA ID: {panaderia_id}")
             
             buffer = BytesIO()
             doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=0.8*inch)
             elements = []
 
-            # ✅ ENCABEZADO UNIFICADO
             elements.append(Paragraph("PANADERÍA-POS", self.estilo_titulo))
             elements.append(Paragraph("📊 REPORTE INTEGRAL DE TESORERÍA", self.estilo_titulo))
             elements.append(Paragraph(f"Período: {fecha_inicio} a {fecha_fin} | Nivel: {nivel_detalle.title()}", self.styles['Normal']))
             elements.append(Spacer(1, 15))
 
-            # Obtener datos combinados
-            datos_combinados = self._obtener_datos_tesoreria_combinados(fecha_inicio, fecha_fin)
+            # ✅ FILTRAR POR TENANT
+            datos_combinados = self._obtener_datos_tesoreria_combinados(panaderia_id, fecha_inicio, fecha_fin)
             
             if not datos_combinados or (not datos_combinados['movimientos'] and not datos_combinados['flujo_data']):
                 elements.append(Paragraph("No hay datos de tesorería para el período seleccionado.", self.styles['Normal']))
@@ -1030,12 +958,12 @@ class GeneradorReportes:
                 buffer.seek(0)
                 return buffer
 
-            # ✅ SECCIÓN 1: RESUMEN EJECUTIVO (SIEMPRE VISIBLE)
+            # ✅ SECCIÓN 1: RESUMEN EJECUTIVO
             elements.append(Paragraph("📈 RESUMEN EJECUTIVO", self.estilo_subtitulo))
             self._agregar_resumen_ejecutivo_tesoreria(elements, datos_combinados)
             elements.append(Spacer(1, 15))
 
-            # ✅ SECCIÓN 2: ANÁLISIS DE FLUJO (SIEMPRE VISIBLE)  
+            # ✅ SECCIÓN 2: ANÁLISIS DE FLUJO
             elements.append(Paragraph("💸 ANÁLISIS DE FLUJO DE CAJA", self.estilo_subtitulo))
             self._agregar_analisis_flujo_tesoreria(elements, datos_combinados)
             elements.append(Spacer(1, 15))
@@ -1046,7 +974,7 @@ class GeneradorReportes:
                 self._agregar_detalle_movimientos_tesoreria(elements, datos_combinados)
                 elements.append(Spacer(1, 15))
 
-            # ✅ SECCIÓN 4: GRÁFICOS Y MÉTRICAS AVANZADAS (SOLO COMPLETO/DETALLADO)
+            # ✅ SECCIÓN 4: GRÁFICOS Y MÉTRICAS AVANZADAS
             if nivel_detalle in ['completo', 'detallado']:
                 try:
                     elements.append(Paragraph("📊 ANÁLISIS VISUAL", self.estilo_subtitulo))
@@ -1056,11 +984,10 @@ class GeneradorReportes:
                     print(f"⚠️ No se pudieron generar gráficos: {e}")
                     elements.append(Paragraph("(Gráficos no disponibles - se requiere matplotlib)", self.styles['Normal']))
 
-            # ✅ SECCIÓN 5: RECOMENDACIONES (SIEMPRE VISIBLE)
+            # ✅ SECCIÓN 5: RECOMENDACIONES
             elements.append(Paragraph("💡 RECOMENDACIONES ESTRATÉGICAS", self.estilo_subtitulo))
             self._agregar_recomendaciones_tesoreria(elements, datos_combinados)
 
-            # Pie de página
             elements.append(Spacer(1, 20))
             elements.append(Paragraph(f"🎯 Reporte Unificado generado el: {datetime.now().strftime('%d/%m/%Y %H:%M')}", 
                                     ParagraphStyle('Footer', parent=self.styles['Normal'], fontSize=8, textColor=colors.gray)))
@@ -1073,14 +1000,14 @@ class GeneradorReportes:
             print(f"❌ Error en reporte unificado: {str(e)}")
             import traceback
             traceback.print_exc()
-            # Retornar un PDF de error
             return self._generar_reporte_error(f"Error en Reporte Unificado: {str(e)}")
     
 #====================================== Análisis de Gastos por Categoría========================================================
-    def generar_reporte_analisis_gastos(self, fecha_inicio, fecha_fin):
-        """Genera reporte de Análisis de Gastos por Categoría CON GRÁFICOS"""
+    def generar_reporte_analisis_gastos(self, panaderia_id, fecha_inicio, fecha_fin):
+        """Genera reporte de Análisis de Gastos por Categoría CON GRÁFICOS - CON FILTRO MULTI-TENANT"""
         try:
             print(f"🎯 Generando análisis de gastos para {fecha_inicio} a {fecha_fin}")
+            print(f"🔍 PANADERÍA ID: {panaderia_id}")
             
             buffer = BytesIO()
             doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=1*inch)
@@ -1092,8 +1019,8 @@ class GeneradorReportes:
             elements.append(Paragraph(f"Período: {fecha_inicio} a {fecha_fin}", self.styles['Normal']))
             elements.append(Spacer(1, 20))
 
-            # Obtener datos de gastos
-            gastos_por_categoria = self._obtener_gastos_por_categoria(fecha_inicio, fecha_fin)
+            # ✅ FILTRAR POR TENANT
+            gastos_por_categoria = self._obtener_gastos_por_categoria(panaderia_id, fecha_inicio, fecha_fin)
             
             if not gastos_por_categoria:
                 elements.append(Paragraph("No hay datos de gastos para el período seleccionado.", self.styles['Normal']))
@@ -1104,34 +1031,28 @@ class GeneradorReportes:
             total_gastos = sum(gastos_por_categoria.values())
             categorias_ordenadas = sorted(gastos_por_categoria.items(), key=lambda x: x[1], reverse=True)
 
-            # ✅ NUEVO: GRÁFICO DE DISTRIBUCIÓN DE GASTOS
+            # Gráficos
             try:
                 import matplotlib.pyplot as plt
                 from matplotlib.figure import Figure
                 import numpy as np
                 
-                # Crear figura con 2 subgráficos
                 fig = Figure(figsize=(10, 8))
-                
-                # --- GRÁFICO 1: Torta (Distribución) ---
                 ax1 = fig.add_subplot(211)
                 
-                # Preparar datos para el gráfico (tomar top 6 categorías y agrupar el resto como "Otros")
                 if len(categorias_ordenadas) > 6:
                     top_categorias = categorias_ordenadas[:6]
                     otros_monto = sum(monto for _, monto in categorias_ordenadas[6:])
                     labels = [cat[0].replace('_', ' ').title() for cat in top_categorias] + ['Otros']
                     valores = [cat[1] for cat in top_categorias] + [otros_monto]
-                    explode = [0.05] * len(top_categorias) + [0]  # Resaltar las principales
+                    explode = [0.05] * len(top_categorias) + [0]
                 else:
                     labels = [cat[0].replace('_', ' ').title() for cat in categorias_ordenadas]
                     valores = [cat[1] for cat in categorias_ordenadas]
                     explode = [0.05] * len(categorias_ordenadas)
                 
-                # Usar colores de matplotlib directamente
                 colors_plt = plt.cm.Set3(np.linspace(0, 1, len(labels)))
                 
-                # Crear gráfico de torta
                 wedges, texts, autotexts = ax1.pie(
                     valores, 
                     labels=labels, 
@@ -1143,21 +1064,16 @@ class GeneradorReportes:
                 )
                 ax1.set_title('Distribución de Gastos por Categoría', fontsize=14, fontweight='bold', pad=20)
                 
-                # Mejorar estética de los porcentajes
                 for autotext in autotexts:
                     autotext.set_color('darkblue')
                     autotext.set_fontweight('bold')
                     autotext.set_fontsize(9)
                 
-                # --- GRÁFICO 2: Barras (Top 10 categorías) ---
                 ax2 = fig.add_subplot(212)
-                
-                # Tomar top 10 categorías para el gráfico de barras
                 top_10 = categorias_ordenadas[:10]
                 categorias_barras = [cat[0].replace('_', ' ').title() for cat in top_10]
                 montos_barras = [cat[1] for cat in top_10]
                 
-                # Crear gráfico de barras horizontal con colores de matplotlib
                 y_pos = np.arange(len(categorias_barras))
                 colors_barras = plt.cm.viridis(np.linspace(0, 1, len(categorias_barras)))
                 bars = ax2.barh(y_pos, montos_barras, color=colors_barras)
@@ -1166,22 +1082,18 @@ class GeneradorReportes:
                 ax2.set_xlabel('Monto ($)', fontweight='bold')
                 ax2.set_title('Top 10 Categorías por Monto Gastado', fontsize=12, fontweight='bold', pad=10)
                 
-                # Agregar valores en las barras
                 for bar, monto in zip(bars, montos_barras):
                     width = bar.get_width()
                     ax2.text(width + (max(montos_barras) * 0.01), bar.get_y() + bar.get_height()/2,
                             f'${monto:,.0f}', ha='left', va='center', fontsize=8, fontweight='bold')
                 
-                # Ajustar diseño
                 fig.tight_layout(pad=3.0)
                 
-                # Guardar gráfico en buffer
                 graphic_buffer = BytesIO()
                 fig.savefig(graphic_buffer, format='png', dpi=150, bbox_inches='tight', 
                         facecolor='#f8f9fa', edgecolor='none')
                 graphic_buffer.seek(0)
                 
-                # Agregar gráfico al PDF
                 from reportlab.platypus import Image
                 elements.append(Paragraph("ANÁLISIS VISUAL DE GASTOS", self.estilo_subtitulo))
                 elements.append(Image(graphic_buffer, width=6.5*inch, height=5*inch))
@@ -1194,7 +1106,7 @@ class GeneradorReportes:
             except Exception as e:
                 print(f"⚠️ Error al generar gráfico: {e}. Continuando sin gráfico.")
 
-            # 1. TABLA DETALLADA DE GASTOS
+            # Tabla detallada
             elements.append(Paragraph("DISTRIBUCIÓN DETALLADA DE GASTOS", self.estilo_subtitulo))
             
             data_gastos = [['Categoría', 'Monto', 'Porcentaje']]
@@ -1207,14 +1119,12 @@ class GeneradorReportes:
                     f"{porcentaje:.1f}%"
                 ])
             
-            # Agregar total
             data_gastos.append([
                 'TOTAL GASTOS',
                 f"${total_gastos:,.0f}",
                 '100%'
             ])
             
-            # ✅ CORREGIDO: Usar reportlab.lib.colors explícitamente
             from reportlab.lib import colors as rl_colors
             
             tabla_gastos = Table(data_gastos, colWidths=[3*inch, 1.5*inch, 1.5*inch])
@@ -1234,16 +1144,13 @@ class GeneradorReportes:
             elements.append(tabla_gastos)
             elements.append(Spacer(1, 20))
 
-            # 2. ANÁLISIS DETALLADO
+            # Análisis detallado
             elements.append(Paragraph("ANÁLISIS DETALLADO", self.estilo_subtitulo))
             
-            # Categoría con mayor gasto
             categoria_mayor = categorias_ordenadas[0] if categorias_ordenadas else ('N/A', 0)
-            # Top 3 categorías
             top_3 = categorias_ordenadas[:3]
             porcentaje_top_3 = sum(monto for _, monto in top_3) / total_gastos * 100 if total_gastos > 0 else 0
             
-            # Cálculos para el análisis
             gasto_promedio = total_gastos / len(gastos_por_categoria) if gastos_por_categoria else 0
             porcentaje_mayor = (categoria_mayor[1] / total_gastos * 100) if total_gastos > 0 else 0
             
@@ -1258,14 +1165,13 @@ class GeneradorReportes:
             elements.append(Paragraph(analisis_texto, self.styles['Normal']))
             elements.append(Spacer(1, 15))
 
-            # 3. RECOMENDACIONES
+            # Recomendaciones
             elements.append(Paragraph("RECOMENDACIONES ESTRATÉGICAS", self.estilo_subtitulo))
             
             recomendaciones = self._generar_recomendaciones_gastos(gastos_por_categoria, total_gastos)
             for recomendacion in recomendaciones:
                 elements.append(Paragraph(f"• {recomendacion}", self.styles['Normal']))
 
-            # Pie de página
             elements.append(Spacer(1, 30))
             elements.append(Paragraph(f"Generado el: {datetime.now().strftime('%d/%m/%Y %H:%M')}", 
                                     ParagraphStyle('Footer', parent=self.styles['Normal'], fontSize=8, textColor=rl_colors.gray)))
@@ -1280,7 +1186,6 @@ class GeneradorReportes:
             import traceback
             traceback.print_exc()
             
-            # Crear un PDF de error mínimo
             error_buffer = BytesIO()
             c = canvas.Canvas(error_buffer, pagesize=A4)
             c.drawString(100, 800, "ERROR AL GENERAR REPORTE DE GASTOS")
@@ -1290,14 +1195,26 @@ class GeneradorReportes:
             error_buffer.seek(0)
             return error_buffer
 
-    def _obtener_gastos_por_categoria(self, fecha_inicio, fecha_fin):
-            """Obtiene gastos agrupados por categoría para el análisis"""
-            try:
-                # Usar la misma función que ya tienes para gastos
-                return self._obtener_gastos_periodo(fecha_inicio, fecha_fin)
-            except Exception as e:
-                print(f"Error al obtener gastos por categoría: {e}")
-                return {}
+    def _obtener_gastos_por_categoria(self, panaderia_id, fecha_inicio, fecha_fin):
+        """Obtiene gastos agrupados por categoría - CON FILTRO MULTI-TENANT"""
+        try:
+            # ✅ FILTRAR POR TENANT
+            from models import PagoIndividual
+            
+            pagos = PagoIndividual.query.filter(
+                PagoIndividual.fecha_pago.between(fecha_inicio, fecha_fin),
+                PagoIndividual.panaderia_id == panaderia_id
+            ).all()
+            
+            gastos = {}
+            for pago in pagos:
+                categoria = pago.categoria or 'Otros'
+                gastos[categoria] = gastos.get(categoria, 0) + pago.monto
+            
+            return gastos
+        except Exception as e:
+            print(f"Error al obtener gastos por categoría: {e}")
+            return {}
 
     def _generar_recomendaciones_gastos(self, gastos_por_categoria, total_gastos):
             """Genera recomendaciones inteligentes basadas en los gastos"""
@@ -1337,30 +1254,29 @@ class GeneradorReportes:
         
 #=================================================== Tendencia de Ventas=================================================
 
-    def generar_reporte_tendencia_ventas(self, fecha_inicio, fecha_fin):
-        """Genera reporte de Tendencia de Ventas con análisis de comportamiento - OPTIMIZADO"""
+    def generar_reporte_tendencia_ventas(self, panaderia_id, fecha_inicio, fecha_fin):
+        """Genera reporte de Tendencia de Ventas con análisis de comportamiento - CON FILTRO MULTI-TENANT"""
         try:
             print(f"📈 Generando tendencia de ventas para {fecha_inicio} a {fecha_fin}")
+            print(f"🔍 PANADERÍA ID: {panaderia_id}")
             
-            # ✅ CONFIGURACIÓN OPTIMIZADA PARA ESPACIOS
             buffer = BytesIO()
             doc = SimpleDocTemplate(buffer, 
                                 pagesize=A4, 
-                                topMargin=0.5*inch,      # Reducido de 1 a 0.5
-                                bottomMargin=0.5*inch,   # Reducido
-                                leftMargin=0.4*inch,     # Reducido
-                                rightMargin=0.4*inch)    # Reducido
+                                topMargin=0.5*inch,
+                                bottomMargin=0.5*inch,
+                                leftMargin=0.4*inch,
+                                rightMargin=0.4*inch)
             
             elements = []
 
-            # ✅ ENCABEZADO COMPACTO
             elements.append(Paragraph("PANADERÍA-POS", self.estilo_titulo))
             elements.append(Paragraph("ANÁLISIS DE TENDENCIA DE VENTAS", self.estilo_titulo))
             elements.append(Paragraph(f"Período: {fecha_inicio} a {fecha_fin}", self.styles['Normal']))
-            elements.append(Spacer(1, 10))  # Reducido de 20 a 10
+            elements.append(Spacer(1, 10))
 
-            # Obtener datos de ventas
-            datos_ventas = self._obtener_datos_tendencia_ventas(fecha_inicio, fecha_fin)
+            # ✅ FILTRAR POR TENANT
+            datos_ventas = self._obtener_datos_tendencia_ventas(panaderia_id, fecha_inicio, fecha_fin)
             
             if not datos_ventas:
                 elements.append(Paragraph("No hay datos de ventas para el período seleccionado.", self.styles['Normal']))
@@ -1368,39 +1284,35 @@ class GeneradorReportes:
                 buffer.seek(0)
                 return buffer
 
-            # ✅ GRÁFICOS DE TENDENCIA OPTIMIZADOS
+            # Gráficos
             try:
                 import matplotlib.pyplot as plt
                 from matplotlib.figure import Figure
                 import numpy as np
                 import pandas as pd
                 
-                # Crear figura más compacta
-                fig = Figure(figsize=(10, 8))  # Reducido de (12, 10)
+                fig = Figure(figsize=(10, 8))
                 
-                # Preparar datos
                 fechas = [item['fecha'] for item in datos_ventas]
                 ventas_diarias = [item['venta_total'] for item in datos_ventas]
                 ventas_acumuladas = np.cumsum(ventas_diarias)
                 
-                # --- GRÁFICO 1: Tendencia de Ventas Diarias ---
                 ax1 = fig.add_subplot(311)
-                ax1.plot(fechas, ventas_diarias, color='#3498db', linewidth=2, marker='o', markersize=3)  # Reducido
+                ax1.plot(fechas, ventas_diarias, color='#3498db', linewidth=2, marker='o', markersize=3)
                 ax1.fill_between(fechas, ventas_diarias, alpha=0.3, color='#3498db')
                 
                 if len(ventas_diarias) > 1:
                     z = np.polyfit(range(len(ventas_diarias)), ventas_diarias, 1)
                     p = np.poly1d(z)
                     ax1.plot(fechas, p(range(len(ventas_diarias))), "r--", alpha=0.8, linewidth=1, label='Tendencia')
-                    ax1.legend(fontsize=8)  # Fuente más pequeña
+                    ax1.legend(fontsize=8)
                 
-                ax1.set_title('Evolución de Ventas Diarias', fontsize=12, fontweight='bold', pad=10)  # Reducido
+                ax1.set_title('Evolución de Ventas Diarias', fontsize=12, fontweight='bold', pad=10)
                 ax1.set_ylabel('Ventas ($)', fontweight='bold', fontsize=9)
                 ax1.grid(True, alpha=0.3)
                 ax1.tick_params(axis='x', rotation=45, labelsize=8)
                 ax1.tick_params(axis='y', labelsize=8)
                 
-                # --- GRÁFICO 2: Ventas Acumuladas ---
                 ax2 = fig.add_subplot(312)
                 ax2.plot(fechas, ventas_acumuladas, color='#27ae60', linewidth=2)
                 ax2.fill_between(fechas, ventas_acumuladas, alpha=0.3, color='#27ae60')
@@ -1411,7 +1323,6 @@ class GeneradorReportes:
                 ax2.tick_params(axis='x', rotation=45, labelsize=8)
                 ax2.tick_params(axis='y', labelsize=8)
                 
-                # --- GRÁFICO 3: Análisis Semanal ---
                 ax3 = fig.add_subplot(313)
                 
                 if len(datos_ventas) >= 7:
@@ -1420,7 +1331,7 @@ class GeneradorReportes:
                     df_ventas['dia_semana'] = df_ventas['fecha'].dt.day_name()
                     
                     dias_orden = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-                    dias_esp = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']  # Abreviado
+                    dias_esp = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
                     
                     ventas_por_dia = df_ventas.groupby('dia_semana')['venta_total'].mean().reindex(dias_orden)
                     
@@ -1433,31 +1344,27 @@ class GeneradorReportes:
                     ax3.grid(True, alpha=0.3, axis='y')
                     ax3.tick_params(axis='both', labelsize=8)
                     
-                    # Valores en barras más compactos
                     for bar, valor in zip(bars, ventas_por_dia.values):
                         height = bar.get_height()
                         ax3.text(bar.get_x() + bar.get_width()/2., height + (max(ventas_por_dia.values) * 0.005),
-                                f'${valor:,.0f}', ha='center', va='bottom', fontsize=7, fontweight='bold')  # Reducido
+                                f'${valor:,.0f}', ha='center', va='bottom', fontsize=7, fontweight='bold')
                 else:
                     ax3.text(0.5, 0.5, 'Se necesitan más datos\npara análisis semanal', 
                             ha='center', va='center', transform=ax3.transAxes, fontsize=10,
                             bbox=dict(boxstyle="round,pad=0.2", facecolor="lightgray"))
                     ax3.set_title('Análisis Semanal (Datos Insuficientes)', fontsize=12, fontweight='bold', pad=10)
                 
-                # Ajustar diseño más compacto
-                fig.tight_layout(pad=2.0)  # Reducido de 3.0
+                fig.tight_layout(pad=2.0)
                 
-                # Guardar gráfico optimizado
                 graphic_buffer = BytesIO()
-                fig.savefig(graphic_buffer, format='png', dpi=120, bbox_inches='tight',  # DPI reducido
+                fig.savefig(graphic_buffer, format='png', dpi=120, bbox_inches='tight',
                         facecolor='#f8f9fa', edgecolor='none')
                 graphic_buffer.seek(0)
                 
-                # Agregar gráfico al PDF
                 from reportlab.platypus import Image
                 elements.append(Paragraph("ANÁLISIS VISUAL DE TENDENCIAS", self.estilo_subtitulo))
-                elements.append(Image(graphic_buffer, width=6*inch, height=6*inch))  # Reducido
-                elements.append(Spacer(1, 10))  # Reducido de 15
+                elements.append(Image(graphic_buffer, width=6*inch, height=6*inch))
+                elements.append(Spacer(1, 10))
                 
                 print("✅ Gráficos de tendencia optimizados generados")
                 
@@ -1466,7 +1373,7 @@ class GeneradorReportes:
             except Exception as e:
                 print(f"⚠️ Error al generar gráficos de tendencia: {e}. Continuando sin gráficos.")
 
-            # ✅ SECCIÓN ESTADÍSTICAS COMPACTA
+            # Estadísticas
             elements.append(Paragraph("ESTADÍSTICAS PRINCIPALES", self.estilo_subtitulo))
             
             ventas_totales = sum(item['venta_total'] for item in datos_ventas)
@@ -1478,48 +1385,44 @@ class GeneradorReportes:
             mejor_dia = max(datos_ventas, key=lambda x: x['venta_total']) if datos_ventas else None
             peor_dia = min(datos_ventas, key=lambda x: x['venta_total']) if datos_ventas else None
             
-            # Texto más compacto
             estadisticas_texto = f"""
             <b>Período Analizado:</b> {dias_analizados} días | <b>Ventas Totales:</b> ${ventas_totales:,.0f}<br/>
             <b>Venta Promedio:</b> ${venta_promedio:,.0f} | <b>Venta Máxima:</b> ${venta_maxima:,.0f} {f"({mejor_dia['fecha'].strftime('%d/%m')})" if mejor_dia else ""}<br/>
             <b>Venta Mínima:</b> ${venta_minima:,.0f} {f"({peor_dia['fecha'].strftime('%d/%m')})" if peor_dia else ""} | <b>Variabilidad:</b> ${venta_maxima - venta_minima:,.0f}
             """
             
-            # Usar estilo más compacto
             estilo_compacto = ParagraphStyle(
                 'Compacto',
                 parent=self.styles['Normal'],
-                fontSize=9,  # Reducido
-                leading=11,  # Interlineado reducido
-                spaceAfter=6  # Espacio después reducido
+                fontSize=9,
+                leading=11,
+                spaceAfter=6
             )
             
             elements.append(Paragraph(estadisticas_texto, estilo_compacto))
-            elements.append(Spacer(1, 12))  # Reducido de 20
+            elements.append(Spacer(1, 12))
 
-            # ✅ ANÁLISIS DE PATRONES COMPACTO
+            # Patrones
             elements.append(Paragraph("DETECCIÓN DE PATRONES", self.estilo_subtitulo))
             
             patrones = self._analizar_patrones_ventas(datos_ventas)
             for patron in patrones:
                 elements.append(Paragraph(f"• {patron}", estilo_compacto))
             
-            elements.append(Spacer(1, 10))  # Reducido de 15
+            elements.append(Spacer(1, 10))
 
-            # ✅ PROYECCIÓN Y RECOMENDACIONES COMPACTA
+            # Proyecciones
             elements.append(Paragraph("PROYECCIÓN Y RECOMENDACIONES", self.estilo_subtitulo))
             
             proyecciones = self._generar_proyecciones_ventas(datos_ventas)
             for proyeccion in proyecciones:
                 elements.append(Paragraph(f"• {proyeccion}", estilo_compacto))
 
-            # ✅ PIE DE PÁGINA COMPACTO
-            elements.append(Spacer(1, 15))  # Reducido de 30
+            elements.append(Spacer(1, 15))
             from reportlab.lib import colors as rl_colors
             elements.append(Paragraph(f"Generado el: {datetime.now().strftime('%d/%m/%Y %H:%M')}", 
                                     ParagraphStyle('Footer', parent=self.styles['Normal'], fontSize=7, textColor=rl_colors.gray)))
 
-            # ✅ CONSTRUIR DOCUMENTO
             doc.build(elements)
             buffer.seek(0)
             print(f"✅ Reporte de tendencia OPTIMIZADO generado. Tamaño: {buffer.getbuffer().nbytes} bytes")
@@ -1530,7 +1433,6 @@ class GeneradorReportes:
             import traceback
             traceback.print_exc()
             
-            # Crear un PDF de error mínimo
             error_buffer = BytesIO()
             c = canvas.Canvas(error_buffer, pagesize=A4)
             c.drawString(100, 800, "ERROR AL GENERAR REPORTE DE TENDENCIA")
@@ -1540,29 +1442,36 @@ class GeneradorReportes:
             error_buffer.seek(0)
             return error_buffer
 
-    def _obtener_datos_tendencia_ventas(self, fecha_inicio, fecha_fin):
-        """Obtiene datos de ventas para análisis de tendencias - CORREGIDO MULTI-TENANT"""
+    def _obtener_datos_tendencia_ventas(self, panaderia_id, fecha_inicio, fecha_fin):
+        """Obtiene datos de tendencia de ventas - CON FILTRO MULTI-TENANT"""
         try:
-            # ✅ CORREGIDO: Añadido filtro panaderia_id
-            # Obtener registros diarios en el período
-            registros = RegistroDiario.query.filter(
-                RegistroDiario.fecha.between(fecha_inicio, fecha_fin),
-                RegistroDiario.panaderia_id == current_user.panaderia_id  # ✅ NUEVO FILTRO MULTI-TENANT
-            ).order_by(RegistroDiario.fecha).all()
+            from models import Venta, RegistroDiario
             
-            datos_ventas = []
-            for registro in registros:
-                venta_total = (registro.efectivo or 0) + (registro.transferencias or 0) + (registro.tarjetas or 0)
-                if venta_total > 0:  # Solo incluir días con ventas
-                    datos_ventas.append({
-                        'fecha': registro.fecha,
-                        'venta_total': venta_total,
-                        'efectivo': registro.efectivo or 0,
-                        'transferencias': registro.transferencias or 0,
-                        'tarjetas': registro.tarjetas or 0
-                    })
+            # ✅ FILTRAR POR TENANT
+            ventas = Venta.query.filter(
+                Venta.fecha_hora >= fecha_inicio,
+                Venta.fecha_hora <= fecha_fin,
+                Venta.panaderia_id == panaderia_id
+            ).all()
             
-            return datos_ventas
+            # Agrupar por fecha
+            datos_por_fecha = {}
+            
+            for venta in ventas:
+                fecha = venta.fecha_hora.date()
+                if fecha not in datos_por_fecha:
+                    datos_por_fecha[fecha] = 0
+                datos_por_fecha[fecha] += venta.total
+            
+            # Ordenar por fecha
+            datos_ordenados = []
+            for fecha, total in sorted(datos_por_fecha.items()):
+                datos_ordenados.append({
+                    'fecha': fecha,
+                    'venta_total': total
+                })
+            
+            return datos_ordenados
             
         except Exception as e:
             print(f"Error al obtener datos de tendencia de ventas: {e}")
@@ -1667,12 +1576,12 @@ class GeneradorReportes:
 
 # =================================================== Análisis Predictivo IA ==================================================
 
-    def generar_reporte_ia_predictivo(self, fecha_inicio, fecha_fin):
-        """Genera reporte de IA Predictivo con recomendaciones inteligentes - OPTIMIZADO"""
+    def generar_reporte_ia_predictivo(self, panaderia_id, fecha_inicio, fecha_fin):
+        """Genera reporte de IA Predictivo con recomendaciones inteligentes - CON FILTRO MULTI-TENANT"""
         try:
             print(f"🤖 Generando análisis predictivo IA para {fecha_inicio} a {fecha_fin}")
+            print(f"🔍 PANADERÍA ID: {panaderia_id}")
             
-            # ✅ CONFIGURACIÓN OPTIMIZADA
             buffer = BytesIO()
             doc = SimpleDocTemplate(buffer, 
                                 pagesize=A4, 
@@ -1683,15 +1592,14 @@ class GeneradorReportes:
             
             elements = []
 
-            # ✅ ENCABEZADO COMPACTO
             elements.append(Paragraph("PANADERÍA-POS", self.estilo_titulo))
             elements.append(Paragraph("🤖 ANÁLISIS PREDICTIVO CON INTELIGENCIA ARTIFICIAL", self.estilo_titulo))
             elements.append(Paragraph(f"Período de análisis: {fecha_inicio} a {fecha_fin}", self.styles['Normal']))
             elements.append(Spacer(1, 10))
 
-            # Obtener datos para análisis
-            datos_ventas = self._obtener_datos_tendencia_ventas(fecha_inicio, fecha_fin)
-            datos_productos = self._obtener_datos_productos_populares(fecha_inicio, fecha_fin)
+            # ✅ FILTRAR POR TENANT
+            datos_ventas = self._obtener_datos_tendencia_ventas(panaderia_id, fecha_inicio, fecha_fin)
+            datos_productos = self._obtener_datos_productos_populares(panaderia_id, fecha_inicio, fecha_fin)
             
             if not datos_ventas:
                 elements.append(Paragraph("No hay datos suficientes para análisis predictivo.", self.styles['Normal']))
@@ -1699,7 +1607,7 @@ class GeneradorReportes:
                 buffer.seek(0)
                 return buffer
 
-            # ✅ GRÁFICOS PREDICTIVOS OPTIMIZADOS
+            # Gráficos predictivos
             try:
                 import matplotlib.pyplot as plt
                 from matplotlib.figure import Figure
@@ -1707,30 +1615,24 @@ class GeneradorReportes:
                 import pandas as pd
                 from datetime import timedelta
                 
-                # Crear figura compacta para análisis predictivo
                 fig = Figure(figsize=(10, 8))
                 
-                # Preparar datos históricos
                 fechas = [item['fecha'] for item in datos_ventas]
                 ventas_diarias = [item['venta_total'] for item in datos_ventas]
                 
-                # --- GRÁFICO 1: Tendencia con Proyección ---
-                ax1 = fig.add_subplot(221)  # 2x2 grid, posición 1
+                # Gráfico 1: Tendencia con Proyección
+                ax1 = fig.add_subplot(221)
                 
-                # Datos históricos
                 ax1.plot(fechas, ventas_diarias, color='#3498db', linewidth=2, marker='o', markersize=3, label='Ventas Reales')
                 
-                # Proyección simple (regresión lineal)
                 if len(ventas_diarias) > 5:
                     x = np.arange(len(ventas_diarias))
                     z = np.polyfit(x, ventas_diarias, 1)
                     p = np.poly1d(z)
                     
-                    # Proyectar 7 días adelante
                     x_future = np.arange(len(ventas_diarias) + 7)
                     y_future = p(x_future)
                     
-                    # Gráfico de proyección
                     ax1.plot(x_future[:len(ventas_diarias)], y_future[:len(ventas_diarias)], 
                             'r--', alpha=0.7, linewidth=1.5, label='Ajuste')
                     ax1.plot(x_future[len(ventas_diarias):], y_future[len(ventas_diarias):], 
@@ -1748,7 +1650,7 @@ class GeneradorReportes:
                 ax1.tick_params(axis='x', rotation=45, labelsize=7)
                 ax1.tick_params(axis='y', labelsize=7)
                 
-                # --- GRÁFICO 2: Análisis de Estacionalidad Semanal ---
+                # Gráfico 2: Análisis de Estacionalidad Semanal
                 ax2 = fig.add_subplot(222)
                 
                 if len(datos_ventas) >= 14:
@@ -1757,7 +1659,6 @@ class GeneradorReportes:
                     df['dia_semana'] = df['fecha'].dt.day_name()
                     df['semana'] = df['fecha'].dt.isocalendar().week
                     
-                    # Promedio por día de semana
                     dias_orden = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
                     dias_esp = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
                     
@@ -1767,7 +1668,6 @@ class GeneradorReportes:
                                 color=plt.cm.Set3(np.linspace(0, 1, 7)),
                                 alpha=0.8)
                     
-                    # Línea de promedio general
                     promedio_general = np.mean(ventas_diarias)
                     ax2.axhline(y=promedio_general, color='red', linestyle='--', alpha=0.7, 
                             label=f'Promedio: ${promedio_general:,.0f}')
@@ -1778,7 +1678,6 @@ class GeneradorReportes:
                     ax2.grid(True, alpha=0.3, axis='y')
                     ax2.tick_params(axis='both', labelsize=7)
                     
-                    # Valores en barras
                     for bar, valor in zip(bars, ventas_por_dia.values):
                         height = bar.get_height()
                         color = 'green' if valor > promedio_general else 'red'
@@ -1791,11 +1690,10 @@ class GeneradorReportes:
                             bbox=dict(boxstyle="round,pad=0.2", facecolor="lightgray"))
                     ax2.set_title('Patrón Semanal', fontsize=11, fontweight='bold', pad=8)
                 
-                # --- GRÁFICO 3: Análisis de Crecimiento ---
+                # Gráfico 3: Análisis de Crecimiento
                 ax3 = fig.add_subplot(223)
                 
                 if len(ventas_diarias) > 1:
-                    # Cálculo de crecimiento diario
                     crecimiento = []
                     for i in range(1, len(ventas_diarias)):
                         if ventas_diarias[i-1] > 0:
@@ -1803,7 +1701,6 @@ class GeneradorReportes:
                         else:
                             crecimiento.append(0)
                     
-                    # Gráfico de crecimiento
                     colores = ['green' if x >= 0 else 'red' for x in crecimiento]
                     bars = ax3.bar(range(len(crecimiento)), crecimiento, color=colores, alpha=0.7)
                     
@@ -1813,7 +1710,6 @@ class GeneradorReportes:
                     ax3.grid(True, alpha=0.3, axis='y')
                     ax3.tick_params(axis='both', labelsize=7)
                     
-                    # Promedio de crecimiento
                     crecimiento_promedio = np.mean(crecimiento) if crecimiento else 0
                     ax3.axhline(y=crecimiento_promedio, color='blue', linestyle='--', alpha=0.7,
                             label=f'Promedio: {crecimiento_promedio:+.1f}%')
@@ -1824,17 +1720,15 @@ class GeneradorReportes:
                             bbox=dict(boxstyle="round,pad=0.2", facecolor="lightgray"))
                     ax3.set_title('Crecimiento Diario', fontsize=11, fontweight='bold', pad=8)
                 
-                # --- GRÁFICO 4: Heatmap de Performance ---
+                # Gráfico 4: Heatmap de Performance
                 ax4 = fig.add_subplot(224)
                 
                 if len(datos_ventas) >= 7:
-                    # Calcular métricas de performance
                     venta_max = max(ventas_diarias)
                     venta_min = min(ventas_diarias)
                     venta_prom = np.mean(ventas_diarias)
                     desviacion = np.std(ventas_diarias)
                     
-                    # Métricas para heatmap visual
                     metricas = ['Máxima', 'Mínima', 'Promedio', 'Estabilidad']
                     valores = [venta_max, venta_min, venta_prom, (1 - (desviacion/venta_prom)) * 100 if venta_prom > 0 else 0]
                     colores_metricas = ['#27ae60', '#e74c3c', '#3498db', '#f39c12']
@@ -1845,7 +1739,6 @@ class GeneradorReportes:
                     ax4.grid(True, alpha=0.3, axis='y')
                     ax4.tick_params(axis='both', labelsize=7)
                     
-                    # Valores en barras
                     for bar, valor, metrica in zip(bars, valores, metricas):
                         height = bar.get_height()
                         if metrica == 'Estabilidad':
@@ -1860,16 +1753,13 @@ class GeneradorReportes:
                             bbox=dict(boxstyle="round,pad=0.2", facecolor="lightgray"))
                     ax4.set_title('Métricas Clave', fontsize=11, fontweight='bold', pad=8)
                 
-                # Ajustar diseño compacto
                 fig.tight_layout(pad=2.0)
                 
-                # Guardar gráfico optimizado
                 graphic_buffer = BytesIO()
                 fig.savefig(graphic_buffer, format='png', dpi=120, bbox_inches='tight',
                         facecolor='#f8f9fa', edgecolor='none')
                 graphic_buffer.seek(0)
                 
-                # Agregar gráfico al PDF
                 from reportlab.platypus import Image
                 elements.append(Paragraph("ANÁLISIS VISUAL PREDICTIVO", self.estilo_subtitulo))
                 elements.append(Image(graphic_buffer, width=6*inch, height=6*inch))
@@ -1882,7 +1772,7 @@ class GeneradorReportes:
             except Exception as e:
                 print(f"⚠️ Error al generar gráficos predictivos: {e}. Continuando sin gráficos.")
 
-            # ✅ RECOMENDACIONES INTELIGENTES DE IA
+            # Recomendaciones inteligentes
             elements.append(Paragraph("🤖 RECOMENDACIONES INTELIGENTES", self.estilo_subtitulo))
             
             recomendaciones = self._generar_recomendaciones_ia(datos_ventas, datos_productos)
@@ -1901,7 +1791,7 @@ class GeneradorReportes:
             
             elements.append(Spacer(1, 12))
 
-            # ✅ PREDICCIONES Y ALERTAS
+            # Predicciones
             elements.append(Paragraph("🔮 PREDICCIONES PARA PRÓXIMA SEMANA", self.estilo_subtitulo))
             
             predicciones = self._generar_predicciones_semanales(datos_ventas)
@@ -1911,7 +1801,7 @@ class GeneradorReportes:
             
             elements.append(Spacer(1, 10))
 
-            # ✅ PLAN DE ACCIÓN AUTOMATIZADO
+            # Plan de acción
             elements.append(Paragraph("🎯 PLAN DE ACCIÓN RECOMENDADO", self.estilo_subtitulo))
             
             plan_accion = self._generar_plan_accion(datos_ventas, datos_productos)
@@ -1919,13 +1809,11 @@ class GeneradorReportes:
             for accion in plan_accion:
                 elements.append(Paragraph(f"✓ {accion}", estilo_recomendacion))
 
-            # ✅ PIE DE PÁGINA COMPACTO
             elements.append(Spacer(1, 15))
             from reportlab.lib import colors as rl_colors
             elements.append(Paragraph(f"🤖 Generado por Sistema IA el: {datetime.now().strftime('%d/%m/%Y %H:%M')}", 
                                     ParagraphStyle('Footer', parent=self.styles['Normal'], fontSize=7, textColor=rl_colors.gray)))
 
-            # ✅ CONSTRUIR DOCUMENTO
             doc.build(elements)
             buffer.seek(0)
             print(f"✅ Reporte de IA predictivo generado. Tamaño: {buffer.getbuffer().nbytes} bytes")
@@ -1936,7 +1824,6 @@ class GeneradorReportes:
             import traceback
             traceback.print_exc()
             
-            # Crear PDF de error mínimo
             error_buffer = BytesIO()
             c = canvas.Canvas(error_buffer, pagesize=A4)
             c.drawString(100, 800, "ERROR AL GENERAR REPORTE DE IA")
@@ -1946,20 +1833,41 @@ class GeneradorReportes:
             error_buffer.seek(0)
             return error_buffer
 
-    def _obtener_datos_productos_populares(self, fecha_inicio, fecha_fin):
-        """Obtiene datos de productos populares para análisis - CORREGIDO MULTI-TENANT"""
+    def _obtener_datos_productos_populares(self, panaderia_id, fecha_inicio, fecha_fin):
+        """Obtiene datos de productos populares - CON FILTRO MULTI-TENANT"""
         try:
-            # ✅ CORREGIDO: Añadido filtro panaderia_id en consultas reales
-            # Esta función depende de tu estructura de base de datos
-            # Por ahora retornamos datos de ejemplo
-            return [
-                {'producto': 'Pan Francés', 'ventas': 150, 'ingreso': 750000},
-                {'producto': 'Croissants', 'ventas': 120, 'ingreso': 600000},
-                {'producto': 'Tortas', 'ventas': 80, 'ingreso': 1200000},
-                {'producto': 'Galletas', 'ventas': 200, 'ingreso': 400000}
-            ]
+            from models import Producto, DetalleVenta, Venta
+            from sqlalchemy import func
+            
+            # ✅ FILTRAR POR TENANT
+            productos = Producto.query.filter_by(
+                panaderia_id=panaderia_id,
+                activo=True
+            ).all()
+            
+            datos_productos = []
+            for producto in productos:
+                # Calcular ventas del período
+                ventas = DetalleVenta.query.join(Venta).filter(
+                    DetalleVenta.producto_id == producto.id,
+                    Venta.fecha_hora >= fecha_inicio,
+                    Venta.fecha_hora <= fecha_fin,
+                    Venta.panaderia_id == panaderia_id
+                ).with_entities(func.sum(DetalleVenta.cantidad)).scalar() or 0
+                
+                if ventas > 0:
+                    datos_productos.append({
+                        'nombre': producto.nombre,
+                        'ventas': ventas,
+                        'stock': producto.stock_actual or 0
+                    })
+            
+            # Ordenar por ventas
+            datos_productos.sort(key=lambda x: x['ventas'], reverse=True)
+            return datos_productos[:10]  # Top 10
+            
         except Exception as e:
-            print(f"Error al obtener datos de productos: {e}")
+            print(f"Error al obtener datos de productos populares: {e}")
             return []
 
     def _generar_recomendaciones_ia(self, datos_ventas, datos_productos):
@@ -2094,12 +2002,12 @@ class GeneradorReportes:
 
     # =================================================== Análisis de Inventarios ==================================================
 
-    def generar_reporte_analisis_inventarios(self, fecha_inicio, fecha_fin):
-        """Genera reporte de Análisis de Inventarios con gestión de stock - OPTIMIZADO CON DATOS REALES"""
+    def generar_reporte_analisis_inventarios(self, panaderia_id, fecha_inicio, fecha_fin):
+        """Genera reporte de Análisis de Inventarios con gestión de stock - CON FILTRO MULTI-TENANT"""
         try:
             print(f"📦 Generando análisis de inventarios para {fecha_inicio} a {fecha_fin}")
+            print(f"🔍 PANADERÍA ID: {panaderia_id}")
             
-            # ✅ CONFIGURACIÓN OPTIMIZADA
             buffer = BytesIO()
             doc = SimpleDocTemplate(buffer, 
                                 pagesize=A4, 
@@ -2110,15 +2018,14 @@ class GeneradorReportes:
             
             elements = []
 
-            # ✅ ENCABEZADO COMPACTO
             elements.append(Paragraph("PANADERÍA-POS", self.estilo_titulo))
             elements.append(Paragraph("📦 ANÁLISIS DE INVENTARIOS Y GESTIÓN DE STOCK", self.estilo_titulo))
             elements.append(Paragraph(f"Período de análisis: {fecha_inicio} a {fecha_fin}", self.styles['Normal']))
             elements.append(Spacer(1, 10))
 
-            # Obtener datos REALES de inventarios
-            datos_inventarios = self._obtener_datos_inventarios_reales()
-            datos_rotacion = self._obtener_datos_rotacion_reales(fecha_inicio, fecha_fin)
+            # ✅ FILTRAR POR TENANT
+            datos_inventarios = self._obtener_datos_inventarios_reales(panaderia_id)
+            datos_rotacion = self._obtener_datos_rotacion_reales(panaderia_id, fecha_inicio, fecha_fin)
             
             if not datos_inventarios:
                 elements.append(Paragraph("No hay datos de inventarios disponibles para análisis.", self.styles['Normal']))
@@ -2126,30 +2033,24 @@ class GeneradorReportes:
                 buffer.seek(0)
                 return buffer
 
-            # ✅ GRÁFICOS DE INVENTARIO OPTIMIZADOS CON DATOS REALES
+            # Gráficos
             try:
                 import matplotlib.pyplot as plt
                 from matplotlib.figure import Figure
                 import numpy as np
                 import pandas as pd
                 
-                # Crear figura compacta para análisis de inventarios
                 fig = Figure(figsize=(10, 8))
                 
-                # Preparar datos REALES
                 productos = [item['nombre'] for item in datos_inventarios]
                 stock_actual = [item['stock_actual'] for item in datos_inventarios]
                 stock_minimo = [item['stock_minimo'] for item in datos_inventarios]
                 stock_maximo = [item.get('stock_maximo', item['stock_minimo'] * 3) for item in datos_inventarios]
                 
-                # --- GRÁFICO 1: Análisis de Niveles de Stock ---
                 ax1 = fig.add_subplot(221)
-                
-                # Gráfico de barras comparativo
                 x_pos = np.arange(len(productos))
                 ancho = 0.25
                 
-                # Acortar nombres de productos para mejor visualización
                 productos_cortos = [p[:15] + '...' if len(p) > 15 else p for p in productos]
                 
                 bars1 = ax1.bar(x_pos - ancho, stock_actual, ancho, 
@@ -2159,7 +2060,6 @@ class GeneradorReportes:
                 bars3 = ax1.bar(x_pos + ancho, stock_maximo, ancho, 
                             label='Stock Máximo', alpha=0.8, color='#27ae60')
                 
-                # Destacar productos con stock bajo
                 for i, (actual, minimo) in enumerate(zip(stock_actual, stock_minimo)):
                     if actual <= minimo:
                         ax1.axvline(x=i, color='red', alpha=0.3, linestyle='--')
@@ -2171,14 +2071,10 @@ class GeneradorReportes:
                 ax1.legend(fontsize=7)
                 ax1.grid(True, alpha=0.3, axis='y')
                 
-                # --- GRÁFICO 2: Análisis ABC de Inventarios ---
                 ax2 = fig.add_subplot(222)
-                
-                # Calcular valor de inventario REAL
                 valores_inventario = [item['valor_inventario'] for item in datos_inventarios]
                 total_valor = sum(valores_inventario)
                 
-                # Ordenar por valor descendente
                 datos_ordenados = sorted(zip(productos, valores_inventario, stock_actual), 
                                     key=lambda x: x[1], reverse=True)
                 
@@ -2187,7 +2083,6 @@ class GeneradorReportes:
                 acumulado = np.cumsum(valores_ordenados)
                 porcentaje_acumulado = (acumulado / total_valor * 100) if total_valor > 0 else [0]
                 
-                # Gráfico de Pareto
                 bars = ax2.bar(range(len(valores_ordenados)), valores_ordenados, 
                             color='skyblue', alpha=0.7, label='Valor Inventario')
                 line = ax2.plot(range(len(valores_ordenados)), porcentaje_acumulado, 
@@ -2201,26 +2096,23 @@ class GeneradorReportes:
                 ax2.tick_params(axis='x', labelsize=6)
                 ax2.tick_params(axis='y', labelsize=7)
                 
-                # Clasificación ABC
                 ax2.axhline(y=80, color='orange', linestyle='--', alpha=0.7, label='Límite A/B (80%)')
                 ax2.axhline(y=95, color='green', linestyle='--', alpha=0.7, label='Límite B/C (95%)')
                 
-                # --- GRÁFICO 3: Análisis de Rotación ---
                 ax3 = fig.add_subplot(223)
                 
                 if datos_rotacion:
                     productos_rot = [item['producto'] for item in datos_rotacion]
                     rotacion = [item['indice_rotacion'] for item in datos_rotacion]
                     
-                    # Colores basados en nivel de rotación
                     colores = []
                     for rot in rotacion:
                         if rot > 12:
-                            colores.append('#27ae60')  # Alta rotación - Verde
+                            colores.append('#27ae60')
                         elif rot > 6:
-                            colores.append('#f39c12')  # Media rotación - Naranja
+                            colores.append('#f39c12')
                         else:
-                            colores.append('#e74c3c')  # Baja rotación - Rojo
+                            colores.append('#e74c3c')
                     
                     productos_rot_cortos = [p[:12] + '...' if len(p) > 12 else p for p in productos_rot]
                     bars = ax3.bar(productos_rot_cortos, rotacion, color=colores, alpha=0.8)
@@ -2231,7 +2123,6 @@ class GeneradorReportes:
                     ax3.tick_params(axis='y', labelsize=7)
                     ax3.grid(True, alpha=0.3, axis='y')
                     
-                    # Líneas de referencia
                     ax3.axhline(y=12, color='green', linestyle='--', alpha=0.5, label='Alta Rotación')
                     ax3.axhline(y=6, color='orange', linestyle='--', alpha=0.5, label='Media Rotación')
                     ax3.legend(fontsize=7)
@@ -2241,30 +2132,27 @@ class GeneradorReportes:
                             bbox=dict(boxstyle="round,pad=0.2", facecolor="lightgray"))
                     ax3.set_title('Índice de Rotación', fontsize=11, fontweight='bold', pad=8)
                 
-                # --- GRÁFICO 4: Análisis de Puntos de Reorden ---
                 ax4 = fig.add_subplot(224)
                 
-                # Calcular días de stock disponible REAL
                 dias_stock = []
                 for item in datos_inventarios:
                     demanda_promedio = item.get('demanda_promedio', 0)
                     if demanda_promedio > 0:
                         dias = item['stock_actual'] / demanda_promedio
                     else:
-                        dias = 999  # Sin demanda conocida
+                        dias = 999
                     dias_stock.append(dias)
                 
                 productos_cortos_dias = [p[:10] + '...' if len(p) > 10 else p for p in productos]
                 
-                # Colores basados en días de stock
                 colores_dias = []
                 for dias in dias_stock:
                     if dias <= 7:
-                        colores_dias.append('#e74c3c')  # Crítico - Rojo
+                        colores_dias.append('#e74c3c')
                     elif dias <= 14:
-                        colores_dias.append('#f39c12')  # Alerta - Naranja
+                        colores_dias.append('#f39c12')
                     else:
-                        colores_dias.append('#27ae60')  # Normal - Verde
+                        colores_dias.append('#27ae60')
                 
                 bars = ax4.bar(productos_cortos_dias, dias_stock, color=colores_dias, alpha=0.8)
                 
@@ -2274,21 +2162,17 @@ class GeneradorReportes:
                 ax4.tick_params(axis='y', labelsize=7)
                 ax4.grid(True, alpha=0.3, axis='y')
                 
-                # Líneas de referencia
                 ax4.axhline(y=7, color='red', linestyle='--', alpha=0.7, label='Límite Crítico (7 días)')
                 ax4.axhline(y=14, color='orange', linestyle='--', alpha=0.7, label='Límite Alerta (14 días)')
                 ax4.legend(fontsize=6)
                 
-                # Ajustar diseño compacto
                 fig.tight_layout(pad=2.0)
                 
-                # Guardar gráfico optimizado
                 graphic_buffer = BytesIO()
                 fig.savefig(graphic_buffer, format='png', dpi=120, bbox_inches='tight',
                         facecolor='#f8f9fa', edgecolor='none')
                 graphic_buffer.seek(0)
                 
-                # Agregar gráfico al PDF
                 from reportlab.platypus import Image
                 elements.append(Paragraph("ANÁLISIS VISUAL DE INVENTARIOS", self.estilo_subtitulo))
                 elements.append(Image(graphic_buffer, width=6*inch, height=6*inch))
@@ -2301,7 +2185,7 @@ class GeneradorReportes:
             except Exception as e:
                 print(f"⚠️ Error al generar gráficos de inventario: {e}. Continuando sin gráficos.")
 
-            # ✅ RESUMEN EJECUTIVO DE INVENTARIOS CON DATOS REALES
+            # Resumen Ejecutivo
             elements.append(Paragraph("📊 RESUMEN EJECUTIVO DE INVENTARIOS", self.estilo_subtitulo))
             
             resumen = self._generar_resumen_inventarios(datos_inventarios)
@@ -2319,7 +2203,7 @@ class GeneradorReportes:
             
             elements.append(Spacer(1, 12))
 
-            # ✅ ALERTAS Y PRODUCTOS CRÍTICOS CON DATOS REALES
+            # Alertas
             elements.append(Paragraph("🚨 ALERTAS DE INVENTARIO", self.estilo_subtitulo))
             
             alertas = self._generar_alertas_inventarios(datos_inventarios)
@@ -2329,7 +2213,7 @@ class GeneradorReportes:
             
             elements.append(Spacer(1, 12))
 
-            # ✅ RECOMENDACIONES DE OPTIMIZACIÓN CON DATOS REALES
+            # Recomendaciones
             elements.append(Paragraph("💡 RECOMENDACIONES DE OPTIMIZACIÓN", self.estilo_subtitulo))
             
             recomendaciones = self._generar_recomendaciones_inventarios(datos_inventarios, datos_rotacion)
@@ -2339,21 +2223,18 @@ class GeneradorReportes:
             
             elements.append(Spacer(1, 10))
 
-            # ✅ TABLA DE PUNTOS DE REORDEN CON DATOS REALES
+            # Tabla de Puntos de Reorden
             elements.append(Paragraph("📋 PUNTOS DE REORDEN SUGERIDOS", self.estilo_subtitulo))
             
-            # Crear tabla compacta
             from reportlab.platypus import Table, TableStyle
             from reportlab.lib import colors
             
             datos_tabla = [['Producto', 'Stock Actual', 'Mínimo', 'Reorden', 'Estado', 'Valor']]
             
-            for item in datos_inventarios[:8]:  # Máximo 8 productos en tabla
+            for item in datos_inventarios[:8]:
                 stock_actual = item['stock_actual']
                 stock_min = item['stock_minimo']
                 estado = "✅ OK" if stock_actual > stock_min else "🚨 BAJO"
-                
-                # Calcular punto de reorden sugerido
                 punto_reorden = max(stock_min, int(stock_min * 1.2))
                 
                 datos_tabla.append([
@@ -2379,13 +2260,11 @@ class GeneradorReportes:
             elements.append(tabla)
             elements.append(Spacer(1, 10))
 
-            # ✅ PIE DE PÁGINA COMPACTO
             elements.append(Spacer(1, 15))
             from reportlab.lib import colors as rl_colors
             elements.append(Paragraph(f"📦 Generado el: {datetime.now().strftime('%d/%m/%Y %H:%M')}", 
                                     ParagraphStyle('Footer', parent=self.styles['Normal'], fontSize=7, textColor=rl_colors.gray)))
 
-            # ✅ CONSTRUIR DOCUMENTO
             doc.build(elements)
             buffer.seek(0)
             print(f"✅ Reporte de análisis de inventarios generado. Tamaño: {buffer.getbuffer().nbytes} bytes")
@@ -2396,7 +2275,6 @@ class GeneradorReportes:
             import traceback
             traceback.print_exc()
             
-            # Crear PDF de error mínimo
             error_buffer = BytesIO()
             c = canvas.Canvas(error_buffer, pagesize=A4)
             c.drawString(100, 800, "ERROR AL GENERAR REPORTE DE INVENTARIOS")
@@ -2406,24 +2284,21 @@ class GeneradorReportes:
             error_buffer.seek(0)
             return error_buffer
 
-    def _obtener_datos_inventarios_reales(self):
-        """Obtiene datos REALES de inventarios desde la base de datos - CORREGIDO MULTI-TENANT"""
+    def _obtener_datos_inventarios_reales(self, panaderia_id):
+        """Obtiene datos REALES de inventarios desde la base de datos - CON FILTRO MULTI-TENANT"""
         try:
             from models import MateriaPrima, Producto, ProductoExterno
             
             datos_inventarios = []
             
-            # ✅ 1. MATERIAS PRIMAS (ingredientes) - CORREGIDO: Añadido filtro panaderia_id
+            # ✅ 1. MATERIAS PRIMAS (ingredientes)
             materias_primas = MateriaPrima.query.filter_by(
                 activo=True,
-                panaderia_id=current_user.panaderia_id  # ✅ NUEVO FILTRO MULTI-TENANT
+                panaderia_id=panaderia_id  # ✅ FILTRO MULTI-TENANT
             ).all()
             
             for mp in materias_primas:
-                # Calcular valor del inventario
                 valor_inventario = mp.stock_actual * mp.costo_promedio
-                
-                # Estimar demanda promedio basada en uso en recetas
                 demanda_promedio = self._calcular_demanda_materia_prima(mp.id)
                 
                 datos_inventarios.append({
@@ -2438,23 +2313,20 @@ class GeneradorReportes:
                     'tipo': 'materia_prima'
                 })
             
-            # ✅ 2. PRODUCTOS DE PRODUCCIÓN (panadería) - CORREGIDO: Añadido filtro panaderia_id
+            # ✅ 2. PRODUCTOS DE PRODUCCIÓN (panadería)
             productos_produccion = Producto.query.filter_by(
                 activo=True, 
                 tipo_producto='produccion',
-                panaderia_id=current_user.panaderia_id  # ✅ NUEVO FILTRO MULTI-TENANT
+                panaderia_id=panaderia_id  # ✅ FILTRO MULTI-TENANT
             ).all()
             
             for producto in productos_produccion:
-                # Calcular valor del inventario (usando costo de receta si está disponible)
                 if producto.receta:
                     costo_unitario = producto.receta.costo_unitario if producto.receta.costo_unitario > 0 else producto.precio_venta * 0.3
                 else:
-                    costo_unitario = producto.precio_venta * 0.3  # Estimación
+                    costo_unitario = producto.precio_venta * 0.3
                 
                 valor_inventario = producto.stock_actual * costo_unitario
-                
-                # Calcular demanda promedio basada en ventas históricas
                 demanda_promedio = self._calcular_demanda_producto(producto.id)
                 
                 datos_inventarios.append({
@@ -2469,16 +2341,14 @@ class GeneradorReportes:
                     'tipo': 'producto_produccion'
                 })
             
-            # ✅ 3. PRODUCTOS EXTERNOS - CORREGIDO: Añadido filtro panaderia_id
+            # ✅ 3. PRODUCTOS EXTERNOS
             productos_externos = ProductoExterno.query.filter_by(
                 activo=True,
-                panaderia_id=current_user.panaderia_id  # ✅ NUEVO FILTRO MULTI-TENANT
+                panaderia_id=panaderia_id  # ✅ FILTRO MULTI-TENANT
             ).all()
             
             for producto in productos_externos:
                 valor_inventario = producto.stock_actual * producto.precio_compra
-                
-                # Calcular demanda promedio
                 demanda_promedio = self._calcular_demanda_producto_externo(producto.id)
                 
                 datos_inventarios.append({
@@ -2582,32 +2452,31 @@ class GeneradorReportes:
             print(f"Error calculando demanda producto externo {producto_externo_id}: {e}")
             return 1.0
 
-    def _obtener_datos_rotacion_reales(self, fecha_inicio, fecha_fin):
-        """Obtiene datos REALES de rotación de inventarios - CORREGIDO MULTI-TENANT"""
+    def _obtener_datos_rotacion_reales(self, panaderia_id, fecha_inicio, fecha_fin):
+        """Obtiene datos REALES de rotación de inventarios - CON FILTRO MULTI-TENANT"""
         try:
             from models import Producto, ProductoExterno, DetalleVenta, Venta
+            from sqlalchemy import func
             
             datos_rotacion = []
             
-            # Productos de producción - CORREGIDO: Añadido filtro panaderia_id
+            # ✅ Productos de producción
             productos = Producto.query.filter_by(
                 activo=True,
-                panaderia_id=current_user.panaderia_id  # ✅ NUEVO FILTRO MULTI-TENANT
+                panaderia_id=panaderia_id  # ✅ FILTRO MULTI-TENANT
             ).all()
             
             for producto in productos:
-                # Calcular ventas del período - CORREGIDO: Añadido filtro panaderia_id
+                # ✅ Calcular ventas del período
                 ventas_periodo = DetalleVenta.query.join(Venta).filter(
                     DetalleVenta.producto_id == producto.id,
                     Venta.fecha_hora >= fecha_inicio,
                     Venta.fecha_hora <= fecha_fin,
-                    Venta.panaderia_id == current_user.panaderia_id  # ✅ NUEVO FILTRO MULTI-TENANT
-                ).with_entities(db.func.sum(DetalleVenta.cantidad)).scalar() or 0
+                    Venta.panaderia_id == panaderia_id  # ✅ FILTRO MULTI-TENANT
+                ).with_entities(func.sum(DetalleVenta.cantidad)).scalar() or 0
                 
-                # Calcular stock promedio (simplificado)
                 stock_promedio = producto.stock_actual
                 
-                # Calcular índice de rotación (anualizado)
                 if stock_promedio > 0:
                     dias_periodo = (fecha_fin - fecha_inicio).days
                     factor_anual = 365 / dias_periodo if dias_periodo > 0 else 12
@@ -2621,20 +2490,20 @@ class GeneradorReportes:
                     'ventas_totales': ventas_periodo
                 })
             
-            # Productos externos - CORREGIDO: Añadido filtro panaderia_id
+            # ✅ Productos externos
             productos_externos = ProductoExterno.query.filter_by(
                 activo=True,
-                panaderia_id=current_user.panaderia_id  # ✅ NUEVO FILTRO MULTI-TENANT
+                panaderia_id=panaderia_id  # ✅ FILTRO MULTI-TENANT
             ).all()
             
             for producto in productos_externos:
-                # CORREGIDO: Añadido filtro panaderia_id
+                # ✅ Calcular ventas del período
                 ventas_periodo = DetalleVenta.query.join(Venta).filter(
                     DetalleVenta.producto_externo_id == producto.id,
                     Venta.fecha_hora >= fecha_inicio,
                     Venta.fecha_hora <= fecha_fin,
-                    Venta.panaderia_id == current_user.panaderia_id  # ✅ NUEVO FILTRO MULTI-TENANT
-                ).with_entities(db.func.sum(DetalleVenta.cantidad)).scalar() or 0
+                    Venta.panaderia_id == panaderia_id  # ✅ FILTRO MULTI-TENANT
+                ).with_entities(func.sum(DetalleVenta.cantidad)).scalar() or 0
                 
                 stock_promedio = producto.stock_actual
                 
@@ -2886,45 +2755,36 @@ class GeneradorReportes:
         
         # ========================================== NUEVAS FUNCIONES PARA REPORTE UNIFICADO DE TESORERÍA ===========================================
 
-    def _obtener_datos_tesoreria_combinados(self, fecha_inicio, fecha_fin):
-        """Obtiene y combina datos para el reporte de tesorería"""
+    def _obtener_datos_tesoreria_combinados(self, panaderia_id, fecha_inicio, fecha_fin):
+        """Obtiene datos combinados de tesorería - CON FILTRO MULTI-TENANT"""
         try:
-            # Obtener movimientos (libro mayor)
-            movimientos = self._obtener_movimientos_periodo(fecha_inicio, fecha_fin)
-            # Obtener datos de flujo de caja
-            flujo_data = self._obtener_flujo_caja_periodo(fecha_inicio, fecha_fin)
-
-            # Calcular métricas consolidadas
-            total_ingresos = sum(mov[3] for mov in movimientos) if movimientos else 0
-            total_egresos = sum(mov[4] for mov in movimientos) if movimientos else 0
+            # ✅ FILTRAR POR TENANT
+            movimientos = self._obtener_movimientos_periodo(panaderia_id, fecha_inicio, fecha_fin)
+            flujo_data = self._obtener_flujo_caja_periodo(panaderia_id, fecha_inicio, fecha_fin)
+            
+            # Calcular totales
+            total_ingresos = sum(m[3] for m in movimientos) if movimientos else 0
+            total_egresos = sum(m[4] for m in movimientos) if movimientos else 0
             saldo_final = total_ingresos - total_egresos
-
-            # Métricas de flujo
-            if flujo_data:
-                flujo_neto_total = sum(ingresos - gastos for _, ingresos, gastos in flujo_data)
-                dias_analizados = len(flujo_data)
-                dias_positivos = sum(1 for _, ingresos, gastos in flujo_data if ingresos - gastos > 0)
-            else:
-                flujo_neto_total = 0
-                dias_analizados = 0
-                dias_positivos = 0
-
+            
             return {
                 'movimientos': movimientos,
                 'flujo_data': flujo_data,
-                'metricas': {
-                    'total_ingresos': total_ingresos,
-                    'total_egresos': total_egresos,
-                    'saldo_final': saldo_final,
-                    'flujo_neto_total': flujo_neto_total,
-                    'dias_analizados': dias_analizados,
-                    'dias_positivos': dias_positivos,
-                    'total_movimientos': len(movimientos) if movimientos else 0
-                }
+                'total_ingresos': total_ingresos,
+                'total_egresos': total_egresos,
+                'saldo_final': saldo_final,
+                'total_movimientos': len(movimientos) if movimientos else 0
             }
         except Exception as e:
-            print(f"Error al obtener datos combinados: {e}")
-            return None
+            print(f"Error al obtener datos de tesorería: {e}")
+            return {
+                'movimientos': [],
+                'flujo_data': [],
+                'total_ingresos': 0,
+                'total_egresos': 0,
+                'saldo_final': 0,
+                'total_movimientos': 0
+            }
 
     def _agregar_resumen_ejecutivo_tesoreria(self, elements, datos):
         """Agrega el resumen ejecutivo al reporte"""
