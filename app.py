@@ -6223,11 +6223,17 @@ def reportes():
 @app.route('/generar_reporte_estado_resultados')
 @login_required
 @modulo_requerido('reportes')
-@tenant_required  # ← NUEVO: Añadir decorador tenant
+@tenant_required
 def generar_reporte_estado_resultados():
-    """Genera reporte de Estado de Resultados en PDF"""
+    """Genera reporte de Estado de Resultados en PDF - CON FILTRO MULTI-TENANT"""
     try:
         from datetime import datetime
+        
+        # 🔍 OBTENER TENANT ACTUAL
+        panaderia_id = obtener_panaderia_actual()
+        if not panaderia_id:
+            flash('No se pudo determinar la panadería', 'error')
+            return redirect(url_for('reportes'))
         
         fecha_inicio = request.args.get('fecha_inicio')
         fecha_fin = request.args.get('fecha_fin')
@@ -6244,9 +6250,9 @@ def generar_reporte_estado_resultados():
             flash('❌ La fecha de inicio no puede ser mayor a la fecha fin', 'error')
             return redirect(url_for('reportes'))
         
+        # ✅ PASAR panaderia_id a la función
         generador = GeneradorReportes()
-        # ✅ current_user.panaderia_id disponible automáticamente gracias a @tenant_required
-        pdf_buffer = generador.generar_reporte_estado_resultados(fecha_inicio, fecha_fin)
+        pdf_buffer = generador.generar_reporte_estado_resultados(panaderia_id, fecha_inicio, fecha_fin)
         
         nombre_archivo = f"estado_resultados_{fecha_inicio}_{fecha_fin}.pdf"
         
@@ -6408,8 +6414,16 @@ metodos = [method for method in dir(generador_test) if callable(getattr(generado
 @modulo_requerido('reportes')
 @tenant_required 
 def generar_reporte_analisis_gastos():
-    """Genera reporte de Análisis de Gastos por Categoría en PDF"""
+    """Genera reporte de Análisis de Gastos por Categoría en PDF - CON FILTRO MULTI-TENANT"""
     try:
+        from datetime import datetime
+        
+        # 🔍 OBTENER TENANT ACTUAL
+        panaderia_id = obtener_panaderia_actual()
+        if not panaderia_id:
+            flash('No se pudo determinar la panadería', 'error')
+            return redirect(url_for('reportes'))
+        
         fecha_inicio = request.args.get('fecha_inicio')
         fecha_fin = request.args.get('fecha_fin')
         
@@ -6425,8 +6439,9 @@ def generar_reporte_analisis_gastos():
             flash('❌ La fecha de inicio no puede ser mayor a la fecha fin', 'error')
             return redirect(url_for('reportes'))
         
+        # ✅ PASAR panaderia_id a la función
         generador = GeneradorReportes()
-        pdf_buffer = generador.generar_reporte_analisis_gastos(fecha_inicio, fecha_fin)
+        pdf_buffer = generador.generar_reporte_analisis_gastos(panaderia_id, fecha_inicio, fecha_fin)
         
         # Verificar que el buffer no esté vacío
         if pdf_buffer.getbuffer().nbytes == 0:
@@ -6449,15 +6464,6 @@ def generar_reporte_analisis_gastos():
         flash(f'❌ Error al generar análisis de gastos: {str(e)}', 'error')
         return redirect(url_for('reportes'))
 
-# Verificación temporal de métodos
-def verificar_metodos():
-    generador = GeneradorReportes()
-    metodos = [method for method in dir(generador) if callable(getattr(generador, method)) and not method.startswith('_')]
-    
-
-# Ejecutar verificación (esto se mostrará en la terminal de Flask al iniciar)
-verificar_metodos()
-
 #==========================================================Tendencia de Ventas==============================================
 
 @app.route('/generar_reporte_tendencia_ventas')
@@ -6465,8 +6471,16 @@ verificar_metodos()
 @modulo_requerido('reportes')
 @tenant_required
 def generar_reporte_tendencia_ventas():
-    """Genera reporte de Tendencia de Ventas en PDF"""
+    """Genera reporte de Tendencia de Ventas en PDF - CON FILTRO MULTI-TENANT"""
     try:
+        from datetime import datetime
+        
+        # 🔍 OBTENER TENANT ACTUAL
+        panaderia_id = obtener_panaderia_actual()
+        if not panaderia_id:
+            flash('No se pudo determinar la panadería', 'error')
+            return redirect(url_for('reportes'))
+        
         fecha_inicio = request.args.get('fecha_inicio')
         fecha_fin = request.args.get('fecha_fin')
         
@@ -6482,8 +6496,9 @@ def generar_reporte_tendencia_ventas():
             flash('❌ La fecha de inicio no puede ser mayor a la fecha fin', 'error')
             return redirect(url_for('reportes'))
         
+        # ✅ PASAR panaderia_id a la función
         generador = GeneradorReportes()
-        pdf_buffer = generador.generar_reporte_tendencia_ventas(fecha_inicio, fecha_fin)
+        pdf_buffer = generador.generar_reporte_tendencia_ventas(panaderia_id, fecha_inicio, fecha_fin)
         
         nombre_archivo = f"tendencia_ventas_{fecha_inicio}_a_{fecha_fin}.pdf"
         
@@ -6509,8 +6524,16 @@ def generar_reporte_tendencia_ventas():
 @modulo_requerido('reportes')
 @tenant_required 
 def generar_reporte_ia_predictivo():
-    """Genera reporte de IA Predictivo en PDF"""
+    """Genera reporte de IA Predictivo en PDF - CON FILTRO MULTI-TENANT"""
     try:
+        from datetime import datetime
+        
+        # 🔍 OBTENER TENANT ACTUAL
+        panaderia_id = obtener_panaderia_actual()
+        if not panaderia_id:
+            flash('No se pudo determinar la panadería', 'error')
+            return redirect(url_for('reportes'))
+        
         fecha_inicio = request.args.get('fecha_inicio')
         fecha_fin = request.args.get('fecha_fin')
         
@@ -6526,8 +6549,9 @@ def generar_reporte_ia_predictivo():
             flash('❌ La fecha de inicio no puede ser mayor a la fecha fin', 'error')
             return redirect(url_for('reportes'))
         
+        # ✅ PASAR panaderia_id a la función
         generador = GeneradorReportes()
-        pdf_buffer = generador.generar_reporte_ia_predictivo(fecha_inicio, fecha_fin)
+        pdf_buffer = generador.generar_reporte_ia_predictivo(panaderia_id, fecha_inicio, fecha_fin)
         
         nombre_archivo = f"analisis_ia_predictivo_{fecha_inicio}_a_{fecha_fin}.pdf"
         
@@ -6554,8 +6578,16 @@ def generar_reporte_ia_predictivo():
 @modulo_requerido('reportes')
 @tenant_required 
 def generar_reporte_analisis_inventarios():
-    """Genera reporte de Análisis de Inventarios en PDF"""
+    """Genera reporte de Análisis de Inventarios en PDF - CON FILTRO MULTI-TENANT"""
     try:
+        from datetime import datetime
+        
+        # 🔍 OBTENER TENANT ACTUAL
+        panaderia_id = obtener_panaderia_actual()
+        if not panaderia_id:
+            flash('No se pudo determinar la panadería', 'error')
+            return redirect(url_for('reportes'))
+        
         fecha_inicio = request.args.get('fecha_inicio')
         fecha_fin = request.args.get('fecha_fin')
         
@@ -6571,8 +6603,9 @@ def generar_reporte_analisis_inventarios():
             flash('❌ La fecha de inicio no puede ser mayor a la fecha fin', 'error')
             return redirect(url_for('reportes'))
         
+        # ✅ PASAR panaderia_id a la función
         generador = GeneradorReportes()
-        pdf_buffer = generador.generar_reporte_analisis_inventarios(fecha_inicio, fecha_fin)
+        pdf_buffer = generador.generar_reporte_analisis_inventarios(panaderia_id, fecha_inicio, fecha_fin)
         
         nombre_archivo = f"analisis_inventarios_{fecha_inicio}_a_{fecha_fin}.pdf"
         
@@ -6596,9 +6629,15 @@ def generar_reporte_analisis_inventarios():
 @modulo_requerido('reportes')
 @tenant_required
 def generar_reporte_tesoreria_unificado():
-    """Genera reporte unificado de Tesorería (Libro Mayor + Flujo de Caja) en PDF"""
+    """Genera reporte unificado de Tesorería (Libro Mayor + Flujo de Caja) en PDF - CON FILTRO MULTI-TENANT"""
     try:
         from datetime import datetime
+        
+        # 🔍 OBTENER TENANT ACTUAL
+        panaderia_id = obtener_panaderia_actual()
+        if not panaderia_id:
+            flash('No se pudo determinar la panadería', 'error')
+            return redirect(url_for('reportes'))
         
         fecha_inicio = request.args.get('fecha_inicio')
         fecha_fin = request.args.get('fecha_fin')
@@ -6616,8 +6655,9 @@ def generar_reporte_tesoreria_unificado():
             flash('❌ La fecha de inicio no puede ser mayor a la fecha fin', 'error')
             return redirect(url_for('reportes'))
         
+        # ✅ PASAR panaderia_id a la función
         generador = GeneradorReportes()
-        pdf_buffer = generador.generar_reporte_tesoreria_unificado(fecha_inicio, fecha_fin, nivel_detalle)
+        pdf_buffer = generador.generar_reporte_tesoreria_unificado(panaderia_id, fecha_inicio, fecha_fin, nivel_detalle)
         
         nombre_archivo = f"tesoreria_unificado_{fecha_inicio}_{fecha_fin}.pdf"
         

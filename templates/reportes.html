@@ -500,8 +500,8 @@
                     <h3>📈 Estado de Resultados</h3>
                     <p><strong>Pérdidas y Ganancias</strong><br/>
                     Muestra ingresos, gastos y resultado neto del período. Esencial para declaraciones de impuestos y análisis de rentabilidad.</p>
-                    <button class="btn btn-primary" onclick="generarReporte('estado_resultados')">
-                        📥 Descargar PDF
+                    <button class="btn btn-primary" onclick="generarReporte('estado_resultados')" title="Generar Estado de Resultados en PDF">
+                        <i class="fas fa-file-pdf me-2"></i> Descargar PDF
                     </button>
                 </div>
                 
@@ -1395,6 +1395,7 @@
         }
 
         // ========== FUNCIÓN GENERAR REPORTE ==========
+        // ========== FUNCIÓN GENERAR REPORTE ==========
         function generarReporte(tipo) {
             const fechaInicio = document.getElementById('fecha_inicio').value;
             const fechaFin = document.getElementById('fecha_fin').value;
@@ -1408,6 +1409,9 @@
                 mostrarError('La fecha de inicio no puede ser mayor a la fecha fin');
                 return;
             }
+            
+            // Mostrar indicador de carga
+            mostrarCarga(true);
             
             let url = '';
             switch(tipo) {
@@ -1428,12 +1432,18 @@
                     break;
                 default:
                     mostrarError('Reporte en desarrollo');
+                    mostrarCarga(false);
                     return;
             }
             
+            // Abrir el reporte en una nueva pestaña
             window.open(url, '_blank');
+            
+            // Ocultar el indicador de carga después de 3 segundos
+            setTimeout(() => {
+                mostrarCarga(false);
+            }, 3000);
         }
-
         // ========== NUEVA FUNCIÓN: REPORTE UNIFICADO DE TESORERÍA ==========
         function generarTesoreriaUnificado() {
             const fechaInicio = document.getElementById('fecha_inicio').value;
@@ -1495,6 +1505,118 @@
                 }
             });
         });
+    </script>
+        <!-- ============================================= -->
+        <!-- INDICADOR DE CARGA PARA REPORTES              -->
+        <!-- ============================================= -->
+        <div id="loadingOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; align-items: center; justify-content: center;">
+            <div style="background: white; padding: 40px; border-radius: 15px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+                <div class="loader" style="margin: 0 auto 20px;"></div>
+                <p style="color: #333; font-weight: bold; font-size: 1.1em;">⏳ Generando reporte...</p>
+                <p style="color: #666; font-size: 0.9em;">Por favor espera, esto puede tomar unos segundos</p>
+                <div style="margin-top: 15px; width: 100%; height: 4px; background: #f0f0f0; border-radius: 2px; overflow: hidden;">
+                    <div style="width: 30%; height: 100%; background: linear-gradient(90deg, #3498db, #2ecc71); border-radius: 2px; animation: loadingBar 1.5s infinite;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================= -->
+        <!-- FUNCIÓN PARA CONTROLAR EL INDICADOR DE CARGA   -->
+        <!-- ============================================= -->
+        <script>
+        // Función para mostrar/ocultar el indicador de carga
+        function mostrarCarga(mostrar) {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) {
+                overlay.style.display = mostrar ? 'flex' : 'none';
+            }
+        }
+
+        // Sobrescribir la función generarReporte para incluir el indicador de carga
+        const generarReporteOriginal = window.generarReporte;
+        window.generarReporte = function(tipo) {
+            const fechaInicio = document.getElementById('fecha_inicio').value;
+            const fechaFin = document.getElementById('fecha_fin').value;
+            
+            if (!fechaInicio || !fechaFin) {
+                mostrarError('Por favor selecciona ambas fechas');
+                return;
+            }
+            
+            if (fechaInicio > fechaFin) {
+                mostrarError('La fecha de inicio no puede ser mayor a la fecha fin');
+                return;
+            }
+            
+            // Mostrar indicador de carga
+            mostrarCarga(true);
+            
+            let url = '';
+            switch(tipo) {
+                case 'estado_resultados':
+                    url = `/generar_reporte_estado_resultados?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+                    break;
+                case 'analisis_gastos':
+                    url = `/generar_reporte_analisis_gastos?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+                    break;
+                case 'tendencia_ventas':
+                    url = `/generar_reporte_tendencia_ventas?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+                    break;
+                case 'ia_predictivo':
+                    url = `/generar_reporte_ia_predictivo?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+                    break;
+                case 'analisis_inventarios':
+                    url = `/generar_reporte_analisis_inventarios?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+                    break;
+                default:
+                    mostrarError('Reporte en desarrollo');
+                    mostrarCarga(false);
+                    return;
+            }
+            
+            // Abrir el reporte en una nueva pestaña
+            window.open(url, '_blank');
+            
+            // Ocultar el indicador de carga después de 2 segundos
+            setTimeout(() => {
+                mostrarCarga(false);
+            }, 2000);
+        };
+
+        // También modificar la función generarTesoreriaUnificado
+        const generarTesoreriaUnificadoOriginal = window.generarTesoreriaUnificado;
+        window.generarTesoreriaUnificado = function() {
+            const fechaInicio = document.getElementById('fecha_inicio').value;
+            const fechaFin = document.getElementById('fecha_fin').value;
+            const nivelDetalle = document.getElementById('nivel_detalle_tesoreria').value;
+            
+            if (!fechaInicio || !fechaFin) {
+                mostrarError('Por favor selecciona ambas fechas');
+                return;
+            }
+            
+            if (fechaInicio > fechaFin) {
+                mostrarError('La fecha de inicio no puede ser mayor a la fecha fin');
+                return;
+            }
+            
+            const url = `/generar_reporte_tesoreria_unificado?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}&nivel_detalle=${nivelDetalle}`;
+            
+            const niveles = {
+                'resumen': 'Resumen Ejecutivo',
+                'completo': 'Reporte Completo', 
+                'detallado': 'Detalle Extendido'
+            };
+            
+            if (confirm(`🎯 ¿Generar Reporte Unificado de Tesorería?\n\n📅 Período: ${fechaInicio} a ${fechaFin}\n📊 Nivel: ${niveles[nivelDetalle]}`)) {
+                // Mostrar indicador de carga
+                mostrarCarga(true);
+                window.open(url, '_blank');
+                setTimeout(() => {
+                    mostrarCarga(false);
+                }, 2000);
+            }
+        };
     </script>
 </body>
 </html>
