@@ -918,73 +918,7 @@ class GeneradorReportes:
             db.session.rollback()
             return False
     
-    def generar_reporte_tesoreria_unificado(self, panaderia_id, fecha_inicio, fecha_fin, nivel_detalle='completo'):
-        """Genera reporte unificado de Tesorería (Libro Mayor + Flujo de Caja) - CON FILTRO MULTI-TENANT"""
-        try:
-            print(f"🎯 Generando Reporte Unificado de Tesorería - Nivel: {nivel_detalle}")
-            print(f"🔍 PANADERÍA ID: {panaderia_id}")
-            
-            buffer = BytesIO()
-            doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=0.8*inch)
-            elements = []
-
-            elements.append(Paragraph("PANADERÍA-POS", self.estilo_titulo))
-            elements.append(Paragraph("📊 REPORTE INTEGRAL DE TESORERÍA", self.estilo_titulo))
-            elements.append(Paragraph(f"Período: {fecha_inicio} a {fecha_fin} | Nivel: {nivel_detalle.title()}", self.styles['Normal']))
-            elements.append(Spacer(1, 15))
-
-            # ✅ FILTRAR POR TENANT
-            datos_combinados = self._obtener_datos_tesoreria_combinados(panaderia_id, fecha_inicio, fecha_fin)
-            
-            if not datos_combinados or (not datos_combinados['movimientos'] and not datos_combinados['flujo_data']):
-                elements.append(Paragraph("No hay datos de tesorería para el período seleccionado.", self.styles['Normal']))
-                doc.build(elements)
-                buffer.seek(0)
-                return buffer
-
-            # ✅ SECCIÓN 1: RESUMEN EJECUTIVO
-            elements.append(Paragraph("📈 RESUMEN EJECUTIVO", self.estilo_subtitulo))
-            self._agregar_resumen_ejecutivo_tesoreria(elements, datos_combinados)
-            elements.append(Spacer(1, 15))
-
-            # ✅ SECCIÓN 2: ANÁLISIS DE FLUJO
-            elements.append(Paragraph("💸 ANÁLISIS DE FLUJO DE CAJA", self.estilo_subtitulo))
-            self._agregar_analisis_flujo_tesoreria(elements, datos_combinados)
-            elements.append(Spacer(1, 15))
-
-            # ✅ SECCIÓN 3: DETALLE DE MOVIMIENTOS (DEPENDE DEL NIVEL)
-            if nivel_detalle in ['completo', 'detallado']:
-                elements.append(Paragraph("📋 DETALLE DE MOVIMIENTOS", self.estilo_subtitulo))
-                self._agregar_detalle_movimientos_tesoreria(elements, datos_combinados)
-                elements.append(Spacer(1, 15))
-
-            # ✅ SECCIÓN 4: GRÁFICOS Y MÉTRICAS AVANZADAS
-            if nivel_detalle in ['completo', 'detallado']:
-                try:
-                    elements.append(Paragraph("📊 ANÁLISIS VISUAL", self.estilo_subtitulo))
-                    self._agregar_graficos_tesoreria_mejorados(elements, datos_combinados)
-                    elements.append(Spacer(1, 15))
-                except Exception as e:
-                    print(f"⚠️ No se pudieron generar gráficos: {e}")
-                    elements.append(Paragraph("(Gráficos no disponibles - se requiere matplotlib)", self.styles['Normal']))
-
-            # ✅ SECCIÓN 5: RECOMENDACIONES
-            elements.append(Paragraph("💡 RECOMENDACIONES ESTRATÉGICAS", self.estilo_subtitulo))
-            self._agregar_recomendaciones_tesoreria(elements, datos_combinados)
-
-            elements.append(Spacer(1, 20))
-            elements.append(Paragraph(f"🎯 Reporte Unificado generado el: {datetime.now().strftime('%d/%m/%Y %H:%M')}", 
-                                    ParagraphStyle('Footer', parent=self.styles['Normal'], fontSize=8, textColor=colors.gray)))
-
-            doc.build(elements)
-            buffer.seek(0)
-            return buffer
-
-        except Exception as e:
-            print(f"❌ Error en reporte unificado: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            return self._generar_reporte_error(f"Error en Reporte Unificado: {str(e)}")
+    
     
 #====================================== Análisis de Gastos por Categoría========================================================
     def generar_reporte_analisis_gastos(self, panaderia_id, fecha_inicio, fecha_fin):
@@ -2785,393 +2719,7 @@ class GeneradorReportes:
         """
         elements.append(Paragraph(resumen_texto, self.styles['Normal']))
 
-    def _agregar_analisis_flujo_tesoreria(self, elements, datos):
-        """Agrega el análisis de flujo al reporte"""
-        metricas = datos['metricas']
-        
-        analisis_texto = f"""
-        <b>Análisis de Flujo:</b><br/>
-        - El flujo neto del período es <b>{'positivo' if metricas['flujo_neto_total'] >= 0 else 'negativo'}</b>.<br/>
-        - El {metricas['dias_positivos']/metricas['dias_analizados']*100 if metricas['dias_analizados'] > 0 else 0:.1f}% de los días tuvo flujo positivo.<br/>
-        - El saldo de caja final es de <b>${metricas['saldo_final']:,.0f}</b>.
-        """
-        elements.append(Paragraph(analisis_texto, self.styles['Normal']))
-
-    def _agregar_detalle_movimientos_tesoreria(self, elements, datos):
-        """Agrega el detalle de movimientos al reporte"""
-        movimientos = datos['movimientos']
-        
-        if not movimientos:
-            elements.append(Paragraph("No hay movimientos para mostrar.", self.styles['Normal']))
-            return
-
-        # Crear tabla de movimientos
-        data = [['Fecha', 'Concepto', 'Referencia', 'Ingresos', 'Egresos', 'Saldo']]
-        saldo_acumulado = 0
-
-        for movimiento in movimientos:
-            fecha, concepto, referencia, ingresos, egresos, tipo = movimiento
-            saldo_acumulado += ingresos - egresos
-            data.append([
-                fecha.strftime('%d/%m/%Y'),
-                concepto,
-                referencia or '-',
-                f"${ingresos:,.0f}" if ingresos > 0 else "$0",
-                f"${egresos:,.0f}" if egresos > 0 else "$0",
-                f"${saldo_acumulado:,.0f}"
-            ])
-
-        # Totales
-        total_ingresos = sum(mov[3] for mov in movimientos)
-        total_egresos = sum(mov[4] for mov in movimientos)
-        data.append([
-            'TOTALES', '', '', 
-            f"${total_ingresos:,.0f}", 
-            f"${total_egresos:,.0f}", 
-            f"${saldo_acumulado:,.0f}"
-        ])
-
-        tabla = Table(data, colWidths=[0.8*inch, 2.2*inch, 1.2*inch, 1.0*inch, 1.0*inch, 1.2*inch])
-        tabla.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2c3e50')),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 8),
-            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
-            ('FONTNAME', (0, 1), (-1, -2), 'Helvetica'),
-            ('FONTSIZE', (0, 1), (-1, -1), 7),
-            ('ALIGN', (0, 1), (2, -1), 'LEFT'),
-            ('ALIGN', (3, 1), (-1, -1), 'RIGHT'),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-            ('BACKGROUND', (0, 1), (-1, -2), colors.HexColor('#f8f9fa')),
-            ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#34495e')),
-            ('TEXTCOLOR', (0, -1), (-1, -1), colors.white),
-            ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, -1), (-1, -1), 8),
-        ]))
-        elements.append(tabla)
-
-    def _agregar_graficos_tesoreria(self, elements, datos):
-        """Agrega gráficos al reporte (si están disponibles las librerías)"""
-        try:
-            import matplotlib.pyplot as plt
-            from matplotlib.figure import Figure
-            import numpy as np
-
-            # Gráfico de tendencia de saldo
-            movimientos = datos['movimientos']
-            if movimientos:
-                fechas = [mov[0] for mov in movimientos]
-                saldos = []
-                saldo_acum = 0
-                for mov in movimientos:
-                    saldo_acum += mov[3] - mov[4]
-                    saldos.append(saldo_acum)
-
-                fig = Figure(figsize=(6, 3))
-                ax = fig.add_subplot(111)
-                ax.plot(fechas, saldos, color='#3498db', linewidth=2)
-                ax.fill_between(fechas, saldos, alpha=0.3, color='#3498db')
-                ax.set_title('Evolución del Saldo de Caja', fontsize=10)
-                ax.grid(True, alpha=0.3)
-
-                # Guardar gráfico en buffer
-                buffer = BytesIO()
-                fig.savefig(buffer, format='png', dpi=100, bbox_inches='tight')
-                buffer.seek(0)
-
-                from reportlab.platypus import Image
-                elements.append(Image(buffer, width=6*inch, height=3*inch))
-        except ImportError:
-            elements.append(Paragraph("(Gráficos no disponibles - se requiere matplotlib)", self.styles['Normal']))
-        except Exception as e:
-            elements.append(Paragraph(f"(Error al generar gráficos: {e})", self.styles['Normal']))
-
-    def _agregar_graficos_tesoreria_mejorados(self, elements, datos):
-        """Agrega gráficos profesionales optimizados para usuarios panaderos"""
-        try:
-            import matplotlib.pyplot as plt
-            from matplotlib.figure import Figure
-            import numpy as np
-            from matplotlib import rcParams
-            
-            # ✅ CONFIGURACIÓN ESPECÍFICA PARA PANADEROS
-            rcParams.update({
-                'font.size': 10,
-                'font.family': 'DejaVu Sans',
-                'axes.titlesize': 12,
-                'axes.labelsize': 11,
-                'xtick.labelsize': 9,
-                'ytick.labelsize': 9,
-                'legend.fontsize': 9,
-                'figure.titlesize': 14,
-                'figure.titleweight': 'bold'
-            })
-            
-            movimientos = datos['movimientos']
-            if not movimientos or len(movimientos) < 2:
-                elements.append(Paragraph("📊 **Nota:** No hay suficientes movimientos para análisis visual.", 
-                                        self.styles['Normal']))
-                return
-
-            # ✅ GRÁFICO 1: EVOLUCIÓN DEL SALDO (MEJORADO)
-            fig1 = Figure(figsize=(8, 4))
-            ax1 = fig1.add_subplot(111)
-            
-            fechas = [mov[0] for mov in movimientos]
-            saldos = []
-            saldo_acum = 0
-            
-            for mov in movimientos:
-                saldo_acum += mov[3] - mov[4]  # ingresos - egresos
-                saldos.append(saldo_acum)
-            
-            # ✅ MEJORA: Determinar color basado en el resultado final
-            if saldos[-1] > saldos[0]:
-                color_linea = '#27ae60'  # Verde - creciendo
-                titulo_extra = " (TENDENCIA POSITIVA ↗)"
-            elif saldos[-1] < saldos[0]:
-                color_linea = '#e74c3c'  # Rojo - decreciendo  
-                titulo_extra = " (TENDENCIA NEGATIVA ↘)"
-            else:
-                color_linea = '#3498db'  # Azul - estable
-                titulo_extra = " (ESTABLE)"
-            
-            # Línea principal con marcadores
-            ax1.plot(fechas, saldos, color=color_linea, linewidth=3, marker='o', 
-                    markersize=6, markerfacecolor='white', markeredgewidth=2)
-            
-            # Área sombreada
-            ax1.fill_between(fechas, saldos, alpha=0.15, color=color_linea)
-            
-            # Línea de referencia en cero
-            ax1.axhline(y=0, color='black', linestyle='--', alpha=0.4, linewidth=1)
-            
-            # ✅ MEJORA: Línea de tendencia si hay suficientes puntos
-            if len(saldos) > 5:
-                x_numeric = np.arange(len(saldos))
-                z = np.polyfit(x_numeric, saldos, 1)
-                p = np.poly1d(z)
-                ax1.plot(fechas, p(x_numeric), 'k--', alpha=0.6, linewidth=1.5, 
-                        label=f'Tendencia: {"+" if z[0] > 0 else ""}{z[0]:.0f}/día')
-                ax1.legend(loc='upper left')
-            
-            # ✅ MEJORA: Etiquetas de puntos clave
-            if len(saldos) >= 2:
-                # Primer punto
-                ax1.annotate(f'Inicio\n${saldos[0]:,.0f}', 
-                            xy=(fechas[0], saldos[0]), 
-                            xytext=(10, 10), textcoords='offset points',
-                            fontsize=8, ha='left', va='bottom',
-                            bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8))
-                
-                # Último punto
-                ax1.annotate(f'Final\n${saldos[-1]:,.0f}', 
-                            xy=(fechas[-1], saldos[-1]), 
-                            xytext=(-10, 10), textcoords='offset points',
-                            fontsize=8, ha='right', va='bottom',
-                            bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8))
-                
-                # Punto máximo y mínimo
-                max_idx = np.argmax(saldos)
-                min_idx = np.argmin(saldos)
-                
-                if max_idx not in [0, len(saldos)-1]:
-                    ax1.annotate(f'Máx\n${saldos[max_idx]:,.0f}', 
-                                xy=(fechas[max_idx], saldos[max_idx]), 
-                                xytext=(0, 15), textcoords='offset points',
-                                fontsize=7, ha='center', va='bottom',
-                                arrowprops=dict(arrowstyle='->', lw=0.5))
-                
-                if min_idx not in [0, len(saldos)-1] and min_idx != max_idx:
-                    ax1.annotate(f'Mín\n${saldos[min_idx]:,.0f}', 
-                                xy=(fechas[min_idx], saldos[min_idx]), 
-                                xytext=(0, -15), textcoords='offset points',
-                                fontsize=7, ha='center', va='top',
-                                arrowprops=dict(arrowstyle='->', lw=0.5))
-            
-            ax1.set_title(f'📈 EVOLUCIÓN DEL SALDO DE CAJA{titulo_extra}', 
-                        fontweight='bold', pad=15, fontsize=12)
-            ax1.set_ylabel('Saldo ($)', fontweight='bold')
-            ax1.set_xlabel('Fecha', fontweight='bold')
-            ax1.grid(True, alpha=0.2)
-            
-            # ✅ MEJORA: Formato de fechas más legible
-            if len(fechas) > 10:
-                # Mostrar cada 3 fechas para evitar superposición
-                paso = max(1, len(fechas) // 5)
-                fechas_mostrar = fechas[::paso]
-                ax1.set_xticks(fechas_mostrar)
-                ax1.set_xticklabels([f.strftime('%d/%m') for f in fechas_mostrar], rotation=30)
-            else:
-                ax1.set_xticks(fechas)
-                ax1.set_xticklabels([f.strftime('%d/%m') for f in fechas], rotation=30)
-            
-            # Formatear eje Y
-            ax1.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'${x:,.0f}'))
-            
-            # ✅ MEJORA: Agregar análisis textual
-            cambio_total = saldos[-1] - saldos[0]
-            cambio_porcentual = (cambio_total / abs(saldos[0])) * 100 if saldos[0] != 0 else 0
-            
-            analisis_texto = f"""
-            📊 **Análisis del Período:**
-            • Saldo inicial: ${saldos[0]:,.0f}
-            • Saldo final: ${saldos[-1]:,.0f}
-            • Cambio total: ${cambio_total:+,.0f} ({cambio_porcentual:+.1f}%)
-            • {'✅ Saludable' if saldos[-1] > 0 else '⚠️ Atención: Saldo negativo'}
-            """
-            
-            fig1.tight_layout(pad=3.0)
-            
-            # ✅ MEJORA: Guardar con fondo blanco puro
-            buffer1 = BytesIO()
-            fig1.savefig(buffer1, format='png', dpi=120, bbox_inches='tight',
-                        facecolor='white', edgecolor='none', transparent=False)
-            buffer1.seek(0)
-            
-            # ✅ GRÁFICO 2: COMPARATIVA DIARIA (MEJORADO)
-            fig2 = Figure(figsize=(8, 4))
-            ax2 = fig2.add_subplot(111)
-            
-            # Agrupar por día
-            ingresos_por_dia = {}
-            egresos_por_dia = {}
-            neto_por_dia = {}
-            
-            for mov in movimientos:
-                fecha = mov[0]
-                if fecha not in ingresos_por_dia:
-                    ingresos_por_dia[fecha] = 0
-                    egresos_por_dia[fecha] = 0
-                    neto_por_dia[fecha] = 0
-                
-                ingresos_por_dia[fecha] += mov[3]
-                egresos_por_dia[fecha] += mov[4]
-                neto_por_dia[fecha] += mov[3] - mov[4]
-            
-            fechas_unicas = sorted(ingresos_por_dia.keys())
-            ingresos_diarios = [ingresos_por_dia[f] for f in fechas_unicas]
-            egresos_diarios = [egresos_por_dia[f] for f in fechas_unicas]
-            neto_diario = [neto_por_dia[f] for f in fechas_unicas]
-            
-            x = np.arange(len(fechas_unicas))
-            ancho = 0.25
-            
-            # ✅ MEJORA: Barras agrupadas con colores más significativos
-            barras_ing = ax2.bar(x - ancho, ingresos_diarios, ancho, 
-                                label='💰 Ingresos', color='#27ae60', alpha=0.9,
-                                edgecolor='darkgreen', linewidth=0.5)
-            
-            barras_egr = ax2.bar(x, egresos_diarios, ancho, 
-                                label='💸 Egresos', color='#e74c3c', alpha=0.9,
-                                edgecolor='darkred', linewidth=0.5)
-            
-            # ✅ MEJORA: Línea de flujo neto superpuesta
-            ax2_twin = ax2.twinx()
-            line_neto = ax2_twin.plot(x, neto_diario, color='#3498db', 
-                                    linewidth=2.5, marker='s', markersize=5,
-                                    label='📊 Flujo Neto', alpha=0.8)
-            
-            # ✅ MEJORA: Colorear área bajo la línea del neto
-            ax2_twin.fill_between(x, neto_diario, alpha=0.1, color='#3498db')
-            
-            # Configurar eje Y izquierdo
-            ax2.set_title('📋 COMPARATIVA DIARIA: INGRESOS VS EGRESOS', 
-                        fontweight='bold', pad=15, fontsize=12)
-            ax2.set_ylabel('Ingresos/Egresos ($)', fontweight='bold')
-            ax2.set_xlabel('Fecha', fontweight='bold')
-            
-            # Configurar eje Y derecho
-            ax2_twin.set_ylabel('Flujo Neto ($)', fontweight='bold', color='#3498db')
-            ax2_twin.tick_params(axis='y', labelcolor='#3498db')
-            
-            # ✅ MEJORA: Leyenda combinada
-            lines_labels = [ax2.get_legend_handles_labels()[0], 
-                        [(line_neto[0], '📊 Flujo Neto')]]
-            all_lines = [barras_ing, barras_egr, line_neto[0]]
-            all_labels = ['💰 Ingresos', '💸 Egresos', '📊 Flujo Neto']
-            ax2.legend(all_lines, all_labels, loc='upper left')
-            
-            # Configurar eje X
-            if len(fechas_unicas) > 10:
-                paso = max(1, len(fechas_unicas) // 6)
-                fechas_mostrar = fechas_unicas[::paso]
-                idx_mostrar = x[::paso]
-                ax2.set_xticks(idx_mostrar)
-                ax2.set_xticklabels([f.strftime('%d/%m') for f in fechas_mostrar], rotation=30)
-            else:
-                ax2.set_xticks(x)
-                ax2.set_xticklabels([f.strftime('%d/%m') for f in fechas_unicas], rotation=30)
-            
-            # Formatear ejes Y
-            ax2.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, p: f'${y:,.0f}'))
-            ax2_twin.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, p: f'${y:,.0f}'))
-            
-            ax2.grid(True, alpha=0.2, axis='y')
-            
-            # ✅ MEJORA: Anotar días con flujo negativo
-            for i, neto in enumerate(neto_diario):
-                if neto < 0:
-                    ax2_twin.annotate('⚠️', 
-                                    xy=(x[i], neto_diario[i]), 
-                                    xytext=(0, -25), textcoords='offset points',
-                                    fontsize=12, ha='center', va='top',
-                                    color='#e74c3c')
-            
-            fig2.tight_layout(pad=3.0)
-            
-            # Guardar segundo gráfico
-            buffer2 = BytesIO()
-            fig2.savefig(buffer2, format='png', dpi=120, bbox_inches='tight',
-                        facecolor='white', edgecolor='none', transparent=False)
-            buffer2.seek(0)
-            
-            # ✅ AGREGAR AMBOS GRÁFICOS AL PDF
-            from reportlab.platypus import Image
-            
-            # Gráfico 1
-            elements.append(Paragraph("🎯 ANÁLISIS VISUAL DE TESORERÍA", self.estilo_subtitulo))
-            elements.append(Image(buffer1, width=6.5*inch, height=3.5*inch))
-            elements.append(Spacer(1, 10))
-            
-            # Pequeña explicación
-            explicacion = Paragraph(f"""
-            <b>💡 Cómo interpretar este gráfico:</b><br/>
-            1. <font color="#27ae60">Línea verde</font> = Saldo creciendo saludablemente<br/>
-            2. <font color="#e74c3c">Línea roja</font> = Atención: saldo decreciente<br/>
-            3. <font color="#3498db">Línea azul</font> = Saldo estable<br/>
-            4. <b>Área sombreada</b> = Visualiza el crecimiento/declive del saldo<br/>
-            5. <b>Puntos marcados</b> = Valores clave (inicio, fin, máximo, mínimo)
-            """, self.styles['Normal'])
-            elements.append(explicacion)
-            elements.append(Spacer(1, 15))
-            
-            # Gráfico 2
-            elements.append(Paragraph("📊 COMPARATIVA DIARIA DETALLADA", self.estilo_subtitulo))
-            elements.append(Image(buffer2, width=6.5*inch, height=3.5*inch))
-            elements.append(Spacer(1, 10))
-            
-            # Pequeña explicación
-            explicacion2 = Paragraph(f"""
-            <b>💡 Cómo interpretar este gráfico:</b><br/>
-            1. <font color="#27ae60">💰 Barras verdes</font> = Ingresos del día<br/>
-            2. <font color="#e74c3c">💸 Barras rojas</font> = Egresos del día<br/>
-            3. <font color="#3498db">📊 Línea azul</font> = Flujo neto (ingresos - egresos)<br/>
-            4. <b>⚠️ Símbolos de advertencia</b> = Días con flujo negativo<br/>
-            5. <b>Posición de la línea</b> = Arriba de cero = positivo, Abajo = negativo
-            """, self.styles['Normal'])
-            elements.append(explicacion2)
-            
-        except ImportError:
-            elements.append(Paragraph("⚠️ Los gráficos no están disponibles (se requiere matplotlib).", 
-                                    self.styles['Normal']))
-        except Exception as e:
-            print(f"⚠️ Error al generar gráficos mejorados: {e}")
-            elements.append(Paragraph("⚠️ Error al generar gráficos visuales.", 
-                                    self.styles['Normal']))
-        
+    
     def _generar_reporte_error(self, mensaje):
         """Genera un PDF de error mínimo"""
         buffer = BytesIO()
@@ -3180,3 +2728,164 @@ class GeneradorReportes:
         doc.build(elements)
         buffer.seek(0)
         return buffer
+    
+    def generar_reporte_tesoreria_unificado(self, panaderia_id, fecha_inicio, fecha_fin, nivel_detalle='completo'):
+        """Genera el Reporte Unificado de Tesorería - INCLUYE GASTOS Y UTILIDAD NETA"""
+        try:
+            from models import RegistroDiario, PagoIndividual, DepositoBancario
+            from sqlalchemy import func
+            from datetime import datetime
+            from reportlab.lib import colors
+            from reportlab.lib.pagesizes import letter
+            from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
+            from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+            from reportlab.lib.units import inch
+            import io
+            
+            buffer = io.BytesIO()
+            doc = SimpleDocTemplate(buffer, pagesize=letter)
+            styles = getSampleStyleSheet()
+            story = []
+            
+            # Título
+            title_style = ParagraphStyle(
+                'TitleStyle',
+                parent=styles['Heading1'],
+                fontSize=16,
+                alignment=1,
+                spaceAfter=20
+            )
+            story.append(Paragraph("REPORTE UNIFICADO DE TESORERÍA", title_style))
+            story.append(Paragraph(f"Período: {fecha_inicio} a {fecha_fin}", styles['Normal']))
+            story.append(Spacer(1, 20))
+            
+            # 1. OBTENER INGRESOS (de RegistroDiario)
+            registros = RegistroDiario.query.filter_by(panaderia_id=panaderia_id).filter(
+                RegistroDiario.fecha >= fecha_inicio,
+                RegistroDiario.fecha <= fecha_fin
+            ).order_by(RegistroDiario.fecha).all()
+            
+            total_ingresos = sum(r.total_ingresos or 0 for r in registros)
+            
+            # 2. OBTENER GASTOS (de PagoIndividual)
+            gastos = PagoIndividual.query.filter_by(panaderia_id=panaderia_id).filter(
+                PagoIndividual.fecha_pago >= fecha_inicio,
+                PagoIndividual.fecha_pago <= fecha_fin
+            ).all()
+            
+            # Clasificar gastos por categoría
+            gastos_por_categoria = {}
+            total_gastos = 0
+            for g in gastos:
+                categoria = g.categoria or 'Sin categoría'
+                if categoria not in gastos_por_categoria:
+                    gastos_por_categoria[categoria] = 0
+                gastos_por_categoria[categoria] += g.monto
+                total_gastos += g.monto
+            
+            # 3. CALCULAR FLUJO NETO Y UTILIDAD
+            flujo_neto = total_ingresos - total_gastos
+            utilidad_neta = flujo_neto  # La utilidad neta es el flujo neto
+            
+            # RESUMEN EJECUTIVO
+            story.append(Paragraph("RESUMEN EJECUTIVO", styles['Heading2']))
+            story.append(Spacer(1, 10))
+            
+            # Crear tabla de resumen - Usar strings planos, NO Paragraphs
+            datos_resumen = [
+                ['Concepto', 'Monto'],
+                ['Total Ingresos', f'${total_ingresos:,.0f}'],
+                ['Total Gastos', f'${total_gastos:,.0f}'],
+                ['Flujo Neto', f'${flujo_neto:,.0f}']
+            ]
+            
+            # Si la utilidad es negativa, mostrarla con formato especial
+            if utilidad_neta < 0:
+                datos_resumen.append(['Utilidad Neta del Período', f'${utilidad_neta:,.0f} (PÉRDIDA)'])
+            else:
+                datos_resumen.append(['Utilidad Neta del Período', f'${utilidad_neta:,.0f}'])
+            
+            tabla_resumen = Table(datos_resumen, colWidths=[200, 200])
+            
+            # Estilo de la tabla
+            estilo_tabla = [
+                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 12),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black)
+            ]
+            
+            # Color para la fila de Utilidad Neta
+            if utilidad_neta < 0:
+                estilo_tabla.append(('BACKGROUND', (0, 4), (-1, 4), colors.pink))
+                estilo_tabla.append(('TEXTCOLOR', (0, 4), (-1, 4), colors.black))
+                estilo_tabla.append(('FONTNAME', (0, 4), (-1, 4), 'Helvetica-Bold'))
+            else:
+                estilo_tabla.append(('BACKGROUND', (0, 4), (-1, 4), colors.lightgreen))
+                estilo_tabla.append(('TEXTCOLOR', (0, 4), (-1, 4), colors.black))
+                estilo_tabla.append(('FONTNAME', (0, 4), (-1, 4), 'Helvetica-Bold'))
+            
+            tabla_resumen.setStyle(TableStyle(estilo_tabla))
+            story.append(tabla_resumen)
+            story.append(Spacer(1, 20))
+            
+            # GASTOS POR CATEGORÍA
+            story.append(Paragraph("GASTOS POR CATEGORÍA", styles['Heading2']))
+            story.append(Spacer(1, 10))
+            
+            # Crear tabla de gastos - Usar strings planos
+            datos_gastos = [['Categoría', 'Monto']]
+            for cat, monto in sorted(gastos_por_categoria.items(), key=lambda x: x[1], reverse=True):
+                datos_gastos.append([str(cat), f'${monto:,.0f}'])
+            datos_gastos.append(['TOTAL GASTOS', f'${total_gastos:,.0f}'])
+            
+            tabla_gastos = Table(datos_gastos, colWidths=[250, 150])
+            tabla_gastos.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 10),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black)
+            ]))
+            story.append(tabla_gastos)
+            story.append(Spacer(1, 20))
+            
+            # DETALLE DE REGISTROS DIARIOS
+            story.append(Paragraph("DETALLE DE INGRESOS DIARIOS", styles['Heading2']))
+            story.append(Spacer(1, 10))
+            
+            datos_detalle = [['Fecha', 'Ingresos']]
+            for r in registros:
+                datos_detalle.append([
+                    r.fecha.strftime('%d/%m/%Y'),
+                    f'${(r.total_ingresos or 0):,.0f}'
+                ])
+            datos_detalle.append(['TOTAL', f'${total_ingresos:,.0f}'])
+            
+            tabla_detalle = Table(datos_detalle, colWidths=[150, 150])
+            tabla_detalle.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 10),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black)
+            ]))
+            story.append(tabla_detalle)
+            
+            # Build PDF
+            doc.build(story)
+            buffer.seek(0)
+            return buffer.getvalue()
+            
+        except Exception as e:
+            print(f"Error en generar_reporte_tesoreria_unificado: {e}")
+            import traceback
+            traceback.print_exc()
+            raise

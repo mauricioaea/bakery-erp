@@ -48,6 +48,7 @@
             padding: 25px;
             border-radius: 15px;
             box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
         }
         .card h3 {
             color: #333;
@@ -93,6 +94,18 @@
         }
         .btn-warning {
             background: linear-gradient(135deg, #f39c12 0%, #f1c40f 100%);
+            color: white;
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+        }
+        .btn-info {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+        }
+        .btn-secondary {
+            background: #95a5a6;
             color: white;
         }
         .btn:hover {
@@ -170,181 +183,872 @@
             gap: 10px;
             margin: 20px 0;
         }
+        .saldo-section {
+            text-align: center;
+            border-left: 5px solid #27ae60;
+        }
+        .metodos-pago {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+        }
+        .metodo-item {
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .historial-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+        .historial-fecha {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .historial-totals {
+            display: flex;
+            gap: 20px;
+        }
+        .ingreso-text {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .egreso-text {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .estadisticas-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .estadistica-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .estadistica-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .estadistica-valor {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #333;
+        }
+        .depositos-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .depositos-table th,
+        .depositos-table td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        .depositos-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+        .depositos-table tr:hover {
+            background: #f8f9fa;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            overflow: auto;
+        }
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 0;
+            width: 90%;
+            max-width: 600px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h3 {
+            margin: 0;
+        }
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #999;
+        }
+        .close-modal:hover {
+            color: #333;
+        }
+        .modal-body {
+            padding: 20px;
+        }
+        .modal-footer {
+            padding: 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .form-full-width {
+            grid-column: 1 / -1;
+        }
+        .estado-registrado { color: #f39c12; font-weight: bold; }
+        .estado-conciliado { color: #27ae60; font-weight: bold; }
+        .estado-anulado { color: #e74c3c; font-weight: bold; }
+        .badge { 
+            padding: 3px 8px; 
+            border-radius: 12px; 
+            font-size: 0.8em; 
+            background: #3498db; 
+            color: white;
+        }
+        .acciones-cell {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 0.8em;
+        }
+        @media (max-width: 768px) {
+            .metodos-pago { grid-template-columns: 1fr; }
+            .estadisticas-container { grid-template-columns: 1fr; }
+            .form-grid { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Mensajes Flash -->
-        <div class="flash-messages">
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ category }}">{{ message }}</div>
+    <div class="flash-messages">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+
+    <!-- ======================================== -->
+    <!-- ESTE ES GESTION_FINANCIERA.HTML -->
+    <!-- ======================================== -->
+    
+
+<div class="container">
+    <!-- HEADER -->
+    <div class="header">
+        <h1>💰 Control Diario de Dinero</h1>
+        <p class="subtitle">Registro simple de ingresos y gastos - Panadería Semillas</p>
+        <div class="nav-buttons">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-primary">🏠 Volver al Dashboard</a>
+            <a href="#saldo" class="btn btn-warning">💳 Actualizar Saldo</a>
+        </div>
+    </div>
+
+    <!-- SALDO -->
+    <div class="card saldo-section">
+        <h2>💳 Saldo en Cuenta</h2>
+        <div class="saldo-monto">${{ "{:,.0f}".format(saldo_actual) }}</div>
+        <p>Saldo actual en cuenta bancaria</p>
+        <div style="margin-top: 15px; padding: 10px; background: #e8f5e8; border-radius: 8px;">
+            <small>💡 <strong>El saldo se actualiza automáticamente</strong> cuando registras transferencias en el cierre de caja</small>
+        </div>
+    </div>
+
+    <!-- CIERRE DE CAJA -->
+    <div class="card">
+        <h2>📊 Cierre de Caja del Día</h2>
+        <form action="{{ url_for('registrar_cierre_caja') }}" method="POST">
+            <div class="form-group">
+                <label>📅 Fecha del cierre:</label>
+                <input type="date" name="fecha" value="{{ hoy }}" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>💰 Total vendido hoy:</label>
+                <input type="number" step="0.01" name="venta_total" placeholder="Ej: 850,000" class="form-control" required min="0">
+                <small>Ingresa el total de ventas del día según tu cierre de caja</small>
+            </div>
+            <div class="form-group">
+                <label>💵 ¿Cómo recibiste el dinero?</label>
+                <div class="metodos-pago">
+                    <div class="metodo-item">
+                        <label>Efectivo (para depositar)</label>
+                        <input type="number" step="0.01" name="efectivo" placeholder="0" class="form-control" required min="0">
+                    </div>
+                    <div class="metodo-item">
+                        <label>Transferencias (ya en cuenta)</label>
+                        <input type="number" step="0.01" name="transferencias" placeholder="0" class="form-control" required min="0">
+                        <small style="color: #27ae60; font-size: 0.8em;">✅ Actualiza automáticamente el saldo</small>
+                    </div>
+                    
+                </div>
+            </div>
+            <div id="validacion-total" style="padding: 15px; background: #f8d7da; border-radius: 8px; margin-bottom: 15px; display: none; border-left: 4px solid #dc3545;">
+                <strong>⚠️ Atención:</strong>
+                <span id="mensaje-validacion"></span>
+                <br><small>Debes corregir esta diferencia para poder guardar el registro.</small>
+            </div>
+            <button type="submit" id="btn-guardar" class="btn btn-success" style="width: 100%; padding: 15px; font-size: 1.1em;">
+                💾 Guardar Cierre de Caja y Actualizar Saldo
+            </button>
+        </form>
+    </div>
+
+    <!-- REGISTRO DE PAGOS -->
+    <div class="card">
+        <h2>💸 Registro de Pagos del Día</h2>
+        <form action="{{ url_for('registrar_pago_individual') }}" method="POST">
+            <div class="form-group">
+                <label>📂 Categoría del Gasto:</label>
+                <select name="categoria" class="form-control" required onchange="mostrarProveedores(this.value)">
+                    <option value="">Selecciona una categoría</option>
+                    <option value="MATERIAS_PRIMAS">Proveedores - Materias Primas</option>
+                    <option value="SERVICIOS_PUBLICOS">Servicios Públicos (Luz, Agua, Gas)</option>
+                    <option value="NOMINA">Nómina y Salarios</option>
+                    <option value="ALQUILER">Alquiler del Local</option>
+                    <option value="SERVICIOS_EXTERNOS">Servicios Externos (Internet, Contador)</option>
+                    <option value="MANTENIMIENTO">Mantenimiento y Reparaciones</option>
+                    <option value="IMPUESTOS">Impuestos y Tributos</option>
+                    <option value="GASTOS_ADMINISTRATIVOS">Gastos Administrativos</option>
+                    <option value="INVERSIONES">Inversiones y Mejoras</option>
+                    <option value="OTROS">Otros Gastos</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>📅 Fecha del pago:</label>
+                <input type="date" name="fecha_pago" value="{{ hoy }}" class="form-control" required>
+            </div>
+            <div class="form-group" id="proveedor-group" style="display: none;">
+                <label>🏢 Proveedor:</label>
+                <select name="proveedor_id" class="form-control">
+                    <option value="">Selecciona un proveedor</option>
+                    {% for proveedor in proveedores %}
+                    <option value="{{ proveedor.id }}">{{ proveedor.nombre }}</option>
                     {% endfor %}
-                {% endif %}
-            {% endwith %}
-        </div>
-
-        <div class="header">
-            <h1>💰 Gestión Financiera y Contabilidad</h1>
-            <p class="subtitle">Control completo de finanzas - Banco, Flujo de Caja y Costos</p>
-            
-            <div class="nav-buttons">
-                <a href="{{ url_for('dashboard') }}" class="btn btn-primary">🏠 Volver al Dashboard</a>
-                <a href="#configuracion" class="btn btn-warning">⚙️ Configurar Saldo</a>
-                <a href="#transacciones" class="btn btn-success">💳 Nueva Transacción</a>
-                <a href="{{ url_for('conciliar_ventas_automatico') }}" class="btn btn-primary">🔄 Conciliar Ventas</a>
+                </select>
             </div>
-        </div>
-
-        <!-- Tarjetas de Resumen -->
-        <div class="dashboard-cards">
-            <div class="card saldo-card">
-                <h3>💰 Saldo Actual</h3>
-                <div class="saldo-monto">${{ "{:,.0f}".format(saldo_actual) }}</div>
-                <p>Saldo en cuenta principal</p>
+            <div class="form-group">
+                <label>💰 Valor Pagado:</label>
+                <input type="number" step="0.01" name="monto" placeholder="Ej: 350,000" class="form-control" required min="0.01">
             </div>
-            
-            <div class="card alerta-card">
-                <h3>⚠️ Alerta de Saldo</h3>
-                <div class="alerta-monto">${{ "{:,.0f}".format(config.alerta_saldo_minimo) if config else 100000 }}</div>
-                <p>Saldo mínimo configurado</p>
-                {% if saldo_actual < (config.alerta_saldo_minimo if config else 100000) %}
-                <div style="color: #e74c3c; font-weight: bold; margin-top: 10px;">
-                    ⚠️ ALERTA: Saldo por debajo del mínimo
-                </div>
-                {% endif %}
+            <div class="form-group">
+                <label>🔢 Número de Referencia:</label>
+                <input type="text" name="referencia" placeholder="Número de transferencia o recibo" class="form-control">
             </div>
-            
-            <div class="card">
-                <h3>📊 Resumen del Mes</h3>
-                <p>Ingresos: <strong style="color: #27ae60;">${{ "{:,.0f}".format(total_ingresos_mes) }}</strong></p>
-                <p>Egresos: <strong style="color: #e74c3c;">${{ "{:,.0f}".format(total_egresos_mes) }}</strong></p>
-                <p>Flujo Neto: <strong style="color: {% if flujo_neto_mes >= 0 %}#27ae60{% else %}#e74c3c{% endif %}">
-                    ${{ "{:,.0f}".format(flujo_neto_mes) }}
-                </strong></p>
+            <div class="form-group">
+                <label>📝 Descripción:</label>
+                <input type="text" name="descripcion" placeholder="Ej: Pago mensual de servicios" class="form-control">
             </div>
+            <div class="form-group">
+                <label>🧾 Número de Factura:</label>
+                <input type="text" name="numero_factura" placeholder="Número de factura" class="form-control">
+            </div>
+            <button type="submit" class="btn btn-success">💾 Guardar Pago</button>
+        </form>
+
+        <div class="form-group" style="margin-top: 20px;">
+            <label>💵 ¿Qué harás con el efectivo?</label>
+            <select name="accion_efectivo" class="form-control" required>
+                <option value="depositar">💰 Depositar el efectivo en el banco</option>
+                <option value="guardar_caja">💼 Guardar efectivo en caja para cambio</option>
+            </select>
+            <small>Selecciona si el efectivo se depositará en el banco o se quedará en caja</small>
         </div>
 
-        <!-- Configuración de Saldo Inicial -->
-        <div class="card" id="configuracion">
-            <h3>⚙️ Configuración Financiera</h3>
-            <form action="{{ url_for('configurar_saldo_inicial') }}" method="POST">
-                <div class="form-group">
-                    <label>Saldo Inicial en Cuenta:</label>
-                    <input type="number" step="0.01" name="saldo_inicial" 
-                           value="{{ config.saldo_inicial if config else 0 }}" 
-                           class="form-control" required>
-                </div>
-                <div class="form-group">
-                    <label>Alerta de Saldo Mínimo:</label>
-                    <input type="number" step="0.01" name="alerta_minimo" 
-                           value="{{ config.alerta_saldo_minimo if config else 100000 }}" 
-                           class="form-control" required>
-                </div>
-                <button type="submit" class="btn btn-success">💾 Guardar Configuración</button>
-            </form>
-        </div>
-
-        <!-- Registrar Transacción Manual -->
-        <div class="card" id="transacciones">
-            <h3>💳 Registrar Transacción Manual</h3>
-            <form action="{{ url_for('registrar_transaccion') }}" method="POST">
-                <div class="form-group">
-                    <label>Tipo de Transacción:</label>
-                    <select name="tipo" class="form-control" required>
-                        <option value="INGRESO">💰 Ingreso</option>
-                        <option value="EGRESO">💸 Egreso</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Categoría:</label>
-                    <select name="categoria" class="form-control" required>
-                        <option value="VENTAS_PANADERIA">Ventas Panadería</option>
-                        <option value="PRODUCTOS_EXTERNOS">Productos Externos</option>
-                        <option value="MATERIAS_PRIMAS">Compras Materias Primas</option>
-                        <option value="SERVICIOS">Servicios Públicos</option>
-                        <option value="NOMINAS">Nóminas</option>
-                        <option value="ALQUILER">Alquiler</option>
-                        <option value="OTROS">Otros Gastos</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Descripción:</label>
-                    <input type="text" name="descripcion" class="form-control" required>
-                </div>
-                <div class="form-group">
-                    <label>Monto:</label>
-                    <input type="number" step="0.01" name="monto" class="form-control" required>
-                </div>
-                <div class="form-group">
-                    <label>Método de Pago:</label>
-                    <select name="metodo_pago" class="form-control" required>
-                        <option value="EFECTIVO">Efectivo</option>
-                        <option value="TRANSFERENCIA">Transferencia</option>
-                        <option value="TARJETA">Tarjeta</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Referencia (opcional):</label>
-                    <input type="text" name="referencia" class="form-control">
-                </div>
-                <button type="submit" class="btn btn-success">💾 Registrar Transacción</button>
-            </form>
-        </div>
-
-        <!-- Últimas Transacciones -->
-        <div class="card">
-            <h3>📋 Últimas Transacciones</h3>
-            {% if transacciones %}
-                {% for trans in transacciones %}
-                <div class="transaccion-item {{ 'ingreso' if trans.tipo == 'INGRESO' else 'egreso' }}">
-                    <div style="display: flex; justify-content: between; align-items: center;">
+        <!-- Pagos Registrados Hoy -->
+        <div style="margin-top: 30px; border-top: 2px solid #f0f0f0; padding-top: 20px;">
+            <h4>📋 Pagos Registrados Hoy</h4>
+            {% if pagos_hoy %}
+                {% for pago in pagos_hoy %}
+                <div class="historial-item" style="margin-bottom: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
-                            <strong>{{ trans.descripcion }}</strong>
-                            <br>
-                            <small>{{ trans.fecha.strftime('%d/%m/%Y %H:%M') }} | {{ trans.categoria }}</small>
+                            <strong>{{ pago.categoria }}</strong>
+                            {% if pago.proveedor %}
+                            <br><small>Proveedor: {{ pago.proveedor.nombre }}</small>
+                            {% endif %}
+                            {% if pago.descripcion %}
+                            <br><small>{{ pago.descripcion }}</small>
+                            {% endif %}
                         </div>
-                        <div class="transaccion-monto">
-                            {{ '+' if trans.tipo == 'INGRESO' else '-' }}${{ "{:,.0f}".format(trans.monto) }}
+                        <div style="color: #e74c3c; font-weight: bold;">
+                            -${{ "{:,.0f}".format(pago.monto) }}
                         </div>
                     </div>
-                    <div style="margin-top: 5px;">
-                        <small>Saldo: ${{ "{:,.0f}".format(trans.saldo_resultante) }} | {{ trans.metodo_pago }}</small>
+                    {% if pago.referencia or pago.numero_factura %}
+                    <div style="font-size: 0.8em; color: #666; margin-top: 5px;">
+                        {% if pago.referencia %}Ref: {{ pago.referencia }}{% endif %}
+                        {% if pago.numero_factura %} | Factura: {{ pago.numero_factura }}{% endif %}
                     </div>
+                    {% endif %}
                 </div>
                 {% endfor %}
             {% else %}
-                <p>No hay transacciones registradas aún.</p>
+                <p>No hay pagos registrados hoy.</p>
             {% endif %}
         </div>
     </div>
 
-    <script>
-        // Efectos visuales
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('💰 Módulo Financiero cargado - Saldo actual: ${{ saldo_actual }}');
-            
-            // Resaltar saldo bajo
-            const saldoActual = {{ saldo_actual }};
-            const saldoMinimo = {{ config.alerta_saldo_minimo if config else 100000 }};
-            
-            if (saldoActual < saldoMinimo) {
-                const saldoCard = document.querySelector('.saldo-card');
-                saldoCard.style.animation = 'pulse 1s infinite';
-                
-                // Crear animación de pulso
-                const style = document.createElement('style');
-                style.textContent = `
-                    @keyframes pulse {
-                        0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); }
-                        70% { box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); }
-                        100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
-                    }
+    <!-- HISTORIAL -->
+    <div class="card">
+        <h2>📋 Historial de Últimos 7 Días</h2>
+        {% if registros_recientes %}
+            {% for registro in registros_recientes %}
+            <div class="historial-item">
+                <div class="historial-fecha">
+                    {{ registro.fecha.strftime('%d/%m/%Y') }}
+                    {% if registro.fecha == hoy %}
+                    <span style="background: #27ae60; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; margin-left: 10px;">HOY</span>
+                    {% endif %}
+                </div>
+                <div class="historial-totals">
+                    <span class="ingreso-text">Ingresos: ${{ "{:,.0f}".format(registro.total_ingresos) }}</span>
+                    <span class="egreso-text">Gastos: ${{ "{:,.0f}".format(registro.total_egresos) }}</span>
+                </div>
+                <div style="margin-top: 5px; font-size: 0.9em; color: #666;">
+                    Saldo del día: <strong>${{ "{:,.0f}".format(registro.saldo_dia) }}</strong>
+                </div>
+                {% if registro.descripcion_gastos %}
+                <div style="margin-top: 5px; font-size: 0.8em; color: #888;">
+                    {{ registro.descripcion_gastos }}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <p>No hay registros recientes. ¡Comienza registrando tu primer día!</p>
+        {% endif %}
+    </div>
+
+    <!-- ======================================== -->
+    <!-- SECCIÓN DE DEPÓSITOS BANCARIOS -->
+    <!-- ======================================== -->
+    <div class="card">
+        <h2><i class="fas fa-piggy-bank"></i> Gestión de Depósitos Bancarios</h2>
+        <p>Administración y conciliación de depósitos bancarios para control de tesorería</p>
+
+        <!-- Estadísticas Rápidas -->
+        <div class="estadisticas-container" id="estadisticasDepositos">
+            <div class="estadistica-card">
+                <div class="estadistica-label">Total Depósitos</div>
+                <div class="estadistica-valor">$0</div>
+            </div>
+            <div class="estadistica-card">
+                <div class="estadistica-label">Conciliación</div>
+                <div class="estadistica-valor">0%</div>
+            </div>
+            <div class="estadistica-card">
+                <div class="estadistica-label">Pendiente</div>
+                <div class="estadistica-valor">$0</div>
+            </div>
+        </div>
+
+        <!-- Botones -->
+        <div style="margin: 20px 0; display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="btn btn-primary" onclick="abrirModalDeposito('crear')">
+                <i class="fas fa-plus"></i> Nuevo Depósito
+            </button>
+            <button class="btn btn-success" onclick="cargarDepositos()">
+                <i class="fas fa-sync"></i> Actualizar
+            </button>
+            <button class="btn btn-info" onclick="abrirModalConciliacion()">
+                <i class="fas fa-balance-scale"></i> Conciliación
+            </button>
+        </div>
+
+        <!-- Tabla de Depósitos -->
+        <table class="depositos-table" id="tablaDepositos">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Fecha</th>
+                    <th>Descripción</th>
+                    <th>Monto</th>
+                    <th>Método</th>
+                    <th>Cuenta</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr id="sinDepositos">
+                    <td colspan="8" style="text-align: center; padding: 40px; color: #7f8c8d;">
+                        <i class="fas fa-search" style="font-size: 2em; margin-bottom: 10px; display: block;"></i>
+                        No hay depósitos para mostrar. <a href="#" onclick="abrirModalDeposito('crear')">Crear el primer depósito</a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ======================================== -->
+<!-- MODALES -->
+<!-- ======================================== -->
+
+<!-- Modal de Depósitos -->
+<div id="modalDeposito" class="modal" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalDepositoTitulo">Nuevo Depósito Bancario</h3>
+            <button class="close-modal" onclick="cerrarModalDeposito()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="formDeposito" onsubmit="return guardarDeposito(event)">
+                <input type="hidden" id="depositoId" value="">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="fechaDeposito">Fecha de depósito: *</label>
+                        <input type="date" id="fechaDeposito" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="montoDeposito">Monto: *</label>
+                        <input type="number" step="0.01" id="montoDeposito" class="form-control" placeholder="0.00" required>
+                    </div>
+                    <div class="form-group form-full-width">
+                        <label for="descripcionDeposito">Descripción:</label>
+                        <input type="text" id="descripcionDeposito" class="form-control" placeholder="Ej: Depósito de cierre diario">
+                    </div>
+                    <div class="form-group">
+                        <label for="referenciaDeposito">Referencia:</label>
+                        <input type="text" id="referenciaDeposito" class="form-control" placeholder="Ej: TRANSF-001">
+                    </div>
+                    <div class="form-group">
+                        <label for="cuentaDeposito">Cuenta bancaria:</label>
+                        <input type="text" id="cuentaDeposito" class="form-control" placeholder="Ej: Cuenta Principal">
+                    </div>
+                    <div class="form-group">
+                        <label for="metodoDeposito">Método de depósito: *</label>
+                        <select id="metodoDeposito" class="form-control" required>
+                            <option value="">Seleccionar...</option>
+                            <option value="efectivo">Efectivo</option>
+                            <option value="transferencia">Transferencia</option>
+                            <option value="cheque">Cheque</option>
+                            <option value="otros">Otros</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="estadoDeposito">Estado:</label>
+                        <select id="estadoDeposito" class="form-control">
+                            <option value="REGISTRADO">Registrado</option>
+                            <option value="CONCILIADO">Conciliado</option>
+                            <option value="ANULADO">Anulado</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="cerrarModalDeposito()">Cancelar</button>
+                    <button type="submit" class="btn btn-success" id="btnGuardarDeposito">
+                        <i class="fas fa-save"></i> Guardar Depósito
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación -->
+<div id="modalConfirmacion" class="modal" style="display:none;">
+    <div class="modal-content" style="max-width: 400px;">
+        <div class="modal-header">
+            <h3 id="modalConfirmacionTitulo">Confirmar acción</h3>
+            <button class="close-modal" onclick="cerrarModalConfirmacion()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p id="modalConfirmacionMensaje">¿Estás seguro de realizar esta acción?</p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="cerrarModalConfirmacion()">Cancelar</button>
+            <button type="button" class="btn btn-danger" id="btnConfirmarAccion">Confirmar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Conciliación -->
+<div id="modalConciliacion" class="modal" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Conciliación Bancaria</h3>
+            <button class="close-modal" onclick="cerrarModalConciliacion()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Fecha de Corte:</label>
+                <input type="date" id="fecha_corte" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>Saldo del Extracto:</label>
+                <input type="number" step="0.01" id="saldo_extracto" class="form-control" required>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="cerrarModalConciliacion()">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="generarConciliacion()">Generar Reporte</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ========== FUNCIONES DE UTILIDAD ==========
+    function mostrarProveedores(categoria) {
+        const proveedorGroup = document.getElementById('proveedor-group');
+        if (categoria === 'MATERIAS_PRIMAS') {
+            proveedorGroup.style.display = 'block';
+        } else {
+            proveedorGroup.style.display = 'none';
+            document.querySelector('select[name="proveedor_id"]').value = '';
+        }
+    }
+
+    // ========== FUNCIONES DE DEPÓSITOS ==========
+    let paginaActual = 1;
+    const limitePorPagina = 50;
+    let hayMasDepositos = true;
+
+    function cargarDepositos(resetear = true) {
+        if (resetear) {
+            paginaActual = 1;
+            hayMasDepositos = true;
+            const tbody = document.querySelector('#tablaDepositos tbody');
+            if (tbody) tbody.innerHTML = '';
+        }
+        if (!hayMasDepositos) return;
+
+        const fechaInicio = '2026-01-01';
+        const fechaFin = new Date().toISOString().split('T')[0];
+
+        fetch(`/depositos_bancarios?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    renderizarDepositos(data.depositos);
+                    actualizarEstadisticas(data.depositos);
+                } else {
+                    console.error('Error al cargar depósitos:', data.error);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    function renderizarDepositos(depositos) {
+        const tbody = document.querySelector('#tablaDepositos tbody');
+        if (!tbody) return;
+
+        if (!depositos || depositos.length === 0) {
+            tbody.innerHTML = `
+                <tr id="sinDepositos">
+                    <td colspan="8" style="text-align: center; padding: 40px; color: #7f8c8d;">
+                        <i class="fas fa-search" style="font-size: 2em; margin-bottom: 10px; display: block;"></i>
+                        No hay depósitos para mostrar. <a href="#" onclick="abrirModalDeposito('crear')">Crear el primer depósito</a>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = '';
+        depositos.forEach(deposito => {
+            const fila = document.createElement('tr');
+            const monto = parseFloat(deposito.monto);
+            const montoFormateado = `$${monto.toLocaleString('es-CO')}`;
+            const claseEstado = `estado-${deposito.estado ? deposito.estado.toLowerCase() : 'registrado'}`;
+
+            let acciones = '';
+            if (deposito.estado === 'REGISTRADO') {
+                acciones = `
+                    <button class="btn btn-success btn-sm" onclick="conciliarDeposito(${deposito.id})">Conciliar</button>
+                    <button class="btn btn-info btn-sm" onclick="abrirModalDeposito('editar', ${deposito.id})">Editar</button>
+                    <button class="btn btn-danger btn-sm" onclick="confirmarEliminarDeposito(${deposito.id})">Eliminar</button>
                 `;
-                document.head.appendChild(style);
+            } else {
+                acciones = `
+                    <button class="btn btn-info btn-sm" onclick="abrirModalDeposito('editar', ${deposito.id})">Ver</button>
+                `;
+            }
+
+            fila.innerHTML = `
+                <td>${deposito.id}</td>
+                <td>${deposito.fecha_deposito}</td>
+                <td>${deposito.descripcion || 'Sin descripción'}</td>
+                <td><strong>${montoFormateado}</strong></td>
+                <td><span class="badge">${deposito.metodo_deposito || 'No especificado'}</span></td>
+                <td>${deposito.cuenta_bancaria || 'No especificada'}</td>
+                <td><span class="${claseEstado}">${deposito.estado}</span></td>
+                <td><div class="acciones-cell">${acciones}</div></td>
+            `;
+            tbody.appendChild(fila);
+        });
+    }
+
+    function actualizarEstadisticas(depositos) {
+        if (!depositos || depositos.length === 0) return;
+
+        const totalMonto = depositos.reduce((sum, d) => sum + parseFloat(d.monto), 0);
+        const depositosConciliados = depositos.filter(d => d.estado === 'CONCILIADO');
+        const totalConciliados = depositosConciliados.length;
+        const montoConciliado = depositosConciliados.reduce((sum, d) => sum + parseFloat(d.monto), 0);
+        const porcentajeConciliacion = (totalConciliados / depositos.length * 100) || 0;
+
+        const container = document.getElementById('estadisticasDepositos');
+        if (container) {
+            const cards = container.querySelectorAll('.estadistica-card');
+            if (cards.length >= 3) {
+                cards[0].querySelector('.estadistica-valor').textContent = `$${totalMonto.toLocaleString('es-CO')}`;
+                cards[1].querySelector('.estadistica-valor').textContent = `${porcentajeConciliacion.toFixed(0)}%`;
+                cards[2].querySelector('.estadistica-valor').textContent = `$${(totalMonto - montoConciliado).toLocaleString('es-CO')}`;
+            }
+        }
+    }
+
+    function abrirModalDeposito(accion, id = null) {
+        const modal = document.getElementById('modalDeposito');
+        const titulo = document.getElementById('modalDepositoTitulo');
+        const form = document.getElementById('formDeposito');
+
+        if (!modal) return;
+
+        if (accion === 'crear') {
+            titulo.textContent = 'Nuevo Depósito Bancario';
+            form.reset();
+            document.getElementById('depositoId').value = '';
+            document.getElementById('fechaDeposito').value = new Date().toISOString().split('T')[0];
+        } else if (accion === 'editar' && id) {
+            titulo.textContent = 'Editar Depósito Bancario';
+            fetch(`/depositos_bancarios/${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.deposito) {
+                        const d = data.deposito;
+                        document.getElementById('depositoId').value = d.id;
+                        document.getElementById('fechaDeposito').value = d.fecha_deposito;
+                        document.getElementById('montoDeposito').value = d.monto;
+                        document.getElementById('descripcionDeposito').value = d.descripcion || '';
+                        document.getElementById('referenciaDeposito').value = d.referencia || '';
+                        document.getElementById('cuentaDeposito').value = d.cuenta_bancaria || '';
+                        document.getElementById('metodoDeposito').value = d.metodo_deposito || 'efectivo';
+                        document.getElementById('estadoDeposito').value = d.estado || 'REGISTRADO';
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+        modal.style.display = 'block';
+    }
+
+    function cerrarModalDeposito() {
+        document.getElementById('modalDeposito').style.display = 'none';
+    }
+
+    function cerrarModalConfirmacion() {
+        document.getElementById('modalConfirmacion').style.display = 'none';
+    }
+
+    function cerrarModalConciliacion() {
+        document.getElementById('modalConciliacion').style.display = 'none';
+    }
+
+    function abrirModalConciliacion() {
+        document.getElementById('modalConciliacion').style.display = 'block';
+        document.getElementById('fecha_corte').value = new Date().toISOString().split('T')[0];
+    }
+
+    function guardarDeposito(event) {
+        if (event) event.preventDefault();
+
+        const id = document.getElementById('depositoId').value;
+        const esNuevo = !id;
+        const url = esNuevo ? '/depositos_bancarios/crear' : `/depositos_bancarios/editar/${id}`;
+
+        const data = {
+            fecha_deposito: document.getElementById('fechaDeposito').value,
+            monto: parseFloat(document.getElementById('montoDeposito').value),
+            descripcion: document.getElementById('descripcionDeposito').value,
+            referencia: document.getElementById('referenciaDeposito').value,
+            cuenta_bancaria: document.getElementById('cuentaDeposito').value,
+            metodo_deposito: document.getElementById('metodoDeposito').value,
+            estado: document.getElementById('estadoDeposito').value
+        };
+
+        const btn = document.getElementById('btnGuardarDeposito');
+        const textoOriginal = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+        btn.disabled = true;
+
+        fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                alert(esNuevo ? 'Depósito creado exitosamente' : 'Depósito actualizado exitosamente');
+                cerrarModalDeposito();
+                cargarDepositos();
+            } else {
+                alert('Error: ' + (result.error || 'Error al guardar'));
+            }
+        })
+        .catch(error => {
+            alert('Error de conexión: ' + error.message);
+        })
+        .finally(() => {
+            btn.innerHTML = textoOriginal;
+            btn.disabled = false;
+        });
+
+        return false;
+    }
+
+    function conciliarDeposito(id) {
+        if (!confirm('¿Estás seguro de marcar este depósito como conciliado?')) return;
+
+        fetch(`/depositos_bancarios/conciliar/${id}`, { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Depósito conciliado exitosamente');
+                    cargarDepositos();
+                } else {
+                    alert('Error: ' + (data.error || 'Error al conciliar'));
+                }
+            })
+            .catch(error => alert('Error de conexión: ' + error.message));
+    }
+
+    function confirmarEliminarDeposito(id) {
+        if (!confirm('¿Estás seguro de eliminar este depósito? Esta acción no se puede deshacer.')) return;
+        eliminarDeposito(id);
+    }
+
+    function eliminarDeposito(id) {
+        fetch(`/depositos_bancarios/eliminar/${id}`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Depósito eliminado exitosamente');
+                cargarDepositos();
+            } else {
+                alert('Error: ' + (data.error || 'Error al eliminar'));
+            }
+        })
+        .catch(error => alert('Error de conexión: ' + error.message));
+    }
+
+    function generarConciliacion() {
+        const fechaCorte = document.getElementById('fecha_corte').value;
+        const saldoExtracto = document.getElementById('saldo_extracto').value;
+
+        if (!fechaCorte || !saldoExtracto) {
+            alert('Por favor completa todos los campos');
+            return;
+        }
+
+        const url = `/generar_reporte_conciliacion?fecha_corte=${fechaCorte}&saldo_extracto=${saldoExtracto}`;
+        window.open(url, '_blank');
+        cerrarModalConciliacion();
+    }
+
+    // ========== INICIALIZACIÓN ==========
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('💰 Módulo Financiero cargado');
+
+        // Cargar depósitos
+        setTimeout(cargarDepositos, 500);
+
+        // Validación de cierre de caja
+        function configurarValidacionCierre() {
+            const ventaTotalInput = document.querySelector('input[name="venta_total"]');
+            const efectivoInput = document.querySelector('input[name="efectivo"]');
+            const transferenciasInput = document.querySelector('input[name="transferencias"]');
+            const tarjetasInput = document.querySelector('input[name="tarjetas"]');
+            const validacionDiv = document.getElementById('validacion-total');
+            const mensajeValidacion = document.getElementById('mensaje-validacion');
+            const btnGuardar = document.getElementById('btn-guardar');
+
+            if (!ventaTotalInput || !validacionDiv) return;
+
+            function validarTotal() {
+                const ventaTotal = parseFloat(ventaTotalInput.value) || 0;
+                const efectivo = parseFloat(efectivoInput?.value) || 0;
+                const transferencias = parseFloat(transferenciasInput?.value) || 0;
+                
+
+                const sumaMetodos = efectivo + transferencias;
+                const diferencia = Math.abs(sumaMetodos - ventaTotal);
+
+                if (ventaTotal > 0 && sumaMetodos > 0 && diferencia > 1) {
+                    validacionDiv.style.display = 'block';
+                    mensajeValidacion.innerHTML = `La suma de los métodos de pago ($${sumaMetodos.toLocaleString()}) no coincide con el total vendido ($${ventaTotal.toLocaleString()}). Diferencia: $${diferencia.toLocaleString()}`;
+                    if (btnGuardar) {
+                        btnGuardar.disabled = true;
+                        btnGuardar.style.opacity = '0.6';
+                    }
+                } else {
+                    validacionDiv.style.display = 'none';
+                    if (btnGuardar) {
+                        btnGuardar.disabled = false;
+                        btnGuardar.style.opacity = '1';
+                    }
+                }
+            }
+
+            [ventaTotalInput, efectivoInput, transferenciasInput, tarjetasInput].forEach(input => {
+                if (input) input.addEventListener('input', validarTotal);
+            });
+            validarTotal();
+        }
+
+        configurarValidacionCierre();
+
+        // Cerrar modales al hacer clic fuera
+        document.addEventListener('click', function(event) {
+            const modales = ['modalDeposito', 'modalConfirmacion', 'modalConciliacion'];
+            modales.forEach(id => {
+                const modal = document.getElementById(id);
+                if (modal && event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        });
+
+        // Cerrar con ESC
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                cerrarModalDeposito();
+                cerrarModalConfirmacion();
+                cerrarModalConciliacion();
             }
         });
-    </script>
+    });
+</script>
+
 </body>
 </html>

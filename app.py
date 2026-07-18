@@ -620,6 +620,9 @@ def obtener_panaderia_actual():
 # Ruta para el login - SOLO UNA VEZ
 @app.route('/', methods=['GET', 'POST'])
 def login():
+    # Limpiar mensajes flash antiguos
+    from flask import get_flashed_messages
+    get_flashed_messages()
     """🎯 SISTEMA DE LOGIN PROFESIONAL - ARQUITECTURA EXTENSIBLE"""
     if request.method == 'POST':
         username = request.form['username']
@@ -6148,14 +6151,21 @@ def registrar_cierre_caja():
         
         # Obtener datos del formulario con sanitización
         fecha = datetime.strptime(request.form['fecha'], '%Y-%m-%d').date()
+        
+        # 🔒 VALIDACIÓN: No permitir fechas futuras en cierre de caja
+        from datetime import date
+        hoy = date.today()
+        if fecha > hoy:
+            flash(f'❌ No se puede registrar un cierre de caja con fecha futura ({fecha.strftime("%d/%m/%Y")}). La fecha debe ser hoy o anterior.', 'error')
+            return redirect(url_for('gestion_financiera'))
         venta_total = sanitizar_numero(request.form.get('venta_total', 0))
         efectivo = sanitizar_numero(request.form.get('efectivo', 0))
         transferencias = sanitizar_numero(request.form.get('transferencias', 0))
-        tarjetas = sanitizar_numero(request.form.get('tarjetas', 0))
+        # tarjetas eliminado - solo usamos efectivo y transferencias
         accion_efectivo = request.form.get('accion_efectivo', 'depositar')
         
         # 🔒 VALIDACIÓN CRÍTICA: Verificar que la suma coincida con el total
-        suma_metodos = efectivo + transferencias + tarjetas
+        suma_metodos = efectivo + transferencias
         diferencia = abs(suma_metodos - venta_total)
         
         if diferencia > 1:
@@ -6163,7 +6173,7 @@ def registrar_cierre_caja():
                 flash(f'❌ El total ingresado en métodos de pago (${suma_metodos:,.0f}) es SUPERIOR al total de ventas (${venta_total:,.0f}). Diferencia: +${diferencia:,.0f}', 'error')
             else:
                 flash(f'❌ El total ingresado en métodos de pago (${suma_metodos:,.0f}) es INFERIOR al total de ventas (${venta_total:,.0f}). Diferencia: -${diferencia:,.0f}', 'error')
-            return redirect(url_for('control_diario'))
+            return redirect(url_for('gestion_financiera'))
         
         # Verificar si ya existe registro para esta fecha - CORREGIDO: current_user.panaderia_id
         registro_existente = RegistroDiario.query.filter_by(panaderia_id=current_user.panaderia_id, fecha=fecha).first()
@@ -6177,7 +6187,7 @@ def registrar_cierre_caja():
         registro.venta_total = venta_total
         registro.efectivo = efectivo
         registro.transferencias = transferencias
-        registro.tarjetas = tarjetas
+        # registro.tarjetas = tarjetas  # campo eliminado
         
         # Calcular totales automáticamente
         registro.calcular_totales()
@@ -6205,7 +6215,7 @@ def registrar_cierre_caja():
     except Exception as e:
         flash(f'❌ Error al registrar cierre: {str(e)}', 'error')
     
-    return redirect(url_for('control_diario'))
+    return redirect(url_for('gestion_financiera'))
 
 
 
@@ -6214,6 +6224,85 @@ def registrar_cierre_caja():
 from reportes import GeneradorReportes
 from io import BytesIO
 
+
+@app.route('/gestion_financiera')
+def gestion_financiera():
+    """Módulo de Gestión Financiera y Contabilidad"""
+    from models import db, Usuario, PagoIndividual, SaldoBanco
+    from sqlalchemy import func
+    from datetime import datetime, date
+    
+    # Obtener pagos recientes (transacciones)
+    transacciones = PagoIndividual.query.order_by(
+        PagoIndividual.fecha_pago.desc()
+    ).limit(50).all()
+    
+    # Calcular saldo actual desde SaldoBanco
+    saldo_banco = SaldoBanco.query.filter_by(panaderia_id=current_user.panaderia_id).order_by(
+        SaldoBanco.fecha_actualizacion.desc()
+    ).first()
+    
+    saldo_actual = saldo_banco.saldo_actual if saldo_banco else 0
+    
+    # Calcular totales para estadísticas (usando PagoIndividual)
+    total_ingresos = PagoIndividual.query.filter(
+        PagoIndividual.monto >= 0
+    ).with_entities(func.sum(PagoIndividual.monto)).scalar() or 0
+    
+    total_egresos = PagoIndividual.query.filter(
+        PagoIndividual.monto < 0
+    ).with_entities(func.sum(PagoIndividual.monto)).scalar() or 0  # total_egresos es negativo
+    
+    # Calcular totales del mes
+    hoy = datetime.now().date()
+    inicio_mes = hoy.replace(day=1)
+    
+    ingresos_mes = PagoIndividual.query.filter(
+        PagoIndividual.monto >= 0,
+        PagoIndividual.fecha_pago >= inicio_mes
+    ).with_entities(func.sum(PagoIndividual.monto)).scalar() or 0
+    
+    egresos_mes = PagoIndividual.query.filter(
+        PagoIndividual.monto < 0,
+        PagoIndividual.fecha_pago >= inicio_mes
+    ).with_entities(func.sum(PagoIndividual.monto)).scalar() or 0
+    
+    flujo_neto_mes = ingresos_mes + egresos_mes  # egresos_mes es negativo
+    
+    # Configuración (valores por defecto)
+        # Obtener registros de últimos 7 días
+    registros_recientes = RegistroDiario.query.filter_by(
+        panaderia_id=current_user.panaderia_id
+    ).order_by(RegistroDiario.fecha.desc()).limit(7).all()
+    
+    # Obtener pagos de hoy
+    hoy = date.today()
+    pagos_hoy = PagoIndividual.query.filter_by(
+        panaderia_id=current_user.panaderia_id,
+        fecha_pago=hoy
+    ).all()
+    
+    # Obtener proveedores
+    proveedores = Proveedor.query.filter_by(
+        panaderia_id=current_user.panaderia_id
+    ).all()
+    
+    config = {
+        'saldo_actual': saldo_actual,
+        'alerta_saldo_minimo': 100000
+    }
+    
+    return render_template('gestion_financiera.html',
+                         registros_recientes=registros_recientes,
+                         pagos_hoy=pagos_hoy,
+                         proveedores=proveedores,
+                         hoy=hoy,
+                         config=config,
+                         saldo_actual=saldo_actual,
+                         transacciones=transacciones,
+                         total_ingresos_mes=ingresos_mes,
+                         total_egresos_mes=abs(egresos_mes),
+                         flujo_neto_mes=flujo_neto_mes)
 @app.route('/reportes')
 @login_required
 @modulo_requerido('reportes')
@@ -6629,28 +6718,21 @@ def generar_reporte_analisis_inventarios():
         flash(f'❌ Error al generar análisis de inventarios: {str(e)}', 'error')
         return redirect(url_for('reportes'))
 
-# ========================================== REPORTE UNIFICADO DE TESORERÍA ===========================================
-
 @app.route('/generar_reporte_tesoreria_unificado')
 @login_required
 @modulo_requerido('reportes')
 @tenant_required
 def generar_reporte_tesoreria_unificado():
-    """Genera reporte unificado de Tesorería (Libro Mayor + Flujo de Caja) en PDF - CON FILTRO MULTI-TENANT"""
+    """Genera el Reporte Unificado de Tesorería - PDF"""
     try:
         from datetime import datetime
-        
-        # 🔍 OBTENER TENANT ACTUAL
-        panaderia_id = obtener_panaderia_actual()
-        if not panaderia_id:
-            flash('No se pudo determinar la panadería', 'error')
-            return redirect(url_for('reportes'))
+        from reportes import GeneradorReportes
+        from flask import Response
         
         fecha_inicio = request.args.get('fecha_inicio')
         fecha_fin = request.args.get('fecha_fin')
-        nivel_detalle = request.args.get('nivel_detalle', 'completo')  # Por defecto completo
+        nivel_detalle = request.args.get('nivel_detalle', 'completo')
         
-        # Validar fechas
         if not fecha_inicio or not fecha_fin:
             flash('❌ Debes seleccionar ambas fechas', 'error')
             return redirect(url_for('reportes'))
@@ -6662,9 +6744,19 @@ def generar_reporte_tesoreria_unificado():
             flash('❌ La fecha de inicio no puede ser mayor a la fecha fin', 'error')
             return redirect(url_for('reportes'))
         
-        # ✅ PASAR panaderia_id a la función
+        panaderia_id = obtener_panaderia_actual()
+        if not panaderia_id:
+            flash('No se pudo determinar la panadería', 'error')
+            return redirect(url_for('reportes'))
+        
         generador = GeneradorReportes()
-        pdf_buffer = generador.generar_reporte_tesoreria_unificado(panaderia_id, fecha_inicio, fecha_fin, nivel_detalle)
+        pdf_buffer = generador.generar_reporte_tesoreria_unificado(
+        
+            panaderia_id=panaderia_id,
+            fecha_inicio=fecha_inicio,
+            fecha_fin=fecha_fin,
+            nivel_detalle=nivel_detalle
+        )
         
         nombre_archivo = f"tesoreria_unificado_{fecha_inicio}_{fecha_fin}.pdf"
         
@@ -6677,9 +6769,12 @@ def generar_reporte_tesoreria_unificado():
         )
         
     except Exception as e:
-        flash(f'❌ Error al generar reporte unificado: {str(e)}', 'error')
+        print(f"Error al generar reporte de tesorería unificado: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        flash(f'❌ Error al generar reporte: {str(e)}', 'error')
         return redirect(url_for('reportes'))
-    
+   
 # ==========================================
 # RUTAS PARA DEPÓSITOS BANCARIOS (MÓDULO TESORERÍA)
 # ==========================================
@@ -6822,17 +6917,25 @@ def crear_deposito_bancario():
             }), 400
 
         # Convertir fecha
+        from datetime import datetime, date
         try:
             fecha_deposito = datetime.strptime(data['fecha_deposito'], '%Y-%m-%d').date()
         except ValueError:
             try:
-                # Intentar otro formato si falla
                 fecha_deposito = datetime.strptime(data['fecha_deposito'], '%d/%m/%Y').date()
             except:
                 return jsonify({
                     'success': False,
                     'error': 'Formato de fecha inválido. Use YYYY-MM-DD'
                 }), 400
+        
+        # 🔒 VALIDACIÓN: No permitir fechas futuras
+        hoy = date.today()
+        if fecha_deposito > hoy:
+            return jsonify({
+                'success': False, 
+                'error': 'No se pueden registrar depósitos con fecha futura. La fecha debe ser hoy o anterior.'
+            }), 400
 
         nuevo_deposito = DepositoBancario(
             panaderia_id=current_user.panaderia_id,
@@ -6889,7 +6992,13 @@ def editar_deposito_bancario(deposito_id):
 
         # Actualizar campos permitidos
         if 'fecha_deposito' in data:
-            deposito.fecha_deposito = datetime.strptime(data['fecha_deposito'], '%Y-%m-%d').date()
+            from datetime import date
+        fecha_deposito = datetime.strptime(data['fecha_deposito'], '%Y-%m-%d').date()
+        
+        # 🔒 VALIDACIÓN: No permitir fechas futuras
+        hoy = date.today()
+        if fecha_deposito > hoy:
+            return jsonify({'success': False, 'error': 'No se pueden registrar depósitos con fecha futura. La fecha debe ser hoy o anterior.'}), 400
         if 'monto' in data:
             deposito.monto = float(data['monto'])
         if 'descripcion' in data:

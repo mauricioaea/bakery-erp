@@ -1902,10 +1902,8 @@ class RegistroDiario(db.Model):
         try:
             # Convertir None a 0 para evitar errores
             self.efectivo = self.efectivo or 0
-            self.transferencias = self.transferencias or 0
-            self.tarjetas = self.tarjetas or 0
-            
-            self.total_ingresos = self.efectivo + self.transferencias + self.tarjetas
+            self.transferencias = self.transferencias or 0            # self.tarjetas = self.tarjetas or 0  # campo eliminado
+            self.total_ingresos = self.efectivo + self.transferencias
             
             # Convertir None a 0 en gastos
             self.gasto_proveedores = self.gasto_proveedores or 0
@@ -1927,7 +1925,7 @@ class RegistroDiario(db.Model):
     def validar_cierre_caja(self):
         """Valida que los métodos de pago coincidan con el total vendido"""
         try:
-            suma_metodos = (self.efectivo or 0) + (self.transferencias or 0) + (self.tarjetas or 0)
+            suma_metodos = (self.efectivo or 0) + (self.transferencias or 0) 
             diferencia = abs(suma_metodos - (self.venta_total or 0))
             
             # Permitir pequeñas diferencias por redondeo (menos de $1)
