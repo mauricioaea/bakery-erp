@@ -1048,34 +1048,47 @@ def obtener_consecutivo_pos():
 
 def obtener_configuracion_sistema():
     """
-    Obtiene la configuración del sistema desde la base de datos
+    Obtiene la configuración del sistema para la panadería actual
     Si no existe, crea una configuración por defecto
     """
+    from models import ConfiguracionSistema
+    
     try:
-        config = ConfiguracionSistema.query.first()
+        # Obtener panadería actual
+        panaderia_id = current_user.panaderia_id if hasattr(current_user, 'panaderia_id') else 1
+        
+        config = ConfiguracionSistema.query.filter_by(panaderia_id=panaderia_id).first()
+        
         if not config:
-            # Crear configuración por defecto
+            # Crear configuración por defecto para esta panadería
             config = ConfiguracionSistema(
+                panaderia_id=panaderia_id,
                 tipo_facturacion='POS',
-                nombre_empresa='Panaderia Semillas',
+                nombre_empresa=f'Panadería {panaderia_id}',
                 nit_empresa='9000000001',
-                direccion_empresa='Cra 18 # 9-45, Atahualpa',
-                telefono_empresa='+57 3189098818',
-                ciudad_empresa='Pasto',
+                direccion_empresa='',
+                telefono_empresa='',
+                ciudad_empresa='',
                 regimen_empresa='Simplificado'
             )
             db.session.add(config)
             db.session.commit()
+            print(f"✅ Configuración creada para panadería {panaderia_id}")
+        
         return config
+        
     except Exception as e:
         print(f"Error obteniendo configuración: {e}")
         # Retornar objeto por defecto en caso de error
         return type('ConfigDefault', (), {
+            'panaderia_id': 1,
             'nit_empresa': '9000000001',
-            'nombre_empresa': 'Panaderia Semillas',
-            'direccion_empresa': 'Cra 18 # 9-45, Atahualpa',
-            'telefono_empresa': '+57 3189098818',
-            'ciudad_empresa': 'Pasto'
+            'nombre_empresa': 'Panadería Default',
+            'direccion_empresa': '',
+            'telefono_empresa': '',
+            'ciudad_empresa': '',
+            'regimen_empresa': 'Simplificado',
+            'tipo_facturacion': 'POS'
         })()
 
 def reiniciar_consecutivo_pos():
@@ -4829,7 +4842,6 @@ def realizar_cierre():
             total_ventas=total_ventas,
             total_efectivo=total_efectivo,
             total_transferencia=total_transferencias,
-            total_tarjeta=total_tarjetas,
             total_transacciones=len(ventas_hoy),
             
         )
@@ -4840,7 +4852,7 @@ def realizar_cierre():
         configuracion = ConfiguracionPanaderia.query.filter_by(panaderia_id=panaderia_id).first()
         if configuracion:
             configuracion.ultimo_cierre = fecha_actual
-            configuracion.sistema_activo = False
+            # configuracion.sistema_activo = False  # ELIMINADO - No se bloquea el sistema
         else:
             # Crear configuración si no existe
                 nueva_config = ConfiguracionPanaderia(
@@ -4918,7 +4930,7 @@ def realizar_cierre():
                 'total_ventas': total_ventas,
                 'efectivo': total_efectivo,
                 'transferencias': total_transferencias,
-                'tarjetas': total_tarjetas,
+                # 'tarjetas': total_tarjetas,  # Eliminado
                 'deposito_id': deposito_id,
                 'fecha': fecha_actual.isoformat()
             }
@@ -4935,7 +4947,7 @@ def realizar_cierre():
                 'total_ventas': float(total_ventas),
                 'efectivo': float(total_efectivo),
                 'transferencias': float(total_transferencias),
-                'tarjetas': float(total_tarjetas),
+                # 'tarjetas': float(total_tarjetas),  # Eliminado
                 'panaderia_id': panaderia_id,
                 'deposito_id': deposito_id,
                 'saldo_disponible': registro_financiero.saldo_disponible if registro_financiero else total_transferencias,
@@ -4976,8 +4988,8 @@ def obtener_ventas_dia(fecha, panaderia_id=None):
         # ✅ FILTRAR VENTAS SOLO DE ESTA PANADERÍA Y DÍA
         ventas = Venta.query.filter(
             Venta.panaderia_id == panaderia_id,
-            func.date(Venta.fecha_venta) == fecha,
-            Venta.estado == 'completada'
+            func.date(Venta.fecha_hora) == fecha,
+            1==1  # Filtro de estado eliminado porque el modelo no tiene este campo
         ).all()
         
         return ventas

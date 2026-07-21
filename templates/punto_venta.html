@@ -21,13 +21,9 @@
             <div class="d-flex align-items-center">
                 <!-- Dashboard en Tiempo Real -->
                 <div class="dashboard-rapido me-4">
-                    <span class="badge bg-success me-2">
-                        <i class="fas fa-shopping-cart"></i>
-                        <span id="ventasHoy">0</span> ventas
+                     ventas
                     </span>
-                    <span class="badge bg-warning me-2">
-                        <i class="fas fa-coins"></i>
-                        $<span id="ingresosHoy">0</span>
+                    
                     </span>
                     <span class="badge bg-info">
                         <i class="fas fa-clock"></i>
@@ -213,13 +209,7 @@
                                     <i class="fas fa-cash-register me-2"></i>   
                                     PROCESAR VENTA
                                 </button>    
-                                <!-- Botón de Cierre Diario -->
-                                <button class="btn btn-warning btn-lg w-100 mb-2" 
-                                        onclick="procesarCierreDiario()" 
-                                        id="btnCierreDiario">
-                                    <i class="fas fa-lock me-2"></i>
-                                    CIERRE DIARIO
-                                </button>
+                                
 
                                 <button class="btn btn-outline-primary btn-sm w-100 mb-2" 
                                             onclick="irAConfiguracionFacturacion()">
@@ -227,10 +217,7 @@
                                         Configurar Facturación
                                 </button>
 
-                                <button class="btn btn-outline-info btn-sm" onclick="mostrarConfiguracionTickets()">
-                                    <i class="fas fa-receipt me-1"></i>
-                                    Personalizar Ticket
-                                </button>
+                                
                                 
                                 <div class="btn-group w-100">
                                     <button class="btn btn-outline-danger" onclick="limpiarCarrito()">
@@ -386,6 +373,11 @@
 
     <!-- 🆕 SCRIPT PARA REINICIO AUTOMÁTICO -->
     <script>
+
+    // ID del tenant actual para almacenamiento separado
+    var tenant_id = "{{ session.panaderia_id or 'default' }}";
+    console.log("🏪 Tenant ID para carrito:", tenant_id);
+
         // Configurar reinicio automático al cerrar modal de confirmación
         document.getElementById('confirmModal').addEventListener('hidden.bs.modal', function () {
             console.log('🔄 Modal cerrado - Reiniciando sistema...');
@@ -420,6 +412,11 @@
     </div>
 </div>
     <script>
+
+    // ID del tenant actual para almacenamiento separado
+    var tenant_id = "{{ session.panaderia_id or 'default' }}";
+    console.log("🏪 Tenant ID para carrito:", tenant_id);
+
 // 🆕 FUNCIÓN SEGURA PARA ABRIR REPORTES
 function abrirReporteConSeguridad(url) {
     console.log('🔍 Intentando abrir reporte:', url);
@@ -668,6 +665,11 @@ function mostrarNotificacion(mensaje, tipo = 'info') {
 
     <!-- SCRIPT CORREGIDO Y OPTIMIZADO -->
     <script>
+
+    // ID del tenant actual para almacenamiento separado
+    var tenant_id = "{{ session.panaderia_id or 'default' }}";
+    console.log("🏪 Tenant ID para carrito:", tenant_id);
+
         // VARIABLES GLOBALES
         window.ultimaVentaId = null;
         window.tipoDocumento = 'POS';
@@ -1528,8 +1530,7 @@ function mostrarNotificacion(mensaje, tipo = 'info') {
             setTimeout(() => {
                 const funcionesEsenciales = [
                     'actualizarCarrito', 'actualizarCarritoMobile', 'limpiarCarrito',
-                    'cargarProductos', 'procesarCierreDiario'
-                ];
+                    'cargarProductos'];
                 
                 let todasDisponibles = true;
                 funcionesEsenciales.forEach(func => {

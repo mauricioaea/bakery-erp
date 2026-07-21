@@ -550,6 +550,17 @@
         <!-- Información del Sistema -->
         <div class="quick-nav">
             <h3>ℹ️ Información del Sistema</h3>
+        <!-- Botón de Desbloqueo (solo administradores) -->
+        {% if current_user.is_authenticated and current_user.rol == 'super_admin' %}
+        <div class="admin-actions mt-3" style="background: #fff3cd; padding: 15px; border-radius: 10px; border-left: 4px solid #ffc107;">
+            <h4><i class="fas fa-unlock-alt"></i> Acciones de Administración</h4>
+            <button class="btn btn-warning" onclick="desbloquearPuntoVenta()">
+                <i class="fas fa-unlock"></i> Desbloquear Punto de Venta
+            </button>
+            <small class="text-muted d-block mt-1">⚠️ Solo para emergencias (si el cierre diario fue accidental)</small>
+        </div>
+        {% endif %}
+
             <div class="nav-buttons">
                 {% if current_user.is_authenticated and current_user.rol == 'super_admin' %}
                     <a href="{{ url_for('gestion_clientes') }}" class="nav-btn">👑 Gestión de Clientes</a>
@@ -604,5 +615,31 @@
             console.log('- 🏢 Activos Fijos (sin métricas)');
         });
     </script>
+
+<script>
+function desbloquearPuntoVenta() {
+    if (!confirm('⚠️ ¿Estás seguro de DESBLOQUEAR el punto de venta?\n\nEsto permitirá realizar ventas nuevamente.\n\nSolo usa esta opción si fue un cierre accidental.\n\n¿Deseas continuar?')) {
+        return;
+    }
+    
+    fetch('/api/desbloquear_cierre', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('✅ Punto de venta desbloqueado correctamente.');
+            location.reload();
+        } else {
+            alert('❌ Error al desbloquear: ' + (data.error || 'Error desconocido'));
+        }
+    })
+    .catch(error => {
+        alert('❌ Error de conexión: ' + error.message);
+    });
+}
+</script>
+
 </body>
 </html>

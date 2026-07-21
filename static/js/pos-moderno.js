@@ -150,7 +150,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // =============================================
 function cargarCarritoPersistente() {
     try {
-        const carritoGuardado = localStorage.getItem('carrito_pos_panaderia');
+        const carritoGuardado = localStorage.getItem('carrito_pos_panaderia_' + tenant_id);
         if (carritoGuardado) {
             carrito = JSON.parse(carritoGuardado);
             console.log('🛒 Carrito cargado desde localStorage:', carrito.length, 'items');
@@ -164,7 +164,7 @@ function cargarCarritoPersistente() {
 
 function guardarCarritoPersistente() {
     try {
-        localStorage.setItem('carrito_pos_panaderia', JSON.stringify(carrito));
+        localStorage.setItem('carrito_pos_panaderia_' + tenant_id, JSON.stringify(carrito));
     } catch (error) {
         console.error('❌ Error guardando carrito:', error);
     }
@@ -721,7 +721,8 @@ function limpiarCarrito() {
     
     if (confirm('¿Estás seguro de que quieres vaciar el carrito?')) {
         carrito = [];
-        actualizarCarrito();
+    actualizarCarrito();
+    reiniciarContadorCarrito();
         mostrarNotificacion('🛒 Carrito limpiado', 'info');
     }
 }
@@ -1051,12 +1052,10 @@ async function procesarVenta() {
         
         if (resultado.success) {
             // Mostrar modal de éxito
-            document.getElementById('modalMessage').textContent = 
-                `Venta #${resultado.venta_id} procesada correctamente`;
-            document.getElementById('modalTotal').textContent = `$${resultado.total}`;
-            document.getElementById('modalFactura').textContent = resultado.numero_factura;
-            document.getElementById('modalMetodo').textContent = 
-                metodoPago.charAt(0).toUpperCase() + metodoPago.slice(1);
+            var elem_modalMessage = document.getElementById("modalMessage"); if (elem_modalMessage) { elem_modalMessage.textContent = valor; }
+            var elem_modalTotal = document.getElementById("modalTotal"); if (elem_modalTotal) { elem_modalTotal.textContent = valor; }
+            var elem_modalFactura = document.getElementById("modalFactura"); if (elem_modalFactura) { elem_modalFactura.textContent = valor; }
+            var elem_modalMetodo = document.getElementById("modalMetodo"); if (elem_modalMetodo) { elem_modalMetodo.textContent = valor; }
             
             // Guardar datos para impresión
             window.ultimaFacturaId = resultado.venta_id;
@@ -1076,7 +1075,8 @@ async function procesarVenta() {
             // Limpiar carrito y recargar productos
             // Limpiar carrito pero MANTENER productos actuales
             carrito = [];
-            actualizarCarrito();
+    actualizarCarrito();
+    reiniciarContadorCarrito();
 
             registrarVenta(resultado.total);
 
@@ -1376,52 +1376,34 @@ function iniciarDashboardTiempoReal() {
 }
 
 function actualizarHora() {
-    const ahora = new Date();
-    document.getElementById('horaActual').textContent = 
-        ahora.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+    try {
+        var ahora = new Date();
+        var hora = ahora.getHours().toString().padStart(2, '0');
+        var minutos = ahora.getMinutes().toString().padStart(2, '0');
+        var horaActual = document.getElementById('horaActual');
+        if (horaActual) {
+            horaActual.textContent = hora + ':' + minutos;
+        }
+    } catch(e) {
+        console.error('Error en actualizarHora:', e);
+    }
 }
 
 async function actualizarDashboard() {
     try {
-        console.log('📊 Actualizando dashboard...');
-        
-        // 🆕 LLAMADA REAL A LA API PARA OBTENER DATOS
-        const response = await fetch('/api/dashboard/metricas-hoy');
-        
-        if (response.ok) {
-            const data = await response.json();
-            
-            // 🆕 USAR DATOS REALES DE LA API
-            const ingresos = parseFloat(data.ingresos_hoy) || 0;
-            const ventas = parseInt(data.ventas_hoy) || 0;
-            
-            document.getElementById('ingresosHoy').textContent = `$${ingresos.toLocaleString()}`;
-            document.getElementById('ventasHoy').textContent = ventas.toLocaleString();
-            
-            console.log(`✅ Dashboard actualizado: $${ingresos} - ${ventas} ventas`);
-            
-        } else {
-            // 🆕 FALLBACK: USAR DATOS DEL CARRITO COMO ESTIMACIÓN
-            throw new Error('API no disponible');
-        }
-        
-    } catch (error) {
-        console.log('ℹ️ Usando datos estimados del dashboard:', error.message);
-        
-        // 🆕 FALLBACK SEGURO - ESTIMAR BASADO EN CARRITO
-        const totalCarrito = calcularTotalCarrito();
-        const itemsCarrito = carrito.reduce((total, item) => total + item.cantidad, 0);
-        
-        // Estimación conservadora (carrito actual + histórico en memoria)
-        const ingresosEstimados = totalCarrito + (window.ingresosAcumulados || 0);
-        const ventasEstimadas = itemsCarrito + (window.ventasAcumuladas || 0);
-        
-        document.getElementById('ingresosHoy').textContent = `$${Math.round(ingresosEstimados).toLocaleString()}`;
-        document.getElementById('ventasHoy').textContent = ventasEstimadas.toLocaleString();
-        
-        // Guardar en memoria para la próxima actualización
-        window.ingresosAcumulados = ingresosEstimados;
-        window.ventasAcumuladas = ventasEstimadas;
+        fetch('/api/dashboard/metricas-hoy')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    var ventasElement = document.getElementById('ventasHoy');
+                    if (ventasElement) {
+                        ventasElement.textContent = data.ventas_hoy || 0;
+                    }
+                }
+            })
+            .catch(error => console.error('Error actualizando dashboard:', error));
+    } catch(e) {
+        console.error('Error en actualizarDashboard:', e);
     }
 }
 
@@ -1678,9 +1660,8 @@ function mostrarModalCierreExitoso(cierre) {
 
 function reiniciarContadoresDia() {
     // Reiniciar contadores locales del dashboard
-    document.getElementById('ventasHoy').textContent = '0';
-    document.getElementById('ingresosHoy').textContent = '0';
-    // 🆕 ELIMINADO: totalItems - document.getElementById('totalItems').textContent = '0';
+    var ventasElement = document.getElementById("ventasHoy"); if (ventasElement) { ventasElement.textContent = valor; }// $0
+    // 🆕 ELIMINADO: totalItems - var elem_totalItems = document.getElementById("totalItems"); if (elem_totalItems) { elem_totalItems.textContent = valor; }
     
     // Aquí puedes agregar más reinicios según necesites
     console.log('Contadores del día reiniciados');
@@ -1693,8 +1674,7 @@ async function verificarEstadoCierreDiario() {
         const estado = await response.json();
         
         // Actualizar dashboard con datos reales
-        document.getElementById('ventasHoy').textContent = estado.total_transacciones;
-        document.getElementById('ingresosHoy').textContent = estado.total_ventas_hoy.toLocaleString();
+        var ventasElement = document.getElementById("ventasHoy"); if (ventasElement) { ventasElement.textContent = valor; }// $0
         
         // Deshabilitar botón de cierre si ya se realizó
         const btnCierre = document.getElementById('btnCierreDiario');
@@ -2036,7 +2016,8 @@ function mostrarModalDonacionExitosa(resultado) {
     document.getElementById('modalDonacionExitosa').addEventListener('hidden.bs.modal', function() {
         // Limpiar carrito
         carrito = [];
-        actualizarCarrito();
+    actualizarCarrito();
+    reiniciarContadorCarrito();
         
         // Actualizar stock visualmente
         actualizarStockVisualmente();
@@ -2502,4 +2483,20 @@ function reiniciarContadoresDia() {
     
     actualizarContadoresVisuales(0, 0);
     console.log('🔄 Contadores reiniciados para nuevo día');
+}
+
+// =============================================
+// FUNCIÓN PARA REINICIAR EL CONTADOR DEL CARRITO
+// =============================================
+function reiniciarContadorCarrito() {
+    console.log('🔄 Reiniciando contador del carrito...');
+    var contador = document.getElementById('contadorCarrito');
+    if (contador) {
+        contador.textContent = '0';
+        console.log('✅ Contador de carrito reiniciado a 0');
+    }
+    var contadorMobile = document.getElementById('carritoContadorMobile');
+    if (contadorMobile) {
+        contadorMobile.textContent = '0';
+    }
 }

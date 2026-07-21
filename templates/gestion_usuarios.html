@@ -173,6 +173,17 @@
                         <li>Para cambios en tu licencia, contacta al administrador</li>
                     </ul>
                 </div>
+        <div class="card mt-3" style="border-left: 4px solid #ffc107;">
+            <div class="card-body">
+                <h5><i class="fas fa-unlock-alt"></i> Acciones de Administración</h5>
+                <p class="text-muted">Desbloquea el punto de venta si se realizó un cierre diario accidental.</p>
+                <button class="btn btn-warning" onclick="desbloquearPuntoVenta()">
+                    <i class="fas fa-unlock"></i> Desbloquear Punto de Venta
+                </button>
+                <small class="text-muted d-block mt-1">⚠️ Solo para emergencias (cierre diario accidental)</small>
+            </div>
+        </div>
+
             </div>
         </div>
     </div>
@@ -228,5 +239,31 @@
             }
         }
     </script>
+
+<script>
+function desbloquearPuntoVenta() {
+    if (!confirm('⚠️ ¿Estás seguro de DESBLOQUEAR el punto de venta?\n\nEsto permitirá realizar ventas nuevamente.\n\nSolo usa esta opción si fue un cierre accidental.\n\n¿Deseas continuar?')) {
+        return;
+    }
+    
+    fetch('/api/desbloquear_cierre', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('✅ Punto de venta desbloqueado correctamente.');
+            location.reload();
+        } else {
+            alert('❌ Error al desbloquear: ' + (data.error || 'Error desconocido'));
+        }
+    })
+    .catch(error => {
+        alert('❌ Error de conexión: ' + error.message);
+    });
+}
+</script>
+
 </body>
 </html>
