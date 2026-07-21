@@ -1988,7 +1988,6 @@ def proveedores():
     panaderia_id = current_user.panaderia_id
     todos_proveedores = Proveedor.query.filter_by(panaderia_id=panaderia_id).all()
     return render_template('proveedores.html', proveedores=todos_proveedores)
-
 @app.route('/agregar_proveedor', methods=['GET', 'POST'])
 @login_required
 @modulo_requerido('proveedores')
@@ -2277,21 +2276,15 @@ def registrar_compra_externa():
 @app.route('/materias_primas')
 @login_required
 @modulo_requerido('inventario')
-@tenant_required  # ← DECORADOR AGREGADO
+@tenant_required
 def materias_primas():
     """Gestión de materias primas - SOLO de esta panadería"""
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    # FILTRO CLAVE: Solo materias primas de ESTA panadería
-    materias = MateriaPrima.query.filter_by(
-        activo=True, 
-        panaderia_id=current_user.panaderia_id  # ← CORREGIDO: current_user.panaderia_id
-    ).all()
+    materias = MateriaPrima.query.filter_by(panaderia_id=current_user.panaderia_id).all()
+    proveedores = Proveedor.query.filter_by(panaderia_id=current_user.panaderia_id, activo=True).all()
     
-    proveedores = Proveedor.query.filter_by(panaderia_id=current_user.panaderia_id, activo=True).all()  # ← CORREGIDO: current_user.panaderia_id
-    
-    # ✅ AGREGAR FECHAS PARA EL TEMPLATE
     from datetime import datetime, timedelta
     hoy = datetime.now().date()
     hoy_mas_15 = hoy + timedelta(days=15)
@@ -2302,15 +2295,16 @@ def materias_primas():
                          hoy=hoy,
                          hoy_mas_15=hoy_mas_15)
 
+
 @app.route('/agregar_materia_prima', methods=['GET', 'POST'])
 @login_required
 @modulo_requerido('inventario')
-@tenant_required  # ← DECORADOR AGREGADO
+@tenant_required
 def agregar_materia_prima():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    proveedores = Proveedor.query.filter_by(panaderia_id=current_user.panaderia_id, activo=True).all()  # ← CORREGIDO: current_user.panaderia_id
+    proveedores = Proveedor.query.filter_by(panaderia_id=current_user.panaderia_id, activo=True).all()
     
     if request.method == 'POST':
         try:
@@ -2327,6 +2321,13 @@ def agregar_materia_prima():
             # NUEVOS CAMPOS COMPRA INICIAL
             cantidad_empaques_comprados = int(request.form['cantidad_empaques_comprados'])
             precio_total_compra = float(request.form['precio_total_compra'])
+            
+            # OBTENER FECHA DE VENCIMIENTO
+            fecha_vencimiento_str = request.form.get('fecha_vencimiento', '').strip()
+            fecha_vencimiento = None
+            if fecha_vencimiento_str:
+                from datetime import datetime
+                fecha_vencimiento = datetime.strptime(fecha_vencimiento_str, '%Y-%m-%d').date()
             
             # VALIDACIONES
             if not proveedor_id:
@@ -2365,12 +2366,13 @@ def agregar_materia_prima():
                 unidad_compra=unidad_compra,
                 gramos_por_empaque=gramos_por_empaque,
                 stock_minimo_empaques=stock_minimo_empaques,
-                panaderia_id=current_user.panaderia_id,  # ← CORREGIDO: current_user.panaderia_id
+                panaderia_id=current_user.panaderia_id,
+                fecha_vencimiento=fecha_vencimiento,
                 activo=True
             )
             
             db.session.add(nueva_materia)
-            db.session.flush()  # Para obtener el ID
+            db.session.flush()
             
             # REGISTRAR COMPRA INICIAL EN HISTORIAL
             nueva_compra = HistorialCompra(
@@ -2395,16 +2397,18 @@ def agregar_materia_prima():
     
     return render_template('agregar_materia_prima.html', proveedores=proveedores)
 
+
 @app.route('/editar_materia_prima/<int:id>', methods=['GET', 'POST'])
 @login_required
 @modulo_requerido('inventario')
+@tenant_required
 def editar_materia_prima(id):
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    panaderia_actual = session.get('panaderia_id', 1)
-    materia = MateriaPrima.query.get_or_404(id)
-    proveedores = Proveedor.query.filter_by(panaderia_id=1, activo=True).all()
+    panaderia_id = current_user.panaderia_id
+    materia = MateriaPrima.query.filter_by(panaderia_id=panaderia_id, id=id).first_or_404()
+    proveedores = Proveedor.query.filter_by(panaderia_id=panaderia_id, activo=True).all()
     
     if request.method == 'POST':
         try:
@@ -2413,7 +2417,6 @@ def editar_materia_prima(id):
                 cantidad_empaques = int(request.form['nueva_compra_cantidad'])
                 precio_total = float(request.form['nueva_compra_precio'])
                 
-                               
                 if cantidad_empaques <= 0 or precio_total <= 0:
                     flash('Cantidad y precio deben ser mayores a 0', 'error')
                     return redirect(url_for('editar_materia_prima', id=id))
@@ -2493,43 +2496,48 @@ def editar_materia_prima(id):
                          proveedores=proveedores,
                          historial_compras=historial_compras)
 
+
 @app.route('/desactivar_materia_prima/<int:id>')
 @login_required
 @modulo_requerido('inventario')
+@tenant_required
 def desactivar_materia_prima(id):
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    materia = MateriaPrima.query.get_or_404(id)
+    materia = MateriaPrima.query.filter_by(panaderia_id=current_user.panaderia_id, id=id).first_or_404()
     materia.activo = False
     db.session.commit()
     
     flash(f'Materia prima "{materia.nombre}" desactivada correctamente', 'success')
     return redirect(url_for('materias_primas'))
 
+
 @app.route('/activar_materia_prima/<int:id>')
 @login_required
 @modulo_requerido('inventario')
+@tenant_required
 def activar_materia_prima(id):
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    materia = MateriaPrima.query.get_or_404(id)
+    materia = MateriaPrima.query.filter_by(panaderia_id=current_user.panaderia_id, id=id).first_or_404()
     materia.activo = True
     db.session.commit()
     
     flash(f'Materia prima "{materia.nombre}" activada correctamente', 'success')
     return redirect(url_for('materias_primas'))
 
-# NUEVA RUTA PARA VER HISTORIAL DE COMPRAS
+
 @app.route('/historial_compras/<int:materia_prima_id>')
 @login_required
 @modulo_requerido('inventario')
+@tenant_required
 def historial_compras(materia_prima_id):
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    materia = MateriaPrima.query.get_or_404(materia_prima_id)
+    materia = MateriaPrima.query.filter_by(panaderia_id=current_user.panaderia_id, id=materia_prima_id).first_or_404()
     historial = HistorialCompra.query.filter_by(materia_prima_id=materia_prima_id).order_by(HistorialCompra.fecha_compra.desc()).all()
     
     return render_template('historial_compras.html', materia=materia, historial=historial)

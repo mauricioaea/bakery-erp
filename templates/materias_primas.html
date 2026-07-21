@@ -231,7 +231,21 @@
     </div>
 
     <div class="container">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <input type="text" id="buscadorMaterias" placeholder="🔍 Buscar por nombre, proveedor..." 
+                   style="padding: 10px 15px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; min-width: 300px;"
+                   onkeyup="filtrarMaterias()">
+            <select id="filtroProveedor" onchange="filtrarMaterias()" 
+                    style="padding: 10px 15px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
+                <option value="">Todos los proveedores</option>
+                {% for proveedor in proveedores %}
+                <option value="{{ proveedor.id }}">{{ proveedor.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <a href="{{ url_for('agregar_materia_prima') }}" class="btn">➕ Agregar Materia Prima</a>
+    </div>
             <h2>Lista de Materias Primas</h2>
             <a href="{{ url_for('agregar_materia_prima') }}" class="btn">➕ Agregar Materia Prima</a>
         </div>
@@ -301,8 +315,8 @@
                         <th>Nombre</th>
                         <th>Proveedor</th>
                         <th>Unidad</th>
-                        <th>Costo Unitario</th>
-                        <th>Costo por kg</th>
+                        <th>Costo Unitario (g)</th>
+                        <th>Costo por kg (kg)</th>
                         <th>Stock Actual</th>
                         <th>Stock Mínimo</th>
                         <th>Vencimiento</th>
@@ -312,23 +326,23 @@
                 </thead>
                 <tbody id="materiasTable">
                     {% for materia in materias_primas %}
-                    <tr class="materia-row" 
+                    <tr class="materia-row" data-proveedor="{{ materia.proveedor_id }}" 
                         data-status="{{ 'active' if materia.activo else 'inactive' }}"
                         data-stock-status="{{ 'critical' if materia.stock_actual <= materia.stock_minimo else 'warning' if materia.stock_actual <= materia.stock_minimo * 1.5 else 'normal' }}"
                         data-vencimiento-status="{% if materia.fecha_vencimiento %}{% if materia.fecha_vencimiento < hoy %}vencido{% elif materia.fecha_vencimiento <= hoy_mas_15 %}por-vencer{% else %}normal{% endif %}{% else %}no-registrado{% endif %}">
                         <td>{{ materia.nombre }}</td>
                         <td>{{ materia.proveedor_rel.nombre if materia.proveedor_rel else 'Sin proveedor' }}</td>
                         <td>{{ materia.unidad_medida }}</td>
-                        <td class="currency">${{ "{:,.2f}".format(materia.costo_promedio).replace(",", "X").replace(".", ",").replace("X", ".") }}</td>
+                        <td class="currency"><strong>${{ "%.2f"|format(materia.costo_promedio) }}</strong> / {{ materia.unidad_medida }}</td>
                         <td class="currency cost-per-kg">
                             {% if materia.unidad_medida == 'kg' %}
-                                ${{ "{:,.2f}".format(materia.costo_promedio).replace(",", "X").replace(".", ",").replace("X", ".") }}
+                                <strong>${{ "%.2f"|format(materia.costo_promedio) }}</strong> / kg
                             {% elif materia.unidad_medida == 'g' %}
-                                ${{ "{:,.2f}".format(materia.costo_promedio * 1000).replace(",", "X").replace(".", ",").replace("X", ".") }}
+                                <strong>${{ "%.2f"|format(materia.costo_promedio * 1000) }}</strong> / kg
                             {% elif materia.unidad_medida == 'L' %}
-                                ${{ "{:,.2f}".format(materia.costo_promedio).replace(",", "X").replace(".", ",").replace("X", ".") }}
+                                <strong>${{ "%.2f"|format(materia.costo_promedio) }}</strong> / L
                             {% elif materia.unidad_medida == 'ml' %}
-                                ${{ "{:,.2f}".format(materia.costo_promedio * 1000).replace(",", "X").replace(".", ",").replace("X", ".") }}
+                                <strong>${{ "%.2f"|format(materia.costo_promedio * 1000) }}</strong> / L
                             {% else %}
                                 N/A
                             {% endif %}
@@ -462,6 +476,35 @@
         document.addEventListener('DOMContentLoaded', function() {
             filterMaterias('all');
         });
-    </script>
+    
+    // ============================================
+    // BUSCADOR Y FILTROS PARA MATERIAS PRIMAS
+    // ============================================
+    function filtrarMaterias() {
+        const busqueda = document.getElementById('buscadorMaterias').value.toLowerCase();
+        const filtroProveedor = document.getElementById('filtroProveedor').value;
+        const rows = document.querySelectorAll('.materia-row');
+        
+        rows.forEach(row => {
+            const texto = row.textContent.toLowerCase();
+            const proveedor = row.dataset.proveedor || '';
+            
+            let visible = true;
+            
+            // Filtrar por búsqueda
+            if (busqueda && !texto.includes(busqueda)) {
+                visible = false;
+            }
+            
+            // Filtrar por proveedor
+            if (filtroProveedor && proveedor !== filtroProveedor) {
+                visible = false;
+            }
+            
+            row.style.display = visible ? '' : 'none';
+        });
+    }
+
+</script>
 </body>
 </html>
