@@ -271,66 +271,7 @@
 
             <!-- ✅ NUEVA SECCIÓN: CÁLCULOS AUTOMÁTICOS CON 45% CIF + 45% GANANCIA -->
             <div class="calculos-section">
-                <h3>📊 Cálculos Automáticos de Costos y Precios</h3>
-                <p style="color: #666; margin-bottom: 15px; font-size: 14px;">
-                    El sistema calcula automáticamente: <strong>Costo MP → +45% CIF → +45% Ganancia → Precio Venta Final</strong>
-                </p>
-                
-                <div class="calculos-grid">
-                    <div class="calculo-item">
-                        <div class="calculo-label">Costo Materia Prima</div>
-                        <div class="calculo-valor" id="costo-mp">$0</div>
-                    </div>
-                    <div class="calculo-item">
-                        <div class="calculo-label">CIF (45%)</div>
-                        <div class="calculo-valor" id="costo-cif">$0</div>
-                    </div>
-                    <div class="calculo-item">
-                        <div class="calculo-label">Costo Total</div>
-                        <div class="calculo-valor" id="costo-total">$0</div>
-                    </div>
-                    <div class="calculo-item ganancia">
-                        <div class="calculo-label">Ganancia (45%)</div>
-                        <div class="calculo-valor" id="ganancia">$0</div>
-                    </div>
-                    <div class="calculo-item precio-final">
-                        <div class="calculo-label">Precio Total Preparación</div>
-                        <div class="calculo-valor" id="precio-total">$0</div>
-                    </div>
-                    <div class="calculo-item precio-final">
-                        <div class="calculo-label">Precio Venta por Unidad</div>
-                        <div class="calculo-valor" id="precio-unidad">$0</div>
-                    </div>
-                </div>
-
-                <!-- MÉTRICAS DE RENTABILIDAD -->
-                <div style="margin-top: 15px; padding: 15px; background: white; border-radius: 6px;">
-                    <strong>📈 Métricas de Rentabilidad:</strong>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 10px;">
-                        <div>
-                            <small>Margen de Contribución:</small>
-                            <div id="margen-contribucion">-</div>
-                        </div>
-                        <div>
-                            <small>Punto de Equilibrio:</small>
-                            <div id="punto-equilibrio">-</div>
-                        </div>
-                        <div>
-                            <small>Rentabilidad:</small>
-                            <div id="rentabilidad-porcentaje">-</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ✅ SECCIÓN: PRECIO DE VENTA REAL (COMPARACIÓN) -->
-            <div class="precio-real-section">
-                <h3>💰 Precio de Venta Real (Comparación)</h3>
-                <p style="color: #666; margin-bottom: 15px; font-size: 14px;">
-                    Ingresa el precio al que realmente vendes este producto para comparar con el precio calculado.
-                </p>
-                
-                <div class="form-group">
+                <h3>📊 <div class="form-group">
                     <label>Precio de Venta Real (OPCIONAL)</label>
                     <input type="number" name="precio_venta_real" step="0.01" min="0" 
                            placeholder="Ej: 6000" 

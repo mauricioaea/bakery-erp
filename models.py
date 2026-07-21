@@ -2172,6 +2172,28 @@ class LogSistema(db.Model):
 # MODELO: RegistroFinanciero - CONTROL DE SALDOS
 # ============================================
 
+
+
+# ============================================
+# HISTORIAL DE PRECIOS DE RECETAS
+# ============================================
+class HistorialPrecioReceta(db.Model):
+    """Registro del historial de precios de recetas"""
+    __tablename__ = 'historial_precios_recetas'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    receta_id = db.Column(db.Integer, db.ForeignKey('recetas.id'), nullable=False)
+    precio_anterior = db.Column(db.Float, nullable=False)
+    precio_nuevo = db.Column(db.Float, nullable=False)
+    usuario_id = db.Column(db.Integer, nullable=False)
+    fecha_cambio = db.Column(db.DateTime, default=datetime.utcnow)
+    motivo = db.Column(db.String(200))
+    panaderia_id = db.Column(db.Integer, nullable=False)
+    
+    receta = db.relationship('Receta', backref='historial_precios')
+    
+    def __repr__(self):
+        return f'<HistorialPrecioReceta {self.receta_id} ${self.precio_anterior} → ${self.precio_nuevo}>'
 class RegistroFinanciero(db.Model):
     __tablename__ = 'registros_financieros'
     

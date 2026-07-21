@@ -944,3 +944,52 @@ Característica	Beneficio
 🔮 Predicciones con ML	Planificación anticipada de inventario
 💡 Recomendaciones personalizadas	Acciones concretas para mejorar
 
+
+MAPA DE RUTA VISUAL
+┌─────────────────────────────────────────────────────────────────┐
+│                     CONFIGURACIÓN INICIAL                       │
+├─────────────────────────────────────────────────────────────────┤
+│  1. Proveedores  →  2. Materias Primas  →  3. Recetas         │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                     OPERACIÓN DIARIA                            │
+├─────────────────────────────────────────────────────────────────┤
+│  4. Producción  →  5. Productos Ext.  →  6. Punto de Venta   │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                  CONTROL Y ADMINISTRACIÓN                       │
+├─────────────────────────────────────────────────────────────────┤
+│  7. Financiera  →  8. Reportes  →  9. Activos  →  10. Usuarios│
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                        VISIÓN GLOBAL                            │
+├─────────────────────────────────────────────────────────────────┤
+│                        11. Dashboard                            │
+└─────────────────────────────────────────────────────────────────┘
+
+📋 RUTA DE USUARIO - MAPA PROFESIONAL
+🔹 FASE 1: CONFIGURACIÓN INICIAL (Base del Sistema)
+Orden	Módulo	Propósito
+1	Gestión de Proveedores	✅ Registrar todos los proveedores (base de datos de suministro)
+2	Gestión de Materias Primas	✅ Registrar ingredientes, costos, stock inicial (depende de proveedores)
+3	Recetas y Fórmulas	✅ Crear recetas usando materias primas, calcular costos y rentabilidad
+🔹 FASE 2: OPERACIÓN DIARIA (Producción y Ventas)
+Orden	Módulo	Propósito
+4	Producción Diaria	✅ Ordenar producciones basadas en recetas, gestionar stock en vitrina
+5	Productos Externos	✅ Gestionar productos no producidos (bebidas, snacks, etc.)
+6	Punto de Venta	✅ Realizar ventas (ya completado)
+🔹 FASE 3: CONTROL Y ADMINISTRACIÓN
+Orden	Módulo	Propósito
+7	Gestión Financiera	✅ Control diario de dinero, cierre de caja, depósitos bancarios
+8	Reportes Profesionales	✅ Análisis de rentabilidad, gastos, tendencias, IA
+9	Activos Fijos	✅ Gestión de equipos, mobiliario, inversiones
+10	Gestión de Usuarios	✅ Administración de empleados y permisos
+🔹 FASE 4: VISIÓN GLOBAL
+Orden	Módulo	Propósito
+11	Dashboard	✅ Panel principal con métricas clave y acceso rápido

@@ -2696,6 +2696,42 @@ def calcular_ingredientes(id):
     return jsonify(ingredientes_calculados)
 
 # ✅ NUEVA API PARA ACTUALIZAR PRECIO REAL EN TIEMPO REAL
+
+
+@app.route('/api/historial_precios/<int:receta_id>')
+@login_required
+@modulo_requerido('produccion')
+@tenant_required
+def obtener_historial_precios(receta_id):
+    """Obtiene el historial de precios de una receta"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        from models import HistorialPrecioReceta
+        
+        historial = HistorialPrecioReceta.query.filter_by(
+            receta_id=receta_id,
+            panaderia_id=current_user.panaderia_id
+        ).order_by(HistorialPrecioReceta.fecha_cambio.desc()).limit(20).all()
+        
+        resultado = []
+        for h in historial:
+            resultado.append({
+                'fecha': h.fecha_cambio.strftime('%d/%m/%Y %H:%M'),
+                'precio_anterior': h.precio_anterior,
+                'precio_nuevo': h.precio_nuevo,
+                'motivo': h.motivo or 'Sin motivo registrado'
+            })
+        
+        return jsonify({
+            'success': True,
+            'historial': resultado,
+            'total_cambios': len(resultado)
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 @app.route('/api/actualizar_precio_real/<int:receta_id>', methods=['POST'])
 @login_required
 @modulo_requerido('produccion')
@@ -3345,6 +3381,7 @@ def produccion_diaria():
 @app.route('/configurar_stock_producto/<int:receta_id>', methods=['GET', 'POST'])
 @login_required
 @modulo_requerido('produccion')
+@tenant_required
 def configurar_stock_producto(receta_id):
     """Configuración personalizada de stock por producto"""
     if 'user_id' not in session:
@@ -3414,6 +3451,7 @@ def calcular_ventas_ultima_semana(nombre_receta):
 @app.route('/configurar_stock/<int:receta_id>', methods=['GET', 'POST'])
 @login_required
 @modulo_requerido('produccion')
+@tenant_required
 def configurar_stock(receta_id):
     """Configurar stock objetivo y parámetros para una receta"""
     if 'user_id' not in session:
@@ -3449,6 +3487,7 @@ def configurar_stock(receta_id):
 @app.route('/api/configuracion_stock/<int:receta_id>')
 @login_required
 @modulo_requerido('produccion')
+@tenant_required
 def api_configuracion_stock(receta_id):
     """API para obtener configuración de stock de una receta"""
     if 'user_id' not in session:

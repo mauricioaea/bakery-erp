@@ -79,7 +79,7 @@
             <h2>📋 {{ receta.nombre }}</h2>
             <div class="btn-group">
                 <a href="{{ url_for('editar_receta', id=receta.id) }}" class="btn btn-warning">✏️ Editar</a>
-                <a href="{{ url_for('producir_receta', id=receta.id) }}" class="btn btn-success">👨‍🍳 Producir</a>
+                
                 <a href="{{ url_for('recetas') }}" class="btn btn-secondary">← Volver</a>
             </div>
         </div>
@@ -207,7 +207,12 @@
                         
                         <table class="table table-bordered">
                             <tr>
-                                <td width="60%"><strong>Rentabilidad:</strong></td>
+                                <td width="60%"><strong>Rentabilidad: 
+        <span style="cursor: help; border-bottom: 1px dashed #6c757d;" 
+              title="Porcentaje de ganancia sobre el costo de producción. 
+                     Calculado como: (Precio de Venta - Costo Unitario) / Precio de Venta * 100">
+            <i class="fas fa-info-circle" style="color: #17a2b8; font-size: 0.8em;"></i>
+        </span></strong></td>
                                 <td>
                                     <span class="badge-rentabilidad" 
                                           style="background: 
@@ -237,11 +242,35 @@
                     </div>
                     <div class="col-md-6">
                         <div class="alert alert-info">
-                            <h6>📈 Análisis de Rentabilidad</h6>
+                            <h6>
+        <!-- HISTORIAL DE PRECIOS -->
+        <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #17a2b8;">
+            <h4 style="margin-bottom: 15px;">
+                📊 Historial de Precios
+                <span id="totalCambios" style="font-size: 0.7em; color: #6c757d;"></span>
+            </h4>
+            <div id="historialPrecios" style="max-height: 300px; overflow-y: auto;">
+                <div style="text-align: center; padding: 20px; color: #6c757d;">
+                    <i class="fas fa-spinner fa-spin"></i> Cargando historial...
+                </div>
+            </div>
+            <div style="margin-top: 10px; font-size: 0.85em; color: #6c757d;">
+                <i class="fas fa-info-circle"></i> 
+                Se muestran los últimos 5 cambios de precio
+            </div>
+        </div>
+
+📈 Análisis de Rentabilidad</h6>
                             <p class="mb-1"><strong>Punto de Equilibrio:</strong> {{ receta.punto_equilibrio_unidades }} unidades</p>
                             <p class="mb-1"><strong>Utilidad Total del Lote:</strong> {{ receta.utilidad_total_lote|currency }}</p>
                             <p class="mb-1"><strong>Valor Total de Producción:</strong> {{ receta.valor_produccion_total|currency }}</p>
-                            <p class="mb-0"><strong>Eficiencia de Costos:</strong> {{ receta.eficiencia_costo|round(1) }}%</p>
+                            <p class="mb-0"><strong>Eficiencia de Costos: 
+        <span style="cursor: help; border-bottom: 1px dashed #6c757d;" 
+              title="Relación entre el costo de producción y el precio de venta. 
+                     Un valor bajo (como 10.8%) significa que el costo representa una pequeña parte del precio final, 
+                     indicando alta rentabilidad.">
+            <i class="fas fa-info-circle" style="color: #17a2b8; font-size: 0.8em;"></i>
+        </span></strong> {{ receta.eficiencia_costo|round(1) }}%</p>
                         </div>
                         
                         {% if receta.utilidad_real_pesos > 0 %}
@@ -379,7 +408,7 @@
             <div class="col-12 text-center">
                 <div class="btn-group">
                     <a href="{{ url_for('editar_receta', id=receta.id) }}" class="btn btn-warning btn-lg">✏️ Editar Receta</a>
-                    <a href="{{ url_for('producir_receta', id=receta.id) }}" class="btn btn-success btn-lg">👨‍🍳 Producir</a>
+                    
                     <a href="{{ url_for('recetas') }}" class="btn btn-secondary btn-lg">📋 Ver Todas las Recetas</a>
                 </div>
             </div>
@@ -458,5 +487,79 @@
             });
         }
     </script>
+
+    <script>
+    function cargarHistorialPrecios(recetaId) {
+        const contenedor = document.getElementById('historialPrecios');
+        const totalCambios = document.getElementById('totalCambios');
+        
+        if (!contenedor) return;
+        
+        fetch(`/api/historial_precios/${recetaId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.historial.length > 0) {
+                    if (totalCambios) {
+                        totalCambios.textContent = `(${data.total_cambios} cambios)`;
+                    }
+                    
+                    let html = '<div style="display: flex; flex-direction: column; gap: 8px;">';
+                    
+                    data.historial.forEach(item => {
+                        const esAumento = item.precio_nuevo > item.precio_anterior;
+                        const color = esAumento ? '#28a745' : '#dc3545';
+                        const flecha = esAumento ? '▲' : '▼';
+                        
+                        html += `
+                            <div style="display: flex; justify-content: space-between; align-items: center; 
+                                        padding: 10px 15px; background: white; border-radius: 6px; 
+                                        border-left: 3px solid ${color}; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                                <div>
+                                    <span style="font-weight: bold;">${item.precio_anterior.toFixed(0)}</span>
+                                    <span style="color: ${color}; margin: 0 8px;">${flecha}</span>
+                                    <span style="font-weight: bold; color: ${color};">${item.precio_nuevo.toFixed(0)}</span>
+                                    <span style="font-size: 0.8em; color: #6c757d; margin-left: 10px;">${item.motivo}</span>
+                                </div>
+                                <div style="font-size: 0.75em; color: #6c757d;">
+                                    ${item.fecha}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    html += '</div>';
+                    contenedor.innerHTML = html;
+                } else {
+                    contenedor.innerHTML = `
+                        <div style="text-align: center; padding: 20px; color: #6c757d;">
+                            <i class="fas fa-history" style="font-size: 1.5em; display: block; margin-bottom: 10px;"></i>
+                            No hay cambios de precio registrados para esta receta.
+                        </div>
+                    `;
+                    if (totalCambios) {
+                        totalCambios.textContent = '(0 cambios)';
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error cargando historial:', error);
+                contenedor.innerHTML = `
+                    <div style="text-align: center; padding: 20px; color: #dc3545;">
+                        <i class="fas fa-exclamation-circle"></i> Error al cargar el historial
+                    </div>
+                `;
+            });
+    }
+    
+    // Cargar historial al cargar la página
+    document.addEventListener('DOMContentLoaded', function() {
+        // Obtener el ID de la receta desde la URL o desde un elemento
+        const recetaId = window.location.pathname.split('/').pop();
+        if (recetaId) {
+            cargarHistorialPrecios(recetaId);
+        }
+    });
+    </script>
+
 </body>
 </html>

@@ -252,31 +252,25 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-
         /* ===== RESPONSIVE DESIGN MEJORADO ===== */
-        
         /* TABLETS (768px - 1024px) */
         @media (max-width: 1024px) {
             .recetas-grid {
                 grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
                 gap: 20px;
             }
-            
             .receta-card {
                 padding: 20px;
             }
         }
-
         /* MÓVILES GRANDES (576px - 768px) */
         @media (max-width: 768px) {
             body {
                 padding: 15px;
             }
-            
             .container {
                 padding: 20px;
             }
-            
             /* HEADER RESPONSIVE */
             .header {
                 flex-direction: column;
@@ -284,23 +278,19 @@
                 align-items: center;
                 text-align: center;
             }
-            
             .header h1 {
                 font-size: 1.5em;
             }
-            
             /* GRID RESPONSIVE - 1 COLUMNA */
             .recetas-grid {
                 grid-template-columns: 1fr;
                 gap: 20px;
             }
-            
             .receta-card {
                 padding: 20px;
                 width: 100%;
                 margin: 0;
             }
-            
             .receta-card h3 {
                 font-size: 1.2em;
                 display: flex;
@@ -308,230 +298,187 @@
                 gap: 10px;
                 align-items: flex-start;
             }
-            
             .receta-card h3 .badge {
                 align-self: flex-start;
                 float: none;
             }
-            
             /* INFO GRID RESPONSIVE */
             .info-grid {
                 grid-template-columns: 1fr;
                 gap: 12px;
             }
-            
             .info-item {
                 margin-bottom: 10px;
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
             }
-            
             /* SECCIONES RESPONSIVE */
             .costos-section,
             .utilidad-section {
                 padding: 15px;
             }
-            
             .costo-item {
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 5px;
                 margin-bottom: 10px;
             }
-            
             .costo-label,
             .costo-value {
                 width: 100%;
             }
-            
             /* BOTONES RESPONSIVE */
             .receta-actions {
                 flex-direction: column;
                 gap: 10px;
             }
-            
             .action-btn {
                 width: 100%;
                 padding: 12px;
             }
-            
             .btn {
                 width: 100%;
                 max-width: 250px;
                 text-align: center;
                 margin-bottom: 10px;
             }
-            
             .btn-secondary {
                 width: auto;
                 margin-bottom: 5px;
             }
-            
             /* INPUT RESPONSIVE */
             .precio-real-input {
                 width: 100%;
                 max-width: 150px;
             }
-            
             /* ESTADÍSTICAS RESPONSIVE */
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr) !important;
                 gap: 15px !important;
             }
-            
             .stats-grid > div {
                 padding: 15px !important;
             }
-            
             .stats-grid div div:first-child {
                 font-size: 1.5em !important;
             }
         }
-
         /* MÓVILES PEQUEÑOS (hasta 576px) */
         @media (max-width: 576px) {
             body {
                 padding: 10px;
             }
-            
             .container {
                 padding: 15px;
             }
-            
             .receta-card {
                 padding: 15px;
             }
-            
             .receta-card h3 {
                 font-size: 1.1em;
                 padding-bottom: 8px;
             }
-            
             .info-grid {
                 gap: 10px;
             }
-            
             .info-item {
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 2px;
             }
-            
             .costos-section,
             .utilidad-section {
                 padding: 12px;
             }
-            
             .costo-item {
                 font-size: 0.85em;
             }
-            
             .receta-actions {
                 gap: 8px;
             }
-            
             .action-btn {
                 padding: 10px;
                 font-size: 0.85em;
             }
-            
             .precio-real-input {
                 max-width: 130px;
                 font-size: 0.85em;
                 padding: 6px 10px;
             }
-            
             .stats-grid {
                 grid-template-columns: 1fr !important;
                 gap: 12px !important;
             }
-            
             .empty-state {
                 padding: 30px 20px;
             }
-            
             .empty-state h3 {
                 font-size: 1.3em;
             }
-            
             .alert {
                 padding: 10px 12px;
                 font-size: 0.9em;
             }
-            
             .navigation-links {
                 display: flex;
                 flex-direction: column;
                 gap: 8px;
                 align-items: center;
             }
-            
             .btn-secondary {
                 width: 100%;
                 max-width: 200px;
                 text-align: center;
             }
         }
-
         /* MÓVILES MUY PEQUEÑOS (hasta 375px) */
         @media (max-width: 375px) {
             body {
                 padding: 8px;
             }
-            
             .container {
                 padding: 12px;
                 border-radius: 8px;
             }
-            
             .receta-card {
                 padding: 12px;
             }
-            
             .costos-section,
             .utilidad-section {
                 padding: 10px;
             }
-            
             .costo-item {
                 font-size: 0.8em;
             }
-            
             .precio-real-input {
                 max-width: 110px;
                 padding: 5px 8px;
             }
-            
             .action-btn {
                 padding: 8px;
                 font-size: 0.8em;
             }
         }
-
         /* MEJORAS ESPECÍFICAS PARA TABLET */
         @media (min-width: 769px) and (max-width: 1024px) {
             .recetas-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
-            
             .header {
                 align-items: center;
             }
         }
-
         /* MEJORAS PARA PANTALLAS GRANDES */
         @media (min-width: 1400px) {
             .recetas-grid {
                 grid-template-columns: repeat(3, 1fr);
             }
         }
-
         /* CORRECCIÓN ESPECÍFICA PARA EVITAR SUPERPOCISIÓN */
         .recetas-grid {
             width: 100%;
         }
-        
         .receta-card {
             min-width: 0; /* Previene problemas de desbordamiento */
         }
@@ -546,10 +493,48 @@
                 <div class="navigation-links">
                     <a href="{{ url_for('dashboard') }}" class="btn-secondary">🏠 Volver al Dashboard</a>
                 </div>
+        <!-- BARRA DE BÚSQUEDA Y FILTROS -->
+        <div style="display: flex; flex-wrap: wrap; gap: 15px; margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; align-items: center;">
+            <div style="flex: 1; min-width: 250px;">
+                <input type="text" id="buscadorRecetas" placeholder="🔍 Buscar recetas por nombre, categoría..." 
+                       style="width: 100%; padding: 10px 15px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;"
+                       onkeyup="filtrarRecetas()">
+            </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <select id="filtroCategoria" onchange="filtrarRecetas()" 
+                        style="padding: 10px 15px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; background: white;">
+                    <option value="">Todas las categorías</option>
+                    {% set categorias = recetas|map(attribute='categoria')|unique|list %}
+                    {% for cat in categorias %}
+                        {% if cat %}
+                        <option value="{{ cat }}">{{ cat }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+                <select id="filtroEstado" onchange="filtrarRecetas()" 
+                        style="padding: 10px 15px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; background: white;">
+                    <option value="">Todos los estados</option>
+                    <option value="activa">Activas</option>
+                    <option value="inactiva">Inactivas</option>
+                </select>
+                <select id="filtroRentabilidad" onchange="filtrarRecetas()" 
+                        style="padding: 10px 15px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; background: white;">
+                    <option value="">Todas las rentabilidades</option>
+                    <option value="Alta">Alta</option>
+                    <option value="Media">Media</option>
+                    <option value="Baja">Baja</option>
+                    <option value="Mínima">Mínima</option>
+                    <option value="Negativa">Negativa</option>
+                </select>
+                <button onclick="limpiarFiltros()" 
+                        style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                    Limpiar Filtros
+                </button>
+            </div>
+        </div>
             </div>
             <a href="{{ url_for('crear_receta') }}" class="btn btn-success">➕ Nueva Receta</a>
         </div>
-
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -557,24 +542,21 @@
                 {% endfor %}
             {% endif %}
         {% endwith %}
-
         {% if recetas %}
         <div class="recetas-grid">
             {% for receta in recetas %}
-            <div class="receta-card">
+            <div class="receta-card" data-nombre="{{ receta.nombre.lower() }}" data-categoria="{{ receta.categoria or 'Sin categoría' }}" data-activo="{{ receta.activo }}" data-rentabilidad="{{ receta.rentabilidad_categoria }}">
                 <h3>
                     <span>{{ receta.nombre }}</span>
                     <span class="badge {% if not receta.activo %}badge-inactive{% endif %}">
                         {{ 'Activa' if receta.activo else 'Inactiva' }}
                     </span>
                 </h3>
-                
                 <div class="receta-info">
                     <div style="margin-bottom: 10px;">
                         <span class="info-label">Descripción:</span>
                         <span class="info-value">{{ receta.descripcion or 'Sin descripción' }}</span>
                     </div>
-                    
                     <div class="info-grid">
                         <div class="info-item">
                             <span class="info-label">Categoría:</span>
@@ -601,31 +583,25 @@
                             <span class="info-value">{{ receta.porcentaje_perdida|round(1) }}%</span>
                         </div>
                     </div>
-
                     <!-- SECCIÓN DE COSTOS DETALLADOS -->
                     <div class="costos-section">
                         <h4 style="margin-bottom: 15px; color: #333;">📊 Análisis de Costos</h4>
-                        
                         <div class="costo-item">
                             <span class="costo-label">Costo Materias Primas:</span>
                             <span class="costo-value">{{ receta.costo_materias_primas|currency if receta.costo_materias_primas else '$0' }}</span>
                         </div>
-                        
                         <div class="costo-item">
                             <span class="costo-label">Costo Indirecto (CIF 45%):</span>
                             <span class="costo-value">{{ receta.costo_indirecto|currency if receta.costo_indirecto else '$0' }}</span>
                         </div>
-                        
                         <div class="costo-item">
                             <span class="costo-label">Costo Total Producción:</span>
                             <span class="costo-value" style="color: #e74c3c;">{{ receta.costo_total|currency if receta.costo_total else '$0' }}</span>
                         </div>
-                        
                         <div class="costo-item">
                             <span class="costo-label">Costo por Unidad:</span>
                             <span class="costo-value">{{ receta.costo_unitario|currency if receta.costo_unitario else '$0' }}</span>
                         </div>
-                        
                         <div class="costo-item" style="border-top: 1px solid #ddd; padding-top: 8px; margin-top: 8px;">
                             <span class="costo-label">Precio Teórico (PVU):</span>
                             <span class="costo-value" style="color: #17a2b8;">
@@ -633,11 +609,9 @@
                             </span>
                         </div>
                     </div>
-
                     <!-- SECCIÓN: PRECIO REAL Y UTILIDAD -->
                     <div class="utilidad-section">
                         <h4 style="margin-bottom: 15px; color: #333;">💰 Precio Real y Utilidad</h4>
-                        
                         <div class="costo-item">
                             <span class="costo-label">Precio de Venta Real:</span>
                             <span class="costo-value">
@@ -651,7 +625,6 @@
                                 <span id="loading-{{ receta.id }}" class="loading-spinner" style="display: none;"></span>
                             </span>
                         </div>
-                        
                         <div class="costo-item">
                             <span class="costo-label">Utilidad Real:</span>
                             <span class="costo-value" style="color: {% if receta.utilidad_real_pesos > 0 %}#27ae60{% else %}#e74c3c{% endif %};">
@@ -659,23 +632,16 @@
                                 ({{ receta.utilidad_real_porcentaje|round(1) }}%)
                             </span>
                         </div>
-                        
                         <div class="costo-item">
                             <span class="costo-label">Rentabilidad:</span>
                             <span class="costo-value">
                                 <span class="badge-rentabilidad" 
-                                      style="background: 
-                                        {% if receta.rentabilidad_categoria == 'Alta' %}#28a745
-                                        {% elif receta.rentabilidad_categoria == 'Media' %}#ffc107
-                                        {% elif receta.rentabilidad_categoria == 'Baja' %}#fd7e14
-                                        {% elif receta.rentabilidad_categoria == 'Mínima' %}#ff6b6b
-                                        {% else %}#dc3545{% endif %};
+                                      style="background: {% if receta.rentabilidad_categoria == 'Alta' %}#28a745{% elif receta.rentabilidad_categoria == 'Media' %}#ffc107{% elif receta.rentabilidad_categoria == 'Baja' %}#fd7e14{% elif receta.rentabilidad_categoria == 'Mínima' %}#ff6b6b{% else %}#dc3545{% endif %};
                                         color: white;">
                                     {{ receta.rentabilidad_categoria }}
                                 </span>
                             </span>
                         </div>
-
                         {% if receta.punto_equilibrio_unidades > 0 %}
                         <div class="costo-item">
                             <span class="costo-label">Punto de Equilibrio:</span>
@@ -685,7 +651,6 @@
                         </div>
                         {% endif %}
                     </div>
-
                     <!-- INFORMACIÓN DE INGREDIENTES -->
                     <div style="background: #e8f5e8; padding: 10px; border-radius: 5px; margin-top: 10px;">
                         <span class="info-label">Ingredientes:</span>
@@ -695,28 +660,14 @@
                         </span>
                     </div>
                 </div>
-
                 <!-- BOTONES DE ACCIÓN -->
                 <div class="receta-actions">
-                    <a href="{{ url_for('editar_receta', id=receta.id) }}" 
-                       class="action-btn" 
-                       style="background: #ffc107; color: #212529;">
-                       ✏️ Editar
-                    </a>
-                    
-                    <a href="{{ url_for('producir_receta', id=receta.id) }}" 
-                       class="action-btn" 
-                       style="background: #28a745; color: white;">
-                       👨‍🍳 Producir
-                    </a>
-                    
                     <a href="{{ url_for('detalle_receta', id=receta.id) }}" 
                        class="action-btn" 
                        style="background: #17a2b8; color: white;">
                        📋 Detalles
                     </a>
                 </div>
-
                 <!-- FECHA DE CREACIÓN -->
                 <div class="fecha-creacion" style="text-align: center; margin-top: 10px;">
                     Creada: {{ receta.created_at.strftime('%d/%m/%Y') if receta.created_at else 'Fecha no disponible' }}
@@ -733,7 +684,6 @@
             </a>
         </div>
         {% endif %}
-
         <!-- ESTADÍSTICAS RÁPIDAS -->
         {% if recetas %}
         <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
@@ -763,7 +713,6 @@
         </div>
         {% endif %}
     </div>
-
     <script>
         // Efectos hover mejorados para las tarjetas
         document.addEventListener('DOMContentLoaded', function() {
@@ -773,13 +722,11 @@
                     this.style.transform = 'translateY(-5px)';
                     this.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
                 });
-                
                 card.addEventListener('mouseleave', function() {
                     this.style.transform = 'translateY(0)';
                     this.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
                 });
             });
-
             // Confirmación para acciones importantes
             const actionButtons = document.querySelectorAll('.action-btn');
             actionButtons.forEach(btn => {
@@ -791,43 +738,35 @@
                     });
                 }
             });
-
             // MANEJADOR PARA ACTUALIZAR PRECIOS REALES
             const precioInputs = document.querySelectorAll('.precio-real-input');
             precioInputs.forEach(input => {
                 let timeoutId;
-                
                 input.addEventListener('input', function() {
                     const recetaId = this.getAttribute('data-receta-id');
                     const nuevoPrecio = parseFloat(this.value) || 0;
                     const loadingElement = document.getElementById(`loading-${recetaId}`);
-                    
                     loadingElement.style.display = 'inline-block';
                     clearTimeout(timeoutId);
-                    
                     timeoutId = setTimeout(() => {
                         actualizarPrecioReal(recetaId, nuevoPrecio, loadingElement);
                     }, 1000);
                 });
-
                 input.addEventListener('blur', function() {
                     const recetaId = this.getAttribute('data-receta-id');
                     const nuevoPrecio = parseFloat(this.value) || 0;
                     const loadingElement = document.getElementById(`loading-${recetaId}`);
-                    
                     clearTimeout(timeoutId);
                     actualizarPrecioReal(recetaId, nuevoPrecio, loadingElement);
                 });
             });
         });
-
         function actualizarPrecioReal(recetaId, nuevoPrecio, loadingElement) {
             if (nuevoPrecio < 0) {
                 loadingElement.style.display = 'none';
                 alert('❌ El precio no puede ser negativo');
                 return;
             }
-
             fetch(`/api/actualizar_precio_real/${recetaId}`, {
                 method: 'POST',
                 headers: {
@@ -838,7 +777,6 @@
             .then(response => response.json())
             .then(data => {
                 loadingElement.style.display = 'none';
-                
                 if (data.success) {
                     location.reload();
                 } else {
@@ -851,6 +789,70 @@
                 alert('❌ Error de conexión al actualizar el precio');
             });
         }
-    </script>
+    // ============================================
+    // FILTROS Y BÚSQUEDA PARA RECETAS
+    // ============================================
+    function filtrarRecetas() {
+        const busqueda = document.getElementById('buscadorRecetas').value.toLowerCase();
+        const categoria = document.getElementById('filtroCategoria').value;
+        const estado = document.getElementById('filtroEstado').value;
+        const rentabilidad = document.getElementById('filtroRentabilidad').value;
+        const cards = document.querySelectorAll('.receta-card');
+        let visibleCount = 0;
+        cards.forEach(card => {
+            const nombre = card.dataset.nombre || '';
+            const cat = card.dataset.categoria || '';
+            const activo = card.dataset.activo === 'True';
+            const rent = card.dataset.rentabilidad || '';
+            let visible = true;
+            // Filtro por búsqueda
+            if (busqueda && !nombre.includes(busqueda) && !cat.toLowerCase().includes(busqueda)) {
+                visible = false;
+            }
+            // Filtro por categoría
+            if (categoria && cat !== categoria) {
+                visible = false;
+            }
+            // Filtro por estado
+            if (estado === 'activa' && !activo) {
+                visible = false;
+            }
+            if (estado === 'inactiva' && activo) {
+                visible = false;
+            }
+            // Filtro por rentabilidad
+            if (rentabilidad && rent !== rentabilidad) {
+                visible = false;
+            }
+            card.style.display = visible ? '' : 'none';
+            if (visible) visibleCount++;
+        });
+        // Actualizar contador de resultados
+        const contador = document.getElementById('resultadosContador');
+        if (contador) {
+            contador.textContent = `Mostrando ${visibleCount} recetas`;
+        }
+    }
+    function limpiarFiltros() {
+        document.getElementById('buscadorRecetas').value = '';
+        document.getElementById('filtroCategoria').value = '';
+        document.getElementById('filtroEstado').value = '';
+        document.getElementById('filtroRentabilidad').value = '';
+        filtrarRecetas();
+    }
+    // Ejecutar filtros al cargar la página
+    document.addEventListener('DOMContentLoaded', function() {
+        // Agregar contador de resultados
+        const header = document.querySelector('.header');
+        if (header) {
+            const contador = document.createElement('div');
+            contador.id = 'resultadosContador';
+            contador.style.cssText = 'color: #666; font-size: 0.9em; margin-top: 5px;';
+            contador.textContent = `Mostrando ${document.querySelectorAll('.receta-card').length} recetas`;
+            header.appendChild(contador);
+        }
+        filtrarRecetas();
+    });
+</script>
 </body>
 </html>
