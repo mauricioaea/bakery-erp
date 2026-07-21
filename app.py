@@ -1974,33 +1974,35 @@ def logout():
     return redirect(url_for('login'))
 
 # =============================================
-# RUTAS DE PROVEEDORES
+# RUTAS DE PROVEEDORES - CORREGIDAS MULTI-TENANT
 # =============================================
 
 @app.route('/proveedores')
 @login_required
 @modulo_requerido('proveedores')
 def proveedores():
-    panaderia_actual = session.get('panaderia_id', 1)
-    panaderia_actual = session.get('panaderia_id', 1)
+    """Lista de proveedores - Multi-tenant"""
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    todos_proveedores = Proveedor.query.filter_by(panaderia_id=panaderia_actual).all()
+    panaderia_id = current_user.panaderia_id
+    todos_proveedores = Proveedor.query.filter_by(panaderia_id=panaderia_id).all()
     return render_template('proveedores.html', proveedores=todos_proveedores)
 
-    panaderia_actual = session.get('panaderia_id', 1)
 @app.route('/agregar_proveedor', methods=['GET', 'POST'])
 @login_required
 @modulo_requerido('proveedores')
 def agregar_proveedor():
-    panaderia_actual = session.get('panaderia_id', 1)
+    """Agregar nuevo proveedor - Multi-tenant"""
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
+    panaderia_id = current_user.panaderia_id
+    
     if request.method == 'POST':
         try:
-            nuevo_proveedor = Proveedor(panaderia_id=panaderia_actual, 
+            nuevo_proveedor = Proveedor(
+                panaderia_id=panaderia_id,
                 nombre=request.form['nombre'],
                 contacto=request.form.get('contacto', ''),
                 telefono=request.form.get('telefono', ''),
@@ -2015,11 +2017,12 @@ def agregar_proveedor():
             db.session.add(nuevo_proveedor)
             db.session.commit()
             
-            flash(f'Proveedor "{nuevo_proveedor.nombre}" agregado correctamente', 'success')
+            flash(f'✅ Proveedor "{nuevo_proveedor.nombre}" agregado correctamente', 'success')
             return redirect(url_for('proveedores'))
             
         except Exception as e:
-            flash('Error al agregar el proveedor', 'error')
+            db.session.rollback()
+            flash(f'❌ Error al agregar el proveedor: {str(e)}', 'error')
             return redirect(url_for('agregar_proveedor'))
     
     return render_template('agregar_proveedor.html')
@@ -2028,11 +2031,12 @@ def agregar_proveedor():
 @login_required
 @modulo_requerido('proveedores')
 def editar_proveedor(id):
+    """Editar proveedor - Multi-tenant"""
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    panaderia_actual = session.get('panaderia_id', 1)  # Línea agregada aquí
     
-    proveedor = Proveedor.query.filter_by(panaderia_id=panaderia_actual, id=id).first_or_404()
+    panaderia_id = current_user.panaderia_id
+    proveedor = Proveedor.query.filter_by(panaderia_id=panaderia_id, id=id).first_or_404()
     
     if request.method == 'POST':
         try:
@@ -2046,11 +2050,12 @@ def editar_proveedor(id):
             proveedor.evaluacion = int(request.form.get('evaluacion', 5))
             
             db.session.commit()
-            flash(f'Proveedor "{proveedor.nombre}" actualizado correctamente', 'success')
+            flash(f'✅ Proveedor "{proveedor.nombre}" actualizado correctamente', 'success')
             return redirect(url_for('proveedores'))
             
         except Exception as e:
-            flash('Error al actualizar el proveedor', 'error')
+            db.session.rollback()
+            flash(f'❌ Error al actualizar el proveedor: {str(e)}', 'error')
             return redirect(url_for('editar_proveedor', id=id))
     
     return render_template('editar_proveedor.html', proveedor=proveedor)
@@ -2059,23 +2064,18 @@ def editar_proveedor(id):
 @login_required
 @modulo_requerido('proveedores')
 def toggle_proveedor(id):
+    """Activar/Desactivar proveedor - Multi-tenant"""
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    panaderia_actual = session.get('panaderia_id', 1)  # Línea agregada aquí
     
-    proveedor = Proveedor.query.filter_by(panaderia_id=panaderia_actual, id=id).first_or_404()
+    panaderia_id = current_user.panaderia_id
+    proveedor = Proveedor.query.filter_by(panaderia_id=panaderia_id, id=id).first_or_404()
     proveedor.activo = not proveedor.activo
     db.session.commit()
     
     estado = "activado" if proveedor.activo else "desactivado"
-    flash(f'Proveedor "{proveedor.nombre}" {estado} correctamente', 'success')
+    flash(f'✅ Proveedor "{proveedor.nombre}" {estado} correctamente', 'success')
     return redirect(url_for('proveedores'))
-
-# =============================================
-# RUTAS DE PRODUCTOS EXTERNOS
-# =============================================
-
-    panaderia_actual = session.get('panaderia_id', 1)
 @app.route('/productos_externos')
 @login_required
 @modulo_requerido('productos')
