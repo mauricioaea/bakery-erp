@@ -868,6 +868,7 @@ def debug_punto_venta():
 @app.route('/buscar_producto')
 @login_required
 @modulo_requerido('punto_venta')
+@tenant_required
 def buscar_producto():
     """Búsqueda unificada de productos (panadería + externos) - VERSIÓN FUNCIONAL"""
     query = request.args.get('q', '').lower()
@@ -1113,6 +1114,7 @@ def reiniciar_consecutivo_pos():
 @app.route('/registrar_venta', methods=['POST'])
 @login_required
 @modulo_requerido('punto_venta')
+@tenant_required
 def registrar_venta():
     """Registrar venta - VERSIÓN CORREGIDA MULTI-TENANT"""
     print("🛒 DEBUG - INICIANDO REGISTRO DE VENTA")
@@ -2075,6 +2077,7 @@ def toggle_proveedor(id):
     estado = "activado" if proveedor.activo else "desactivado"
     flash(f'✅ Proveedor "{proveedor.nombre}" {estado} correctamente', 'success')
     return redirect(url_for('proveedores'))
+
 @app.route('/productos_externos')
 @login_required
 @modulo_requerido('productos')
@@ -2141,18 +2144,20 @@ def crear_producto_externo():
 @app.route('/editar_producto_externo/<int:id>', methods=['POST'])
 @login_required
 @modulo_requerido('productos')
+@tenant_required
 def editar_producto_externo(id):
     """Editar producto externo - Solo si pertenece a esta panadería"""
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
     try:
-        panaderia_actual = session.get('panaderia_id', 1)
+        # ✅ CORREGIDO: Usar current_user.panaderia_id
+        panaderia_id = current_user.panaderia_id
         
-        # FILTRO DE SEGURIDAD: Solo productos de esta panadería
+        # ✅ CORREGIDO: Filtro por tenant
         producto = ProductoExterno.query.filter_by(
             id=id, 
-            panaderia_id=panaderia_actual  # ← PROTECCIÓN
+            panaderia_id=panaderia_id
         ).first()
         
         if not producto:
@@ -2184,25 +2189,26 @@ def editar_producto_externo(id):
 @app.route('/eliminar_producto_externo/<int:id>', methods=['POST'])
 @login_required
 @modulo_requerido('productos')
+@tenant_required
 def eliminar_producto_externo(id):
     """Eliminar producto externo (borrado lógico) - Solo si pertenece a esta panadería"""
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
     try:
-        panaderia_actual = session.get('panaderia_id', 1)
+        # ✅ CORREGIDO: Usar current_user.panaderia_id
+        panaderia_id = current_user.panaderia_id
         
-        # FILTRO DE SEGURIDAD: Solo productos de esta panadería
+        # ✅ CORREGIDO: Filtro por tenant
         producto = ProductoExterno.query.filter_by(
             id=id, 
-            panaderia_id=panaderia_actual  # ← PROTECCIÓN
+            panaderia_id=panaderia_id
         ).first()
         
         if not producto:
             flash('❌ Producto no encontrado o no tienes permisos', 'error')
             return redirect(url_for('productos_externos'))
         
-        # Borrado lógico (mejor que eliminar físicamente)
         producto.activo = False
         db.session.commit()
         
@@ -2217,6 +2223,7 @@ def eliminar_producto_externo(id):
 @app.route('/registrar_compra_externa', methods=['POST'])
 @login_required
 @modulo_requerido('productos')
+@tenant_required
 def registrar_compra_externa():
     """Registrar compra de productos externos y actualizar stock"""
     if 'user_id' not in session:
@@ -2229,7 +2236,13 @@ def registrar_compra_externa():
         precio_compra = float(request.form['precio_compra'])
         notas = request.form.get('notas', '')
         
-        producto = ProductoExterno.query.get(producto_id)
+        # ✅ CORREGIDO: Filtrar producto por tenant
+        panaderia_id = current_user.panaderia_id
+        producto = ProductoExterno.query.filter_by(
+            id=producto_id,
+            panaderia_id=panaderia_id
+        ).first()
+        
         if not producto:
             return jsonify({'success': False, 'message': 'Producto no encontrado'})
         
@@ -2240,12 +2253,13 @@ def registrar_compra_externa():
             cantidad=cantidad,
             precio_compra=precio_compra,
             total_compra=cantidad * precio_compra,
-            notas=notas
+            notas=notas,
+            panaderia_id=panaderia_id  # ✅ AGREGADO: Tenant en compra
         )
         
         # Actualizar stock y precios del producto
         producto.stock_actual += cantidad
-        producto.precio_compra = precio_compra  # Actualizar último precio de compra
+        producto.precio_compra = precio_compra
         producto.fecha_ultima_compra = datetime.now()
         
         db.session.add(compra)
@@ -4031,6 +4045,54 @@ def reporte_produccion_diaria():
 # ✅ NUEVAS RUTAS PARA PUNTO DE VENTA INTELIGENTE
 # =============================================
 
+
+
+@app.route('/api/buscar_por_codigo_barras/<codigo>')
+@login_required
+@modulo_requerido('productos')
+@tenant_required
+def buscar_por_codigo_barras(codigo):
+    """Buscar producto externo por código de barras - MULTI-TENANT"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        from models import ProductoExterno
+        
+        # ✅ OBTENER TENANT ACTUAL
+        panaderia_id = current_user.panaderia_id
+        print(f"🔍 Buscando código {codigo} en tenant {panaderia_id}")
+        
+        # ✅ FILTRO MULTI-TENANT
+        producto = ProductoExterno.query.filter_by(
+            codigo_barras=codigo,
+            panaderia_id=panaderia_id,
+            activo=True
+        ).first()
+        
+        if producto:
+            print(f"✅ Producto encontrado: {producto.nombre}")
+            return jsonify({
+                'success': True,
+                'producto': {
+                    'id': producto.id,
+                    'nombre': producto.nombre,
+                    'precio_venta': producto.precio_venta,
+                    'stock_actual': producto.stock_actual,
+                    'categoria': producto.categoria,
+                    'marca': producto.marca
+                }
+            })
+        else:
+            print(f"❌ Producto no encontrado para código {codigo} en tenant {panaderia_id}")
+            return jsonify({
+                'success': False,
+                'message': 'Producto no encontrado'
+            }), 404
+            
+    except Exception as e:
+        print(f"❌ Error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 @app.route('/api/verificar_stock/<int:producto_id>')
 @login_required
 @modulo_requerido('punto_venta')
@@ -4237,6 +4299,7 @@ def actualizar_stock_externo(producto_id):
 @app.route('/reporte_inventario_externo')
 @login_required
 @modulo_requerido('productos')
+@tenant_required
 def reporte_inventario_externo():
     """Reporte completo de inventario de productos externos"""
     if 'user_id' not in session:
@@ -4361,6 +4424,7 @@ def exportar_inventario_externo():
 @app.route('/reporte_ventas_externas')
 @login_required
 @modulo_requerido('reportes')
+@tenant_required
 def reporte_ventas_externas():
     """Reporte de ventas y rentabilidad de productos externos"""
     if 'user_id' not in session:
@@ -4537,6 +4601,7 @@ def exportar_ventas_externas():
 @app.route('/dashboard_externos')
 @login_required
 @modulo_requerido('productos')
+@tenant_required
 def dashboard_externos():
     """Dashboard ejecutivo de productos externos"""
     if 'user_id' not in session:

@@ -85,6 +85,24 @@
                         <!-- Barra de Búsqueda Mejorada -->
                         <div class="search-header sticky-top bg-white p-3 border-bottom">
                             <div class="row g-2 search-controls">
+                                <!-- Campo para Código de Barras -->
+                                <div class="col-md-3 col-sm-12">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-warning text-dark" title="Escanea o escribe el código de barras">
+                                            <i class="fas fa-barcode"></i>
+                                        </span>
+                                        <input type="text" 
+                                               id="codigoBarrasInput" 
+                                               class="form-control form-control-sm" 
+                                               placeholder="Código de barras..."
+                                               onkeydown="detectarCodigoBarras(event)"
+                                               autocomplete="off">
+                                        <button class="btn btn-outline-secondary btn-sm" type="button" onclick="limpiarCodigoBarras()">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                    <small class="text-muted" style="font-size: 0.7em;">Escanea o escribe código de barras</small>
+                                </div>
                                 <div class="col-md-8">
                                     <div class="input-group input-group-lg">
                                         <span class="input-group-text bg-light">
@@ -94,7 +112,7 @@
                                                id="searchInput" 
                                                class="form-control" 
                                                placeholder="Buscar productos..."
-                                               autocomplete="off">
+                                               autocomplete="off" onkeydown="detectarCodigoBarras(event)">
                                         <button class="btn btn-outline-secondary" type="button" onclick="limpiarBusqueda()">
                                             <i class="fas fa-times"></i>
                                         </button>
@@ -1564,5 +1582,91 @@ function mostrarNotificacion(mensaje, tipo = 'info') {
         });
 
     </script>
+
+    <script>
+    // ============================================
+    // LECTOR DE CÓDIGO DE BARRAS
+    // ============================================
+    let codigoBarrasBuffer = '';
+    let timerCodigoBarras = null;
+    
+    function detectarCodigoBarras(event) {
+    console.log("🔑 Tecla presionada:", event.key);
+    
+    if (event.key === "Enter") {
+        var input = document.getElementById("codigoBarrasInput");
+        var codigo = input.value.trim();
+        console.log("📝 Código ingresado:", codigo);
+        
+        if (codigo.length > 3) {
+            event.preventDefault();
+            console.log("🔍 Buscando código:", codigo);
+            buscarProductoPorCodigo(codigo);
+            input.value = "";
+        } else {
+            console.log("⚠️ Código demasiado corto:", codigo);
+        }
+        return;
+    }
+}
+
+function buscarProductoPorCodigo(codigo) {
+    console.log("🔍 Buscando producto por código:", codigo);
+    mostrarNotificacion("🔍 Buscando producto...", "info");
+    
+    fetch("/api/buscar_por_codigo_barras/" + codigo)
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+            if (data.success) {
+                var producto = data.producto;
+                
+                if (producto.stock_actual <= 0) {
+                    mostrarNotificacion("❌ Producto sin stock disponible", "error");
+                    return;
+                }
+                
+                var item = {
+                    id: producto.id,
+                    nombre: producto.nombre,
+                    precio: producto.precio_venta,
+                    cantidad: 1,
+                    tipo: "externo"
+                };
+                
+                var existente = carrito.findIndex(function(p) { 
+                    return p.id === item.id && p.tipo === "externo"; 
+                });
+                
+                if (existente !== -1) {
+                    carrito[existente].cantidad += 1;
+                } else {
+                    carrito.push(item);
+                }
+                
+                actualizarCarrito();
+                guardarCarritoPersistente();
+                
+                mostrarNotificacion("✅ " + producto.nombre + " agregado al carrito", "success");
+                document.getElementById("codigoBarrasInput").value = "";
+                codigoBarrasBuffer = "";
+            } else {
+                mostrarNotificacion("❌ Producto no encontrado: " + codigo, "error");
+            }
+        })
+        .catch(function(error) {
+            console.error("Error:", error);
+            mostrarNotificacion("❌ Error al buscar producto", "error");
+        });
+}
+</script>
+
+<script>
+    function limpiarCodigoBarras() {
+        document.getElementById('codigoBarrasInput').value = '';
+        codigoBarrasBuffer = '';
+        clearTimeout(timerCodigoBarras);
+    }
+
+</script>
 </body>
 </html>
