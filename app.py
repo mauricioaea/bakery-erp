@@ -743,7 +743,7 @@ def registrar_intento_login(user_id, exitoso, metodo):
         #     metodo_autenticacion=metodo,
         #     ip_address=request.remote_addr,
         #     user_agent=request.headers.get('User-Agent'),
-        #     fecha_hora=datetime.utcnow()
+        #     fecha_hora=datetime.now()
         # )
         # db.session.add(auditoria)
         # db.session.commit()
@@ -1283,7 +1283,7 @@ def registrar_venta():
                     producto.total_ventas += cantidad
                     producto.total_ingresos += cantidad * producto.precio_venta
                     producto.utilidad_total += cantidad * (producto.precio_venta - producto.precio_compra)
-                    producto.fecha_ultima_venta = datetime.utcnow()
+                    producto.fecha_ultima_venta = datetime.now()
                 
                 precio_unitario = producto.precio_venta
                 
@@ -1481,7 +1481,7 @@ def guardar_cliente():
             cliente_existente.departamento = data.get('departamento', '')
             cliente_existente.regimen = data.get('regimen', '')
             cliente_existente.responsabilidades = data.get('responsabilidades', '')
-            cliente_existente.fecha_actualizacion = datetime.utcnow()
+            cliente_existente.fecha_actualizacion = datetime.now()
             
             cliente = cliente_existente
             accion = 'actualizado'
@@ -1744,7 +1744,7 @@ def imprimir_factura_electronica(venta_id):
             venta=venta,
             detalles=detalles,
             config=config,
-            ahora=datetime.utcnow()
+            ahora=datetime.now()
         )
         
     except Exception as e:
@@ -2246,7 +2246,7 @@ def registrar_compra_externa():
         # Actualizar stock y precios del producto
         producto.stock_actual += cantidad
         producto.precio_compra = precio_compra  # Actualizar último precio de compra
-        producto.fecha_ultima_compra = datetime.utcnow()
+        producto.fecha_ultima_compra = datetime.now()
         
         db.session.add(compra)
         db.session.commit()
@@ -2438,7 +2438,7 @@ def editar_materia_prima(id):
                 # ACTUALIZAR MATERIA PRIMA
                 materia.stock_actual += nuevo_stock_gramos
                 materia.costo_promedio = nuevo_costo_promedio
-                materia.fecha_ultima_actualizacion = datetime.utcnow()
+                materia.fecha_ultima_actualizacion = datetime.now()
                 
                 # REGISTRAR EN HISTORIAL
                 nueva_compra = HistorialCompra(
@@ -2625,7 +2625,7 @@ def producir_receta(id):
                 cantidad_producir=cantidad,
                 estado='confirmada',
                 usuario_id=session['user_id'],
-                fecha_inicio=datetime.utcnow(),
+                fecha_inicio=datetime.now(),
                 panaderia_id=current_user.panaderia_id  # ✅ NUEVO: Asignar panaderia_id
             )
             db.session.add(orden_produccion)
@@ -3245,6 +3245,7 @@ def diagnostico_productos():
 @app.route('/produccion_diaria')
 @login_required
 @modulo_requerido('produccion')
+@tenant_required
 def produccion_diaria():
     """Dashboard principal de producción diaria - SOLO datos de esta panadería"""
     if 'user_id' not in session:
@@ -3410,7 +3411,7 @@ def configurar_stock_producto(receta_id):
             config.stock_maximo = int(request.form['stock_maximo'])
             config.rotacion_diaria_esperada = float(request.form['rotacion_diaria_esperada'])
             config.tendencia_ventas = float(request.form.get('tendencia_ventas', 1.0))
-            config.fecha_actualizacion = datetime.utcnow()
+            config.fecha_actualizacion = datetime.now()
             
             db.session.commit()
             flash(f'✅ Configuración de stock para "{receta.nombre}" actualizada', 'success')
@@ -3472,7 +3473,7 @@ def configurar_stock(receta_id):
             config.porcentaje_bajo = float(request.form['porcentaje_bajo'])
             config.porcentaje_medio = float(request.form['porcentaje_medio'])
             config.tendencia_ventas = float(request.form.get('tendencia_ventas', 1.0))
-            config.fecha_actualizacion = datetime.utcnow()
+            config.fecha_actualizacion = datetime.now()
             
             db.session.commit()
             flash(f'✅ Configuración de stock para "{receta.nombre}" actualizada', 'success')
@@ -3484,6 +3485,70 @@ def configurar_stock(receta_id):
     return render_template('configurar_stock.html', receta=receta, config=config)
 
 # ✅ NUEVO: API para obtener configuración de stock
+
+
+@app.route('/api/historial_produccion')
+@login_required
+@modulo_requerido('produccion')
+@tenant_required
+def api_historial_produccion():
+    """API para obtener historial de producción por fechas"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        fecha_inicio = request.args.get('fecha_inicio')
+        fecha_fin = request.args.get('fecha_fin')
+        
+        if not fecha_inicio or not fecha_fin:
+            return jsonify({'error': 'Fechas requeridas'}), 400
+        
+        from datetime import datetime
+        fecha_inicio_dt = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+        fecha_fin_dt = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
+        
+        if fecha_inicio_dt > fecha_fin_dt:
+            return jsonify({'error': 'Fecha inicio > fecha fin'}), 400
+        
+        panaderia_id = current_user.panaderia_id
+        
+        # Obtener órdenes completadas en el rango
+        ordenes = OrdenProduccion.query.filter(
+            OrdenProduccion.estado == 'COMPLETADA',
+            OrdenProduccion.panaderia_id == panaderia_id,
+            OrdenProduccion.fecha_fin >= fecha_inicio_dt,
+            OrdenProduccion.fecha_fin <= fecha_fin_dt
+        ).order_by(OrdenProduccion.fecha_fin.desc()).all()
+        
+        resultado = []
+        total_producido = 0
+        recetas_set = set()
+        
+        for orden in ordenes:
+            receta_nombre = orden.receta.nombre if orden.receta else 'Receta eliminada'
+            recetas_set.add(receta_nombre)
+            total_producido += orden.cantidad_producir
+            
+            resultado.append({
+                'id': orden.id,
+                'receta_nombre': receta_nombre,
+                'cantidad': orden.cantidad_producir,
+                'fecha_fin': orden.fecha_fin.isoformat() if orden.fecha_fin else None,
+                'usuario': orden.usuario.username if orden.usuario else 'N/A'
+            })
+        
+        return jsonify({
+            'success': True,
+            'ordenes': resultado,
+            'metricas': {
+                'total_producido': total_producido,
+                'recetas_producidas': len(recetas_set),
+                'total_ordenes': len(resultado)
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 @app.route('/api/configuracion_stock/<int:receta_id>')
 @login_required
 @modulo_requerido('produccion')
@@ -3510,6 +3575,7 @@ def api_configuracion_stock(receta_id):
 @app.route('/produccion/ordenar_produccion', methods=['POST'])
 @login_required
 @modulo_requerido('produccion')
+@tenant_required
 def ordenar_produccion():
     """Crear nueva orden de producción desde el dashboard"""
     if 'user_id' not in session:
@@ -3764,6 +3830,7 @@ def calcular_ventas_hoy(nombre_receta, fecha):
 @app.route('/produccion/iniciar_produccion/<int:orden_id>')
 @login_required
 @modulo_requerido('produccion')
+@tenant_required
 def iniciar_produccion(orden_id):
     """Iniciar una orden de producción - Cambia estado a EN_PRODUCCION"""
     if 'user_id' not in session:
@@ -3806,6 +3873,7 @@ def iniciar_produccion(orden_id):
 @app.route('/produccion/confirmar_produccion/<int:orden_id>')
 @login_required
 @modulo_requerido('produccion')
+@tenant_required
 def confirmar_produccion(orden_id):
     """Confirmar producción completada - Actualiza stock y descuenta ingredientes"""
     if 'user_id' not in session:
@@ -3840,6 +3908,7 @@ def confirmar_produccion(orden_id):
 @app.route('/produccion/cancelar_orden/<int:orden_id>')
 @login_required
 @modulo_requerido('produccion')
+@tenant_required
 def cancelar_orden_produccion(orden_id):
     """Cancelar una orden de producción"""
     if 'user_id' not in session:
@@ -3872,6 +3941,7 @@ def cancelar_orden_produccion(orden_id):
 @app.route('/stock_vitrina')
 @login_required
 @modulo_requerido('produccion')
+@tenant_required
 def stock_vitrina():
     """Vista completa de stock en vitrina - Nueva pestaña"""
     if 'user_id' not in session:
@@ -3910,6 +3980,7 @@ def stock_vitrina():
 @app.route('/reporte_produccion_diaria')
 @login_required
 @modulo_requerido('produccion')
+@tenant_required
 def reporte_produccion_diaria():
     """Reporte imprimible de producción diaria"""
     if 'user_id' not in session:
@@ -3963,6 +4034,7 @@ def reporte_produccion_diaria():
 @app.route('/api/verificar_stock/<int:producto_id>')
 @login_required
 @modulo_requerido('punto_venta')
+@tenant_required
 def verificar_stock_tiempo_real(producto_id):
     """API para verificar stock en tiempo real durante venta"""
     if 'user_id' not in session:
@@ -4032,14 +4104,14 @@ def imprimir_factura(factura_id):
                                 venta=venta,
                                 detalles=detalles,
                                 config=config,
-                                ahora=datetime.utcnow())
+                                ahora=datetime.now())
         else:
             # Usar template de recibo POS tradicional
             return render_template('recibo_pos.html',
                                 venta=venta,
                                 detalles=detalles,
                                 config=config,
-                                ahora=datetime.utcnow())
+                                ahora=datetime.now())
         
     except Exception as e:
         flash(f'❌ Error generando documento: {str(e)}', 'error')
@@ -4497,7 +4569,7 @@ def dashboard_externos():
     valor_inventario = sum(p.stock_actual * p.precio_compra for p in productos)
     
     # Ventas del último mes
-    un_mes_atras = datetime.utcnow() - timedelta(days=30)
+    un_mes_atras = datetime.now() - timedelta(days=30)
 
     ventas_recientes = DetalleVenta.query.join(ProductoExterno).join(Venta).filter(
         DetalleVenta.producto_externo_id.isnot(None),
@@ -4970,7 +5042,7 @@ def realizar_cierre():
             accion='cierre_diario',
             modulo='finanzas',
             descripcion=f'Cierre diario realizado - Ventas: ${total_ventas:,.2f}',
-            fecha_hora=datetime.utcnow(),
+            fecha_hora=datetime.now(),
             ip_address=request.remote_addr,
             user_agent=request.user_agent.string,
             datos_adicionales={ 
@@ -7071,9 +7143,9 @@ def editar_deposito_bancario(deposito_id):
         if 'estado' in data:
             deposito.estado = data['estado']
             if data['estado'] == 'CONCILIADO' and not deposito.fecha_conciliacion:
-                deposito.fecha_conciliacion = datetime.utcnow().date()
+                deposito.fecha_conciliacion = datetime.now().date()
 
-        deposito.fecha_actualizacion = datetime.utcnow()
+        deposito.fecha_actualizacion = datetime.now()
 
         db.session.commit()
 
@@ -8124,7 +8196,7 @@ def registrar_reseteo_password(usuario_id, administrador_id):
         #     accion='reset_password',
         #     ip_address=request.remote_addr,
         #     user_agent=request.headers.get('User-Agent'),
-        #     fecha_hora=datetime.utcnow(),
+        #     fecha_hora=datetime.now(),
         #     detalles='Reseteo manual por super_admin'
         # )
         # db.session.add(auditoria)

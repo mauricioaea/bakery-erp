@@ -511,7 +511,7 @@
             <div class="section-title">📦 Stock en Vitrina - Tiempo Real</div>
             <div class="stock-grid">
                 {% for receta in recetas_con_stock %}
-                <div class="stock-card {{ 'critical' if receta.stock_actual <= receta.stock_minimo else 'warning' if receta.stock_actual <= receta.stock_minimo * 2 else 'low' if receta.stock_actual <= receta.stock_minimo * 3 else '' }}">
+                <div class="stock-card {{ 'critical' if receta.stock_actual <= receta.stock_minimo else 'warning' if receta.stock_actual <= receta.stock_minimo * 2 else 'low' if receta.stock_actual <= receta.stock_minimo * 3 else '' }}" data-receta-id="{{ receta.id }}">
                     <div class="stock-header">
                         <div class="stock-title">🍞 {{ receta.nombre }}</div>
                         <span class="stock-badge badge-{{ 'danger' if receta.stock_actual <= receta.stock_minimo else 'warning' if receta.stock_actual <= receta.stock_minimo * 2 else 'low' if receta.stock_actual <= receta.stock_minimo * 3 else 'success' }}">
@@ -709,8 +709,59 @@
             <div class="header">
                 <div>
                     <h2>📈 Historial de Producción</h2>
-                    <p>Órdenes completadas recientemente</p>
+                    <p>Órdenes completadas - Consulta por fecha</p>
                 </div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                    <div style="display: flex; gap: 5px; align-items: center;">
+                        <label style="font-weight: bold;">Desde:</label>
+                        <input type="date" id="fechaInicioHistorial" value="{{ hoy }}" 
+                               style="padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                    </div>
+                    <div style="display: flex; gap: 5px; align-items: center;">
+                        <label style="font-weight: bold;">Hasta:</label>
+                        <input type="date" id="fechaFinHistorial" value="{{ hoy }}" 
+                               style="padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                    </div>
+                    <button onclick="cargarHistorialFechas()" class="btn btn-info">
+                        🔍 Consultar
+                    </button>
+                    <button onclick="limpiarHistorialFechas()" class="btn btn-secondary" style="background: #6c757d; color: white;">
+                        ❌ Limpiar
+                    </button>
+                    <a href="{{ url_for('reporte_produccion_diaria') }}" class="btn btn-info" target="_blank">
+                        📄 Imprimir Reporte
+                    </a>
+                </div>
+            </div>
+
+            <!-- Contenedor de resultados -->
+            <div id="historialResultados">
+                <div class="orders-section">
+                    <div class="section-title">✅ Órdenes Completadas</div>
+                    <div id="historialLista">
+                        <p style="text-align: center; color: #6c757d; padding: 20px;">
+                            Selecciona un rango de fechas y haz clic en "Consultar"
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Métricas dinámicas -->
+                <div class="metrics" id="historialMetricas" style="display: none;">
+                    <div class="metric-card">
+                        <div class="metric-value" id="totalProducidoHistorial">0</div>
+                        <div class="metric-label">Total Producido</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="recetasProducidasHistorial">0</div>
+                        <div class="metric-label">Recetas Producidas</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="totalOrdenesHistorial">0</div>
+                        <div class="metric-label">Total Órdenes</div>
+                    </div>
+                </div>
+            </div>
+        </div>
                 <a href="{{ url_for('reporte_produccion_diaria') }}" class="btn btn-info" target="_blank">
                     📄 Imprimir Reporte Completo
                 </a>
@@ -764,20 +815,61 @@
 
     <!-- MODAL PARA ORDENAR PRODUCCIÓN -->
     <div id="modalProduccion" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
-        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 10px; width: 90%; max-width: 500px;">
-            <h3 id="modalTitulo">Ordenar Producción</h3>
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 10px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto;">
+            <h3 id="modalTitulo" style="margin-bottom: 20px; color: #333;">Ordenar Producción</h3>
             <form id="formProduccion" method="POST">
                 <input type="hidden" id="recetaId" name="receta_id">
                 
                 <div style="margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Cantidad a Producir:</label>
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Cantidad a Producir:</label>
                     <input type="number" id="cantidadProducir" name="cantidad" min="1" value="1" required 
-                           style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                           style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 1em;">
                 </div>
+                
+                <div style="margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+                    <strong style="color: #333;">Resumen:</strong>
+                    <div id="resumenIngredientes" style="margin-top: 10px; font-size: 0.9em;">
+                        <!-- Se llenará con JavaScript -->
+                    </div>
+                    <div id="resumenStock" style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 5px; display: flex; gap: 20px; flex-wrap: wrap;">
+                        <div>
+                            <span style="color: #28a745;">✅ Suficientes:</span>
+                            <span id="contadorSuficientes" style="font-weight: bold;">0</span>
+                        </div>
+                        <div>
+                            <span style="color: #dc3545;">❌ Insuficientes:</span>
+                            <span id="contadorInsuficientes" style="font-weight: bold;">0</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee;">
+                    <button type="button" onclick="cerrarModal()" class="btn" style="background: #6c757d; color: white; padding: 10px 25px; border-radius: 5px; border: none; cursor: pointer; font-size: 1em;">
+                        ❌ Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-success" style="background: #28a745; color: white; padding: 10px 25px; border-radius: 5px; border: none; cursor: pointer; font-size: 1em;">
+                        ✅ Confirmar Producción
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
                 
                 <div style="margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px;">
                     <strong>Resumen:</strong>
                     <div id="resumenIngredientes" style="margin-top: 10px; font-size: 0.9em;">
+                        <!-- Se llenará con JavaScript -->
+                    </div>
+                    <div id="resumenStock" style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 5px; display: flex; gap: 20px; flex-wrap: wrap;">
+                        <div>
+                            <span style="color: #28a745;">✅ Suficientes:</span>
+                            <span id="contadorSuficientes" style="font-weight: bold;">0</span>
+                        </div>
+                        <div>
+                            <span style="color: #dc3545;">❌ Insuficientes:</span>
+                            <span id="contadorInsuficientes" style="font-weight: bold;">0</span>
+                        </div>
+                    </div>
                         <!-- Se llenará con JavaScript -->
                     </div>
                 </div>
@@ -936,6 +1028,144 @@
                     }
                 });
         }
-    </script>
+    
+    // ============================================
+    // ACTUALIZACIÓN AUTOMÁTICA DE STOCK - VERSIÓN CORRECTA
+    // ============================================
+    function actualizarStockAutomatico() {
+        console.log('🔄 Actualizando stock...');
+        fetch('/api/stock_vitrina_actualizado')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    data.stock.forEach(item => {
+                        const tarjeta = document.querySelector(`.stock-card[data-receta-id="${item.id}"]`);
+                        if (tarjeta) {
+                            const stockElement = tarjeta.querySelector('.stock-metric strong');
+                            if (stockElement) {
+                                stockElement.textContent = item.stock_actual + ' unidades';
+                            }
+                            const badge = tarjeta.querySelector('.stock-badge');
+                            if (badge) {
+                                const estado = item.estado;
+                                badge.className = `stock-badge badge-${estado === 'CRITICO' ? 'danger' : estado === 'BAJO' ? 'warning' : estado === 'MEDIO' ? 'low' : 'success'}`;
+                                badge.textContent = estado;
+                            }
+                            tarjeta.className = `stock-card ${estado === 'CRITICO' ? 'critical' : estado === 'BAJO' ? 'warning' : 'low'}`;
+                        }
+                    });
+                    console.log('✅ Stock actualizado');
+                }
+            })
+            .catch(error => console.error('Error:', error));
+    }
+    
+    // Actualizar cada 60 segundos
+    setInterval(actualizarStockAutomatico, 60000);
+
+</script>
+<script>
+    // ============================================
+    // HISTORIAL POR FECHAS
+    // ============================================
+    function cargarHistorialFechas() {
+        const fechaInicio = document.getElementById('fechaInicioHistorial').value;
+        const fechaFin = document.getElementById('fechaFinHistorial').value;
+        
+        if (!fechaInicio || !fechaFin) {
+            alert('❌ Selecciona ambas fechas');
+            return;
+        }
+        
+        if (fechaInicio > fechaFin) {
+            alert('❌ La fecha de inicio no puede ser mayor a la fecha fin');
+            return;
+        }
+        
+        fetch(`/api/historial_produccion?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    mostrarHistorial(data.ordenes, data.metricas);
+                } else {
+                    alert('❌ Error al cargar historial: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('❌ Error de conexión');
+            });
+    }
+    
+    function mostrarHistorial(ordenes, metricas) {
+        const lista = document.getElementById('historialLista');
+        const metricasDiv = document.getElementById('historialMetricas');
+        
+        // Actualizar métricas
+        document.getElementById('totalProducidoHistorial').textContent = metricas.total_producido || 0;
+        document.getElementById('recetasProducidasHistorial').textContent = metricas.recetas_producidas || 0;
+        document.getElementById('totalOrdenesHistorial').textContent = metricas.total_ordenes || 0;
+        metricasDiv.style.display = 'grid';
+        
+        if (ordenes.length === 0) {
+            lista.innerHTML = `
+                <p style="text-align: center; color: #6c757d; padding: 20px;">
+                    📝 No hay órdenes completadas en este período
+                </p>
+            `;
+            return;
+        }
+        
+        let html = `<div style="margin-bottom: 15px; text-align: center;">
+                        <strong>Total: ${ordenes.length} órdenes</strong>
+                    </div>`;
+        
+        ordenes.forEach(orden => {
+            const fecha = orden.fecha_fin ? new Date(orden.fecha_fin).toLocaleDateString() : 'N/A';
+            const hora = orden.fecha_fin ? new Date(orden.fecha_fin).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : 'N/A';
+            
+            html += `
+                <div class="order-item">
+                    <div class="order-info">
+                        <strong>${orden.receta_nombre}</strong>
+                        <br>
+                        <small>Cantidad: ${orden.cantidad} unidades</small>
+                        <br>
+                        <small>Completada: ${fecha} ${hora}</small>
+                        <br>
+                        <small style="color: #28a745;">📦 Stock generado: +${orden.cantidad} unidades</small>
+                    </div>
+                    <div>
+                        <span class="order-status status-COMPLETADA">
+                            COMPLETADA
+                        </span>
+                    </div>
+                </div>
+            `;
+        });
+        
+        lista.innerHTML = html;
+    }
+    
+    function limpiarHistorialFechas() {
+        document.getElementById('fechaInicioHistorial').value = '';
+        document.getElementById('fechaFinHistorial').value = '';
+        document.getElementById('historialLista').innerHTML = `
+            <p style="text-align: center; color: #6c757d; padding: 20px;">
+                Selecciona un rango de fechas y haz clic en "Consultar"
+            </p>
+        `;
+        document.getElementById('historialMetricas').style.display = 'none';
+    }
+    
+    // Cargar historial del día actual al abrir la pestaña
+    document.querySelector('[data-tab="historial"]').addEventListener('click', function() {
+        const hoy = new Date().toISOString().split('T')[0];
+        document.getElementById('fechaInicioHistorial').value = hoy;
+        document.getElementById('fechaFinHistorial').value = hoy;
+        cargarHistorialFechas();
+    });
+
+</script>
 </body>
 </html>

@@ -1102,7 +1102,7 @@ class OrdenProduccion(db.Model):
         """Marca la orden como completada, actualiza stock y descuenta ingredientes"""
         if self.estado == 'EN_PRODUCCION':
             self.estado = 'COMPLETADA'
-            self.fecha_fin = datetime.utcnow()
+            self.fecha_fin = datetime.now()
             
             print(f"🔍 DEBUG: Completando producción - Receta: {self.receta.nombre if self.receta else 'N/A'}")
             print(f"🔍 DEBUG: Cantidad a producir: {self.cantidad_producir}")
