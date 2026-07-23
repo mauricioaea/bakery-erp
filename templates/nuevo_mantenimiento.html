@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuevo Mantenimiento - {{ activo.nombre }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h1 { margin-bottom: 10px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: bold; }
+        .form-control { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1em; }
+        .btn { padding: 12px 25px; border-radius: 25px; border: none; cursor: pointer; font-weight: bold; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .actions { display: flex; gap: 15px; margin-top: 20px; }
+        select.form-control { appearance: auto; }
+        @media (max-width: 768px) { .actions { flex-direction: column; } .actions .btn { width: 100%; text-align: center; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Nuevo Mantenimiento</h1>
+        <p><strong>Activo:</strong> {{ activo.nombre }}</p>
+        <hr>
+
+        <form method="POST">
+            <div class="form-group">
+                <label>Fecha del mantenimiento *</label>
+                <input type="date" name="fecha_mantenimiento" class="form-control" value="{{ now.strftime('%Y-%m-%d') }}" required>
+            </div>
+
+            <div class="form-group">
+                <label>Tipo de mantenimiento *</label>
+                <select name="tipo" class="form-control" required>
+                    <option value="PREVENTIVO">🔧 Preventivo</option>
+                    <option value="CORRECTIVO">⚡ Correctivo</option>
+                    <option value="REPARACION">🛠️ Reparación</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Descripción *</label>
+                <textarea name="descripcion" class="form-control" rows="3" placeholder="Describe el mantenimiento realizado..." required></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Costo</label>
+                <input type="number" step="0.01" name="costo" class="form-control" placeholder="0.00" value="0">
+            </div>
+
+            <div class="form-group">
+                <label>Técnico / Responsable</label>
+                <input type="text" name="tecnico" class="form-control" placeholder="Nombre del técnico">
+            </div>
+
+            <div class="form-group">
+                <label>Notas adicionales</label>
+                <textarea name="notas" class="form-control" rows="2" placeholder="Observaciones..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" name="cambiar_estado" value="1">
+                    Cambiar estado del activo a "MANTENIMIENTO"
+                </label>
+            </div>
+
+            <div class="actions">
+                <a href="{{ url_for('listar_mantenimientos', activo_id=activo.id) }}" class="btn btn-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-success">💾 Guardar Mantenimiento</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

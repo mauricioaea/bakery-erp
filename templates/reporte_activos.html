@@ -197,7 +197,7 @@
     <div class="container">
         <div class="header">
             <h1>📊 Reporte de Activos Fijos</h1>
-            <p class="subtitle">Panadería Semillas - Generado el {{ now.strftime('%d/%m/%Y %H:%M') }}</p>
+            <p class="subtitle">{{ nombre_empresa or "Panadería" }} - Generado el {{ now.strftime('%d/%m/%Y %H:%M') }}</p>
         </div>
 
         <div class="content">
@@ -386,7 +386,7 @@
             <!-- Información para Impresión -->
             <div class="print-only" style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #ccc;">
                 <p><strong>Reporte generado el:</strong> {{ now.strftime('%d/%m/%Y %H:%M') }}</p>
-                <p><strong>Sistema:</strong> Panadería Semillas - Módulo de Activos Fijos</p>
+                <p><strong>Sistema:</strong> {{ nombre_empresa or "Panadería" }} - Módulo de Activos Fijos</p>
             </div>
         </div>
     </div>

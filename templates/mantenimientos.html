@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mantenimientos - {{ activo.nombre }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 15px; }
+        .btn { padding: 10px 20px; border-radius: 25px; text-decoration: none; font-weight: bold; border: none; cursor: pointer; display: inline-block; }
+        .btn-primary { background: #667eea; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-sm { padding: 5px 12px; font-size: 0.8em; }
+        .table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .table th { background: #343a40; color: white; padding: 12px; text-align: left; }
+        .table td { padding: 10px; border-bottom: 1px solid #eee; }
+        .badge { padding: 4px 12px; border-radius: 15px; font-size: 0.8em; font-weight: bold; }
+        .badge-preventivo { background: #17a2b8; color: white; }
+        .badge-correctivo { background: #ffc107; color: black; }
+        .badge-reparacion { background: #fd7e14; color: white; }
+        .badge-{{ activo.estado|lower }} { background: #28a745; color: white; }
+        .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
+        @media (max-width: 768px) { .table { font-size: 0.8em; } .table th, .table td { padding: 8px; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>🔧 Mantenimientos de "{{ activo.nombre }}"</h1>
+                <p><strong>Estado actual:</strong> <span class="badge badge-{{ activo.estado|lower }}">{{ activo.estado }}</span></p>
+            </div>
+            <div>
+                <a href="{{ url_for('activos_fijos') }}" class="btn btn-secondary">← Volver</a>
+            </div>
+        </div>
+        <div class="actions">
+            <a href="{{ url_for('nuevo_mantenimiento', activo_id=activo.id) }}" class="btn btn-success">➕ Nuevo Mantenimiento</a>
+            <a href="{{ url_for('editar_activo', id=activo.id) }}" class="btn btn-primary">✏️ Editar Activo</a>
+        </div>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div style="padding: 12px; border-radius: 8px; margin: 15px 0; background: {% if category == 'success' %}#d4edda{% else %}#f8d7da{% endif %}; color: {% if category == 'success' %}#155724{% else %}#721c24{% endif %};">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        {% if mantenimientos %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Tipo</th>
+                    <th>Descripción</th>
+                    <th>Costo</th>
+                    <th>Técnico</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in mantenimientos %}
+                <tr>
+                    <td>{{ m.fecha_mantenimiento.strftime('%d/%m/%Y') }}</td>
+                    <td><span class="badge badge-{{ m.tipo|lower }}">{{ m.tipo }}</span></td>
+                    <td>{{ m.descripcion }}</td>
+                    <td>${{ "{:,.0f}".format(m.costo) }}</td>
+                    <td>{{ m.tecnico or '-' }}</td>
+                    <td>
+                        <a href="{{ url_for('detalle_mantenimiento', id=m.id) }}" class="btn btn-primary btn-sm">👁️ Ver</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="text-align: center; padding: 30px; color: #666;">📝 No hay mantenimientos registrados para este activo</p>
+        {% endif %}
+    </div>
+</body>
+</html>

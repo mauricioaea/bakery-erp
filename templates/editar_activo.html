@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Activo - Panadería</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 20px;
+        }
+        .header h1 {
+            color: #333;
+            font-size: 2em;
+        }
+        .subtitle {
+            color: #666;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+        .form-control:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .btn {
+            padding: 12px 25px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            justify-content: flex-end;
+        }
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+        .alert {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .back-btn {
+            background: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        .back-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        select.form-control {
+            appearance: auto;
+        }
+        @media (max-width: 768px) {
+            .row {
+                grid-template-columns: 1fr;
+            }
+            .container {
+                padding: 20px;
+            }
+            .actions {
+                flex-direction: column;
+            }
+            .actions .btn {
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="{{ url_for('activos_fijos') }}" class="back-btn">← Volver a Activos Fijos</a>
+
+        <div class="header">
+            <h1>✏️ Editar Activo Fijo</h1>
+            <p class="subtitle">Actualiza la información del activo</p>
+        </div>
+
+        <!-- Mensajes Flash -->
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <form method="POST">
+            <div class="form-group">
+                <label for="nombre">Nombre del Activo *</label>
+                <input type="text" id="nombre" name="nombre" class="form-control" value="{{ activo.nombre }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="categoria">Categoría *</label>
+                <select id="categoria" name="categoria" class="form-control" required>
+                    {% for key, value in categorias.items() %}
+                        <option value="{{ key }}" {% if activo.categoria == key %}selected{% endif %}>{{ value }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="descripcion">Descripción</label>
+                <textarea id="descripcion" name="descripcion" class="form-control" rows="3">{{ activo.descripcion or '' }}</textarea>
+            </div>
+
+            <div class="row">
+                <div class="form-group">
+                    <label for="numero_serie">Número de Serie</label>
+                    <input type="text" id="numero_serie" name="numero_serie" class="form-control" value="{{ activo.numero_serie or '' }}">
+                </div>
+                <div class="form-group">
+                    <label for="fecha_compra">Fecha de Compra *</label>
+                    <input type="date" id="fecha_compra" name="fecha_compra" class="form-control" value="{{ activo.fecha_compra.strftime('%Y-%m-%d') }}" required>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="form-group">
+                    <label for="proveedor">Proveedor</label>
+                    <input type="text" id="proveedor" name="proveedor" class="form-control" value="{{ activo.proveedor or '' }}">
+                </div>
+                <div class="form-group">
+                    <label for="valor_compra">Valor de Compra *</label>
+                    <input type="number" step="0.01" id="valor_compra" name="valor_compra" class="form-control" value="{{ activo.valor_compra }}" required>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="form-group">
+                    <label for="metodo_pago">Método de Pago</label>
+                    <select id="metodo_pago" name="metodo_pago" class="form-control">
+                        <option value="">Seleccionar...</option>
+                        <option value="EFECTIVO" {% if activo.metodo_pago == 'EFECTIVO' %}selected{% endif %}>Efectivo</option>
+                        <option value="TRANSFERENCIA" {% if activo.metodo_pago == 'TRANSFERENCIA' %}selected{% endif %}>Transferencia</option>
+                        <option value="CREDITO" {% if activo.metodo_pago == 'CREDITO' %}selected{% endif %}>Crédito</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="vida_util">Vida Útil (años)</label>
+                    <input type="number" id="vida_util" name="vida_util" class="form-control" value="{{ activo.vida_util or 5 }}">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="form-group">
+                    <label for="valor_residual">Valor Residual</label>
+                    <input type="number" step="0.01" id="valor_residual" name="valor_residual" class="form-control" value="{{ activo.valor_residual or 0 }}">
+                </div>
+                <div class="form-group">
+                    <label for="ubicacion">Ubicación</label>
+                    <input type="text" id="ubicacion" name="ubicacion" class="form-control" value="{{ activo.ubicacion or '' }}">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="form-group">
+                    <label for="responsable">Responsable</label>
+                    <input type="text" id="responsable" name="responsable" class="form-control" value="{{ activo.responsable or '' }}">
+                </div>
+                <div class="form-group">
+                    <label for="estado">Estado *</label>
+                    <select id="estado" name="estado" class="form-control" required>
+                        <option value="ACTIVO" {% if activo.estado == 'ACTIVO' %}selected{% endif %}>✅ Activo</option>
+                        <option value="MANTENIMIENTO" {% if activo.estado == 'MANTENIMIENTO' %}selected{% endif %}>🔧 Mantenimiento</option>
+                        <option value="INACTIVO" {% if activo.estado == 'INACTIVO' %}selected{% endif %}>❌ Inactivo</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="actions">
+                <a href="{{ url_for('activos_fijos') }}" class="btn btn-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-success">💾 Guardar Cambios</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

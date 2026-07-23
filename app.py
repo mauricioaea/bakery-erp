@@ -227,7 +227,7 @@ from models import calcular_rotacion_automatica, actualizar_rotaciones_automatic
 from models import calcular_tendencia_ventas, analizar_productos_periodo, calcular_rotacion_automatica_por_nombre
 from models import calcular_proyeccion_ventas, generar_recomendacion_stock, generar_alertas_inteligentes
 from models import LogSistema, RegistroFinanciero
-from models import obtener_productos_sin_ventas_recientes, ActivoFijo, CATEGORIAS_ACTIVOS
+from models import obtener_productos_sin_ventas_recientes, ActivoFijo, HistorialMantenimiento, CATEGORIAS_ACTIVOS
 from facturacion.generador_xml import generar_xml_ubl_21
 
 
@@ -7468,6 +7468,124 @@ def registrar_activo():
     
     return render_template('registrar_activo.html', categorias=CATEGORIAS_ACTIVOS)
 
+
+
+@app.route('/editar_activo/<int:id>', methods=['GET', 'POST'])
+@login_required
+@tenant_required
+@modulo_requerido('activos')
+def editar_activo(id):
+    """Editar activo fijo - Multi-tenant"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    activo = ActivoFijo.query.filter_by(panaderia_id=current_user.panaderia_id, id=id).first_or_404()
+    
+    if request.method == 'POST':
+        try:
+            activo.nombre = request.form['nombre']
+            activo.categoria = request.form['categoria']
+            activo.descripcion = request.form['descripcion']
+            activo.numero_serie = request.form.get('numero_serie', '')
+            activo.fecha_compra = datetime.strptime(request.form['fecha_compra'], '%Y-%m-%d').date()
+            activo.proveedor = request.form.get('proveedor', '')
+            activo.valor_compra = float(request.form['valor_compra'])
+            activo.metodo_pago = request.form.get('metodo_pago', '')
+            activo.vida_util = int(request.form.get('vida_util', 5))
+            activo.valor_residual = float(request.form.get('valor_residual', 0))
+            activo.ubicacion = request.form.get('ubicacion', '')
+            activo.responsable = request.form.get('responsable', '')
+            activo.estado = request.form['estado']
+            
+            db.session.commit()
+            
+            flash('✅ Activo actualizado exitosamente', 'success')
+            return redirect(url_for('lista_activos'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'❌ Error al actualizar activo: {str(e)}', 'error')
+    
+    return render_template('editar_activo.html', activo=activo, categorias=CATEGORIAS_ACTIVOS)
+
+
+@app.route('/activo/<int:activo_id>/mantenimientos')
+@login_required
+@tenant_required
+@modulo_requerido('activos')
+def listar_mantenimientos(activo_id):
+    """Listar mantenimientos de un activo"""
+    activo = ActivoFijo.query.filter_by(panaderia_id=current_user.panaderia_id, id=activo_id).first_or_404()
+    mantenimientos = HistorialMantenimiento.query.filter_by(activo_id=activo_id).order_by(HistorialMantenimiento.fecha_mantenimiento.desc()).all()
+    
+    return render_template('mantenimientos.html', activo=activo, mantenimientos=mantenimientos)
+
+@app.route('/activo/<int:activo_id>/mantenimiento/nuevo', methods=['GET', 'POST'])
+@login_required
+@tenant_required
+@modulo_requerido('activos')
+def nuevo_mantenimiento(activo_id):
+    """Agregar nuevo mantenimiento a un activo"""
+    activo = ActivoFijo.query.filter_by(panaderia_id=current_user.panaderia_id, id=activo_id).first_or_404()
+    
+    if request.method == 'POST':
+        try:
+            from datetime import datetime
+            
+            nuevo = HistorialMantenimiento(
+                activo_id=activo_id,
+                fecha_mantenimiento=datetime.strptime(request.form['fecha_mantenimiento'], '%Y-%m-%d').date(),
+                tipo=request.form['tipo'],
+                descripcion=request.form['descripcion'],
+                costo=float(request.form.get('costo', 0)),
+                tecnico=request.form.get('tecnico', ''),
+                notas=request.form.get('notas', ''),
+                panaderia_id=current_user.panaderia_id
+            )
+            
+            db.session.add(nuevo)
+            
+            # Si el estado cambia a MANTENIMIENTO, actualizar el activo
+            if 'cambiar_estado' in request.form:
+                activo.estado = 'MANTENIMIENTO'
+            
+            db.session.commit()
+            
+            flash(f'✅ Mantenimiento registrado para "{activo.nombre}"', 'success')
+            return redirect(url_for('listar_mantenimientos', activo_id=activo_id))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'❌ Error al registrar mantenimiento: {str(e)}', 'error')
+    
+    from datetime import datetime
+    
+    return render_template('nuevo_mantenimiento.html', activo=activo, now=datetime.now())
+
+@app.route('/mantenimiento/<int:id>/eliminar', methods=['POST'])
+@login_required
+@tenant_required
+@modulo_requerido('activos')
+def eliminar_mantenimiento(id):
+    """Eliminar un mantenimiento"""
+    mantenimiento = HistorialMantenimiento.query.filter_by(id=id, panaderia_id=current_user.panaderia_id).first_or_404()
+    activo_id = mantenimiento.activo_id
+    
+    db.session.delete(mantenimiento)
+    db.session.commit()
+    
+    flash('✅ Mantenimiento eliminado', 'success')
+    return redirect(url_for('listar_mantenimientos', activo_id=activo_id))
+
+
+@app.route('/mantenimiento/<int:id>/detalle')
+@login_required
+@tenant_required
+@modulo_requerido('activos')
+def detalle_mantenimiento(id):
+    """Ver detalle de un mantenimiento"""
+    mantenimiento = HistorialMantenimiento.query.filter_by(id=id, panaderia_id=current_user.panaderia_id).first_or_404()
+    return render_template('detalle_mantenimiento.html', mantenimiento=mantenimiento)
 @app.route('/lista_activos')
 @login_required
 @tenant_required
@@ -7505,6 +7623,12 @@ def reporte_activos():
     """Reporte de activos fijos - Multi-tenant"""
     # 🔍 OBTENER TENANT ACTUAL
     panaderia_id = current_user.panaderia_id
+        
+    # OBTENER CONFIGURACIÓN DEL TENANT PARA EL NOMBRE
+    from models import ConfiguracionSistema
+    config = ConfiguracionSistema.query.filter_by(panaderia_id=panaderia_id).first()
+    nombre_empresa = config.nombre_empresa if config else f'Panadería {panaderia_id}'
+    nit_empresa = config.nit_empresa if config else 'N/A'
     if not panaderia_id:
         flash('No se pudo determinar la panadería', 'error')
         return redirect(url_for('dashboard'))
@@ -7596,7 +7720,9 @@ def reporte_activos():
                 print(f"Error generando gráficos: {e}")
                 graph_path = None
     
-    return render_template('reporte_activos.html', 
+    return render_template('reporte_activos.html',
+                         nombre_empresa=nombre_empresa,
+                         nit_empresa=nit_empresa, 
                          activos=activos, 
                          graph_path=graph_path,
                          total_valor=sum(activo.valor_actual() for activo in activos),

@@ -602,12 +602,39 @@
 
         <!-- Contenido Principal -->
         <div class="content">
-            <h3>📦 Activos Recientes</h3>
+        <!-- BUSCADOR Y FILTROS -->
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; background: #f8f9fa; padding: 15px; border-radius: 8px;">
+            <div style="flex: 1; min-width: 200px;">
+                <input type="text" id="buscadorActivos" class="form-control" 
+                       placeholder="🔍 Buscar activos por nombre, categoría..." 
+                       onkeyup="filtrarActivos()"
+                       style="padding: 10px 15px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; width: 100%;">
+            </div>
+            <div>
+                <select id="filtroEstadoActivos" class="form-control" onchange="filtrarActivos()"
+                        style="padding: 10px 15px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
+                    <option value="">📊 Todos los estados</option>
+                    <option value="ACTIVO">✅ Activo</option>
+                    <option value="MANTENIMIENTO">🔧 Mantenimiento</option>
+                    <option value="INACTIVO">❌ Inactivo</option>
+                </select>
+            </div>
+            <div>
+                <span style="background: #6c757d; color: white; padding: 8px 15px; border-radius: 20px; font-size: 0.9em; display: inline-block;">
+                    Mostrando <span id="numActivos">0</span> activos
+                </span>
+            </div>
+            <button onclick="limpiarFiltrosActivos()" class="btn btn-secondary btn-sm" 
+                    style="padding: 8px 15px; background: #6c757d; color: white; border: none; border-radius: 20px; cursor: pointer;">
+                ❌ Limpiar
+            </button>
+        </div>
+        <h3>📦 Activos Recientes</h3>
             
             {% if activos %}
             <div class="assets-grid">
                 {% for activo in activos[:6] %}
-                <div class="asset-card">
+                <div class="asset-card" data-nombre="{{ activo.nombre.lower() }}" data-categoria="{{ categorias[activo.categoria] }}" data-estado="{{ activo.estado }}" data-responsable="{{ (activo.responsable or "").lower() }}">
                     <div class="asset-header">
                         <div class="asset-name">{{ activo.nombre }}</div>
                         <div class="asset-category">{{ categorias[activo.categoria] }}</div>
@@ -635,8 +662,9 @@
                     </div>
                     
                     <div class="asset-actions">
-                        <button class="btn btn-primary btn-sm">👁️ Ver</button>
-                        <button class="btn btn-warning btn-sm">✏️ Editar</button>
+                        <a href="{{ url_for('lista_activos') }}" class="btn btn-primary btn-sm">👁️ Ver</a>
+                    <a href="{{ url_for('listar_mantenimientos', activo_id=activo.id) }}" class="btn btn-warning btn-sm">🔧 Mantenimiento</a>
+                        <a href="{{ url_for('editar_activo', id=activo.id) }}" class="btn btn-warning btn-sm">✏️ Editar</a>
                     </div>
                 </div>
                 {% endfor %}
@@ -670,5 +698,55 @@
             }
         });
     </script>
+
+    <script>
+    // ============================================
+    // BUSCADOR Y FILTROS PARA ACTIVOS FIJOS
+    // ============================================
+    function filtrarActivos() {
+        const busqueda = document.getElementById('buscadorActivos').value.toLowerCase();
+        const filtroEstado = document.getElementById('filtroEstadoActivos').value;
+        const cards = document.querySelectorAll('.asset-card');
+        let visibleCount = 0;
+        
+        cards.forEach(card => {
+            const nombre = card.dataset.nombre || '';
+            const categoria = card.dataset.categoria || '';
+            const responsable = card.dataset.responsable || '';
+            const estado = card.dataset.estado || '';
+            
+            let visible = true;
+            
+            // Filtro por búsqueda
+            if (busqueda && !nombre.includes(busqueda) && !categoria.toLowerCase().includes(busqueda) && !responsable.includes(busqueda)) {
+                visible = false;
+            }
+            
+            // Filtro por estado
+            if (filtroEstado && estado !== filtroEstado) {
+                visible = false;
+            }
+            
+            card.style.display = visible ? '' : 'none';
+            if (visible) visibleCount++;
+        });
+        
+        document.getElementById('numActivos').textContent = visibleCount;
+    }
+    
+    // Inicializar contador al cargar
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(filtrarActivos, 500);
+    });
+    </script>
+
+<script>
+    function limpiarFiltrosActivos() {
+        document.getElementById('buscadorActivos').value = '';
+        document.getElementById('filtroEstadoActivos').value = '';
+        filtrarActivos();
+    }
+
+</script>
 </body>
 </html>

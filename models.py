@@ -2078,6 +2078,30 @@ CATEGORIAS_ACTIVOS = {
 
 # ====================================== 🆕 NUEVOS MODELOS PARA SISTEMA POS/FACTURACIÓN =====================================
 
+
+
+# ============================================
+# HISTORIAL DE MANTENIMIENTO DE ACTIVOS
+# ============================================
+class HistorialMantenimiento(db.Model):
+    """Registro de mantenimientos y reparaciones de activos fijos"""
+    __tablename__ = 'historial_mantenimientos'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    activo_id = db.Column(db.Integer, db.ForeignKey('activos_fijos.id'), nullable=False)
+    fecha_mantenimiento = db.Column(db.Date, nullable=False)
+    tipo = db.Column(db.String(50), nullable=False)  # PREVENTIVO, CORRECTIVO, REPARACION
+    descripcion = db.Column(db.String(500), nullable=False)
+    costo = db.Column(db.Float, default=0)
+    tecnico = db.Column(db.String(100))
+    notas = db.Column(db.String(500))
+    fecha_registro = db.Column(db.DateTime, default=datetime.utcnow)
+    panaderia_id = db.Column(db.Integer, nullable=False)
+    
+    activo = db.relationship('ActivoFijo', backref='mantenimientos')
+    
+    def __repr__(self):
+        return f'<HistorialMantenimiento {self.activo.nombre} - {self.tipo} - {self.fecha_mantenimiento}>'
 class ConsecutivoPOS(db.Model):
     """Maneja el consecutivo persistente para recibos POS"""
     __tablename__ = 'consecutivos_pos'
