@@ -7439,7 +7439,8 @@ def registrar_activo():
             responsable = request.form['responsable']
             
             # Crear nuevo activo
-            nuevo_activo = ActivoFijo(panaderia_id=current_user.panaderia_id, 
+            nuevo_activo = ActivoFijo(
+                panaderia_id=current_user.panaderia_id,
                 nombre=nombre,
                 categoria=categoria,
                 descripcion=descripcion,
@@ -7458,12 +7459,12 @@ def registrar_activo():
             db.session.add(nuevo_activo)
             db.session.commit()
             
-            flash('Activo registrado exitosamente', 'success')
+            flash('✅ Activo registrado exitosamente', 'success')
             return redirect(url_for('activos_fijos'))
             
         except Exception as e:
             db.session.rollback()
-            flash(f'Error al registrar activo: {str(e)}', 'error')
+            flash(f'❌ Error al registrar activo: {str(e)}', 'error')
     
     return render_template('registrar_activo.html', categorias=CATEGORIAS_ACTIVOS)
 
@@ -7498,11 +7499,12 @@ def lista_activos():
 
 @app.route('/reporte_activos')
 @login_required
+@tenant_required  # ✅ AGREGADO
 @modulo_requerido('activos')
 def reporte_activos():
-    """Reporte de activos fijos"""
+    """Reporte de activos fijos - Multi-tenant"""
     # 🔍 OBTENER TENANT ACTUAL
-    panaderia_id = obtener_panaderia_actual()
+    panaderia_id = current_user.panaderia_id
     if not panaderia_id:
         flash('No se pudo determinar la panadería', 'error')
         return redirect(url_for('dashboard'))
@@ -7530,10 +7532,14 @@ def reporte_activos():
     else:
         # ✅ FILTRAR POR TENANT
         activos = ActivoFijo.query.filter_by(panaderia_id=panaderia_id).all()
-    
+        graph_path = None
+        
         # Generar gráficos si hay activos
         if activos:
             try:
+                import matplotlib.pyplot as plt
+                import os
+                
                 fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(12, 10))
                 
                 # Gráfico 1: Distribución por categoría
@@ -7581,7 +7587,6 @@ def reporte_activos():
                 
                 plt.tight_layout()
                 
-                # Guardar gráfico
                 graph_path = os.path.join('static', 'temp', 'activos_report.png')
                 os.makedirs(os.path.dirname(graph_path), exist_ok=True)
                 plt.savefig(graph_path)
@@ -7590,8 +7595,6 @@ def reporte_activos():
             except Exception as e:
                 print(f"Error generando gráficos: {e}")
                 graph_path = None
-        else:
-            graph_path = None
     
     return render_template('reporte_activos.html', 
                          activos=activos, 
@@ -7603,9 +7606,10 @@ def reporte_activos():
 
 @app.route('/api/activos_metrics')
 @login_required
-@tenant_required
+@tenant_required  # ✅ AGREGADO
 @modulo_requerido('activos')
 def api_activos_metrics():
+    """API de métricas de activos - Multi-tenant"""
     # 🆕 VERIFICACIÓN SEGURA PARA SUPER ADMINISTRADOR
     es_super_admin = False
     try:
