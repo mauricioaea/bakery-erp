@@ -2024,6 +2024,8 @@ def logout():
 @app.route('/proveedores')
 @login_required
 @modulo_requerido('proveedores')
+@permisos_requeridos('proveedores', 'ver')
+@permisos_requeridos('proveedores', 'ver')
 def proveedores():
     """Lista de proveedores - Multi-tenant"""
     if 'user_id' not in session:
@@ -2035,6 +2037,7 @@ def proveedores():
 @app.route('/agregar_proveedor', methods=['GET', 'POST'])
 @login_required
 @modulo_requerido('proveedores')
+@permisos_requeridos('proveedores', 'gestionar')
 def agregar_proveedor():
     """Agregar nuevo proveedor - Multi-tenant"""
     if 'user_id' not in session:
@@ -2124,6 +2127,8 @@ def toggle_proveedor(id):
 @login_required
 @modulo_requerido('productos')
 @tenant_required  # ← DECORADOR AGREGADO
+@permisos_requeridos('productos', 'ver')
+@permisos_requeridos('productos', 'ver')
 def productos_externos():
     """Gestión de productos externos (bebidas, helados) - SOLO de esta panadería"""
     if 'user_id' not in session:
@@ -2151,6 +2156,7 @@ def productos_externos():
 @login_required
 @modulo_requerido('productos')
 @tenant_required  # ← DECORADOR AGREGADO
+@permisos_requeridos('productos', 'gestionar')
 def crear_producto_externo():
     """Crear nuevo producto externo - Asigna automáticamente la panadería actual"""
     if 'user_id' not in session:
@@ -2330,8 +2336,9 @@ def registrar_compra_externa():
                          hoy_mas_15=hoy_mas_15)
     
 @app.route('/materias_primas')
+@permisos_requeridos('materias_primas', 'ver')
+@permisos_requeridos('materias_primas', 'ver')
 @login_required
-@modulo_requerido('inventario')
 @tenant_required
 def materias_primas():
     """Gestión de materias primas - SOLO de esta panadería"""
@@ -2353,8 +2360,8 @@ def materias_primas():
 
 
 @app.route('/agregar_materia_prima', methods=['GET', 'POST'])
+@permisos_requeridos('materias_primas', 'gestionar')
 @login_required
-@modulo_requerido('inventario')
 @tenant_required
 def agregar_materia_prima():
     if 'user_id' not in session:
@@ -2456,7 +2463,7 @@ def agregar_materia_prima():
 
 @app.route('/editar_materia_prima/<int:id>', methods=['GET', 'POST'])
 @login_required
-@modulo_requerido('inventario')
+@permisos_requeridos('materias_primas', 'gestionar')
 @tenant_required
 def editar_materia_prima(id):
     if 'user_id' not in session:
@@ -2603,8 +2610,9 @@ def historial_compras(materia_prima_id):
 from tenant_decorators import tenant_required  # Asegúrate de importar el decorador
 
 @app.route('/recetas')
+@permisos_requeridos('recetas', 'ver')
+@permisos_requeridos('recetas', 'ver')
 @login_required
-@modulo_requerido('produccion')
 @tenant_required  # ✅ NUEVO: Decorador multi-tenant
 def recetas():
     if 'user_id' not in session:
@@ -2630,8 +2638,8 @@ def recetas():
 
 @app.route('/detalle_receta/<int:id>')
 @login_required
-@modulo_requerido('produccion')
-@tenant_required  # ✅ NUEVO: Decorador multi-tenant
+@permisos_requeridos('recetas', 'ver')
+@tenant_required
 def detalle_receta(id):
     """Página de detalle de una receta específica"""
     if 'user_id' not in session:
@@ -2643,7 +2651,7 @@ def detalle_receta(id):
 
 @app.route('/producir_receta/<int:id>', methods=['GET', 'POST'])
 @login_required
-@modulo_requerido('produccion')
+@permisos_requeridos('recetas', 'gestionar')
 @tenant_required  # ✅ NUEVO: Decorador multi-tenant
 def producir_receta(id):
     """Producción de una receta - cálculo de ingredientes"""
@@ -2928,8 +2936,8 @@ def calcular_precio_receta():
         }), 500
 
 @app.route('/crear_receta', methods=['GET', 'POST'])
+@permisos_requeridos('recetas', 'gestionar')
 @login_required
-@modulo_requerido('produccion')
 @tenant_required  # ✅ NUEVO: Decorador multi-tenant
 def crear_receta():
     if 'user_id' not in session:
@@ -3095,7 +3103,7 @@ def obtener_categoria_id(nombre_categoria, panaderia_id):
 # ✅ RUTA MEJORADA PARA EDITAR RECETAS EXISTENTES
 @app.route('/editar_receta/<int:id>', methods=['GET', 'POST'])
 @login_required
-@modulo_requerido('produccion')
+@permisos_requeridos('recetas', 'gestionar')
 @tenant_required  # ✅ NUEVO: Decorador multi-tenant
 def editar_receta(id):
     """Editar una receta existente - AHORA CON PRECIO REAL"""
@@ -3299,8 +3307,9 @@ def diagnostico_productos():
 
 
 @app.route('/produccion_diaria')
+@permisos_requeridos('produccion', 'ver')
+@permisos_requeridos('produccion', 'ver')
 @login_required
-@modulo_requerido('produccion')
 @tenant_required
 def produccion_diaria():
     """Dashboard principal de producción diaria - SOLO datos de esta panadería"""
@@ -3629,8 +3638,8 @@ def api_configuracion_stock(receta_id):
     })
 
 @app.route('/produccion/ordenar_produccion', methods=['POST'])
+@permisos_requeridos('produccion', 'gestionar')
 @login_required
-@modulo_requerido('produccion')
 @tenant_required
 def ordenar_produccion():
     """Crear nueva orden de producción desde el dashboard"""
@@ -3995,8 +4004,8 @@ def cancelar_orden_produccion(orden_id):
         return jsonify({'error': str(e)}), 500
 
 @app.route('/stock_vitrina')
+@permisos_requeridos('produccion', 'ver')
 @login_required
-@modulo_requerido('produccion')
 @tenant_required
 def stock_vitrina():
     """Vista completa de stock en vitrina - Nueva pestaña"""
@@ -5226,7 +5235,8 @@ def obtener_ventas_dia(fecha, panaderia_id=None):
 
 @app.route('/reporte/cierre_caja')
 @login_required
-@modulo_requerido('reportes')
+@permisos_requeridos('reportes', 'ver_cierre')
+@tenant_required
 def reporte_cierre_caja():
     """Reporte de cierre de caja con análisis automático - VERSIÓN CON ANÁLISIS POR PRODUCTO"""
     if 'user_id' not in session:
@@ -5596,8 +5606,8 @@ def reporte_cierre_caja():
         return redirect(url_for('dashboard'))
     
 @app.route('/reporte/ventas')
+@permisos_requeridos('reportes', 'ver')
 @login_required
-@modulo_requerido('reportes')
 def reporte_ventas():
     """Reporte de ventas por período con análisis predictivo"""
     if 'user_id' not in session:
@@ -5673,8 +5683,8 @@ def reporte_ventas():
                          productos_donados=productos_donados)
 
 @app.route('/reporte/productos_populares')
+@permisos_requeridos('reportes', 'ver')
 @login_required
-@modulo_requerido('reportes')
 def reporte_productos_populares():
     """Reporte de productos más vendidos con análisis de rotación"""
     if 'user_id' not in session:
@@ -5765,8 +5775,8 @@ def reporte_productos_populares():
                          productos_donados=productos_donados)
 
 @app.route('/reporte/analisis_predictivo')
+@permisos_requeridos('reportes', 'ver')
 @login_required
-@modulo_requerido('reportes')
 def reporte_analisis_predictivo():
     """Reporte de análisis predictivo con recomendaciones ML"""
     if 'user_id' not in session:
@@ -5829,8 +5839,8 @@ def reporte_analisis_predictivo():
 
 # 🆕 NUEVA FUNCIÓN - INSERTAR AQUÍ
 @app.route('/reporte/ventas_avanzado')
+@permisos_requeridos('reportes', 'ver')
 @login_required
-@modulo_requerido('reportes')
 def reporte_ventas_avanzado():
     """Reporte unificado: Ventas por período + Análisis Predictivo + ML"""
     # 📦 IMPORTAR DATETIME AL INICIO
@@ -6283,9 +6293,17 @@ def registrar_dia():
 
 @app.route('/control_diario')
 @login_required
-@modulo_requerido('finanzas')
+@permisos_requeridos('finanzas', 'ver')
 @tenant_required  # ← DECORADOR MULTI-TENANT AGREGADO
 def control_diario():
+    # =============================================
+
+    # 🆕 OCULTAR SALDO PARA CAJEROS
+
+    # =============================================
+
+    es_cajero = current_user.rol == "cajero"
+
     """Vista principal del control financiero diario"""
     from datetime import datetime, date
     
@@ -6464,6 +6482,8 @@ from io import BytesIO
 
 
 @app.route('/gestion_financiera')
+@login_required
+@permisos_requeridos('finanzas', 'ver')
 def gestion_financiera():
     """Módulo de Gestión Financiera y Contabilidad"""
     from models import db, Usuario, PagoIndividual, SaldoBanco
@@ -6542,8 +6562,9 @@ def gestion_financiera():
                          total_egresos_mes=abs(egresos_mes),
                          flujo_neto_mes=flujo_neto_mes)
 @app.route('/reportes')
+@permisos_requeridos('reportes', 'ver')
+@permisos_requeridos('reportes', 'ver')
 @login_required
-@modulo_requerido('reportes')
 def reportes():
     """Vista principal de reportes"""
     # 🔍 Verificar tenant
@@ -6555,8 +6576,8 @@ def reportes():
     return render_template('reportes.html')
 
 @app.route('/generar_reporte_estado_resultados')
+@permisos_requeridos('reportes', 'exportar')
 @login_required
-@modulo_requerido('reportes')
 @tenant_required
 def generar_reporte_estado_resultados():
     """Genera reporte de Estado de Resultados en PDF - CON FILTRO MULTI-TENANT"""
@@ -6603,8 +6624,8 @@ def generar_reporte_estado_resultados():
         return redirect(url_for('reportes'))
 
 @app.route('/generar_reporte_flujo_caja')
+@permisos_requeridos('reportes', 'exportar')
 @login_required
-@modulo_requerido('reportes')
 @tenant_required
 def generar_reporte_flujo_caja():
     """Genera reporte de Flujo de Caja en PDF"""
@@ -6646,8 +6667,8 @@ def generar_reporte_flujo_caja():
 #===============================================libro contable==========================================================
 
 @app.route('/generar_reporte_libro_diario')
+@permisos_requeridos('reportes', 'exportar')
 @login_required
-@modulo_requerido('reportes')
 @tenant_required 
 def generar_reporte_libro_diario():
     """Genera reporte de Libro Diario Contable en PDF"""
@@ -6687,8 +6708,8 @@ def generar_reporte_libro_diario():
         return redirect(url_for('reportes'))
 #===========================================Conciliacion Babcaria===================================================
 @app.route('/generar_reporte_conciliacion')
+@permisos_requeridos('reportes', 'exportar')
 @login_required
-@modulo_requerido('reportes')
 @tenant_required 
 def generar_reporte_conciliacion():
     """Genera reporte de Conciliación Bancaria en PDF"""
@@ -7020,6 +7041,8 @@ def generar_reporte_tesoreria_unificado():
 @app.route('/depositos_bancarios', methods=['GET'])
 @tenant_required
 @login_required  # <-- SOLO ESTOS DOS
+@permisos_requeridos('finanzas', 'ver_depositos')
+
 def listar_depositos_bancarios():
     """Lista todos los depósitos bancarios del tenant actual"""
     try:
@@ -7081,6 +7104,8 @@ def listar_depositos_bancarios():
 @app.route('/depositos_bancarios/<int:deposito_id>', methods=['GET'])
 @tenant_required
 @login_required
+@permisos_requeridos('finanzas', 'ver_depositos')
+
 def obtener_deposito_bancario(deposito_id):
     """Obtiene un depósito bancario específico por ID"""
     try:
@@ -7121,6 +7146,8 @@ def obtener_deposito_bancario(deposito_id):
 @app.route('/depositos_bancarios/crear', methods=['POST'])
 @tenant_required
 @login_required
+@permisos_requeridos('finanzas', 'ver_depositos')
+
 def crear_deposito_bancario():
     """Crea un nuevo depósito bancario - VERSIÓN CORREGIDA"""
     try:
@@ -7211,6 +7238,8 @@ def crear_deposito_bancario():
 @app.route('/depositos_bancarios/editar/<int:deposito_id>', methods=['POST'])
 @tenant_required
 @login_required
+@permisos_requeridos('finanzas', 'ver_depositos')
+
 def editar_deposito_bancario(deposito_id):
     """Edita un depósito bancario existente"""
     try:
@@ -7272,6 +7301,8 @@ def editar_deposito_bancario(deposito_id):
 @app.route('/depositos_bancarios/eliminar/<int:deposito_id>', methods=['POST'])
 @tenant_required
 @login_required
+@permisos_requeridos('finanzas', 'ver_depositos')
+
 def eliminar_deposito_bancario(deposito_id):
     """Elimina un depósito bancario (solo si está en estado REGISTRADO)"""
     try:
@@ -7311,6 +7342,8 @@ def eliminar_deposito_bancario(deposito_id):
 @app.route('/depositos_bancarios/conciliar/<int:deposito_id>', methods=['POST'])
 @tenant_required
 @modulo_requerido('tesoreria')
+@permisos_requeridos('finanzas', 'ver_depositos')
+
 def conciliar_deposito_bancario(deposito_id):
     """Marca un depósito como conciliado"""
     try:
@@ -7340,6 +7373,8 @@ def conciliar_deposito_bancario(deposito_id):
 @app.route('/depositos_bancarios/estadisticas', methods=['GET'])
 @tenant_required
 @login_required
+@permisos_requeridos('finanzas', 'ver_depositos')
+
 def estadisticas_depositos_bancarios():
     """Obtiene estadísticas de depósitos bancarios"""
     try:
@@ -7400,6 +7435,8 @@ def estadisticas_depositos_bancarios():
 @login_required
 @tenant_required
 @modulo_requerido('activos')
+@permisos_requeridos('activos', 'ver')
+@permisos_requeridos('activos', 'ver')
 def activos_fijos():
     # 🆕 VERIFICACIÓN SEGURA PARA SUPER ADMINISTRADOR
     es_super_admin = False
@@ -7443,6 +7480,7 @@ def activos_fijos():
 @login_required
 @tenant_required
 @modulo_requerido('activos')
+@permisos_requeridos('activos', 'gestionar')
 def registrar_activo():
     # 🆕 VERIFICACIÓN SEGURA PARA SUPER ADMINISTRADOR
     es_super_admin = False
@@ -7632,6 +7670,7 @@ def detalle_mantenimiento(id):
 @login_required
 @tenant_required
 @modulo_requerido('activos')
+@permisos_requeridos('activos', 'ver')
 def lista_activos():
     # 🆕 VERIFICACIÓN SEGURA PARA SUPER ADMINISTRADOR
     es_super_admin = False
@@ -7661,6 +7700,7 @@ def lista_activos():
 @login_required
 @tenant_required  # ✅ AGREGADO
 @modulo_requerido('activos')
+@permisos_requeridos('activos', 'ver')
 def reporte_activos():
     """Reporte de activos fijos - Multi-tenant"""
     # 🔍 OBTENER TENANT ACTUAL
@@ -7815,8 +7855,9 @@ def api_activos_metrics():
 
 #========================================= 🆕 RUTAS PARA GESTIÓN DE USUARIOS==================================================
 @app.route('/gestion_usuarios')
+@permisos_requeridos('usuarios', 'ver')
+@permisos_requeridos('usuarios', 'ver')
 @login_required
-@modulo_requerido('gestion_usuarios')
 def gestion_usuarios():
     """Gestión de usuarios de la panadería actual"""
     try:
@@ -8131,6 +8172,7 @@ def guardar_permisos(usuario_id):
 @app.route('/gestion_clientes')
 @login_required
 @modulo_requerido('gestion_clientes')  # ✅ CORREGIDO: 'sistema' → 'gestion_clientes'
+@permisos_requeridos('clientes', 'ver')
 def gestion_clientes():
     """Panel de gestión de clientes/suscripciones"""
     from models import ConfiguracionPanaderia
@@ -8157,6 +8199,7 @@ def gestion_clientes():
 @app.route('/crear_cliente', methods=['POST'])
 @login_required
 @modulo_requerido('sistema')
+@permisos_requeridos('clientes', 'gestionar')
 def crear_cliente():
     """Crear un nuevo cliente/panadería con usuarios automáticos"""
     from models import ConfiguracionPanaderia, Usuario
@@ -8539,6 +8582,7 @@ def obtener_datos_cliente(cliente_id):
 
 @app.route('/editar_cliente', methods=['POST'])
 @login_required
+@permisos_requeridos('clientes', 'gestionar')
 def editar_cliente():
     """Editar datos de un cliente existente"""
     if current_user.rol != 'super_admin':
@@ -8619,6 +8663,7 @@ def obtener_datos_cliente_super(cliente_id):
 
 @app.route('/editar_cliente_super', methods=['POST'])
 @login_required
+@permisos_requeridos('clientes', 'gestionar')
 def editar_cliente_super():
     """Editar datos de un cliente existente (SUPER ADMIN)"""
     if current_user.rol != 'super_admin':
@@ -8658,6 +8703,7 @@ def editar_cliente_super():
 
 @app.route('/renovar_suscripcion_super', methods=['POST'])
 @login_required
+@permisos_requeridos('clientes', 'gestionar')
 def renovar_suscripcion_super():
     """Renovar suscripción de un cliente (SUPER ADMIN)"""
     if current_user.rol != 'super_admin':

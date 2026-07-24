@@ -42,11 +42,11 @@ class Usuario(UserMixin, db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
     
-    # 🆕 MÉTODOS ACTUALIZADOS PARA GESTIÓN DE PERMISOS
+   # 🆕 MÉTODOS ACTUALIZADOS PARA GESTIÓN DE PERMISOS
     def tiene_permiso(self, modulo, accion):
         """Verificar si usuario tiene permiso para acción en módulo"""
         # 1. Administrador tiene acceso completo
-        if self.rol == 'administrador':
+        if self.rol == 'admin_cliente':
             return True
             
         # 2. Verificar permisos personalizados primero
@@ -67,7 +67,7 @@ class Usuario(UserMixin, db.Model):
     
     def puede_acceder_modulo(self, modulo):
         """Verificar si usuario puede acceder a un módulo completo"""
-        if self.rol == 'administrador':
+        if self.rol == 'admin_cliente':
             return True
             
         # Verificar permisos personalizados
@@ -86,7 +86,7 @@ class Usuario(UserMixin, db.Model):
     
     def obtener_modulos_permitidos(self):
         """Obtener lista de módulos a los que tiene acceso"""
-        if self.rol == 'administrador':
+        if self.rol == 'admin_cliente':
             return list(MODULOS_SISTEMA.keys())
         
         permisos_rol = ROLES_PERMISOS.get(self.rol, {})
@@ -117,6 +117,7 @@ ROLES_PERMISOS = {
     'cajero': {
         'dashboard': ['ver'],
         'punto_venta': ['vender', 'ver_ventas_propias', 'imprimir_ticket', 'cierre_caja'], 
+        'reportes': ['ver_cierre'],  # 🆕 AGREGADO: Permiso para ver cierre de caja
         'finanzas': ['ver_cierre_diario'],
         'usuarios': ['ver_perfil']  # Solo puede ver su propio perfil
     },
@@ -130,7 +131,7 @@ ROLES_PERMISOS = {
         'clientes': ['ver', 'gestionar'],
         'proveedores': ['ver'],
         'ventas': ['ver_todas', 'exportar'],
-        'reportes': ['ver_ventas', 'ver_produccion'],
+        'reportes': ['ver_ventas', 'ver_produccion', 'ver_cierre'],  # 🆕 AGREGADO: ver_cierre
         'finanzas': ['ver_cierre_diario'],
         'usuarios': ['ver_perfil']
     },
@@ -145,7 +146,7 @@ ROLES_PERMISOS = {
         'clientes': ['ver', 'gestionar'],
         'proveedores': ['ver', 'gestionar'],
         'ventas': ['ver_todas', 'exportar', 'analizar'],
-        'reportes': ['ver_todos', 'exportar', 'analizar'],
+        'reportes': ['ver_todos', 'exportar', 'analizar', 'ver_cierre'],  # 🆕 AGREGADO: ver_cierre
         'finanzas': ['ver_todo', 'gestionar'],
         'activos': ['ver', 'gestionar'],
         'configuracion': ['ver', 'editar_parametros'],
@@ -163,7 +164,7 @@ ROLES_PERMISOS = {
         'clientes': ['ver', 'gestionar'],
         'proveedores': ['ver', 'gestionar'],
         'finanzas': ['ver_todo', 'gestionar'],
-        'reportes': ['ver_todos', 'exportar', 'analizar'],
+        'reportes': ['ver_todos', 'exportar', 'analizar', 'ver_cierre'],  # 🆕 AGREGADO: ver_cierre
         'configuracion': ['ver', 'editar_parametros'],
         'activos': ['ver', 'gestionar'],
         'usuarios': ['gestionar', 'ver_perfil'],
@@ -183,7 +184,7 @@ ROLES_PERMISOS = {
         'clientes': ['ver', 'gestionar'],
         'proveedores': ['ver', 'gestionar'],
         'finanzas': ['ver_todo', 'gestionar'],
-        'reportes': ['ver_todos', 'exportar', 'analizar'],
+        'reportes': ['ver_todos', 'exportar', 'analizar', 'ver_cierre'],  # 🆕 AGREGADO: ver_cierre
         'configuracion': ['ver', 'editar_parametros'],
         'activos': ['ver', 'gestionar'],
         'usuarios': ['gestionar', 'ver_perfil'],
