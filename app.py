@@ -670,6 +670,40 @@ def login():
                 # 🔐 REGISTRO DE ACTIVIDAD (PREPARACIÓN PARA AUDITORÍA)
                 registrar_intento_login(user.id, True, metodo_usado)
                 
+                # =============================================
+                # 🆕 VERIFICAR FECHA DE EXPIRACIÓN DE LICENCIA
+                # =============================================
+                from models import ConfiguracionPanaderia
+                from datetime import datetime
+                
+                # Obtener configuración de la panadería del usuario
+                config = ConfiguracionPanaderia.query.filter_by(
+                    tenant_id=user.panaderia_id
+                ).first()
+                
+                # Si no encuentra por tenant_id, buscar por panaderia_id
+                if not config:
+                    config = ConfiguracionPanaderia.query.filter_by(
+                        panaderia_id=user.panaderia_id
+                    ).first()
+                
+                # Verificar si la licencia es de tipo local (permanente) o tiene fecha de expiración
+                if config and config.tipo_licencia != 'local' and config.fecha_expiracion:
+                    hoy = datetime.now().date()
+                    dias_restantes = (config.fecha_expiracion - hoy).days
+                    
+                    if dias_restantes < 0:
+                        # Licencia expirada - redirigir a licencia_expirada
+                        flash('🔴 ¡ATENCIÓN! Tu licencia ha expirado. No podrás acceder al sistema hasta que renueves. 📞 Contáctanos: 3102482881 o ✉️ mauricioandreserazo@outlook.com', 'error')
+                        return redirect(url_for('licencia_expirada'))
+                    
+                    # Opcional: mostrar alerta si está por vencer (7 días o menos)
+                    elif dias_restantes <= 7 and dias_restantes >= 0:
+                        flash(f'⚠️ Tu licencia vence en {dias_restantes} días. Renueva pronto.', 'warning')
+                # =============================================
+                # FIN DE VERIFICACIÓN
+                # =============================================
+                
                 login_user(user)
                 session['user_id'] = user.id
                 session['username'] = user.username
@@ -756,6 +790,14 @@ def registrar_intento_login(user_id, exitoso, metodo):
 @login_required
 def acceso_denegado():
     return render_template('acceso_denegado.html')
+
+# =============================================
+# 🆕 NUEVA RUTA PARA LICENCIA EXPIRADA
+# =============================================
+@app.route('/licencia_expirada')
+def licencia_expirada():
+    """Página específica para licencia expirada"""
+    return render_template('licencia_expirada.html')
 
 # Ruta para el dashboard - SOLO UNA VEZ
 @app.route('/dashboard')
@@ -7774,55 +7816,96 @@ def api_activos_metrics():
 #========================================= 🆕 RUTAS PARA GESTIÓN DE USUARIOS==================================================
 @app.route('/gestion_usuarios')
 @login_required
-@modulo_requerido('gestion_usuarios')  # ✅ AGREGAR DECORADOR
+@modulo_requerido('gestion_usuarios')
 def gestion_usuarios():
-    """Gestión de usuarios de la panadería actual - SOLO para admin_cliente"""
+    """Gestión de usuarios de la panadería actual"""
     try:
         if 'user_id' not in session:
             return redirect(url_for('login'))
         
-        # Solo admin_cliente puede gestionar usuarios de su panadería
         if current_user.rol != 'admin_cliente':
             flash('No tienes permisos para gestionar usuarios', 'error')
             return redirect(url_for('dashboard'))
         
-        panaderia_actual_id = obtener_panaderia_actual()
-        
-        # Obtener información de la panadería
-        panaderia_actual = ConfiguracionPanaderia.query.get(panaderia_actual_id)
+        panaderia_actual_id = current_user.panaderia_id
+        panaderia_actual = ConfiguracionPanaderia.query.filter_by(
+            id=panaderia_actual_id
+        ).first()
         
         if not panaderia_actual:
             flash('Error: No se encontró información de la panadería', 'error')
             return redirect(url_for('dashboard'))
         
-        # Obtener usuarios de ESTA panadería
+        # =============================================
+        # 🆕 CALCULAR DATOS DE LICENCIA
+        # =============================================
+        from datetime import date
+        import sqlite3
+        import os
+        
+        datos_licencia = {
+            'tipo': panaderia_actual.tipo_licencia or 'Local',
+            'max_usuarios': panaderia_actual.max_usuarios or 3,
+            'fecha_expiracion': None,
+            'dias_restantes': None,
+            'estado': 'activa',
+            'alerta': None,
+            'color': 'success'
+        }
+        
+        # Si tiene fecha de expiración en la configuración
+        if panaderia_actual.fecha_expiracion:
+            fecha_exp = panaderia_actual.fecha_expiracion
+            datos_licencia['fecha_expiracion'] = fecha_exp
+            
+            # Calcular días restantes
+            if isinstance(fecha_exp, str):
+                fecha_exp = datetime.strptime(fecha_exp, '%Y-%m-%d').date()
+            
+            hoy = date.today()
+            dias = (fecha_exp - hoy).days
+            
+            datos_licencia['dias_restantes'] = dias
+            
+            if dias < 0:
+                datos_licencia['estado'] = 'expirada'
+                datos_licencia['color'] = 'danger'
+                datos_licencia['alerta'] = f'🔴 LICENCIA EXPIRADA (hace {abs(dias)} días)'
+            elif dias == 0:
+                datos_licencia['estado'] = 'por_vencer'
+                datos_licencia['color'] = 'warning'
+                datos_licencia['alerta'] = '⚠️ ¡Tu licencia vence HOY!'
+            elif dias <= 7:
+                datos_licencia['estado'] = 'por_vencer'
+                datos_licencia['color'] = 'warning'
+                datos_licencia['alerta'] = f'⚠️ Tu licencia vence en {dias} días'
+            elif dias <= 30:
+                datos_licencia['estado'] = 'por_vencer'
+                datos_licencia['color'] = 'info'
+                datos_licencia['alerta'] = f'ℹ️ Tu licencia vence en {dias} días'
+            else:
+                datos_licencia['estado'] = 'activa'
+                datos_licencia['color'] = 'success'
+                datos_licencia['alerta'] = f'✅ Licencia activa - Vence en {dias} días'
+        else:
+            # Licencia LOCAL
+            datos_licencia['estado'] = 'permanente'
+            datos_licencia['color'] = 'secondary'
+            datos_licencia['alerta'] = '🔒 Licencia Local (Permanente)'
+        
         usuarios = Usuario.query.filter_by(panaderia_id=panaderia_actual_id).all()
         
-        # Debug en consola
-        print(f"🔍 DEBUG GESTIÓN USUARIOS:")
-        print(f"   Panadería: {panaderia_actual.nombre_panaderia} (ID: {panaderia_actual_id})")
-        print(f"   Usuarios: {len(usuarios)}")
-        for usuario in usuarios:
-            print(f"     - {usuario.username} ({usuario.rol})")
-        
-        return render_template('gestion_usuarios.html', 
+        return render_template('gestion_usuarios.html',
                              usuarios=usuarios,
-                             panaderia_actual=panaderia_actual)
+                             panaderia_actual=panaderia_actual,
+                             datos_licencia=datos_licencia)  # 🆕 PASAMOS LOS DATOS DE LICENCIA
                              
     except Exception as e:
         print(f"❌ ERROR en gestión_usuarios: {e}")
         flash('Error interno del servidor', 'error')
         return redirect(url_for('dashboard'))
     
-    print(f"🔍 DEBUG GESTIÓN USUARIOS:")
-    print(f"   Panadería ID: {panaderia_actual_id}")
-    print(f"   Panadería Nombre: {panaderia_actual.nombre_panaderia}")
-    print(f"   Usuarios encontrados: {len(usuarios)}")
     
-    return render_template('gestion_usuarios.html', 
-                         usuarios=usuarios,
-                         panaderia_actual=panaderia_actual)
-
 @app.route('/crear_usuario', methods=['GET', 'POST'])
 @login_required
 @permisos_requeridos('usuarios', 'gestionar')
