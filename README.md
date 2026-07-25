@@ -993,3 +993,30 @@ Orden	Módulo	Propósito
 🔹 FASE 4: VISIÓN GLOBAL
 Orden	Módulo	Propósito
 11	Dashboard	✅ Panel principal con métricas clave y acceso rápido
+
+**estrategia comercial**
+🎯 DECISIÓN FINAL
+Pregunta	Decisión
+¿Precio Básica?	🟢 $50,000 COP / mes
+¿Precio Premium?	🟢 $150,000 COP / mes
+¿Anual (2 meses gratis)?	✅ Sí
+¿Prueba gratuita 7 días?	✅ Sí
+¿Usuarios Básica?	1 usuario
+¿Usuarios Premium?	3 usuarios
+
+en el plan Premium"
+
+📋 CÓMO QUEDÓ EL SISTEMA
+Módulo	Básica	Premium
+Punto de Venta	✅ (sin Reporte IA)	✅ (con Reporte IA)
+Producción	✅	✅
+Productos Externos	✅	✅
+Recetas	✅	✅
+Materias Primas	✅	✅
+Proveedores	✅	✅
+Gestión Financiera	✅	✅
+Reporte Cierre de Caja	✅	✅
+Estado de Resultados	✅	✅
+Reportes Gerenciales	❌	✅
+Activos Fijos	❌	✅
+Gestión de Usuarios	❌	✅

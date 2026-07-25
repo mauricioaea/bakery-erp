@@ -11,6 +11,14 @@
         .sidebar { min-height: 100vh; }
         .module-card { transition: transform 0.2s; }
         .module-card:hover { transform: translateY(-2px); }
+        .badge-premium {
+            font-size: 0.6rem;
+            padding: 0.25rem 0.5rem;
+            background-color: #ffc107;
+            color: #212529;
+            border-radius: 0.25rem;
+            margin-left: 0.5rem;
+        }
     </style>
 </head>
 <body>
@@ -56,12 +64,15 @@
             <nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar">
                 <div class="position-sticky pt-3">
                     <ul class="nav flex-column">
+                        <!-- Dashboard -->
                         <li class="nav-item">
                             <a class="nav-link active" href="{{ url_for('dashboard') }}">
                                 <i class="fas fa-tachometer-alt me-2"></i>
                                 Dashboard
                             </a>
                         </li>
+                        
+                        <!-- Punto de Venta -->
                         {% if usuario_tiene_acceso('punto_venta') %}
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('punto_venta') }}">
@@ -70,6 +81,8 @@
                             </a>
                         </li>
                         {% endif %}
+                        
+                        <!-- Productos -->
                         {% if usuario_tiene_acceso('productos') %}
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('productos_externos') }}">
@@ -78,14 +91,73 @@
                             </a>
                         </li>
                         {% endif %}
+                        
+                        <!-- Gestión de Usuarios - PREMIUM -->
                         {% if usuario_tiene_acceso('usuarios') and usuario_puede('usuarios', 'gestionar') %}
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('gestion_usuarios') }}">
                                 <i class="fas fa-users me-2"></i>
                                 Gestión de Usuarios
+                                {% if config and config.tipo_licencia == 'nube_basica' %}
+                                    <span class="badge bg-warning text-dark ms-2" style="font-size: 0.6rem;">⭐ PREMIUM</span>
+                                {% endif %}
                             </a>
                         </li>
                         {% endif %}
+                        
+                        <!-- Reportes Avanzados - PREMIUM -->
+                        {% if usuario_tiene_acceso('reportes') and usuario_puede('reportes', 'ver') %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('reporte_analisis_predictivo') }}">
+                                <i class="fas fa-chart-line me-2"></i>
+                                Reportes Avanzados
+                                {% if config and config.tipo_licencia == 'nube_basica' %}
+                                    <span class="badge bg-warning text-dark ms-2" style="font-size: 0.6rem;">⭐ PREMIUM</span>
+                                {% endif %}
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        <!-- Activos Fijos - PREMIUM -->
+                        {% if usuario_tiene_acceso('activos') %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('activos_fijos') }}">
+                                <i class="fas fa-building me-2"></i>
+                                Activos Fijos
+                                {% if config and config.tipo_licencia == 'nube_basica' %}
+                                    <span class="badge bg-warning text-dark ms-2" style="font-size: 0.6rem;">⭐ PREMIUM</span>
+                                {% endif %}
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        <!-- Gestión Financiera -->
+                        {% if usuario_tiene_acceso('finanzas') %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('gestion_financiera') }}">
+                                <i class="fas fa-coins me-2"></i>
+                                Gestión Financiera
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        <!-- Reporte Cierre de Caja -->
+                        {% if usuario_tiene_acceso('reportes') and usuario_puede('reportes', 'ver_cierre') %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('reporte_cierre_caja') }}">
+                                <i class="fas fa-file-invoice me-2"></i>
+                                Cierre de Caja
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        <!-- Mi Perfil -->
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('mi_perfil') }}">
+                                <i class="fas fa-user-cog me-2"></i>
+                                Mi Perfil
+                            </a>
+                        </li>
                     </ul>
                 </div>
             </nav>

@@ -318,12 +318,53 @@ def modulo_requerido(modulo):
     return decorator
 
 # =============================================
+# 🆕 DECORADOR PARA VERIFICAR LICENCIA PREMIUM
+# =============================================
+def licencia_premium_requerida():
+    """
+    Decorador para verificar que el tenant tenga licencia Premium.
+    Si es Básica, redirige a página de upgrade.
+    """
+    from functools import wraps
+    from flask import flash, redirect, url_for
+    from flask_login import current_user
+    from models import ConfiguracionPanaderia
+    
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if not current_user.is_authenticated:
+                flash('Debes iniciar sesión', 'warning')
+                return redirect(url_for('login'))
+            
+            # Obtener configuración del tenant actual
+            config = ConfiguracionPanaderia.query.filter_by(
+                tenant_id=current_user.panaderia_id
+            ).first()
+            
+            if not config:
+                config = ConfiguracionPanaderia.query.filter_by(
+                    panaderia_id=current_user.panaderia_id
+                ).first()
+            
+            # Verificar si tiene licencia Premium
+            if config and config.tipo_licencia == 'nube_basica':
+                flash('🔒 Esta funcionalidad está disponible solo en el plan Premium. ¡Mejora tu plan!', 'warning')
+                return redirect(url_for('dashboard'))
+            
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
+# =============================================
 # 🆕 CONTEXT PROCESSOR PARA PERMISOS EN TEMPLATES
 # =============================================
 
 @app.context_processor
 def inject_permisos():
     """Inyectar funciones de permisos en todos los templates"""
+    from models import ConfiguracionPanaderia
+    
     def usuario_puede(modulo, accion):
         if not current_user.is_authenticated:
             return False
@@ -339,11 +380,23 @@ def inject_permisos():
             return []
         return current_user.obtener_modulos_permitidos()
     
+    # Obtener configuración del tenant actual
+    config = None
+    if current_user.is_authenticated:
+        config = ConfiguracionPanaderia.query.filter_by(
+            tenant_id=current_user.panaderia_id
+        ).first()
+        if not config:
+            config = ConfiguracionPanaderia.query.filter_by(
+                panaderia_id=current_user.panaderia_id
+            ).first()
+    
     return dict(
         usuario_puede=usuario_puede,
         usuario_tiene_acceso=usuario_tiene_acceso,
         modulos_permitidos=modulos_permitidos,
-        MODULOS_SISTEMA=MODULOS_SISTEMA
+        MODULOS_SISTEMA=MODULOS_SISTEMA,
+        config=config  # 🆕 AGREGADO
     )
 
 @app.before_request
@@ -4473,6 +4526,7 @@ def exportar_inventario_externo():
     
     
 @app.route('/reporte_ventas_externas')
+@licencia_premium_requerida()
 @login_required
 @modulo_requerido('reportes')
 @tenant_required
@@ -5775,6 +5829,7 @@ def reporte_productos_populares():
                          productos_donados=productos_donados)
 
 @app.route('/reporte/analisis_predictivo')
+@licencia_premium_requerida()
 @permisos_requeridos('reportes', 'ver')
 @login_required
 def reporte_analisis_predictivo():
@@ -5839,8 +5894,9 @@ def reporte_analisis_predictivo():
 
 # 🆕 NUEVA FUNCIÓN - INSERTAR AQUÍ
 @app.route('/reporte/ventas_avanzado')
-@permisos_requeridos('reportes', 'ver')
 @login_required
+@licencia_premium_requerida()
+@permisos_requeridos('reportes', 'ver')
 def reporte_ventas_avanzado():
     """Reporte unificado: Ventas por período + Análisis Predictivo + ML"""
     # 📦 IMPORTAR DATETIME AL INICIO
@@ -6626,6 +6682,7 @@ def generar_reporte_estado_resultados():
 @app.route('/generar_reporte_flujo_caja')
 @permisos_requeridos('reportes', 'exportar')
 @login_required
+@licencia_premium_requerida()
 @tenant_required
 def generar_reporte_flujo_caja():
     """Genera reporte de Flujo de Caja en PDF"""
@@ -6669,6 +6726,7 @@ def generar_reporte_flujo_caja():
 @app.route('/generar_reporte_libro_diario')
 @permisos_requeridos('reportes', 'exportar')
 @login_required
+@licencia_premium_requerida()
 @tenant_required 
 def generar_reporte_libro_diario():
     """Genera reporte de Libro Diario Contable en PDF"""
@@ -6710,6 +6768,7 @@ def generar_reporte_libro_diario():
 @app.route('/generar_reporte_conciliacion')
 @permisos_requeridos('reportes', 'exportar')
 @login_required
+@licencia_premium_requerida()
 @tenant_required 
 def generar_reporte_conciliacion():
     """Genera reporte de Conciliación Bancaria en PDF"""
@@ -6766,6 +6825,7 @@ metodos = [method for method in dir(generador_test) if callable(getattr(generado
 
 @app.route('/generar_reporte_analisis_gastos')
 @login_required
+@licencia_premium_requerida()
 @modulo_requerido('reportes')
 @tenant_required 
 def generar_reporte_analisis_gastos():
@@ -6823,6 +6883,7 @@ def generar_reporte_analisis_gastos():
 
 @app.route('/generar_reporte_tendencia_ventas')
 @login_required
+@licencia_premium_requerida()
 @modulo_requerido('reportes')
 @tenant_required
 def generar_reporte_tendencia_ventas():
@@ -6875,6 +6936,7 @@ def generar_reporte_tendencia_ventas():
     # ========================================================== IA Predictivo ===============================================
 
 @app.route('/generar_reporte_ia_predictivo')
+@licencia_premium_requerida()
 @login_required
 @modulo_requerido('reportes')
 @tenant_required 
@@ -6930,6 +6992,7 @@ def generar_reporte_ia_predictivo():
 
 @app.route('/generar_reporte_analisis_inventarios')
 @login_required
+@licencia_premium_requerida()
 @modulo_requerido('reportes')
 @tenant_required 
 def generar_reporte_analisis_inventarios():
@@ -6979,6 +7042,7 @@ def generar_reporte_analisis_inventarios():
 
 @app.route('/generar_reporte_tesoreria_unificado')
 @login_required
+@licencia_premium_requerida()
 @modulo_requerido('reportes')
 @tenant_required
 def generar_reporte_tesoreria_unificado():
@@ -7432,6 +7496,7 @@ def estadisticas_depositos_bancarios():
 # === RUTAS DE ACTIVOS FIJOS ===
 
 @app.route('/activos_fijos')
+@licencia_premium_requerida()
 @login_required
 @tenant_required
 @modulo_requerido('activos')
@@ -7477,6 +7542,7 @@ def activos_fijos():
                          categorias=CATEGORIAS_ACTIVOS)
 
 @app.route('/registrar_activo', methods=['GET', 'POST'])
+@licencia_premium_requerida()
 @login_required
 @tenant_required
 @modulo_requerido('activos')
@@ -7551,6 +7617,7 @@ def registrar_activo():
 
 
 @app.route('/editar_activo/<int:id>', methods=['GET', 'POST'])
+@licencia_premium_requerida()
 @login_required
 @tenant_required
 @modulo_requerido('activos')
@@ -7590,6 +7657,7 @@ def editar_activo(id):
 
 
 @app.route('/activo/<int:activo_id>/mantenimientos')
+@licencia_premium_requerida()
 @login_required
 @tenant_required
 @modulo_requerido('activos')
@@ -7601,6 +7669,7 @@ def listar_mantenimientos(activo_id):
     return render_template('mantenimientos.html', activo=activo, mantenimientos=mantenimientos)
 
 @app.route('/activo/<int:activo_id>/mantenimiento/nuevo', methods=['GET', 'POST'])
+@licencia_premium_requerida()
 @login_required
 @tenant_required
 @modulo_requerido('activos')
@@ -7643,6 +7712,7 @@ def nuevo_mantenimiento(activo_id):
     return render_template('nuevo_mantenimiento.html', activo=activo, now=datetime.now())
 
 @app.route('/mantenimiento/<int:id>/eliminar', methods=['POST'])
+@licencia_premium_requerida()
 @login_required
 @tenant_required
 @modulo_requerido('activos')
@@ -7659,6 +7729,7 @@ def eliminar_mantenimiento(id):
 
 
 @app.route('/mantenimiento/<int:id>/detalle')
+@licencia_premium_requerida()
 @login_required
 @tenant_required
 @modulo_requerido('activos')
@@ -7667,6 +7738,7 @@ def detalle_mantenimiento(id):
     mantenimiento = HistorialMantenimiento.query.filter_by(id=id, panaderia_id=current_user.panaderia_id).first_or_404()
     return render_template('detalle_mantenimiento.html', mantenimiento=mantenimiento)
 @app.route('/lista_activos')
+@licencia_premium_requerida()
 @login_required
 @tenant_required
 @modulo_requerido('activos')
@@ -7697,6 +7769,7 @@ def lista_activos():
     return render_template('lista_activos.html', activos=activos, categorias=CATEGORIAS_ACTIVOS)
 
 @app.route('/reporte_activos')
+@licencia_premium_requerida()
 @login_required
 @tenant_required  # ✅ AGREGADO
 @modulo_requerido('activos')
@@ -7855,6 +7928,7 @@ def api_activos_metrics():
 
 #========================================= 🆕 RUTAS PARA GESTIÓN DE USUARIOS==================================================
 @app.route('/gestion_usuarios')
+@licencia_premium_requerida()
 @permisos_requeridos('usuarios', 'ver')
 @permisos_requeridos('usuarios', 'ver')
 @login_required
@@ -7948,6 +8022,7 @@ def gestion_usuarios():
     
     
 @app.route('/crear_usuario', methods=['GET', 'POST'])
+@licencia_premium_requerida()
 @login_required
 @permisos_requeridos('usuarios', 'gestionar')
 def crear_usuario():
@@ -8033,6 +8108,7 @@ def crear_usuario():
     return render_template('crear_usuario.html', limites=limites)
 
 @app.route('/editar_usuario/<int:usuario_id>', methods=['GET', 'POST'])
+@licencia_premium_requerida()
 @login_required
 @permisos_requeridos('usuarios', 'gestionar')
 def editar_usuario(usuario_id):
@@ -8063,6 +8139,7 @@ def editar_usuario(usuario_id):
     return render_template('editar_usuario.html', usuario=usuario)
 
 @app.route('/toggle_usuario/<int:usuario_id>')
+@licencia_premium_requerida()
 @login_required
 @permisos_requeridos('usuarios', 'gestionar')
 def toggle_usuario(usuario_id):
@@ -8274,23 +8351,33 @@ def crear_cliente():
         
         contrasena_temp = generar_contrasena_temporal()
         
-        usuarios_base = [
-            {
-                'username': f'admin_{panaderia_id}',
-                'rol': 'admin_cliente',
-                'nombre': f'Administrador {nombre_panaderia}'
-            },
-            {
+        # =============================================
+        # 🆕 CREAR USUARIOS SEGÚN LÍMITE DE LICENCIA
+        # =============================================
+        usuarios_base = []
+
+        # Siempre crear el usuario admin (obligatorio)
+        usuarios_base.append({
+            'username': f'admin_{panaderia_id}',
+            'rol': 'admin_cliente',
+            'nombre': f'Administrador {nombre_panaderia}'
+        })
+
+        # Si el límite es mayor a 1, crear supervisor
+        if max_usuarios >= 2:
+            usuarios_base.append({
                 'username': f'super_{panaderia_id}',
                 'rol': 'supervisor', 
                 'nombre': f'Supervisor {nombre_panaderia}'
-            },
-            {
+            })
+
+        # Si el límite es mayor a 2, crear cajero
+        if max_usuarios >= 3:
+            usuarios_base.append({
                 'username': f'cajero_{panaderia_id}',
                 'rol': 'cajero',
                 'nombre': f'Cajero Principal {nombre_panaderia}'
-            }
-        ]
+            })
         
         usuarios_creados = []
         
