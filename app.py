@@ -1272,11 +1272,11 @@ def registrar_venta():
                 
                 if producto_id > 10000:
                     producto_externo_id = producto_id - 10000
-                    producto = ProductoExterno.query.get(producto_externo_id)
+                    producto = ProductoExterno.query.filter_by(id=producto_externo_id, panaderia_id=current_user.panaderia_id).first()
                     if producto:
                         total_venta += cantidad * producto.precio_venta
                 else:
-                    producto = Producto.query.get(producto_id)
+                    producto = Producto.query.filter_by(id=producto_id, panaderia_id=current_user.panaderia_id).first()
                     if producto:
                         total_venta += cantidad * producto.precio_venta
         else:
@@ -1366,7 +1366,7 @@ def registrar_venta():
             
             if producto_id > 10000:
                 producto_externo_id = producto_id - 10000
-                producto = ProductoExterno.query.get(producto_externo_id)
+                producto = ProductoExterno.query.filter_by(id=producto_externo_id, panaderia_id=current_user.panaderia_id).first()
                 
                 if not producto or producto.stock_actual < cantidad:
                     return jsonify({
@@ -1394,7 +1394,7 @@ def registrar_venta():
                 detalles_venta.append(detalle)
                 
             else:
-                producto = Producto.query.get(producto_id)
+                producto = Producto.query.filter_by(id=producto_id, panaderia_id=current_user.panaderia_id).first()
                 
                 if not producto or producto.stock_actual < cantidad:
                     return jsonify({
@@ -1519,7 +1519,7 @@ def registrar_venta():
         }
         
         if cliente_id:
-            cliente = Cliente.query.get(cliente_id)
+            cliente = Cliente.query.filter_by(id=cliente_id, panaderia_id=current_user.panaderia_id).first()
             if cliente:
                 respuesta['cliente'] = cliente.to_dict()
                 print(f'✅ Cliente incluido: {cliente.nombre}')
@@ -1746,7 +1746,7 @@ def exportar_xml_venta(venta_id):
     Exporta una venta a formato XML UBL 2.1 - VERSIÓN CORREGIDA
     """
     try:
-        venta = Venta.query.get_or_404(venta_id)
+        venta = Venta.query.filter_by(id=venta_id, panaderia_id=current_user.panaderia_id).first_or_404()
         detalles = DetalleVenta.query.filter_by(venta_id=venta_id).all()
         
         # Verificar que existan detalles
@@ -1785,7 +1785,7 @@ def exportar_xml_venta(venta_id):
 def debug_xml(venta_id):
     """Debug del XML generado"""
     try:
-        venta = Venta.query.get_or_404(venta_id)
+        venta = Venta.query.filter_by(id=venta_id, panaderia_id=current_user.panaderia_id).first_or_404()
         detalles = DetalleVenta.query.filter_by(venta_id=venta_id).all()
         config = obtener_configuracion_sistema()
         
@@ -1819,7 +1819,7 @@ def debug_xml(venta_id):
 def imprimir_factura_electronica(venta_id):
     """Genera la representación impresa de la factura electrónica"""
     try:
-        venta = Venta.query.get_or_404(venta_id)
+        venta = Venta.query.filter_by(id=venta_id, panaderia_id=current_user.panaderia_id).first_or_404()
         detalles = DetalleVenta.query.filter_by(venta_id=venta_id).all()
         config = obtener_configuracion_sistema()
         
@@ -3887,7 +3887,7 @@ def actualizar_control_vida_util():
 def calcular_stock_vitrina(receta_id):
     """Calcular stock actual en vitrina para una receta"""
     try:
-        receta = Receta.query.get(receta_id)
+        receta = Receta.query.filter_by(id=receta_id, panaderia_id=current_user.panaderia_id).first()
         print(f"🔍 DEBUG calcular_stock_vitrina: Receta: {receta.nombre if receta else 'N/A'}")
         
         # Si la receta tiene producto asociado, usar el stock del producto
@@ -4259,7 +4259,7 @@ def productos_sugeridos_venta():
 def imprimir_factura(factura_id):
     """Generar vista imprimible - Versión mejorada que detecta tipo de documento"""
     try:
-        venta = Venta.query.get_or_404(factura_id)
+        venta = Venta.query.filter_by(id=factura_id, panaderia_id=current_user.panaderia_id).first_or_404()
         detalles = DetalleVenta.query.filter_by(venta_id=factura_id).all()
         config = obtener_configuracion_sistema()
         
@@ -4824,7 +4824,7 @@ def debug_api_productos():
             # Obtener nombre de categoría de forma segura
             categoria_nombre = "Sin categoría"
             if producto.categoria_id:
-                categoria = Categoria.query.get(producto.categoria_id)
+                categoria = Categoria.query.filter_by(id=producto.categoria_id, panaderia_id=current_user.panaderia_id).first()
                 if categoria:
                     categoria_nombre = categoria.nombre
             
@@ -8113,7 +8113,7 @@ def crear_usuario():
 @permisos_requeridos('usuarios', 'gestionar')
 def editar_usuario(usuario_id):
     """Editar usuario existente"""
-    usuario = Usuario.query.get_or_404(usuario_id)
+    usuario = Usuario.query.filter_by(id=usuario_id, panaderia_id=current_user.panaderia_id).first_or_404()
     
     if request.method == 'POST':
         try:
@@ -8148,7 +8148,7 @@ def toggle_usuario(usuario_id):
         flash('❌ No puedes desactivar tu propio usuario', 'error')
         return redirect(url_for('gestion_usuarios'))
     
-    usuario = Usuario.query.get_or_404(usuario_id)
+    usuario = Usuario.query.filter_by(id=usuario_id, panaderia_id=current_user.panaderia_id).first_or_404()
     usuario.activo = not usuario.activo
     
     estado = "activado" if usuario.activo else "desactivado"
@@ -8196,7 +8196,7 @@ def gestionar_permisos(usuario_id):
         flash('❌ No tienes permisos para gestionar permisos', 'error')
         return redirect(url_for('dashboard'))
     
-    usuario = Usuario.query.get_or_404(usuario_id)
+    usuario = Usuario.query.filter_by(id=usuario_id, panaderia_id=current_user.panaderia_id).first_or_404()
     return render_template('gestionar_permisos.html', usuario=usuario)
 
 @app.route('/guardar_permisos/<int:usuario_id>', methods=['POST'])
@@ -8209,7 +8209,7 @@ def guardar_permisos(usuario_id):
             flash('❌ No tienes permisos para gestionar permisos', 'error')
             return redirect(url_for('dashboard'))
         
-        usuario = Usuario.query.get_or_404(usuario_id)
+        usuario = Usuario.query.filter_by(id=usuario_id, panaderia_id=current_user.panaderia_id).first_or_404()
         
         # Eliminar permisos existentes del usuario
         from models import PermisoUsuario
@@ -8615,6 +8615,7 @@ def registrar_reseteo_password(usuario_id, administrador_id):
         
 @app.route('/obtener_usuarios_panaderia/<int:panaderia_id>')
 @login_required
+@permisos_requeridos('clientes', 'ver')
 def obtener_usuarios_panaderia(panaderia_id):
     """Obtener usuarios de una panadería específica (solo super_admin)"""
     if current_user.rol != 'super_admin':
@@ -8640,6 +8641,7 @@ def obtener_usuarios_panaderia(panaderia_id):
     
 @app.route('/obtener_datos_cliente/<int:cliente_id>')
 @login_required
+@permisos_requeridos('clientes', 'ver')
 def obtener_datos_cliente(cliente_id):
     """Obtener datos de un cliente específico para edición"""
     if current_user.rol != 'super_admin':
@@ -8711,6 +8713,7 @@ def editar_cliente():
 
 @app.route('/obtener_datos_cliente_super/<int:cliente_id>')
 @login_required
+@permisos_requeridos('clientes', 'ver')
 def obtener_datos_cliente_super(cliente_id):
     """Obtener datos de un cliente específico para edición (SUPER ADMIN)"""
     if current_user.rol != 'super_admin':
@@ -8825,6 +8828,7 @@ def renovar_suscripcion_super():
 
 @app.route('/acceder_panaderia_super/<int:panaderia_id>/<int:usuario_id>')
 @login_required
+@permisos_requeridos('sistema', 'acceder')
 def acceder_panaderia_super(panaderia_id, usuario_id):
     """Acceder a una panadería como super admin - VERSIÓN FUNCIONAL"""
     if current_user.rol != 'super_admin':
@@ -8851,6 +8855,7 @@ def acceder_panaderia_super(panaderia_id, usuario_id):
     
 @app.route('/acceder_panaderia/<int:panaderia_id>')
 @login_required
+@permisos_requeridos('sistema', 'acceder')
 def acceder_panaderia(panaderia_id):
     """Acceso remoto para super usuario a cualquier panadería"""
     print(f"🎯 DEBUG: Iniciando acceso remoto a panadería {panaderia_id}")
@@ -8898,6 +8903,7 @@ app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 # ============================================
 @app.route('/eliminar_cliente/<int:tenant_id>', methods=['POST'])
 @login_required
+@permisos_requeridos('clientes', 'gestionar')
 def eliminar_cliente(tenant_id):
     """Elimina un cliente - Busca por tenant_id en configuracion_panaderia"""
     import sqlite3
@@ -8995,6 +9001,7 @@ def eliminar_cliente(tenant_id):
 # ============================================
 @app.route('/toggle_cliente/<int:tenant_id>', methods=['POST'])
 @login_required
+@permisos_requeridos('clientes', 'gestionar')
 def toggle_cliente(tenant_id):
     """Activa o desactiva un cliente (Solo super_admin)"""
     try:
