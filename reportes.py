@@ -9,7 +9,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
-from models import db, RegistroDiario, PagoIndividual, SaldoBanco, Venta, Producto, Proveedor, DepositoBancario
+from models import db, RegistroDiario, PagoIndividual, SaldoBanco, Venta, Producto, Proveedor, DepositoBancario, ConfiguracionPanaderia
 from sqlalchemy import func, extract
 
 # Importación para multi-tenant
@@ -24,8 +24,11 @@ except ImportError:
 
 
 class GeneradorReportes:
-    def __init__(self):
+    def __init__(self, panaderia_id=None):
         self.styles = getSampleStyleSheet()
+        self.panaderia_id = panaderia_id
+        self.nombre_empresa = self._obtener_nombre_empresa()
+        
         self.estilo_titulo = ParagraphStyle(
             'CustomTitle',
             parent=self.styles['Heading1'],
@@ -42,6 +45,29 @@ class GeneradorReportes:
             textColor=colors.HexColor('#34495e')
         )
     
+    def _obtener_nombre_empresa(self):
+        """Obtiene el nombre de la empresa desde la configuración del tenant"""
+        try:
+            from models import ConfiguracionPanaderia
+            from flask_login import current_user
+            
+            panaderia_id = self.panaderia_id or (current_user.panaderia_id if current_user.is_authenticated else None)
+            
+            if panaderia_id:
+                config = ConfiguracionPanaderia.query.filter_by(
+                    tenant_id=panaderia_id
+                ).first()
+                if not config:
+                    config = ConfiguracionPanaderia.query.filter_by(
+                        panaderia_id=panaderia_id
+                    ).first()
+                if config and config.nombre_panaderia:
+                    return config.nombre_panaderia.upper()
+        except Exception as e:
+            print(f"⚠️ Error obteniendo nombre de empresa: {e}")
+        
+        return "PANADERIA - POS"  # Fallback
+    
     def generar_reporte_estado_resultados(self, panaderia_id, fecha_inicio, fecha_fin):
         """Genera reporte de Estado de Resultados (Pérdidas y Ganancias) - CON FILTRO MULTI-TENANT"""
         buffer = BytesIO()
@@ -49,7 +75,7 @@ class GeneradorReportes:
         elements = []
         
         # Encabezado
-        elements.append(Paragraph("PANADERÍA-POS", self.estilo_titulo))
+        elements.append(Paragraph(self.nombre_empresa, self.estilo_titulo))
         elements.append(Paragraph("ESTADO DE RESULTADOS", self.estilo_titulo))
         elements.append(Paragraph(f"Período: {fecha_inicio} a {fecha_fin}", self.styles['Normal']))
         elements.append(Spacer(1, 20))
@@ -213,7 +239,7 @@ class GeneradorReportes:
         doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=1*inch)
         elements = []
 
-        elements.append(Paragraph("PANADERÍA-POS", self.estilo_titulo))
+        elements.append(Paragraph(self.nombre_empresa, self.estilo_titulo))
         elements.append(Paragraph("REPORTE DE FLUJO DE CAJA", self.estilo_titulo))
         elements.append(Paragraph(f"Período: {fecha_inicio} a {fecha_fin}", self.styles['Normal']))
         elements.append(Spacer(1, 20))
@@ -436,7 +462,7 @@ class GeneradorReportes:
         doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=1*inch)
         elements = []
 
-        elements.append(Paragraph("PANADERÍA-POS", self.estilo_titulo))
+        elements.append(Paragraph(self.nombre_empresa, self.estilo_titulo))
         elements.append(Paragraph("LIBRO MAYOR DE CAJA", self.estilo_titulo))
         elements.append(Paragraph(f"Período: {fecha_inicio} a {fecha_fin}", self.styles['Normal']))
         elements.append(Spacer(1, 15))
@@ -618,7 +644,7 @@ class GeneradorReportes:
             elements = []
 
             # Encabezado
-            elements.append(Paragraph("PANADERÍA-POS", self.estilo_titulo))
+            elements.append(Paragraph(self.nombre_empresa, self.estilo_titulo))
             elements.append(Paragraph("CONCILIACIÓN BANCARIA", self.estilo_titulo))
             elements.append(Paragraph(f"Fecha de Corte: {fecha_corte}", self.styles['Normal']))
             elements.append(Spacer(1, 20))
@@ -932,7 +958,7 @@ class GeneradorReportes:
             elements = []
 
             # Encabezado
-            elements.append(Paragraph("PANADERÍA-POS", self.estilo_titulo))
+            elements.append(Paragraph(self.nombre_empresa, self.estilo_titulo))
             elements.append(Paragraph("ANÁLISIS DE GASTOS POR CATEGORÍA", self.estilo_titulo))
             elements.append(Paragraph(f"Período: {fecha_inicio} a {fecha_fin}", self.styles['Normal']))
             elements.append(Spacer(1, 20))
@@ -1188,7 +1214,7 @@ class GeneradorReportes:
             
             elements = []
 
-            elements.append(Paragraph("PANADERÍA-POS", self.estilo_titulo))
+            elements.append(Paragraph(self.nombre_empresa, self.estilo_titulo))
             elements.append(Paragraph("ANÁLISIS DE TENDENCIA DE VENTAS", self.estilo_titulo))
             elements.append(Paragraph(f"Período: {fecha_inicio} a {fecha_fin}", self.styles['Normal']))
             elements.append(Spacer(1, 10))
@@ -1510,7 +1536,7 @@ class GeneradorReportes:
             
             elements = []
 
-            elements.append(Paragraph("PANADERÍA-POS", self.estilo_titulo))
+            elements.append(Paragraph(self.nombre_empresa, self.estilo_titulo))
             elements.append(Paragraph("🤖 ANÁLISIS PREDICTIVO CON INTELIGENCIA ARTIFICIAL", self.estilo_titulo))
             elements.append(Paragraph(f"Período de análisis: {fecha_inicio} a {fecha_fin}", self.styles['Normal']))
             elements.append(Spacer(1, 10))
@@ -1936,7 +1962,7 @@ class GeneradorReportes:
             
             elements = []
 
-            elements.append(Paragraph("PANADERÍA-POS", self.estilo_titulo))
+            elements.append(Paragraph(self.nombre_empresa, self.estilo_titulo))
             elements.append(Paragraph("📦 ANÁLISIS DE INVENTARIOS Y GESTIÓN DE STOCK", self.estilo_titulo))
             elements.append(Paragraph(f"Período de análisis: {fecha_inicio} a {fecha_fin}", self.styles['Normal']))
             elements.append(Spacer(1, 10))
