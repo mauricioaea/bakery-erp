@@ -509,6 +509,7 @@ class ProductoExterno(db.Model):
     # INVENTARIO Y PRECIOS
     stock_actual = db.Column(db.Integer, default=0)
     stock_minimo = db.Column(db.Integer, default=5)
+    fecha_vencimiento = db.Column(db.Date, nullable=True)  # 🆕 AGREGADO
     precio_compra = db.Column(db.Float, nullable=False)
     precio_venta = db.Column(db.Float, nullable=False)
     

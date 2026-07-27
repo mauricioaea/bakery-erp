@@ -622,7 +622,7 @@ def es_super_usuario():
     if not user_id:
         return False
     
-    usuario = Usuario.query.get(user_id)
+    usuario = db.session.get(Usuario, user_id)
     
     # Identificar por nombre de usuario (dev_master)
     if usuario and usuario.username == 'dev_master':
@@ -889,7 +889,7 @@ def punto_venta():
     categorias = Categoria.query.filter_by(panaderia_id=panaderia_actual).all()
     
     # ✅ OBTENER CLIENTES PARA EL SELECT
-    clientes = Cliente.query.filter_by(activo=True).all()
+    clientes = Cliente.query.filter_by(activo=True, panaderia_id=current_user.panaderia_id).all()
     
     # Debug temporal para verificar
     print(f"DEBUG PUNTO VENTA: Panadería {panaderia_actual}")
@@ -913,7 +913,7 @@ def debug_punto_venta():
         return redirect(url_for('login'))
     
     # 1. Verificar todos los productos
-    todos_productos = Producto.query.all()
+    todos_productos = Producto.query.filter_by(panaderia_id=current_user.panaderia_id).all()
     
     # 2. Productos que deberían aparecer en búsqueda
     productos_busqueda = Producto.query.filter(
@@ -922,10 +922,10 @@ def debug_punto_venta():
     ).all()
     
     # 3. Productos de producción específicamente
-    productos_produccion = Producto.query.filter_by(tipo_producto='produccion').all()
+    productos_produccion = Producto.query.filter_by(tipo_producto="produccion", panaderia_id=current_user.panaderia_id).all()
     
     # 4. Recetas con productos asociados
-    recetas_con_producto = Receta.query.filter(Receta.producto_id.isnot(None)).all()
+    recetas_con_producto = Receta.query.filter(Receta.producto_id.isnot(None), Receta.panaderia_id == current_user.panaderia_id).all()
     
     debug_info = {
         'total_productos': len(todos_productos),
@@ -1220,7 +1220,7 @@ def registrar_venta():
     
     try:
         # 🎯 OBTENER USUARIO ACTUAL PARA panaderia_id
-        usuario_actual = Usuario.query.get(session['user_id'])
+        usuario_actual = db.session.get(Usuario, session["user_id"])
         panaderia_id = usuario_actual.panaderia_id
         print(f"🏪 DEBUG - Panadería ID del usuario: {panaderia_id}")
         
@@ -1564,7 +1564,7 @@ def guardar_cliente():
             }), 400
         
         # ✅ BUSCAR CLIENTE EXISTENTE POR DOCUMENTO
-        cliente_existente = Cliente.query.filter_by(documento=data['documento']).first()
+        cliente_existente = Cliente.query.filter_by(documento=data["documento"], panaderia_id=current_user.panaderia_id).first()
         
         if cliente_existente:
             # ✅ ACTUALIZAR CLIENTE EXISTENTE
@@ -1629,7 +1629,7 @@ def obtener_clientes_recientes():
     """
     try:
         # ✅ OBTENER LOS ÚLTIMOS 10 CLIENTES ACTIVOS
-        clientes = Cliente.query.filter_by(activo=True)\
+        clientes = Cliente.query.filter_by(activo=True, panaderia_id=current_user.panaderia_id)\
                                .order_by(Cliente.fecha_actualizacion.desc())\
                                .limit(10)\
                                .all()
@@ -1652,7 +1652,7 @@ def buscar_cliente(documento):
     Busca un cliente por número de documento
     """
     try:
-        cliente = Cliente.query.filter_by(documento=documento, activo=True).first()
+        cliente = Cliente.query.filter_by(documento=documento, activo=True, panaderia_id=current_user.panaderia_id).first()
         
         if cliente:
             return jsonify({
@@ -1747,7 +1747,7 @@ def exportar_xml_venta(venta_id):
     """
     try:
         venta = Venta.query.filter_by(id=venta_id, panaderia_id=current_user.panaderia_id).first_or_404()
-        detalles = DetalleVenta.query.filter_by(venta_id=venta_id).all()
+        detalles = DetalleVenta.query.filter_by(venta_id=venta_id, panaderia_id=current_user.panaderia_id).all()
         
         # Verificar que existan detalles
         if not detalles:
@@ -1786,7 +1786,7 @@ def debug_xml(venta_id):
     """Debug del XML generado"""
     try:
         venta = Venta.query.filter_by(id=venta_id, panaderia_id=current_user.panaderia_id).first_or_404()
-        detalles = DetalleVenta.query.filter_by(venta_id=venta_id).all()
+        detalles = DetalleVenta.query.filter_by(venta_id=venta_id, panaderia_id=current_user.panaderia_id).all()
         config = obtener_configuracion_sistema()
         
         xml_content = generar_xml_ubl_21(venta, config, detalles)
@@ -1820,7 +1820,7 @@ def imprimir_factura_electronica(venta_id):
     """Genera la representación impresa de la factura electrónica"""
     try:
         venta = Venta.query.filter_by(id=venta_id, panaderia_id=current_user.panaderia_id).first_or_404()
-        detalles = DetalleVenta.query.filter_by(venta_id=venta_id).all()
+        detalles = DetalleVenta.query.filter_by(venta_id=venta_id, panaderia_id=current_user.panaderia_id).all()
         config = obtener_configuracion_sistema()
         
         # 🆕 DEBUG: Verificar datos del cliente
@@ -2179,30 +2179,36 @@ def toggle_proveedor(id):
 @app.route('/productos_externos')
 @login_required
 @modulo_requerido('productos')
-@tenant_required  # ← DECORADOR AGREGADO
-@permisos_requeridos('productos', 'ver')
+@tenant_required
 @permisos_requeridos('productos', 'ver')
 def productos_externos():
     """Gestión de productos externos (bebidas, helados) - SOLO de esta panadería"""
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
+    from datetime import datetime, timedelta
+    hoy = datetime.now().date()
+    
     # FILTRO CLAVE: Solo productos de ESTA panadería
-    productos = ProductoExterno.query.filter_by(
+    productos_activos = ProductoExterno.query.filter_by(
         activo=True, 
-        panaderia_id=current_user.panaderia_id  # ← CORREGIDO: current_user.panaderia_id
+        panaderia_id=current_user.panaderia_id
     ).all()
     
-    proveedores = Proveedor.query.filter_by(panaderia_id=current_user.panaderia_id, activo=True).all()  # ← CORREGIDO: current_user.panaderia_id
+    proveedores = Proveedor.query.filter_by(
+        panaderia_id=current_user.panaderia_id, 
+        activo=True
+    ).all()
     
     # Calcular métricas adicionales para cada producto
-    for producto in productos:
+    for producto in productos_activos:
         producto.utilidad_unitaria = producto.precio_venta - producto.precio_compra
         producto.margen_ganancia = (producto.utilidad_unitaria / producto.precio_compra * 100) if producto.precio_compra > 0 else 0
     
-    return render_template('productos_externos.html', 
-                         productos=productos, 
-                         proveedores=proveedores)
+    return render_template('productos_externos.html',
+                         productos=productos_activos,
+                         proveedores=proveedores,
+                         hoy=hoy)
     
 # RUTA PARA CREAR PRODUCTO EXTERNO
 @app.route('/crear_producto_externo', methods=['POST'])
@@ -2216,6 +2222,14 @@ def crear_producto_externo():
         return redirect(url_for('login'))
     
     try:
+        from datetime import datetime
+        
+        # Obtener fecha de vencimiento si se proporcionó
+        fecha_vencimiento_str = request.form.get('fecha_vencimiento', '')
+        fecha_vencimiento = None
+        if fecha_vencimiento_str:
+            fecha_vencimiento = datetime.strptime(fecha_vencimiento_str, '%Y-%m-%d').date()
+        
         nuevo_producto = ProductoExterno(
             nombre=request.form['nombre'],
             descripcion=request.form.get('descripcion', ''),
@@ -2227,7 +2241,8 @@ def crear_producto_externo():
             precio_venta=float(request.form['precio_venta']),
             stock_actual=int(request.form.get('stock_actual', 0)),
             stock_minimo=int(request.form.get('stock_minimo', 5)),
-            panaderia_id=current_user.panaderia_id  # ← CORREGIDO: current_user.panaderia_id
+            fecha_vencimiento=fecha_vencimiento,  # 🆕 NUEVO CAMPO
+            panaderia_id=current_user.panaderia_id
         )
         
         db.session.add(nuevo_producto)
@@ -2241,6 +2256,7 @@ def crear_producto_externo():
     
     return redirect(url_for('productos_externos'))
 
+
 # RUTA PARA EDITAR PRODUCTO EXTERNO
 @app.route('/editar_producto_externo/<int:id>', methods=['POST'])
 @login_required
@@ -2252,6 +2268,8 @@ def editar_producto_externo(id):
         return redirect(url_for('login'))
     
     try:
+        from datetime import datetime
+        
         # ✅ CORREGIDO: Usar current_user.panaderia_id
         panaderia_id = current_user.panaderia_id
         
@@ -2265,6 +2283,12 @@ def editar_producto_externo(id):
             flash('❌ Producto no encontrado o no tienes permisos', 'error')
             return redirect(url_for('productos_externos'))
         
+        # Obtener fecha de vencimiento si se proporcionó
+        fecha_vencimiento_str = request.form.get('fecha_vencimiento', '')
+        fecha_vencimiento = None
+        if fecha_vencimiento_str:
+            fecha_vencimiento = datetime.strptime(fecha_vencimiento_str, '%Y-%m-%d').date()
+        
         # Actualizar campos
         producto.nombre = request.form['nombre']
         producto.descripcion = request.form.get('descripcion', '')
@@ -2276,6 +2300,7 @@ def editar_producto_externo(id):
         producto.precio_venta = float(request.form['precio_venta'])
         producto.stock_actual = int(request.form.get('stock_actual', 0))
         producto.stock_minimo = int(request.form.get('stock_minimo', 5))
+        producto.fecha_vencimiento = fecha_vencimiento  # 🆕 NUEVO CAMPO
         
         db.session.commit()
         flash('✅ Producto actualizado exitosamente', 'success')
@@ -2285,6 +2310,7 @@ def editar_producto_externo(id):
         flash(f'❌ Error al actualizar producto: {str(e)}', 'error')
     
     return redirect(url_for('productos_externos'))
+
 
 # RUTA PARA ELIMINAR PRODUCTO EXTERNO (Borrado lógico)
 @app.route('/eliminar_producto_externo/<int:id>', methods=['POST'])
@@ -2321,6 +2347,7 @@ def eliminar_producto_externo(id):
     
     return redirect(url_for('productos_externos'))
 
+
 @app.route('/registrar_compra_externa', methods=['POST'])
 @login_required
 @modulo_requerido('productos')
@@ -2331,6 +2358,8 @@ def registrar_compra_externa():
         return jsonify({'success': False, 'message': 'No autorizado'})
     
     try:
+        from datetime import datetime
+        
         producto_id = request.form['producto_id']
         proveedor_id = request.form['proveedor_id']
         cantidad = int(request.form['cantidad'])
@@ -2375,9 +2404,50 @@ def registrar_compra_externa():
         db.session.rollback()
         return jsonify({'success': False, 'message': f'Error: {str(e)}'})
 
+
+# =============================================
+# 🆕 FUNCIÓN PARA OBTENER PRODUCTOS PRÓXIMOS A VENCER
+# =============================================
+def obtener_productos_proximos_a_vencer(panaderia_id, dias=10):
+    """Obtiene productos externos con fecha de vencimiento próxima"""
+    from datetime import datetime, timedelta
+    
+    fecha_actual = datetime.now().date()
+    fecha_limite = fecha_actual + timedelta(days=dias)
+    
+    productos = ProductoExterno.query.filter(
+        ProductoExterno.panaderia_id == panaderia_id,
+        ProductoExterno.fecha_vencimiento.isnot(None),
+        ProductoExterno.fecha_vencimiento <= fecha_limite,
+        ProductoExterno.fecha_vencimiento >= fecha_actual,
+        ProductoExterno.activo == True
+    ).order_by(ProductoExterno.fecha_vencimiento.asc()).all()
+    
+    return productos
+
+
+@app.route('/productos_proximos_vencer')
+@login_required
+@modulo_requerido('productos')
+@tenant_required
+def productos_proximos_vencer():
+    """Vista de productos próximos a vencer"""
+    from datetime import datetime, timedelta
+    
+    panaderia_id = current_user.panaderia_id
+    dias = request.args.get('dias', 10, type=int)
+    
+    productos = obtener_productos_proximos_a_vencer(panaderia_id, dias)
+    fecha_actual = datetime.now().date()
+    
+    return render_template('productos_proximos_vencer.html',
+                         productos=productos,
+                         dias=dias,
+                         fecha_actual=fecha_actual)
+
     
     # Obtener todas las materias primas (activas e inactivas)
-    materias = MateriaPrima.query.all()
+    materias = MateriaPrima.query.filter_by(panaderia_id=current_user.panaderia_id).all()
     
     # CALCULAR FECHAS PARA ALERTAS DE VENCIMIENTO
     hoy = datetime.now().date()
@@ -2605,7 +2675,7 @@ def editar_materia_prima(id):
             return redirect(url_for('editar_materia_prima', id=id))
     
     # OBTENER HISTORIAL DE COMPRAS PARA MOSTRAR
-    historial_compras = HistorialCompra.query.filter_by(materia_prima_id=id).order_by(HistorialCompra.fecha_compra.desc()).all()
+    historial_compras = HistorialCompra.query.filter_by(materia_prima_id=id, panaderia_id=current_user.panaderia_id).order_by(HistorialCompra.fecha.desc()).all()
     
     return render_template('editar_materia_prima.html', 
                          materia=materia, 
@@ -2654,7 +2724,7 @@ def historial_compras(materia_prima_id):
         return redirect(url_for('login'))
     
     materia = MateriaPrima.query.filter_by(panaderia_id=current_user.panaderia_id, id=materia_prima_id).first_or_404()
-    historial = HistorialCompra.query.filter_by(materia_prima_id=materia_prima_id).order_by(HistorialCompra.fecha_compra.desc()).all()
+    historial = HistorialCompra.query.filter_by(materia_prima_id=materia_prima_id, panaderia_id=current_user.panaderia_id).order_by(HistorialCompra.fecha.desc()).all()
     
     return render_template('historial_compras.html', materia=materia, historial=historial)
 # =============================================
@@ -3182,7 +3252,7 @@ def editar_receta(id):
             receta.precio_venta_real = nuevo_precio_real  # ✅ ACTUALIZAR PRECIO REAL
             
             # ✅ ELIMINAR INGREDIENTES EXISTENTES Y AGREGAR NUEVOS
-            RecetaIngrediente.query.filter_by(receta_id=receta.id).delete()
+            RecetaIngrediente.query.filter_by(receta_id=receta.id).delete()  # ✅ Ya tiene receta_id que está asociada a panadería
             
             # Reprocesar ingredientes (misma lógica que crear)
             costo_total_materias_primas = 0
@@ -3274,10 +3344,10 @@ def diagnostico_productos():
         return redirect(url_for('login'))
     
     # Obtener todos los productos
-    productos = Producto.query.all()
+    productos = Producto.query.filter_by(panaderia_id=current_user.panaderia_id).all()
     
     # Obtener recetas con/sin producto
-    recetas = Receta.query.all()
+    recetas = Receta.query.filter_by(panaderia_id=current_user.panaderia_id).all()
     
     # Probar la búsqueda
     resultados_busqueda_pan = []
@@ -3412,7 +3482,7 @@ def produccion_diaria():
             stock_actual = 0  # Si la función no existe o falla
         
         # Obtener configuración personalizada
-        config = ConfiguracionProduccion.query.filter_by(receta_id=receta.id).first()
+        config = ConfiguracionProduccion.query.filter_by(receta_id=receta.id, panaderia_id=current_user.panaderia_id).first()
         if not config:
             # Crear configuración por defecto si no existe
             config = ConfiguracionProduccion(
@@ -3506,8 +3576,8 @@ def configurar_stock_producto(receta_id):
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    receta = Receta.query.get_or_404(receta_id)
-    config = ConfiguracionProduccion.query.filter_by(receta_id=receta_id).first()
+    receta = Receta.query.filter_by(id=receta_id, panaderia_id=current_user.panaderia_id).first_or_404()
+    config = ConfiguracionProduccion.query.filter_by(receta_id=receta_id, panaderia_id=current_user.panaderia_id).first()
     
     # Crear configuración si no existe
     if not config:
@@ -3576,8 +3646,8 @@ def configurar_stock(receta_id):
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    receta = Receta.query.get_or_404(receta_id)
-    config = ConfiguracionProduccion.query.filter_by(receta_id=receta_id).first()
+    receta = Receta.query.filter_by(id=receta_id, panaderia_id=current_user.panaderia_id).first_or_404()
+    config = ConfiguracionProduccion.query.filter_by(receta_id=receta_id, panaderia_id=current_user.panaderia_id).first()
     
     if not config:
         config = ConfiguracionProduccion(receta_id=receta_id)
@@ -3676,7 +3746,7 @@ def api_configuracion_stock(receta_id):
     if 'user_id' not in session:
         return jsonify({'error': 'No autorizado'}), 401
     
-    config = ConfiguracionProduccion.query.filter_by(receta_id=receta_id).first()
+    config = ConfiguracionProduccion.query.filter_by(receta_id=receta_id, panaderia_id=current_user.panaderia_id).first()
     if not config:
         config = ConfiguracionProduccion(receta_id=receta_id)
         db.session.add(config)
@@ -3745,7 +3815,7 @@ def debug_produccion():
         return redirect(url_for('login'))
     
     # Obtener órdenes de producción
-    ordenes = OrdenProduccion.query.all()
+    ordenes = OrdenProduccion.query.filter_by(panaderia_id=current_user.panaderia_id).all()
     
     debug_info = {
         'total_ordenes': len(ordenes),
@@ -3798,12 +3868,12 @@ def calcular_rotacion_automatica(producto_id, dias_historial=30):
 def actualizar_rotaciones_automaticas():
     """Actualiza automáticamente todas las rotaciones basado en datos históricos"""
     try:
-        productos_activos = Producto.query.filter_by(activo=True).all()
+        productos_activos = Producto.query.filter_by(activo=True, panaderia_id=current_user.panaderia_id).all()
         actualizaciones = 0
         
         for producto in productos_activos:
             if producto.receta:  # Solo productos con receta
-                config = ConfiguracionProduccion.query.filter_by(receta_id=producto.receta.id).first()
+                config = ConfiguracionProduccion.query.filter_by(receta_id=producto.receta.id, panaderia_id=current_user.panaderia_id).first()
                 if config:
                     nueva_rotacion = calcular_rotacion_automatica(producto.id)
                     
@@ -3832,7 +3902,7 @@ def actualizar_rotaciones_automaticas():
 def actualizar_control_vida_util():
     """Actualiza el control de vida útil de todos los productos"""
     try:
-        productos_pan = Producto.query.filter_by(es_pan=True, activo=True).all()
+        productos_pan = Producto.query.filter_by(es_pan=True, activo=True, panaderia_id=current_user.panaderia_id).all()
         hoy = datetime.now().date()
         
         for producto in productos_pan:
@@ -4066,14 +4136,14 @@ def stock_vitrina():
         return redirect(url_for('login'))
     
     # Obtener todas las recetas con su stock actual
-    recetas_activas = Receta.query.filter_by(activo=True).all()
+    recetas_activas = Receta.query.filter_by(activo=True, panaderia_id=current_user.panaderia_id).all()
     
     stock_completo = []
     for receta in recetas_activas:
         stock_actual = calcular_stock_vitrina(receta.id)
         
         # Obtener configuración
-        config = ConfiguracionProduccion.query.filter_by(receta_id=receta.id).first()
+        config = ConfiguracionProduccion.query.filter_by(receta_id=receta.id, panaderia_id=current_user.panaderia_id).first()
         if not config:
             config = ConfiguracionProduccion(receta_id=receta.id, stock_objetivo=50)
             db.session.add(config)
@@ -4206,13 +4276,13 @@ def verificar_stock_tiempo_real(producto_id):
     if 'user_id' not in session:
         return jsonify({'error': 'No autorizado'}), 401
     
-    producto = Producto.query.get_or_404(producto_id)
+    producto = Producto.query.filter_by(id=producto_id, panaderia_id=current_user.panaderia_id).first_or_404()
     cantidad = request.args.get('cantidad', 1, type=int)
     
     # Obtener configuración de producción si existe
     config = None
     if producto.receta:
-        config = ConfiguracionProduccion.query.filter_by(receta_id=producto.receta.id).first()
+        config = ConfiguracionProduccion.query.filter_by(receta_id=producto.receta.id, panaderia_id=current_user.panaderia_id).first()
     
     return jsonify({
         'stock_actual': producto.stock_actual,
@@ -4233,10 +4303,10 @@ def productos_sugeridos_venta():
     # Productos con alta rotación y buen stock
     productos_alta_rotacion = []
     
-    productos_activos = Producto.query.filter_by(activo=True).all()
+    productos_activos = Producto.query.filter_by(activo=True, panaderia_id=current_user.panaderia_id).all()
     for producto in productos_activos:
         if producto.receta:
-            config = ConfiguracionProduccion.query.filter_by(receta_id=producto.receta.id).first()
+            config = ConfiguracionProduccion.query.filter_by(receta_id=producto.receta.id, panaderia_id=current_user.panaderia_id).first()
             if config and producto.stock_actual > 0:
                 # Priorizar productos con alta rotación esperada
                 if config.rotacion_diaria_esperada >= 5:  # Alta rotación
@@ -4260,7 +4330,7 @@ def imprimir_factura(factura_id):
     """Generar vista imprimible - Versión mejorada que detecta tipo de documento"""
     try:
         venta = Venta.query.filter_by(id=factura_id, panaderia_id=current_user.panaderia_id).first_or_404()
-        detalles = DetalleVenta.query.filter_by(venta_id=factura_id).all()
+        detalles = DetalleVenta.query.filter_by(venta_id=factura_id, panaderia_id=current_user.panaderia_id).all()
         config = obtener_configuracion_sistema()
         
         # 🆕 DETECTAR TIPO DE DOCUMENTO Y USAR TEMPLATE APROPIADO
@@ -4377,7 +4447,7 @@ def actualizar_stock_externo(producto_id):
     if 'user_id' not in session:
         return jsonify({'error': 'No autorizado'}), 401
     
-    producto = Producto.query.get_or_404(producto_id)
+    producto = Producto.query.filter_by(id=producto_id, panaderia_id=current_user.panaderia_id).first_or_404()
     
     try:
         cantidad = int(request.form['cantidad'])
@@ -4456,7 +4526,7 @@ def exportar_inventario_externo():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    productos = ProductoExterno.query.filter_by(activo=True).all()
+    productos = ProductoExterno.query.filter_by(activo=True, panaderia_id=current_user.panaderia_id).all()
     
     from reportlab.lib.pagesizes import letter
     from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
@@ -4811,13 +4881,13 @@ def debug_api_productos():
         total_productos = Producto.query.count()
         
         # Productos activos
-        productos_activos = Producto.query.filter_by(activo=True).all()
+        productos_activos = Producto.query.filter_by(activo=True, panaderia_id=current_user.panaderia_id).all()
         
         # Productos con stock
-        productos_con_stock = Producto.query.filter(Producto.stock_actual > 0).all()
+        productos_con_stock = Producto.query.filter(Producto.stock_actual > 0, Producto.panaderia_id == current_user.panaderia_id).all()
         
         # Lista completa de productos
-        todos_productos = Producto.query.all()
+        todos_productos = Producto.query.filter_by(panaderia_id=current_user.panaderia_id).all()
         
         productos_data = []
         for producto in todos_productos:
@@ -4871,13 +4941,13 @@ def crear_productos_prueba():
             return jsonify({'mensaje': 'Ya existen productos en la base de datos'})
         
         # Obtener o crear categorías
-        categoria_pan = Categoria.query.filter_by(nombre="Panadería").first()
+        categoria_pan = Categoria.query.filter_by(nombre="Panadería", panaderia_id=current_user.panaderia_id).first()
         if not categoria_pan:
             categoria_pan = Categoria(nombre="Panadería")
             db.session.add(categoria_pan)
             db.session.flush()
         
-        categoria_bebida = Categoria.query.filter_by(nombre="Bebidas").first()
+        categoria_bebida = Categoria.query.filter_by(nombre="Bebidas", panaderia_id=current_user.panaderia_id).first()
         if not categoria_bebida:
             categoria_bebida = Categoria(nombre="Bebidas")
             db.session.add(categoria_bebida)
@@ -5309,7 +5379,7 @@ def reporte_cierre_caja():
         fin_dia = datetime.combine(fecha_consultada, datetime.max.time())
         
         # 🆕 OBTENER panaderia_id DEL USUARIO ACTUAL
-        usuario_actual = Usuario.query.get(session['user_id'])
+        usuario_actual = db.session.get(Usuario, session["user_id"])
         panaderia_id = usuario_actual.panaderia_id
         
         print(f"🔍 DEBUG: Generando reporte para panaderia_id: {panaderia_id}")
@@ -5930,7 +6000,7 @@ def reporte_ventas_avanzado():
         fecha_inicio = fecha_fin - timedelta(days=7)
     
     # 🎯 OBTENER panaderia_id DEL USUARIO ACTUAL (MULTICLIENTE)
-    usuario_actual = Usuario.query.get(session['user_id'])
+    usuario_actual = db.session.get(Usuario, session["user_id"])
     panaderia_id = usuario_actual.panaderia_id
     
     print(f"🔍 [VENTAS_AVANZADO] Usuario: {usuario_actual.username}, Panadería: {panaderia_id}")
@@ -7664,7 +7734,7 @@ def editar_activo(id):
 def listar_mantenimientos(activo_id):
     """Listar mantenimientos de un activo"""
     activo = ActivoFijo.query.filter_by(panaderia_id=current_user.panaderia_id, id=activo_id).first_or_404()
-    mantenimientos = HistorialMantenimiento.query.filter_by(activo_id=activo_id).order_by(HistorialMantenimiento.fecha_mantenimiento.desc()).all()
+    mantenimientos = HistorialMantenimiento.query.filter_by(activo_id=activo_id, panaderia_id=current_user.panaderia_id).order_by(HistorialMantenimiento.fecha.desc()).all()
     
     return render_template('mantenimientos.html', activo=activo, mantenimientos=mantenimientos)
 
@@ -8512,7 +8582,7 @@ def resetear_password(usuario_id):
         })
     
     try:
-        usuario = Usuario.query.get_or_404(usuario_id)
+        usuario = db.get_or_404(Usuario, usuario_id)
         
         # 🎯 GENERACIÓN DE CONTRASEÑA SEGURA (MEJORES PRÁCTICAS)
         nueva_password = generar_contrasena_segura()
@@ -8649,7 +8719,7 @@ def obtener_datos_cliente(cliente_id):
     
     try:
         from models import ConfiguracionPanaderia
-        cliente = ConfiguracionPanaderia.query.get_or_404(cliente_id)
+        cliente = db.get_or_404(ConfiguracionPanaderia, cliente_id)
         
         return jsonify({
             'success': True,
@@ -8680,7 +8750,7 @@ def editar_cliente():
     try:
         from models import ConfiguracionPanaderia
         cliente_id = request.form.get('cliente_id')
-        cliente = ConfiguracionPanaderia.query.get_or_404(cliente_id)
+        cliente = db.get_or_404(ConfiguracionPanaderia, cliente_id)
         
         # Actualizar datos
         cliente.nombre_panaderia = request.form.get('nombre_panaderia')
@@ -8721,7 +8791,7 @@ def obtener_datos_cliente_super(cliente_id):
     
     try:
         from models import ConfiguracionPanaderia
-        cliente = ConfiguracionPanaderia.query.get_or_404(cliente_id)
+        cliente = db.get_or_404(ConfiguracionPanaderia, cliente_id)
         
         # Determinar estado de suscripción
         estado_suscripcion = 'activa'
@@ -8764,7 +8834,7 @@ def editar_cliente_super():
         from datetime import datetime
         
         cliente_id = request.form.get('cliente_id')
-        cliente = ConfiguracionPanaderia.query.get_or_404(cliente_id)
+        cliente = db.get_or_404(ConfiguracionPanaderia, cliente_id)
         
         # Actualizar datos
         cliente.nombre_panaderia = request.form.get('nombre_panaderia')
@@ -8804,7 +8874,7 @@ def renovar_suscripcion_super():
         from datetime import datetime
         
         cliente_id = request.form.get('cliente_id')
-        cliente = ConfiguracionPanaderia.query.get_or_404(cliente_id)
+        cliente = db.get_or_404(ConfiguracionPanaderia, cliente_id)
         
         # Actualizar datos
         cliente.tipo_licencia = request.form.get('tipo_licencia')
@@ -8871,7 +8941,7 @@ def acceder_panaderia(panaderia_id):
     session['panaderia_remota'] = panaderia_id
     print(f"✅ DEBUG: panaderia_remota guardado: {session.get('panaderia_remota')}")
     
-    panaderia = Panaderia.query.get(panaderia_id)
+    panaderia = db.session.get(Panaderia, panaderia_id)
     print(f"✅ DEBUG: Panadería encontrada: {panaderia.nombre if panaderia else 'NO ENCONTRADA'}")
     
     if panaderia:

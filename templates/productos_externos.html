@@ -247,6 +247,25 @@
     </nav>
 
     <div class="container mt-4">
+        <!-- ============================================= -->
+        <!-- 🆕 ALERTA DE PRODUCTOS PRÓXIMOS A VENCER -->
+        <!-- ============================================= -->
+        {% if productos_proximos_vencer %}
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>⚠️ Productos próximos a vencer:</strong>
+            {% for producto in productos_proximos_vencer %}
+                <span class="badge bg-warning text-dark me-1">
+                    {{ producto.nombre }} - {{ (producto.fecha_vencimiento - hoy).days }} días
+                </span>
+            {% endfor %}
+            <a href="{{ url_for('productos_externos') }}?filtro=proximos_vencer" class="btn btn-sm btn-warning ms-2">
+                Ver todos
+            </a>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endif %}
+
         <h2>🍹 Productos Externos</h2>
         <p class="text-muted">Gestión de bebidas, helados y otros productos externos</p>
 
@@ -270,6 +289,8 @@
                     <option value="Helados">🍦 Helados</option>
                     <option value="Snacks">🍿 Snacks</option>
                     <option value="Otros">📦 Otros</option>
+                    <option value="proximos_vencer">⏰ Próximos a vencer</option>
+                    <option value="vencidos">❌ Vencidos</option>
                 </select>
             </div>
             <div class="col-md-2 col-sm-6">
@@ -360,6 +381,12 @@
                             <label class="form-label">Stock Mínimo</label>
                             <input type="number" name="stock_minimo" class="form-control" value="5" min="1">
                         </div>
+
+                        <div class="col-md-2 col-sm-6">
+                            <label class="form-label">📅 Fecha Vencimiento</label>
+                            <input type="date" name="fecha_vencimiento" class="form-control">
+                            <small class="text-muted">Dejar en blanco si no aplica</small>
+                        </div>
                     </div>
                     
                     <!-- BOTÓN DENTRO DEL FORMULARIO -->
@@ -398,7 +425,7 @@
                         </thead>
                         <tbody>
                             {% for producto in productos %}
-                            <tr class="{% if producto.stock_actual <= producto.stock_minimo %}table-warning{% endif %}" data-nombre="{{ producto.nombre.lower() }}" data-marca="{{ (producto.marca or "").lower() }}" data-categoria="{{ producto.categoria }}" data-stock="{{ producto.stock_actual }}" data-stockMinimo="{{ producto.stock_minimo }}">
+                            <tr class="{% if producto.stock_actual <= producto.stock_minimo %}table-warning{% endif %}" data-nombre="{{ producto.nombre.lower() }}" data-marca="{{ (producto.marca or "").lower() }}" data-categoria="{{ producto.categoria }}" data-stock="{{ producto.stock_actual }}" data-stockMinimo="{{ producto.stock_minimo }}" data-fecha-vencimiento="{% if producto.fecha_vencimiento %}{{ producto.fecha_vencimiento.strftime("%Y-%m-%d") }}{% endif %}" data-dias-para-vencer="{% if producto.fecha_vencimiento %}{{ (producto.fecha_vencimiento - hoy).days }}{% else %}999{% endif %}">
                                 <td data-label="Producto">
                                     <strong>{{ producto.nombre }}</strong>
                                     {% if producto.descripcion %}
@@ -503,6 +530,11 @@
                                 <label class="form-label">Precio Compra *</label>
                                 <input type="number" name="precio_compra" class="form-control" step="0.01" min="0" required>
                             </div>
+                            <div class="col-md-6">
+                                <label class="form-label">📅 Fecha Vencimiento</label>
+                                <input type="date" name="fecha_vencimiento" class="form-control">
+                                <small class="text-muted">Dejar en blanco si no aplica</small>
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Notas (opcional)</label>
@@ -572,6 +604,12 @@
                                 <label class="form-label">Stock Mínimo</label>
                                 <input type="number" id="editar_stock_minimo" name="stock_minimo" class="form-control" min="1" value="5">
                             </div>
+
+                            <div class="col-md-6 col-sm-6">
+                                <label class="form-label">📅 Fecha Vencimiento</label>
+                                <input type="date" id="editar_fecha_vencimiento" name="fecha_vencimiento" class="form-control">
+                                <small class="text-muted">Dejar en blanco si no aplica</small>
+                            </div>
                             <div class="col-md-6 col-sm-6">
                                 <label class="form-label">Proveedor</label>
                                 <select id="editar_proveedor_id" name="proveedor_id" class="form-control">
@@ -608,10 +646,13 @@
                 precio_venta: {{ p.precio_venta }},
                 stock_actual: {{ p.stock_actual }},
                 stock_minimo: {{ p.stock_minimo }},
+                fecha_vencimiento: {% if p.fecha_vencimiento %}"{{ p.fecha_vencimiento.strftime("%Y-%m-%d") }}"{% else %}null{% endif %},
                 proveedor_id: {{ p.proveedor_id or 'null' }}
             }{% if not loop.last %},{% endif %}
             {% endfor %}
         ];
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
 
         function abrirModalCompra(productoId) {
             const producto = productos.find(p => p.id === productoId);
@@ -673,6 +714,10 @@
 
         async function registrarCompra() {
             const formData = new FormData(document.getElementById('formCompraExterna'));
+            const fechaVencimiento = document.querySelector('#formCompraExterna input[name="fecha_vencimiento"]').value;
+            if (fechaVencimiento) {
+                formData.append('fecha_vencimiento', fechaVencimiento);
+            }
             
             try {
                 const response = await fetch('/registrar_compra_externa', {
@@ -728,7 +773,19 @@
             }
             
             // Filtro por categoría
-            if (categoria && cat !== categoria) {
+            if (categoria === 'proximos_vencer') {
+                // 🔧 AJUSTE: Verificar días para vencimiento
+                const dias = parseInt(row.dataset.diasParaVencer) || 999;
+                if (dias > 10 || dias < 0) {
+                    visible = false;
+                }
+            } else if (categoria === 'vencidos') {
+                // 🔧 AJUSTE: Verificar productos vencidos
+                const dias = parseInt(row.dataset.diasParaVencer) || 999;
+                if (dias >= 0) {
+                    visible = false;
+                }
+            } else if (categoria && cat !== categoria) {
                 visible = false;
             }
             
@@ -741,6 +798,29 @@
             }
             if (filtroStock === 'normal' && stock <= stockMinimo) {
                 visible = false;
+            }
+            
+            // 🆕 FILTRO POR VENCIMIENTO (usando dataset)
+            const fechaVencimiento = row.dataset.fechaVencimiento;
+            if (categoria === 'proximos_vencer') {
+                if (!fechaVencimiento) {
+                    visible = false;
+                } else {
+                    const dias = parseInt(row.dataset.diasParaVencer) || 999;
+                    if (dias > 10 || dias < 0) {
+                        visible = false;
+                    }
+                }
+            }
+            if (categoria === 'vencidos') {
+                if (!fechaVencimiento) {
+                    visible = false;
+                } else {
+                    const dias = parseInt(row.dataset.diasParaVencer) || 999;
+                    if (dias >= 0) {
+                        visible = false;
+                    }
+                }
             }
             
             row.style.display = visible ? '' : 'none';

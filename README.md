@@ -1020,3 +1020,40 @@ Estado de Resultados	✅	✅
 Reportes Gerenciales	❌	✅
 Activos Fijos	❌	✅
 Gestión de Usuarios	❌	✅
+
+📋 PLAN MAESTRO ACTUALIZADO
+🚨 FASE 1: DEPURACIÓN - PENDIENTE
+#	Tarea	Estado	Acción
+1	Backup completo creado	✅ COMPLETADO	-
+2	Script de limpieza listo	✅ COMPLETADO	-
+3	Limpiar tenants de prueba	❌ PENDIENTE	Eliminar tenants de prueba
+4	Verificar consultas SQL	❌ PENDIENTE	Verificar todas las consultas
+5	Corregir advertencias SQLAlchemy	❌ PENDIENTE	Diagnosticar y corregir
+✅ FASE 2: FUNCIONALIDADES - COMPLETADA
+#	Ítem	Estado
+1	Dashboard por tenant	✅ EXISTE
+2	Reportes por tenant	✅ FUNCIONAL
+3	Cierre diario multi-tenant	❌ ELIMINADO (No se usa)
+4	Módulo de inventario	✅ EXISTE
+5	Módulo de compras (Productos Externos)	✅ EXISTE
+6	Módulo de clientes	✅ EXISTE
+🚀 FASE 3: PREPARACIÓN PARA LA NUBE - PENDIENTE
+#	Ítem	Prioridad	Estado
+1	Migrar a PostgreSQL	🔴 ALTA	⏳ PENDIENTE
+2	Configurar subdominios	🔴 ALTA	⏳ PENDIENTE
+3	Dockerizar	🟡 MEDIA	⏳ PENDIENTE
+4	Backups automáticos	🟡 MEDIA	⏳ PENDIENTE
+5	Migrar a producción	🔴 ALTA	⏳ PENDIENTE
+🚀 FASE 4: SEGURIDAD Y ESCALABILIDAD - PENDIENTE
+#	Ítem	Prioridad	Estado
+1	HTTPS/SSL	🔴 ALTA	⏳ PENDIENTE
+2	Rate limiting	🟡 MEDIA	⏳ PENDIENTE
+3	Logging y auditoría	🟡 MEDIA	⏳ PENDIENTE
+4	Monitoreo	🟢 BAJA	⏳ PENDIENTE
+5	Caché (Redis)	🟢 BAJA	⏳ PENDIENTE
+🚀 FASE 5: MONETIZACIÓN - PENDIENTE
+#	Ítem	Prioridad	Estado
+1	Planes de suscripción	🔴 ALTA	✅ COMPLETADO
+2	Pasarela de pagos	🔴 ALTA	⏳ PENDIENTE
+3	Portal de clientes	🟡 MEDIA	⏳ PENDIENTE
+4	Facturación automática	🟡 MEDIA	⏳ PENDIENTE
