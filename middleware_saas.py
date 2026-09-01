@@ -169,105 +169,136 @@ class GestorTenants:
             return 1000  # ID alto para evitar conflictos
     
     def crear_tenant_automatico(self, identificador):
-        """Crear un nuevo tenant automáticamente"""
+        """Crear un nuevo tenant automáticamente usando PostgreSQL"""
         try:
-            print(f"🆕 Creando tenant automáticamente: {identificador}")
+            from models import Tenant, ConfiguracionPanaderia, db
+            from sqlalchemy import text
+            from werkzeug.security import generate_password_hash
+            import secrets
+            import string
             
-            # 1. Obtener siguiente ID disponible
-            siguiente_id = self.obtener_siguiente_panaderia_id()
+            print(f"🚀 Creando tenant automáticamente: {identificador}")
             
-            # 2. Crear base de datos
-            destino = os.path.join(self.databases_dir, f"{identificador}.db")
-            plantilla = os.path.join(self.databases_dir, "tenant_plantilla.db")
+            # 1. Verificar si ya existe
+            tenant_existente = Tenant.query.filter_by(subdominio=identificador).first()
+            if tenant_existente:
+                print(f"✅ Tenant ya existe: {tenant_existente.nombre} (ID: {tenant_existente.id})")
+                return {
+                    'id': tenant_existente.id,
+                    'nombre': tenant_existente.nombre,
+                    'subdominio': tenant_existente.subdominio,
+                    'base_datos': tenant_existente.base_datos,
+                    'activo': tenant_existente.activo,
+                    'plan': tenant_existente.plan
+                }
             
-            if not Path(plantilla).exists():
-                print(f"❌ Plantilla no encontrada: {plantilla}")
-                return None
+            # 2. Crear tenant en PostgreSQL
+            nuevo_tenant = Tenant(
+                nombre=f"Panadería {identificador}",
+                subdominio=identificador,
+                base_datos=f"tenant_{identificador}",
+                plan='basico',
+                activo=True
+            )
+            db.session.add(nuevo_tenant)
+            db.session.commit()
             
-            # Copiar plantilla
-            shutil.copy2(plantilla, destino)
+            tenant_id = nuevo_tenant.id
             
-            # Configurar tenant
-            conn = sqlite3.connect(destino)
-            cursor = conn.cursor()
+            # 3. Crear schema en PostgreSQL
+            schema_name = f"tenant_{tenant_id}"
+            db.session.execute(text(f"CREATE SCHEMA IF NOT EXISTS {schema_name}"))
+            db.session.commit()
             
-            # Configurar panadería según columnas reales
-            cursor.execute("PRAGMA table_info(configuracion_panaderia)")
-            columnas = [col[1] for col in cursor.fetchall()]
+            # 4. Crear las tablas dentro del schema
+            from models import db
+            from sqlalchemy import MetaData
             
-            cursor.execute("DELETE FROM configuracion_panaderia")
+            metadata = MetaData(schema=schema_name)
+            for table in db.metadata.tables.values():
+                if table.schema is None or table.schema == 'public':
+                    try:
+                        new_table = table.to_metadata(metadata, schema=schema_name)
+                    except AttributeError:
+                        new_table = table.tometadata(metadata, schema=schema_name)
             
-            if 'panaderia_id' in columnas and 'nombre_panaderia' in columnas:
-                columnas_disponibles = ['panaderia_id', 'nombre_panaderia']
-                valores = [siguiente_id, f"Panadería {identificador}"]
-                
-                # CORRECCIÓN: Para fecha_creacion, usar SQLite directamente
-                sql_extra = ""
-                if 'fecha_creacion' in columnas:
-                    columnas_disponibles.append('fecha_creacion')
-                    sql_extra = ", datetime('now')"
-                
-                columnas_sql = ', '.join(columnas_disponibles)
-                
-                # Construir SQL correctamente
-                if sql_extra:
-                    sql = f"INSERT INTO configuracion_panaderia ({columnas_sql}) VALUES (?, ?{sql_extra})"
-                else:
-                    sql = f"INSERT INTO configuracion_panaderia ({columnas_sql}) VALUES (?, ?)"
-                
-                cursor.execute(sql, (siguiente_id, f"Panadería {identificador}"))
-                print(f"   ✅ configuracion_panaderia: ID {siguiente_id}")
+            metadata.create_all(db.engine)
+            print(f"   ✅ Tablas creadas en schema {schema_name}")
             
-            # Configurar consecutivo POS
-            cursor.execute("DELETE FROM consecutivos_pos")
-            cursor.execute("INSERT INTO consecutivos_pos (panaderia_id, numero_actual) VALUES (?, 0)", (siguiente_id,))
-            print(f"   ✅ consecutivos_pos: ID {siguiente_id}")
+            # 5. Generar contraseña temporal
+            caracteres = string.ascii_letters + string.digits + "!@#$%"
+            contrasena_temp = ''.join(secrets.choice(caracteres) for _ in range(10))
             
-            # Configurar tabla panaderias si existe (opcional)
-            try:
-                cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='panaderias'")
-                if cursor.fetchone():
-                    cursor.execute("DELETE FROM panaderias")
-                    cursor.execute("INSERT INTO panaderias (id, nombre) VALUES (?, ?)", (siguiente_id, f"Panadería {identificador}"))
-                    print(f"   ✅ panaderias: ID {siguiente_id}")
-            except Exception as e:
-                print(f"   ⚠️  panaderias: {e}")
+            # 6. Configurar panadería en el schema (SIN ID)
+            db.session.execute(
+                text(f"""
+                    INSERT INTO {schema_name}.configuracion_panaderia 
+                    (panaderia_id, nombre_panaderia, fecha_creacion, activo)
+                    VALUES (:panaderia_id, :nombre_panaderia, NOW(), true)
+                """),
+                {
+                    'panaderia_id': tenant_id,
+                    'nombre_panaderia': f"Panadería {identificador}"
+                }
+            )
+            print(f"   ✅ Configuración creada")
             
-            conn.commit()
-            conn.close()
+            # 7. Obtener el ID generado
+            result = db.session.execute(
+                text(f"SELECT id FROM {schema_name}.configuracion_panaderia WHERE panaderia_id = :panaderia_id"),
+                {'panaderia_id': tenant_id}
+            )
+            config_id = result.fetchone()[0]
+            print(f"   ✅ Config ID: {config_id}")
             
-            # 3. Registrar en tenant_master.db
-            conn_master = sqlite3.connect(self.tenant_master_db)
-            cursor_master = conn_master.cursor()
+            # 8. Configurar consecutivo POS
+            db.session.execute(
+                text(f"""
+                    INSERT INTO {schema_name}.consecutivos_pos 
+                    (panaderia_id, numero_actual)
+                    VALUES (:panaderia_id, :numero_actual)
+                """),
+                {
+                    'panaderia_id': config_id,
+                    'numero_actual': 0
+                }
+            )
             
-            cursor_master.execute('''
-                INSERT INTO tenants (id, nombre, subdominio, base_datos, activo, plan)
-                VALUES (?, ?, ?, ?, 1, 'basico')
-            ''', (siguiente_id, f"Panadería {identificador}", identificador, f"{identificador}.db"))
+            # 9. Crear usuario admin
+            db.session.execute(
+                text(f"""
+                    INSERT INTO {schema_name}.usuarios 
+                    (username, password_hash, nombre_completo, rol, activo, panaderia_id)
+                    VALUES 
+                    (:username, :password_hash, :nombre_completo, :rol, :activo, :panaderia_id)
+                """),
+                {
+                    'username': f'admin_{tenant_id}',
+                    'password_hash': generate_password_hash(contrasena_temp),
+                    'nombre_completo': f'Administrador Panadería {identificador}',
+                    'rol': 'admin_cliente',
+                    'activo': True,
+                    'panaderia_id': config_id
+                }
+            )
             
-            conn_master.commit()
-            conn_master.close()
+            db.session.commit()
             
-            print(f"✅ Tenant creado automáticamente: {identificador} (ID: {siguiente_id})")
+            print(f"✅ Tenant creado: {identificador} (ID: {tenant_id})")
+            print(f"   🔑 Contraseña temporal: {contrasena_temp}")
             
             return {
-                'id': siguiente_id,
+                'id': tenant_id,
                 'nombre': f"Panadería {identificador}",
                 'subdominio': identificador,
-                'base_datos': f"{identificador}.db",
+                'base_datos': f"tenant_{identificador}",
                 'activo': True,
                 'plan': 'basico'
             }
             
         except Exception as e:
             print(f"❌ Error creando tenant automático: {e}")
-            # Intentar limpiar archivo corrupto
-            try:
-                if os.path.exists(destino):
-                    os.remove(destino)
-                    print(f"🗑️  Limpiado archivo corrupto: {destino}")
-            except:
-                pass
+            db.session.rollback()
             return None
 
 # Instancia global del gestor de tenants
@@ -277,3 +308,20 @@ def init_tenants_app(app):
     """Inicializar la aplicación con el sistema de tenants"""
     gestor_tenants.init_app(app)
     return gestor_tenants
+    
+    # =============================================
+    # 🆕 CREAR SCHEMAS PARA TENANTS EXISTENTES
+    # =============================================
+    try:
+        from sqlalchemy import text
+        with app.app_context():
+            # Obtener tenants de la base de datos
+            from models import Tenant
+            tenants = Tenant.query.all()
+            for tenant in tenants:
+                schema_name = f"tenant_{tenant.id}"
+                db.session.execute(text(f"CREATE SCHEMA IF NOT EXISTS {schema_name}"))
+                db.session.commit()
+                print(f"✅ Schema {schema_name} creado/verificado para tenant {tenant.id}")
+    except Exception as e:
+        print(f"⚠️ Error creando schemas: {e}")

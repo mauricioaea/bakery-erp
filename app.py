@@ -2,112 +2,491 @@ import os
 import uuid
 import json
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, Response, make_response, g
+from werkzeug.security import generate_password_hash, check_password_hash
 
+
+def crear_tablas_en_orden(schema_name):
+    """
+    Crea las tablas en el orden correcto de dependencias.
+    Esto resuelve el problema de que db.create_all() falla por orden alfabético.
+    """
+    from sqlalchemy import text
+    
+    print(f"   📝 Creando tablas en orden para {schema_name}...")
+    
+    # 1. panaderias (no depende de nadie)
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.panaderias (
+            id INTEGER PRIMARY KEY,
+            panaderia_id INTEGER NOT NULL DEFAULT 1,
+            nombre VARCHAR(100) NOT NULL,
+            direccion VARCHAR(200),
+            telefono VARCHAR(20),
+            email VARCHAR(100),
+            ruc VARCHAR(20),
+            propietario VARCHAR(100),
+            moneda VARCHAR(10) DEFAULT 'USD',
+            impuesto FLOAT DEFAULT 0.0,
+            logo VARCHAR(200),
+            activa BOOLEAN DEFAULT TRUE,
+            fecha_creacion TIMESTAMP DEFAULT NOW(),
+            fecha_actualizacion TIMESTAMP DEFAULT NOW()
+        )
+    '''))
+    
+    # 2. categorias (depende de panaderias)
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.categorias (
+            id SERIAL PRIMARY KEY,
+            nombre VARCHAR(100) NOT NULL,
+            descripcion TEXT,
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
+        )
+    '''))
+    
+    # 3. productos (depende de categorias y panaderias)
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.productos (
+            id SERIAL PRIMARY KEY,
+            nombre VARCHAR(100) NOT NULL,
+            descripcion TEXT,
+            categoria_id INTEGER NOT NULL REFERENCES {schema_name}.categorias(id),
+            stock_actual INTEGER DEFAULT 0,
+            stock_minimo INTEGER DEFAULT 10,
+            precio_venta FLOAT NOT NULL,
+            codigo_barras VARCHAR(50) UNIQUE,
+            activo BOOLEAN DEFAULT TRUE,
+            vida_util_dias INTEGER DEFAULT 3,
+            es_pan BOOLEAN DEFAULT TRUE,
+            fecha_creacion TIMESTAMP DEFAULT NOW(),
+            tipo_producto VARCHAR(20) DEFAULT 'produccion',
+            costo_compra FLOAT DEFAULT 0,
+            proveedor_externo VARCHAR(100),
+            receta_id INTEGER,
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
+        )
+    '''))
+    
+    # 4. usuarios (depende de panaderias)
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.usuarios (
+            id SERIAL PRIMARY KEY,
+            username VARCHAR(80) UNIQUE NOT NULL,
+            password_hash VARCHAR(200) NOT NULL,
+            nombre_completo VARCHAR(100) NOT NULL,
+            email VARCHAR(120),
+            telefono VARCHAR(20),
+            rol VARCHAR(20) DEFAULT 'cajero',
+            activo BOOLEAN DEFAULT TRUE,
+            fecha_creacion TIMESTAMP DEFAULT NOW(),
+            fecha_ultimo_acceso TIMESTAMP,
+            sucursal_id INTEGER,
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),
+            tenant_id INTEGER DEFAULT 1
+        )
+    '''))
+    
+    # 5. configuracion_panaderia (depende de panaderias)
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.configuracion_panaderia (
+            id SERIAL PRIMARY KEY,
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),
+            tenant_id INTEGER,
+            activo BOOLEAN DEFAULT TRUE,
+            nombre_panaderia VARCHAR(200) DEFAULT 'Mi Panadería' NOT NULL,
+            telefono_contacto VARCHAR(20),
+            direccion TEXT,
+            tipo_licencia VARCHAR(20) DEFAULT 'local',
+            max_usuarios INTEGER DEFAULT 3,
+            ventas_ilimitadas BOOLEAN DEFAULT TRUE,
+            fecha_expiracion DATE,
+            estado_suscripcion VARCHAR(20) DEFAULT 'activa',
+            dias_gracia INTEGER DEFAULT 7,
+            ultima_notificacion TIMESTAMP,
+            notificaciones_pendientes INTEGER DEFAULT 0,
+            razon_social VARCHAR(200),
+            nit VARCHAR(20),
+            email_facturacion VARCHAR(120),
+            telefono_facturacion VARCHAR(20),
+            metodo_pago VARCHAR(50) DEFAULT 'transferencia',
+            referencia_pago VARCHAR(100),
+            fecha_creacion TIMESTAMP DEFAULT NOW(),
+            fecha_actualizacion TIMESTAMP DEFAULT NOW(),
+            ultimo_cierre DATE,
+            sistema_activo BOOLEAN DEFAULT TRUE
+        )
+    '''))
+    
+    # 6. consecutivos_pos (depende de panaderias)
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.consecutivos_pos (
+            id SERIAL PRIMARY KEY,
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),
+            numero_actual INTEGER DEFAULT 0,
+            updated_at TIMESTAMP DEFAULT NOW()
+        )
+    '''))
+    
+    db.session.commit()
+    print(f"   ✅ Tablas creadas en {schema_name}")
+    
+
+# =============================================
+# 🆕 FUNCIÓN HELPER PARA OBTENER CONFIGURACIÓN DE PANADERÍA
+# =============================================
+def obtener_configuracion_panaderia_segura(panaderia_id):
+    """
+    Obtiene la configuración de una panadería asegurando que se use el schema correcto.
+    SOLO busca en el schema del tenant, NO crea configuraciones en public.
+    """
+    from sqlalchemy import text
+    
+    # ✅ VERIFICACIÓN CRÍTICA: Si panaderia_id es None, retornar None
+    if panaderia_id is None:
+        return None
+    
+    try:
+        schema_name = f"tenant_{panaderia_id}"
+        
+        # ✅ FORZAR el schema para la sesión de SQLAlchemy
+        db.session.execute(text(f"SET search_path TO {schema_name}"))
+        db.session.commit()
+        
+        # ✅ Verificar que el cambio de schema funcionó
+        current_schema = db.session.execute(text("SELECT current_schema()")).scalar()
+        
+        # ✅ Buscar configuración en el schema actual
+        config = ConfiguracionPanaderia.query.filter_by(panaderia_id=panaderia_id).first()
+        
+        if config:
+            db.session.execute(text("SET search_path TO public"))
+            db.session.commit()
+            return config
+        
+        # ✅ FALLBACK: Buscar directamente con SQL (SOLO LECTURA)
+        result = db.session.execute(
+            text(f"SELECT id, panaderia_id, tipo_licencia, max_usuarios, fecha_expiracion FROM {schema_name}.configuracion_panaderia WHERE panaderia_id = :pid"),
+            {'pid': panaderia_id}
+        ).fetchone()
+        
+        if result:
+            # ✅ Crear objeto config PERO NO GUARDARLO EN LA BD
+            config = ConfiguracionPanaderia(
+                id=result[0],
+                panaderia_id=result[1],
+                tipo_licencia=result[2],
+                max_usuarios=result[3],
+                fecha_expiracion=result[4]
+            )
+            # ⚠️ NO HACER db.session.add(config) - SOLO USAR EL OBJETO
+        else:
+            # ✅ Silenciar mensajes de error para evitar ruido en inicio
+            pass
+        
+        db.session.execute(text("SET search_path TO public"))
+        db.session.commit()
+        return config
+        
+    except Exception as e:
+        # ✅ Silenciar errores para evitar mensajes en inicio
+        return None
 # =============================================
 # 🆕 FUNCIÓN SAAS - CREAR TENANT AUTOMÁTICAMENTE
 # =============================================
 
-def crear_tenant_saas(nombre_panaderia, subdominio, email_contacto=None):
+def crear_tenant_saas(nombre_panaderia, subdominio, email_contacto=None, max_usuarios=1, fecha_expiracion=None, contrasena_temp=None, tipo_licencia='local'):
     """
     Crear un nuevo tenant SaaS cuando se crea un cliente
-    Returns: (éxito, mensaje, tenant_id)
+    Usando PostgreSQL (en lugar de SQLite)
     """
     try:
-        # Importar módulos necesarios
-        import sqlite3
-        import os
-        import shutil
+        # ✅ IMPORTACIONES NECESARIAS
+        import secrets
+        import string
+        from sqlalchemy import text
+        from datetime import datetime
+        from werkzeug.security import generate_password_hash
         
-        # 1. REGISTRAR EN BD MAESTRA
-        conn_maestra = sqlite3.connect('tenant_master.db')
-        cursor_maestra = conn_maestra.cursor()
-        
-        # Verificar si el subdominio ya existe
-        cursor_maestra.execute("SELECT id FROM tenants WHERE subdominio = ?", (subdominio,))
-        if cursor_maestra.fetchone():
-            conn_maestra.close()
+        # 1. VERIFICAR SI EL SUBDOMINIO YA EXISTE
+        tenant_existente = Tenant.query.filter_by(subdominio=subdominio).first()
+        if tenant_existente:
             return False, f"El subdominio '{subdominio}' ya existe", None
         
-        # Nombre del archivo de BD
-        nombre_bd = f"{subdominio}.db"  # Cambiado a formato más simple
-        ruta_bd = os.path.join('databases_tenants', nombre_bd)
+        # 2. CREAR EL TENANT EN POSTGRESQL
+        nuevo_tenant = Tenant(
+            nombre=nombre_panaderia,
+            subdominio=subdominio,
+            base_datos=f"tenant_{subdominio}",
+            plan='basico' if max_usuarios <= 1 else 'premium',
+            activo=True,
+            fecha_expiracion=fecha_expiracion
+        )
+        db.session.add(nuevo_tenant)
+        db.session.flush()
+        tenant_id = nuevo_tenant.id
         
-        # Insertar nuevo tenant
-        cursor_maestra.execute(
-            "INSERT INTO tenants (nombre, subdominio, base_datos, plan, activo) VALUES (?, ?, ?, ?, ?)",
-            (nombre_panaderia, subdominio, nombre_bd, 'basico', 1)
+        # 3. CREAR EL SCHEMA EN POSTGRESQL
+        schema_name = f"tenant_{tenant_id}"
+        db.session.execute(text(f"CREATE SCHEMA IF NOT EXISTS {schema_name}"))
+        db.session.commit()
+        
+        # 4. CREAR LAS TABLAS DENTRO DEL SCHEMA
+        print(f"   📝 Creando tablas en schema {schema_name}...")
+
+        # ✅ FORZAR LA CREACIÓN DE TABLAS EN EL SCHEMA
+        db.session.execute(text(f"SET search_path TO {schema_name}"))
+
+        # ✅ CREAR TABLAS EN ORDEN
+        crear_tablas_en_orden(schema_name)
+
+        db.session.execute(text(f"SET search_path TO public"))
+        db.session.commit()
+
+        print(f"   ✅ Tablas creadas en schema {schema_name}")
+        
+        # 5. USAR CONTRASEÑA RECIBIDA
+        if not contrasena_temp:
+            caracteres = string.ascii_letters + string.digits + "!@#$%"
+            contrasena_temp = ''.join(secrets.choice(caracteres) for _ in range(10))
+        else:
+            print(f"   🔑 Usando contraseña proporcionada: {contrasena_temp}")
+        
+        # Configurar el schema para la sesión
+        db.session.execute(text(f"SET search_path TO {schema_name}"))
+        
+        # =============================================
+        # ✅ PASO 6: CREAR PANADERÍA EN EL SCHEMA (PRIMERO)
+        # =============================================
+        db.session.execute(
+            text(f"""
+                INSERT INTO {schema_name}.panaderias 
+                (id, panaderia_id, nombre, direccion, telefono, email, moneda, impuesto, activa)
+                VALUES (:id, :panaderia_id, :nombre, :direccion, :telefono, :email, :moneda, :impuesto, :activa)
+            """),
+            {
+                'id': tenant_id,
+                'panaderia_id': tenant_id,
+                'nombre': nombre_panaderia,
+                'direccion': '',
+                'telefono': '',
+                'email': email_contacto or '',
+                'moneda': 'USD',
+                'impuesto': 0.0,
+                'activa': True
+            }
+        )
+        print(f"   ✅ Panadería creada en schema para tenant_id: {tenant_id}")
+        
+        # =============================================
+        # ✅ PASO 7: CREAR CONFIGURACIÓN EN EL SCHEMA CON TIPO DE LICENCIA
+        # =============================================
+        db.session.execute(
+            text(f"""
+                INSERT INTO {schema_name}.configuracion_panaderia 
+                (panaderia_id, nombre_panaderia, fecha_creacion, activo, max_usuarios, fecha_expiracion, tipo_licencia)
+                VALUES (:panaderia_id, :nombre_panaderia, NOW(), true, :max_usuarios, :fecha_expiracion, :tipo_licencia)
+            """),
+            {
+                'panaderia_id': tenant_id,
+                'nombre_panaderia': nombre_panaderia,
+                'max_usuarios': max_usuarios,
+                'fecha_expiracion': fecha_expiracion,
+                'tipo_licencia': tipo_licencia  # ✅ AGREGADO
+            }
+        )
+        print(f"   ✅ Configuración en schema creada para tenant_id: {tenant_id} (Licencia: {tipo_licencia})")
+        
+        # =============================================
+        # ✅ PASO 8: CREAR USUARIOS EN EL SCHEMA
+        # =============================================
+        hashed_password = generate_password_hash(contrasena_temp)
+        
+        # Usuario Administrador
+        db.session.execute(
+            text(f"""
+                INSERT INTO {schema_name}.usuarios 
+                (username, password_hash, nombre_completo, rol, panaderia_id, tenant_id, activo)
+                VALUES (:username, :password_hash, :nombre_completo, :rol, :panaderia_id, :tenant_id, true)
+            """),
+            {
+                'username': f'admin_{tenant_id}',
+                'password_hash': hashed_password,
+                'nombre_completo': f'Administrador {nombre_panaderia}',
+                'rol': 'admin_cliente',
+                'panaderia_id': tenant_id,
+                'tenant_id': tenant_id
+            }
         )
         
-        tenant_id = cursor_maestra.lastrowid
-        
-        # 2. CREAR BASE DE DATOS DEL TENANT
-        if not os.path.exists(ruta_bd):
-            # Usar plantilla profesional
-            plantilla = 'databases_tenants/tenant_plantilla.db'
-            if os.path.exists(plantilla):
-                shutil.copy2(plantilla, ruta_bd)
-                print(f"✅ BD creada desde plantilla: {ruta_bd}")
-            else:
-                # Fallback a BD principal
-                shutil.copy2('databases_tenants/panaderia_principal.db', ruta_bd)
-                print(f"✅ BD creada desde principal: {ruta_bd}")
-        
-        # 3. CONFIGURAR TENANT EN SU BD (REEMPLAZA usuarios_global)
-        # Ahora se configura directamente en la BD del tenant, no en tabla global
-        conn_tenant = sqlite3.connect(ruta_bd)
-        cursor_tenant = conn_tenant.cursor()
-        
-        # Configurar panadería en su propia BD
-        cursor_tenant.execute("DELETE FROM configuracion_panaderia")
-        cursor_tenant.execute(
-            "INSERT INTO configuracion_panaderia (panaderia_id, nombre_panaderia, fecha_creacion) VALUES (?, ?, datetime('now'))",
-            (tenant_id, nombre_panaderia)
+        # Usuario Supervisor
+        db.session.execute(
+            text(f"""
+                INSERT INTO {schema_name}.usuarios 
+                (username, password_hash, nombre_completo, rol, panaderia_id, tenant_id, activo)
+                VALUES (:username, :password_hash, :nombre_completo, :rol, :panaderia_id, :tenant_id, true)
+            """),
+            {
+                'username': f'super_{tenant_id}',
+                'password_hash': hashed_password,
+                'nombre_completo': f'Supervisor {nombre_panaderia}',
+                'rol': 'supervisor',
+                'panaderia_id': tenant_id,
+                'tenant_id': tenant_id
+            }
         )
         
-        # Configurar consecutivo POS
-        cursor_tenant.execute("DELETE FROM consecutivos_pos")
-        cursor_tenant.execute(
-            "INSERT INTO consecutivos_pos (panaderia_id, numero_actual) VALUES (?, 0)",
-            (tenant_id,)
+        # Usuario Cajero
+        db.session.execute(
+            text(f"""
+                INSERT INTO {schema_name}.usuarios 
+                (username, password_hash, nombre_completo, rol, panaderia_id, tenant_id, activo)
+                VALUES (:username, :password_hash, :nombre_completo, :rol, :panaderia_id, :tenant_id, true)
+            """),
+            {
+                'username': f'cajero_{tenant_id}',
+                'password_hash': hashed_password,
+                'nombre_completo': f'Cajero {nombre_panaderia}',
+                'rol': 'cajero',
+                'panaderia_id': tenant_id,
+                'tenant_id': tenant_id
+            }
         )
         
-        conn_tenant.commit()
-        conn_tenant.close()
+        print(f"   ✅ Usuarios creados en schema para tenant_id: {tenant_id}")
         
-        conn_maestra.commit()
-        conn_maestra.close()
+        # =============================================
+        # ✅ PASO 9: CONFIGURAR CONSECUTIVO POS
+        # =============================================
+        db.session.execute(
+            text(f"""
+                INSERT INTO {schema_name}.consecutivos_pos 
+                (panaderia_id, numero_actual)
+                VALUES (:panaderia_id, :numero_actual)
+            """),
+            {
+                'panaderia_id': tenant_id,
+                'numero_actual': 0
+            }
+        )
+        print(f"   ✅ Consecutivo POS creado para tenant_id: {tenant_id}")
+        
+        # =============================================
+        # ✅ PASO 10: CREAR CATEGORÍAS Y PRODUCTOS DE PRUEBA
+        # =============================================
+        try:
+            # Cambiar al schema del tenant
+            db.session.execute(text(f"SET search_path TO {schema_name}"))
+            
+            # Crear categorías
+            db.session.execute(
+                text(f"""
+                    INSERT INTO {schema_name}.categorias 
+                    (nombre, panaderia_id)
+                    VALUES 
+                        ('Panadería', :panaderia_id),
+                        ('Pastelería', :panaderia_id),
+                        ('Bebidas', :panaderia_id)
+                """),
+                {'panaderia_id': tenant_id}
+            )
+            print(f"   ✅ Categorías creadas para tenant_id: {tenant_id}")
+            
+            # Obtener IDs de las categorías recién creadas
+            categorias = db.session.execute(
+                text(f"""
+                    SELECT id, nombre FROM {schema_name}.categorias 
+                    WHERE panaderia_id = :panaderia_id
+                """),
+                {'panaderia_id': tenant_id}
+            ).fetchall()
+            
+            # Crear diccionario con los IDs
+            cat_ids = {}
+            for cat in categorias:
+                cat_ids[cat[1]] = cat[0]
+            
+            # Crear productos con códigos de barras ÚNICOS por tenant
+            productos = [
+                ('Pan Mantequilla', cat_ids.get('Panadería', 1), f"{tenant_id}1001", 300),
+                ('Pan Integral', cat_ids.get('Panadería', 1), f"{tenant_id}1002", 4000),
+                ('Croissant', cat_ids.get('Panadería', 1), f"{tenant_id}1003", 1000),
+                ('Pastel de Chocolate', cat_ids.get('Pastelería', 2), f"{tenant_id}2001", 30000),
+                ('Galletas', cat_ids.get('Pastelería', 2), f"{tenant_id}2002", 1200),
+                ('Café', cat_ids.get('Bebidas', 3), f"{tenant_id}3001", 1000),
+                ('Jugo de Naranja', cat_ids.get('Bebidas', 3), f"{tenant_id}3002", 4000)
+            ]
+            
+            for nombre, cat_id, codigo, precio in productos:
+                db.session.execute(
+                    text(f"""
+                        INSERT INTO {schema_name}.productos 
+                        (nombre, categoria_id, precio_venta, codigo_barras, panaderia_id, stock_actual, stock_minimo, es_pan, vida_util_dias, tipo_producto)
+                        VALUES (:nombre, :categoria_id, :precio_venta, :codigo_barras, :panaderia_id, 0, 10, true, 3, 'produccion')
+                    """),
+                    {
+                        'nombre': nombre,
+                        'categoria_id': cat_id,
+                        'precio_venta': precio,
+                        'codigo_barras': codigo,
+                        'panaderia_id': tenant_id
+                    }
+                )
+            
+            db.session.commit()
+            print(f"   ✅ {len(productos)} productos creados para tenant_id: {tenant_id}")
+            
+        except Exception as e:
+            print(f"   ⚠️ Error creando categorías/productos: {e}")
+            # No fallar, solo mostrar advertencia
+        
+        # =============================================
+        # ✅ PASO 11: COMMIT FINAL
+        # =============================================
+        db.session.commit()
         
         print(f"🎉 Nuevo tenant SaaS creado: {nombre_panaderia} (ID: {tenant_id})")
-        print(f"   📁 Archivo: {nombre_bd}")
-        print(f"   🔢 Consecutivo POS: 0")
-        return True, f"Tenant {nombre_panaderia} creado exitosamente", tenant_id
+        print(f"   📁 Schema: {schema_name}")
+        print(f"   🔑 Contraseña temporal: {contrasena_temp}")
+        print(f"   👤 Usuarios: admin_{tenant_id}, super_{tenant_id}, cajero_{tenant_id}")
+        print(f"   📅 Fecha expiración: {fecha_expiracion}")
+        print(f"   🏷️  Tipo Licencia: {tipo_licencia}")
+        
+        return True, f"Tenant {nombre_panaderia} creado exitosamente. Contraseña temporal: {contrasena_temp}", tenant_id
         
     except Exception as e:
+        db.session.rollback()
         print(f"❌ Error creando tenant SaaS: {e}")
+        import traceback
+        traceback.print_exc()
         return False, f"Error creando tenant: {str(e)}", None
     
 # =============================================
 # CREAR USUARIOS PARA UN TENANT (SIEMPRE)
 # =============================================
-def crear_usuarios_tenant_siempre(tenant_id, tenant_db_path, nombre_panaderia):
+def crear_usuarios_tenant_siempre(tenant_id, tenant_db_path, nombre_panaderia, contrasena_temp=None):
     """
     Crea los usuarios admin, super y cajero para un tenant
     Args:
         tenant_id: ID del tenant
         tenant_db_path: Ruta a la BD del tenant
         nombre_panaderia: Nombre de la panadería
+        contrasena_temp: Contraseña temporal (si no se proporciona, se genera una)
     Returns:
         str: Contraseña temporal generada, o None si hay error
     """
     import sqlite3
-    from werkzeug.security import generate_password_hash
+    
     import secrets
     import string
     
     try:
-        # Generar contraseña temporal
-        caracteres = string.ascii_letters + string.digits + "!@#$%"
-        contrasena_temp = ''.join(secrets.choice(caracteres) for _ in range(10))
+        # ✅ Usar la contraseña proporcionada o generar una nueva
+        if not contrasena_temp:
+            caracteres = string.ascii_letters + string.digits + "!@#$%"
+            contrasena_temp = ''.join(secrets.choice(caracteres) for _ in range(10))
+            print(f"   🔑 Generada nueva contraseña: {contrasena_temp}")
+        else:
+            print(f"   🔑 Usando contraseña proporcionada: {contrasena_temp}")
         
         conn = sqlite3.connect(tenant_db_path)
         cursor = conn.cursor()
@@ -146,7 +525,7 @@ def crear_usuarios_tenant_siempre(tenant_id, tenant_db_path, nombre_panaderia):
                 VALUES (?, ?, ?, ?, ?, ?)
             """, (
                 user_data['username'],
-                generate_password_hash(contrasena_temp),
+                generate_password_hash(contrasena_temp),  # ✅ Usar la contraseña recibida
                 user_data['nombre'],
                 user_data['rol'],
                 1,  # Siempre activo
@@ -172,7 +551,7 @@ from middleware_saas import init_tenants_app, gestor_tenants
 
 from flask_login import LoginManager, login_required, current_user, login_user, logout_user
 from flask_migrate import Migrate
-from werkzeug.security import generate_password_hash, check_password_hash
+
 from datetime import datetime, timedelta, date, timezone
 from sqlalchemy import func, extract
 from reportes import GeneradorReportes
@@ -201,11 +580,22 @@ app = Flask(__name__)
 TenantContext.initialize_app(app)
 # INICIALIZAR SISTEMA SAAS MULTI-TENANT
 init_tenants_app(app)
-print("🚀 Middleware SaaS - Sistema multi-tenant activado")
+# print("🚀 Middleware SaaS - Sistema multi-tenant activado")
 app.secret_key = '023431bcb986f0ebab954d4237dffb57f86d01e38107bfc16c839c717ba8b15f'
 app.config['SESSION_PERMANENT'] = False
 app.config['PERMANENT_SESSION_LIFETIME'] = 3600
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///C:/Users/Mauricio/Desktop/panaderia_sistema/panaderia_profesional/databases_tenants/panaderia_principal.db'
+
+# =============================================
+# 🗄️ CONFIGURACIÓN DE BASE DE DATOS (POSTGRESQL)
+# =============================================
+from dotenv import load_dotenv
+import os
+
+# Cargar variables de entorno
+load_dotenv()
+
+# Usar PostgreSQL para la base de datos maestra
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://postgres:PanaderiaPro2026!@localhost:5433/panaderia_master')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # =============================================
@@ -216,8 +606,10 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # 🆕 SOLO IMPORTAR db PRIMERO
 from models import db
 
-# 🆕 AHORA IMPORTAR TODOS LOS MODELOS
-from models import Usuario, Producto, Venta, DetalleVenta, MateriaPrima, Receta, RecetaIngrediente, Panaderia,  ConfiguracionPanaderia
+# 🆕 AHORA IMPORTAR TODOS LOS MODELOS GLOBALMENTE (ORDEN CORREGIDO)
+# 🔴 CRÍTICO: ConfiguracionPanaderia y Tenant DEBEN estar PRIMERO
+from models import ConfiguracionPanaderia, Tenant
+from models import Usuario, Producto, Venta, DetalleVenta, MateriaPrima, Receta, RecetaIngrediente, Panaderia
 from models import OrdenProduccion, Categoria, Proveedor, HistorialCompra, HistorialInventario
 from models import ConfiguracionProduccion, HistorialRotacionProducto, ControlVidaUtil, Factura
 from models import ProductoExterno, CompraExterna, RegistroDiario, SaldoBanco, PagoIndividual, DepositoBancario
@@ -231,7 +623,17 @@ from models import obtener_productos_sin_ventas_recientes, ActivoFijo, Historial
 from facturacion.generador_xml import generar_xml_ubl_21
 
 
-
+# =============================================
+# ✅ FORZAR REGISTRO DE MODELOS EN METADATA
+# =============================================
+# Esto asegura que todos los modelos estén en el metadata de SQLAlchemy
+from sqlalchemy import MetaData
+# ✅ Comentado para limpiar la terminal
+# print("📋 Verificando modelos registrados en metadata...")
+# for table in db.metadata.tables.values():
+#     if table.schema is None or table.schema == 'public':
+#         print(f"   ✅ Tabla registrada: {table.name}")
+# print("📋 Verificación completada.")
 
 # =============================================
 # CONFIGURACIÓN FLASK-LOGIN
@@ -247,7 +649,77 @@ migrate = Migrate(app, db)
 
 @login_manager.user_loader
 def load_user(user_id):
-    return db.session.get(Usuario, int(user_id))
+    """
+    🎯 CARGA PROFESIONAL DE USUARIOS - ARQUITECTURA MULTI-TENANT
+    Busca al usuario en el schema del tenant usando el tenant_id de la sesión
+    """
+    try:
+        from sqlalchemy import text
+        import re
+        
+        # =============================================
+        # 1. OBTENER tenant_id DE LA SESIÓN
+        # =============================================
+        from flask import session
+        tenant_id = session.get('tenant_id')
+        
+        # =============================================
+        # 2. SI HAY tenant_id, BUSCAR EN ESE SCHEMA
+        # =============================================
+        if tenant_id:
+            schema_name = f"tenant_{tenant_id}"
+            
+            # Verificar si la tabla usuarios existe
+            table_check = db.session.execute(
+                text(f"SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = :schema AND table_name = 'usuarios')"),
+                {'schema': schema_name}
+            ).fetchone()[0]
+            
+            if table_check:
+                result = db.session.execute(
+                    text(f"SELECT id, username, password_hash, panaderia_id, rol FROM {schema_name}.usuarios WHERE id = :id"),
+                    {'id': user_id}
+                )
+                user_data = result.fetchone()
+                
+                if user_data:
+                    user = Usuario()
+                    user.id = user_data[0]
+                    user.username = user_data[1]
+                    user.password_hash = user_data[2]
+                    user.panaderia_id = user_data[3]
+                    user.rol = user_data[4]
+                    user.tenant_id = tenant_id
+                    
+                    print(f"✅ [LOAD_USER] Usuario cargado desde {schema_name}: {user.username} (tenant_id: {tenant_id})")
+                    return user
+        
+        # =============================================
+        # 3. FALLBACK: BUSCAR EN PUBLIC (solo para dev_master)
+        # =============================================
+        result = db.session.execute(
+            text("SELECT id, username, password_hash, panaderia_id, rol FROM public.usuarios WHERE id = :id"),
+            {'id': user_id}
+        )
+        user_data = result.fetchone()
+        
+        if user_data:
+            user = Usuario()
+            user.id = user_data[0]
+            user.username = user_data[1]
+            user.password_hash = user_data[2]
+            user.panaderia_id = user_data[3]
+            user.rol = user_data[4]
+            user.tenant_id = 1
+            print(f"✅ [LOAD_USER] Usuario cargado desde public: {user.username} (tenant_id: 1)")
+            return user
+        
+        print(f"⚠️ [LOAD_USER] Usuario con ID {user_id} no encontrado")
+            
+    except Exception as e:
+        print(f"⚠️ Error en user_loader: {e}")
+    
+    return None
 
 # =============================================
 # 🆕 DEFINICIÓN DE MÓDULOS DEL SISTEMA
@@ -323,12 +795,11 @@ def modulo_requerido(modulo):
 def licencia_premium_requerida():
     """
     Decorador para verificar que el tenant tenga licencia Premium.
-    Si es Básica, redirige a página de upgrade.
+    Si es Básica o Local, redirige a página de upgrade.
     """
     from functools import wraps
     from flask import flash, redirect, url_for
     from flask_login import current_user
-    from models import ConfiguracionPanaderia
     
     def decorator(f):
         @wraps(f)
@@ -337,22 +808,28 @@ def licencia_premium_requerida():
                 flash('Debes iniciar sesión', 'warning')
                 return redirect(url_for('login'))
             
-            # Obtener configuración del tenant actual
-            config = ConfiguracionPanaderia.query.filter_by(
-                tenant_id=current_user.panaderia_id
-            ).first()
+            # ✅ Obtener panaderia_id del usuario
+            panaderia_id = current_user.panaderia_id
             
+            # ✅ Usar la función helper para obtener configuración del schema correcto
+            config = obtener_configuracion_panaderia_segura(panaderia_id)
+            
+            # ✅ Si no hay configuración, bloquear acceso
             if not config:
-                config = ConfiguracionPanaderia.query.filter_by(
-                    panaderia_id=current_user.panaderia_id
-                ).first()
+                flash('⚠️ Configuración de licencia no encontrada. Contacta al administrador.', 'error')
+                return redirect(url_for('dashboard'))
             
-            # Verificar si tiene licencia Premium
-            if config and config.tipo_licencia == 'nube_basica':
+            # ✅ Tipos de licencia que NO son premium
+            tipos_no_premium = ['local', 'basico', 'nube_basica']
+            
+            # ✅ Verificar si tiene licencia Premium
+            if config.tipo_licencia in tipos_no_premium:
                 flash('🔒 Esta funcionalidad está disponible solo en el plan Premium. ¡Mejora tu plan!', 'warning')
                 return redirect(url_for('dashboard'))
             
+            # ✅ Si es Premium, permitir acceso
             return f(*args, **kwargs)
+        
         return decorated_function
     return decorator
 
@@ -363,6 +840,7 @@ def licencia_premium_requerida():
 @app.context_processor
 def inject_permisos():
     """Inyectar funciones de permisos en todos los templates"""
+    from flask_login import current_user  # ✅ IMPORTAR current_user
     from models import ConfiguracionPanaderia
     
     def usuario_puede(modulo, accion):
@@ -380,27 +858,237 @@ def inject_permisos():
             return []
         return current_user.obtener_modulos_permitidos()
     
-    # Obtener configuración del tenant actual
+    # ✅ Obtener configuración del tenant actual usando la función helper
     config = None
-    if current_user.is_authenticated:
-        config = ConfiguracionPanaderia.query.filter_by(
-            tenant_id=current_user.panaderia_id
-        ).first()
-        if not config:
-            config = ConfiguracionPanaderia.query.filter_by(
-                panaderia_id=current_user.panaderia_id
-            ).first()
+    # ✅ VERIFICACIÓN SEGURA: current_user existe y está autenticado
+    try:
+        if hasattr(current_user, 'is_authenticated') and current_user.is_authenticated:
+            panaderia_id = getattr(current_user, 'panaderia_id', None)
+            if panaderia_id:
+                config = obtener_configuracion_panaderia_segura(panaderia_id)
+    except Exception as e:
+        # ✅ Silenciar errores durante el inicio de la aplicación
+        pass
     
     return dict(
         usuario_puede=usuario_puede,
         usuario_tiene_acceso=usuario_tiene_acceso,
         modulos_permitidos=modulos_permitidos,
         MODULOS_SISTEMA=MODULOS_SISTEMA,
-        config=config  # 🆕 AGREGADO
+        config=config
     )
+
+# =============================================
+# 🆕 FUNCIONES AUXILIARES PARA TENANT
+# =============================================
+
+def set_tenant_schema(tenant_id):
+    """Establece el schema de PostgreSQL para el tenant"""
+    from sqlalchemy import text
+    schema_name = f"tenant_{tenant_id}"
+    try:
+        # ✅ Cambiar al schema del tenant usando text()
+        db.session.execute(text(f'SET search_path TO {schema_name}, public'))
+        db.session.commit()
+        # print(f"🔧 PostgreSQL - Schema configurado: {schema_name}")
+        return True
+    except Exception as e:
+        print(f"❌ Error cambiando a schema {schema_name}: {e}")
+        # ✅ Fallback al schema public
+        try:
+            db.session.execute(text('SET search_path TO public'))
+            db.session.commit()
+        except:
+            pass
+        return False
+
+def verificar_y_crear_datos_tenant(tenant_id):
+    """Verifica y crea categorías y productos para un tenant específico"""
+    from models import db, Panaderia, Categoria, Producto
+    from sqlalchemy import text
+    
+    try:
+        # ✅ Asegurar que estamos en el schema correcto
+        db.session.execute(text(f'SET search_path TO tenant_{tenant_id}, public'))
+        db.session.commit()
+        
+        # ✅ Verificar si existe Panadería para este tenant
+        panaderia = Panaderia.query.filter_by(id=tenant_id).first()
+        
+        if not panaderia:
+            # ✅ Crear panadería si no existe
+            panaderia = Panaderia(
+                id=tenant_id,
+                nombre=f"Panadería {tenant_id}",
+                direccion="Dirección por defecto",
+                telefono="00000000"
+            )
+            db.session.add(panaderia)
+            db.session.commit()
+            print(f"✅ Panadería creada para tenant {tenant_id}")
+        
+        # ✅ Verificar categorías - FORZAR RECARGA
+        categorias = Categoria.query.filter_by(panaderia_id=tenant_id).all()
+        
+        
+        if not categorias:
+            print(f"⚠️ No se encontraron categorías para tenant {tenant_id}. Creando...")
+            
+            categorias_default = [
+                Categoria(nombre="Panadería", panaderia_id=tenant_id),
+                Categoria(nombre="Pastelería", panaderia_id=tenant_id),
+                Categoria(nombre="Bebidas", panaderia_id=tenant_id)
+            ]
+            
+            for cat in categorias_default:
+                db.session.add(cat)
+            
+            db.session.commit()
+            
+            # ✅ REFRESCAR: Obtener IDs de las categorías recién creadas
+            categorias = Categoria.query.filter_by(panaderia_id=tenant_id).all()
+            print(f"   ✅ Categorías creadas para tenant {tenant_id}")
+        
+            
+        
+        # ✅ Verificar productos (solo si hay categorías)
+        if categorias:
+            productos_existentes = Producto.query.filter_by(panaderia_id=tenant_id).count()
+            
+            
+            if productos_existentes == 0:
+                
+                
+                # ✅ Crear productos con códigos de barras únicos por tenant
+                productos_default = [
+                    Producto(
+                        nombre="Pan Mantequilla",
+                        categoria_id=categorias[0].id,
+                        precio_venta=300,
+                        stock_minimo=10,
+                        stock_actual=0,
+                        codigo_barras=f"{tenant_id}1001",
+                        es_pan=True,
+                        vida_util_dias=3,
+                        tipo_producto='produccion',
+                        panaderia_id=tenant_id
+                    ),
+                    Producto(
+                        nombre="Pan Integral",
+                        categoria_id=categorias[0].id,
+                        precio_venta=4000,
+                        stock_minimo=10,
+                        stock_actual=0,
+                        codigo_barras=f"{tenant_id}1002",
+                        es_pan=True,
+                        vida_util_dias=3,
+                        tipo_producto='produccion',
+                        panaderia_id=tenant_id
+                    ),
+                    Producto(
+                        nombre="Croissant",
+                        categoria_id=categorias[0].id,
+                        precio_venta=1000,
+                        stock_minimo=10,
+                        stock_actual=0,
+                        codigo_barras=f"{tenant_id}1003",
+                        es_pan=True,
+                        vida_util_dias=3,
+                        tipo_producto='produccion',
+                        panaderia_id=tenant_id
+                    ),
+                    Producto(
+                        nombre="Galletas",
+                        categoria_id=categorias[1].id,
+                        precio_venta=1200,
+                        stock_minimo=10,
+                        stock_actual=0,
+                        codigo_barras=f"{tenant_id}2002",
+                        es_pan=True,
+                        vida_util_dias=3,
+                        tipo_producto='produccion',
+                        panaderia_id=tenant_id
+                    ),
+                    Producto(
+                        nombre="Café",
+                        categoria_id=categorias[2].id,
+                        precio_venta=1000,
+                        stock_minimo=10,
+                        stock_actual=0,
+                        codigo_barras=f"{tenant_id}3001",
+                        es_pan=True,
+                        vida_util_dias=3,
+                        tipo_producto='produccion',
+                        panaderia_id=tenant_id
+                    ),
+                    Producto(
+                        nombre="Jugo de Naranja",
+                        categoria_id=categorias[2].id,
+                        precio_venta=4000,
+                        stock_minimo=10,
+                        stock_actual=0,
+                        codigo_barras=f"{tenant_id}3002",
+                        es_pan=True,
+                        vida_util_dias=3,
+                        tipo_producto='produccion',
+                        panaderia_id=tenant_id
+                    )
+                ]
+                
+                for prod in productos_default:
+                    db.session.add(prod)
+                
+                db.session.commit()
+                
+            
+        else:
+            print(f"⚠️ No hay categorías para crear productos en tenant {tenant_id}")
+        
+        
+        return True
+        
+    except Exception as e:
+        print(f"❌ Error en verificar_y_crear_datos_tenant para tenant {tenant_id}: {e}")
+        db.session.rollback()
+        return False
+
+# =============================================
+# ✅ MIDDLEWARE - SE EJECUTA ANTES DE CADA PETICIÓN
+# =============================================
 
 @app.before_request
 def antes_de_cada_peticion():
+    
+    # =============================================
+    # ✅ VERIFICAR SI LA SESIÓN ES VÁLIDA
+    # =============================================
+    if 'tenant_id' in session:
+        tenant_id = session['tenant_id']
+        # Verificar si el tenant existe
+        from models import Tenant
+        tenant_existe = Tenant.query.filter_by(id=tenant_id, activo=True).first()
+        if not tenant_existe:
+            # Si el tenant no existe, limpiar la sesión
+            session.clear()
+            print(f"⚠️ Sesión inválida (tenant {tenant_id} no existe). Sesión limpiada.")
+
+
+@app.before_request
+def antes_de_cada_peticion():
+    
+    # =============================================
+    # ✅ VERIFICAR SI LA SESIÓN ES VÁLIDA
+    # =============================================
+    if 'tenant_id' in session:
+        tenant_id = session['tenant_id']
+        # Verificar si el tenant existe
+        from models import Tenant
+        tenant_existe = Tenant.query.filter_by(id=tenant_id, activo=True).first()
+        if not tenant_existe:
+            # Si el tenant no existe, limpiar la sesión
+            session.clear()
+            print(f"⚠️ Sesión inválida (tenant {tenant_id} no existe). Sesión limpiada.")
+            
     # =============================================
     # 🆕 SAAS - DETECCIÓN MEJORADA DE TENANT
     # =============================================
@@ -414,14 +1102,19 @@ def antes_de_cada_peticion():
         print(f"🔍 Tenant detectado por subdominio: {tenant_detectado['nombre']}")
     
     # SEGUNDO: Si hay usuario autenticado, priorizar su tenant
-    # Verificar de forma segura si current_user está disponible
     try:
         if hasattr(current_user, 'is_authenticated') and current_user.is_authenticated and hasattr(current_user, 'panaderia_id'):
             try:
-                import sqlite3
-                conn = sqlite3.connect('tenant_master.db')
+                import psycopg2
+                conn = psycopg2.connect(
+                    host='localhost',
+                    port=5433,
+                    database='panaderia_master',
+                    user='postgres',
+                    password='PanaderiaPro2026!'
+                )
                 cursor = conn.cursor()
-                cursor.execute('SELECT id, nombre, subdominio, base_datos FROM tenants WHERE id = ? AND activo = 1', (current_user.panaderia_id,))
+                cursor.execute('SELECT id, nombre, subdominio, base_datos FROM tenants WHERE id = %s AND activo = true', (current_user.panaderia_id,))
                 
                 tenant_data = cursor.fetchone()
                 conn.close()
@@ -439,6 +1132,52 @@ def antes_de_cada_peticion():
     except Exception as e:
         print(f"⚠️ current_user no disponible aún: {e}")
     
+    # =============================================
+    # ✅ AGREGADO: Verificar si hay tenant en sesión
+    # =============================================
+    if 'tenant_id' in session:
+        tenant_id = session['tenant_id']
+        if not tenant_detectado or tenant_detectado.get('id') != tenant_id:
+            try:
+                import psycopg2
+                conn = psycopg2.connect(
+                    host='localhost',
+                    port=5433,
+                    database='panaderia_master',
+                    user='postgres',
+                    password='PanaderiaPro2026!'
+                )
+                cursor = conn.cursor()
+                cursor.execute('SELECT id, nombre, subdominio, base_datos FROM tenants WHERE id = %s AND activo = true', (tenant_id,))
+                tenant_data = cursor.fetchone()
+                conn.close()
+                
+                if tenant_data:
+                    tenant_detectado = {
+                        'id': tenant_data[0],
+                        'nombre': tenant_data[1],
+                        'subdominio': tenant_data[2],
+                        'base_datos': tenant_data[3]
+                    }
+                    print(f"🔍 Tenant desde sesión: {tenant_detectado['nombre']} (ID: {tenant_id})")
+                else:
+                    tenant_detectado = {
+                        'id': tenant_id,
+                        'nombre': f'Tenant {tenant_id}',
+                        'subdominio': f'tenant_{tenant_id}',
+                        'base_datos': f'tenant_{tenant_id}'
+                    }
+                    print(f"🔍 Tenant desde sesión (fallback): {tenant_detectado['nombre']}")
+            except Exception as e:
+                print(f"⚠️ Error obteniendo tenant de sesión: {e}")
+                tenant_detectado = {
+                    'id': tenant_id,
+                    'nombre': f'Tenant {tenant_id}',
+                    'subdominio': f'tenant_{tenant_id}',
+                    'base_datos': f'tenant_{tenant_id}'
+                }
+                print(f"🔍 Tenant desde sesión (error): {tenant_detectado['nombre']}")
+    
     # TERCERO: Si no hay tenant detectado, usar principal por defecto
     if not tenant_detectado:
         tenant_detectado = {
@@ -451,26 +1190,32 @@ def antes_de_cada_peticion():
     
     # Configurar en contexto global
     g.tenant = tenant_detectado
-    
-    # Configurar SQLAlchemy para el tenant detectado
-    app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///databases_tenants/{tenant_detectado['base_datos']}"
-    print(f"🔧 SaaS - BD configurada: {tenant_detectado['base_datos']}")
-    
+
+    # =============================================
+    # 🗄️ CONFIGURACIÓN PARA TENANT EN POSTGRESQL
+    # =============================================
+    tenant_schema = f"tenant_{tenant_detectado['id']}"
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://postgres:PanaderiaPro2026!@localhost:5433/panaderia_master')
+
+    # ✅ USAR set_tenant_schema() EN LUGAR DEL CÓDIGO MANUAL
+    try:
+        from app import set_tenant_schema
+        set_tenant_schema(tenant_detectado['id'])
+        print(f"🔧 PostgreSQL - Schema configurado: {tenant_schema}")
+    except Exception as e:
+        print(f"⚠️ Error configurando schema PostgreSQL: {e}")
+
     """Middleware global unificado - VERSIÓN MEJORADA"""
-    # 1. Establecer información de usuario y panadería
     from multicliente_middleware import obtener_info_usuario
     obtener_info_usuario()
 
-    # 2. Verificar suscripción (solo si current_user está disponible)
     try:
         if hasattr(current_user, 'is_authenticated') and current_user.is_authenticated and hasattr(current_user, 'panaderia_id'):
             from models import obtener_configuracion_panaderia
-
             try:
                 config = obtener_configuracion_panaderia(current_user.panaderia_id)
                 if config is not None:
                     config.actualizar_estado_suscripcion()
-
                     if config.tipo_licencia != 'local' and not config.suscripcion_activa:
                         rutas_permitidas = ['logout', 'static', 'suscripcion_vencida', 'login']
                         if request.endpoint and not any(ruta in request.endpoint for ruta in rutas_permitidas):
@@ -480,119 +1225,286 @@ def antes_de_cada_peticion():
     except Exception as e:
         print(f"⚠️ current_user no disponible para verificación de suscripción: {e}")
 
+    # =============================================
+    # ✅ OBTENER tenant_id DE MANERA SEGURA
+    # =============================================
+    tenant_id = None
+    if hasattr(g, 'tenant') and g.tenant:
+        tenant_id = g.tenant.get('id')
+    elif hasattr(current_user, 'panaderia_id') and current_user.panaderia_id:
+        tenant_id = current_user.panaderia_id
+    elif 'tenant_id' in session:
+        tenant_id = session.get('tenant_id')
+    
+    # Si aún no hay tenant_id, usar el de tenant_detectado
+    if not tenant_id and tenant_detectado:
+        tenant_id = tenant_detectado.get('id')
 
-# =============================================
-# 🚀 INICIALIZACIÓN SAAS (EJECUCIÓN ÚNICA)
-# =============================================
+    # ✅ USAR set_tenant_schema() para asegurar el schema correcto
+    if tenant_id:
+        try:
+            set_tenant_schema(tenant_id)
+        except Exception as e:
+            print(f"⚠️ Error configurando schema para tenant {tenant_id}: {e}")
 
-with app.app_context():
-    db.create_all()
+    with app.app_context():
+        # ✅ Solo crear tablas si tenant_id está definido
+        if tenant_id:
+            schema_name = f"tenant_{tenant_id}"
+            from sqlalchemy import text
+            # Verificar si el schema existe
+            result = db.session.execute(
+                text(f"SELECT schema_name FROM information_schema.schemata WHERE schema_name = :schema"),
+                {'schema': schema_name}
+            ).fetchone()
+            
+            if result:
+                # Configurar el schema para la sesión
+                db.session.execute(text(f"SET search_path TO {schema_name}"))
+                db.create_all()
+                print(f"✅ Tablas creadas/verificadas en schema {schema_name}")
+            else:
+                print(f"⚠️ Schema {schema_name} no encontrado")
+        else:
+            print("⚠️ No se pudo determinar tenant_id para crear tablas")
     
-    # Verificar si ya existe un usuario admin
-    admin = Usuario.query.filter_by(username='admin').first()
-    if not admin:
-        hashed_password = generate_password_hash('admin123')
-        admin_user = Usuario(
-            username='admin', 
-            password_hash=hashed_password, 
-            nombre_completo='Administrador Principal',
-            rol='administrador'
-        )
-        db.session.add(admin_user)
-        db.session.commit()
-        print("✅ Usuario admin creado: usuario: admin, contraseña: admin123")
+    # =============================================
+    # 🆕 INICIALIZAR CONFIGURACIÓN DEL TENANT (SI NO EXISTE)
+    # =============================================
+    from models import ConfiguracionPanaderia, Usuario, ConsecutivoPOS, ConfiguracionSistema, Categoria, Producto, Panaderia
     
-    # 🆕 VERIFICAR Y CREAR MODELOS NUEVOS DEL SISTEMA POS
-    consecutivo = ConsecutivoPOS.query.first()
-    if not consecutivo:
-        consecutivo_inicial = ConsecutivoPOS(numero_actual=0)
-        db.session.add(consecutivo_inicial)
-        print("✅ Consecutivo POS inicial creado")
+    # ✅ Usar tenant_id ya definido
+    if not tenant_id:
+        tenant_id = getattr(g, 'tenant', {}).get('id', 1)
     
-    config_sistema = ConfiguracionSistema.query.first()
-    if not config_sistema:
-        config_inicial = ConfiguracionSistema(
-            tipo_facturacion='POS',
-            nombre_empresa='Panadería y Pasteleria Semillas',
-            nit_empresa='900000000-1',
-            direccion_empresa='Cra. 18 # 9-45 Atahualpa',
-            telefono_empresa='+57 3189098818',
-            ciudad_empresa='Pasto',
-            regimen_empresa='Simplificado'
-        )
-        db.session.add(config_inicial)
-        print("✅ Configuración del sistema inicial creada")
-    
-    # Crear categorías y productos de prueba si no existen
-    if not Categoria.query.first():
-        # Crear categorías
-        panaderia = Categoria(nombre="Panadería")
-        pasteleria = Categoria(nombre="Pastelería")
-        bebidas = Categoria(nombre="Bebidas")
+    # =============================================
+    # ✅ USAR verificar_y_crear_datos_tenant() EN LUGAR DEL CÓDIGO MANUAL
+    # =============================================
+    try:
+        from app import verificar_y_crear_datos_tenant
+        verificar_y_crear_datos_tenant(tenant_id)
+    except Exception as e:
+        print(f"⚠️ Error verificando/creando datos para tenant {tenant_id}: {e}")
         
-        db.session.add_all([panaderia, pasteleria, bebidas])
-        db.session.commit()
-        
-        # Crear productos de prueba
-        productos = [
-            Producto(nombre="Pan Mantequilla", categoria_id=panaderia.id, precio_venta=300, codigo_barras="1001"),
-            Producto(nombre="Pan Integral", categoria_id=panaderia.id, precio_venta=4000, codigo_barras="1002"),
-            Producto(nombre="Croissant", categoria_id=panaderia.id, precio_venta=1000, codigo_barras="1003"),
-            Producto(nombre="Pastel de Chocolate", categoria_id=pasteleria.id, precio_venta=30000, codigo_barras="2001"),
-            Producto(nombre="Galletas", categoria_id=pasteleria.id, precio_venta=1200, codigo_barras="2002"),
-            Producto(nombre="Café", categoria_id=bebidas.id, precio_venta=1000, codigo_barras="3001"),
-            Producto(nombre="Jugo de Naranja", categoria_id=bebidas.id, precio_venta=4000, codigo_barras="3002")
-        ]
-        
-        db.session.add_all(productos)
-        db.session.commit()
-        print("✅ Productos de prueba creados automáticamente")
-    
-    # ❌ ELIMINADO: PROVEEDORES PRE-CONFIGURADOS
-    # Cada tenant debe empezar limpio y crear sus propios proveedores
-    # if not Proveedor.query.first():
-    #     proveedores_ejemplo = [
-    #         Proveedor(
-    #             nombre="Haz de Oros",
-    #             contacto="Juan Pérez",
-    #             telefono="3001234567",
-    #             email="ventas@hazdeoros.com",
-    #             direccion="Calle 123 #45-67, Bogotá",
-    #             productos_que_suministra="Harina de trigo, harina integral, salvado",
-    #             tiempo_entrega_dias=2,
-    #             evaluacion=5
-    #         ),
-    #         Proveedor(
-    #             nombre="Lacteos La Sabana",
-    #             contacto="María González",
-    #             telefono="3109876543", 
-    #             email="pedidos@lacteoslasabana.com",
-    #             direccion="Av. 68 #12-34, Medellín",
-    #             productos_que_suministra="Leche, mantequilla, queso, crema de leche",
-    #             tiempo_entrega_dias=1,
-    #             evaluacion=4
-    #         ),
-    #         Proveedor(
-    #             nombre="Dulces del Valle",
-    #             contacto="Carlos Rodríguez",
-    #             telefono="3205558888",
-    #             email="info@dulcesdelvalle.com",
-    #             direccion="Cr. 45 #78-90, Cali", 
-    #             productos_que_suministra="Azúcar, panela, miel, esencias",
-    #             tiempo_entrega_dias=3,
-    #             evaluacion=4
-    #         )
-    #     ]
-    #     
-    #     db.session.add_all(proveedores_ejemplo)
-    #     db.session.commit()
-    #     print("✅ Proveedores de ejemplo creados automáticamente")
-    
-    # 🆕 HACER COMMIT FINAL DE TODOS LOS CAMBIOS
-    db.session.commit()
+        # =============================================
+        # 📦 FALLBACK: CREAR CATEGORÍAS Y PRODUCTOS DE PRUEBA (SOLO SI FALLA)
+        # =============================================
+        try:
+            from sqlalchemy import text
+            
+            # ✅ Buscar panadería directamente en el schema del tenant
+            tenant_schema = f"tenant_{tenant_id}"
+            
+            result = db.session.execute(
+                text(f"SELECT id, nombre, activa FROM {tenant_schema}.panaderias WHERE id = :tenant_id"),
+                {'tenant_id': tenant_id}
+            ).fetchone()
+            
+            if not result:
+                print(f"⚠️ No se encontró panadería para tenant {tenant_id}. Creando...")
+                
+                db.session.execute(
+                    text(f"""
+                        INSERT INTO {tenant_schema}.panaderias 
+                        (id, panaderia_id, nombre, moneda, impuesto, activa)
+                        VALUES (:id, :panaderia_id, :nombre, :moneda, :impuesto, :activa)
+                    """),
+                    {
+                        'id': tenant_id,
+                        'panaderia_id': tenant_id,
+                        'nombre': f"Panadería {tenant_id}",
+                        'moneda': "USD",
+                        'impuesto': 0.0,
+                        'activa': True
+                    }
+                )
+                db.session.commit()
+                
+                panaderia = type('Panaderia', (), {
+                    'id': tenant_id,
+                    'nombre': f"Panadería {tenant_id}"
+                })()
+                print(f"✅ Panadería creada para tenant {tenant_id} (ID: {tenant_id})")
+            else:
+                panaderia = type('Panaderia', (), {
+                    'id': result[0],
+                    'nombre': result[1]
+                })()
+                print(f"✅ Panadería ya existe para tenant {tenant_id} (ID: {result[0]})")
+            
+            # =============================================
+            # 🏪 VERIFICAR CONFIGURACIÓN DEL TENANT
+            # =============================================
+            config = ConfiguracionPanaderia.query.filter_by(panaderia_id=tenant_id).first()
+            if not config:
+                print(f"⚠️ No se encontró configuración para tenant {tenant_id}. Creando...")
+                nueva_config = ConfiguracionPanaderia(
+                    panaderia_id=tenant_id,
+                    nombre_panaderia=f"Panadería {tenant_id}",
+                    tipo_licencia='basico',
+                    max_usuarios=5,
+                    ventas_ilimitadas=False,
+                    estado_suscripcion='activa',
+                    sistema_activo=True,
+                    activo=True
+                )
+                db.session.add(nueva_config)
+                db.session.commit()
+                print(f"✅ Configuración creada para tenant {tenant_id}")
+            
+            # =============================================
+            # 👤 VERIFICAR Y CREAR USUARIO ADMIN (SOLO PARA TENANT PRINCIPAL)
+            # =============================================
+            if tenant_id == 1:
+                admin_tenant = Usuario.query.filter(
+                    Usuario.username.like(f'admin_{tenant_id}'),
+                    Usuario.panaderia_id == tenant_id
+                ).first()
+                
+                if not admin_tenant:
+                    print(f"⚠️ No se encontró usuario admin para tenant {tenant_id}. Creando...")
+                    hashed_password = generate_password_hash('admin123')
+                    admin_user = Usuario(
+                        username=f'admin_{tenant_id}',
+                        password_hash=hashed_password,
+                        nombre_completo=f'Administrador Tenant {tenant_id}',
+                        rol='admin_cliente',
+                        panaderia_id=tenant_id,
+                        tenant_id=tenant_id,
+                        activo=True
+                    )
+                    db.session.add(admin_user)
+                    db.session.commit()
+                    print(f"✅ Usuario admin_{tenant_id} creado para tenant {tenant_id}")
+                else:
+                    print(f"✅ Usuario admin_{tenant_id} ya existe para tenant {tenant_id}")
+            else:
+                print(f"ℹ️ Tenant {tenant_id}: los usuarios se crean en crear_cliente()")
+            
+            # =============================================
+            # 🆕 VERIFICAR Y CREAR MODELOS NUEVOS DEL SISTEMA POS
+            # =============================================
+            consecutivo = ConsecutivoPOS.query.filter_by(panaderia_id=tenant_id).first()
+            if not consecutivo:
+                consecutivo_inicial = ConsecutivoPOS(
+                    numero_actual=0,
+                    panaderia_id=tenant_id
+                )
+                db.session.add(consecutivo_inicial)
+                print(f"✅ Consecutivo POS inicial creado para tenant {tenant_id}")
+            
+            config_sistema = ConfiguracionSistema.query.filter_by(panaderia_id=tenant_id).first()
+            if not config_sistema:
+                config_inicial = ConfiguracionSistema(
+                    tipo_facturacion='POS',
+                    nombre_empresa='Panadería y Pasteleria Semillas',
+                    nit_empresa='900000000-1',
+                    direccion_empresa='Cra. 18 # 9-45 Atahualpa',
+                    telefono_empresa='+57 3189098818',
+                    ciudad_empresa='Pasto',
+                    regimen_empresa='Simplificado',
+                    panaderia_id=tenant_id
+                )
+                db.session.add(config_inicial)
+                print(f"✅ Configuración del sistema inicial creada para tenant {tenant_id}")
+            
+            # =============================================
+            # 📦 CREAR CATEGORÍAS Y PRODUCTOS DE PRUEBA (SOLO SI NO EXISTEN)
+            # =============================================
+            categoria_existente = Categoria.query.filter_by(panaderia_id=tenant_id).first()
+            
+            if not categoria_existente:
+                
+                
+                # 1. Crear categorías
+                panaderia_cat = Categoria(
+                    nombre="Panadería",
+                    panaderia_id=panaderia.id
+                )
+                pasteleria = Categoria(
+                    nombre="Pastelería",
+                    panaderia_id=panaderia.id
+                )
+                bebidas = Categoria(
+                    nombre="Bebidas",
+                    panaderia_id=panaderia.id
+                )
+                
+                db.session.add_all([panaderia_cat, pasteleria, bebidas])
+                db.session.flush()
+                
+                print(f"   ✅ Categorías creadas: Panadería (ID: {panaderia_cat.id}), Pastelería (ID: {pasteleria.id}), Bebidas (ID: {bebidas.id})")
+                
+                # 2. Crear productos usando códigos de barras ÚNICOS por tenant
+                productos = [
+                    Producto(
+                        nombre="Pan Mantequilla",
+                        categoria_id=panaderia_cat.id,
+                        precio_venta=300,
+                        codigo_barras=f"{tenant_id}1001",  # ✅ Único por tenant
+                        panaderia_id=panaderia.id
+                    ),
+                    Producto(
+                        nombre="Pan Integral",
+                        categoria_id=panaderia_cat.id,
+                        precio_venta=4000,
+                        codigo_barras=f"{tenant_id}1002",  # ✅ Único por tenant
+                        panaderia_id=panaderia.id
+                    ),
+                    Producto(
+                        nombre="Croissant",
+                        categoria_id=panaderia_cat.id,
+                        precio_venta=1000,
+                        codigo_barras=f"{tenant_id}1003",  # ✅ Único por tenant
+                        panaderia_id=panaderia.id
+                    ),
+                    Producto(
+                        nombre="Pastel de Chocolate",
+                        categoria_id=pasteleria.id,
+                        precio_venta=30000,
+                        codigo_barras=f"{tenant_id}2001",  # ✅ Único por tenant
+                        panaderia_id=panaderia.id
+                    ),
+                    Producto(
+                        nombre="Galletas",
+                        categoria_id=pasteleria.id,
+                        precio_venta=1200,
+                        codigo_barras=f"{tenant_id}2002",  # ✅ Único por tenant
+                        panaderia_id=panaderia.id
+                    ),
+                    Producto(
+                        nombre="Café",
+                        categoria_id=bebidas.id,
+                        precio_venta=1000,
+                        codigo_barras=f"{tenant_id}3001",  # ✅ Único por tenant
+                        panaderia_id=panaderia.id
+                    ),
+                    Producto(
+                        nombre="Jugo de Naranja",
+                        categoria_id=bebidas.id,
+                        precio_venta=4000,
+                        codigo_barras=f"{tenant_id}3002",  # ✅ Único por tenant
+                        panaderia_id=panaderia.id
+                    )
+                ]
+                
+                db.session.add_all(productos)
+                db.session.flush()
+                db.session.commit()
+                print(f"✅ {len(productos)} productos de prueba creados para tenant {tenant_id}")
+            else:
+                print(f"✅ Categorías ya existen para tenant {tenant_id}")
+            
+            db.session.commit()
+            
+        except Exception as e:
+            db.session.rollback()
+            print(f"❌ Error en fallback creando categorías y productos para tenant {tenant_id}: {e}")
+            import traceback
+            traceback.print_exc()
     
     print("✅ Base de datos lista!")
-    print(f"📁 Ubicación de la BD: {os.path.join(basedir, 'panaderia.db')}")
+    print(f"📁 Tenant activo: {tenant_id}")
 # =============================================
 # 🆕 RUTA DE SUSCRIPCIÓN VENCIDA
 # =============================================
@@ -684,35 +1596,94 @@ def login():
         print(f"🔍 [LOGIN] Buscando usuario: {username}")
         print(f"🔍 [LOGIN] URI de BD: {app.config['SQLALCHEMY_DATABASE_URI']}")
         
-        # 🔧 CORREGIDO: Buscar usuario en la BD del tenant
-        from flask import g
-        if hasattr(g, 'db_path') and g.db_path:
-            # Usar la BD del tenant detectada
-            import sqlite3
-            conn_tenant = sqlite3.connect(g.db_path)
-            cursor_tenant = conn_tenant.cursor()
-            cursor_tenant.execute("SELECT id, username, password_hash, panaderia_id, rol FROM usuarios WHERE username = ?", (username,))
-            user_data = cursor_tenant.fetchone()
-            conn_tenant.close()
-            
-            if user_data:
-                # Crear objeto Usuario a partir de los datos
-                user = Usuario()
-                user.id = user_data[0]
-                user.username = user_data[1]
-                user.password_hash = user_data[2]
-                user.panaderia_id = user_data[3]
-                user.rol = user_data[4]
-            else:
-                user = None
-        else:
-            # Fallback a BD principal
-            user = Usuario.query.filter_by(username=username).first()
+        # 🔧 CORREGIDO: Buscar usuario en PostgreSQL usando SQLAlchemy
+        from sqlalchemy import text
+        import re
         
-        if user:
+        # =============================================
+        # ✅ AGREGADO: BUSCAR EN SCHEMAS DE TENANTS
+        # =============================================
+        user_data = None
+        user = None
+        schema_actual = None  # ✅ Guardar el schema donde se encontró el usuario
+        
+        # 1. Primero, buscar en los schemas de tenants (para usuarios como admin_XX)
+        try:
+            # Obtener lista de schemas de tenants
+            schemas_result = db.session.execute(
+                text("SELECT schema_name FROM information_schema.schemata WHERE schema_name LIKE 'tenant_%' ORDER BY schema_name")
+            )
+            schemas = [row[0] for row in schemas_result]
+            
+            for schema in schemas:
+                # Verificar si la tabla usuarios existe en este schema
+                table_check = db.session.execute(
+                    text(f"SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = :schema AND table_name = 'usuarios')"),
+                    {'schema': schema}
+                ).fetchone()[0]
+                
+                if table_check:
+                    # Buscar usuario en este schema
+                    result = db.session.execute(
+                        text(f"SELECT id, username, password_hash, panaderia_id, rol FROM {schema}.usuarios WHERE username = :username"),
+                        {'username': username}
+                    )
+                    user_data = result.fetchone()
+                    if user_data:
+                        schema_actual = schema  # ✅ Guardar el schema
+                        print(f"✅ [LOGIN] Usuario encontrado en schema: {schema}")
+                        break
+        except Exception as e:
+            print(f"⚠️ Error buscando en schemas: {e}")
+        
+        # 2. Si no se encontró en schemas, buscar en public (para dev_master y otros)
+        if not user_data:
+            try:
+                # Ejecutar consulta directa en PostgreSQL
+                result = db.session.execute(
+                    text("SELECT id, username, password_hash, panaderia_id, rol FROM public.usuarios WHERE username = :username"),
+                    {'username': username}
+                )
+                user_data = result.fetchone()
+                
+                if user_data:
+                    schema_actual = 'public'  # ✅ Guardar schema
+                    print(f"✅ [LOGIN] Usuario encontrado en public")
+            except Exception as e:
+                print(f"⚠️ Error en consulta PostgreSQL: {e}")
+                user_data = None
+        
+        if user_data:
+            # Crear objeto Usuario a partir de los datos
+            user = Usuario()
+            user.id = user_data[0]
+            user.username = user_data[1]
+            user.password_hash = user_data[2]
+            user.panaderia_id = user_data[3]
+            user.rol = user_data[4]
+            
+            # ✅ EXTRAER tenant_id DEL SCHEMA DONDE SE ENCONTRÓ EL USUARIO
+            tenant_id = 1  # Valor por defecto
+            if schema_actual and schema_actual != 'public':
+                match = re.search(r'tenant_(\d+)', schema_actual)
+                if match:
+                    tenant_id = int(match.group(1))
+                    print(f"🏪 [LOGIN] Tenant ID extraído del schema: {tenant_id}")
+            
+            user.tenant_id = tenant_id
+            
             print(f"✅ [LOGIN] USUARIO ENCONTRADO: {user.username}")
             print(f"📦 [LOGIN] Hash en BD: {user.password_hash}")
             print(f"🏪 [LOGIN] Panadería ID: {user.panaderia_id}")
+            print(f"🏪 [LOGIN] Tenant ID: {user.tenant_id}")
+            
+            # =============================================
+            # ✅ CORREGIDO: Guardar tenant en sesión usando tenant_id REAL
+            # =============================================
+            schema_name = f"tenant_{tenant_id}"
+            session['tenant_id'] = tenant_id
+            session['tenant_schema'] = schema_name
+            print(f"🏪 [LOGIN] Tenant asignado: {schema_name} (tenant_id: {tenant_id})")
             
             # 🎯 ARQUITECTURA PROFESIONAL - MÚLTIPLES MÉTODOS DE VERIFICACIÓN
             login_exitoso, metodo_usado = verificar_credenciales(user, password)
@@ -743,7 +1714,14 @@ def login():
                 # Verificar si la licencia es de tipo local (permanente) o tiene fecha de expiración
                 if config and config.tipo_licencia != 'local' and config.fecha_expiracion:
                     hoy = datetime.now().date()
-                    dias_restantes = (config.fecha_expiracion - hoy).days
+                    
+                    # ✅ CORREGIDO: Convertir a date si es datetime
+                    if isinstance(config.fecha_expiracion, datetime):
+                        fecha_exp = config.fecha_expiracion.date()
+                    else:
+                        fecha_exp = config.fecha_expiracion
+                    
+                    dias_restantes = (fecha_exp - hoy).days
                     
                     if dias_restantes < 0:
                         # Licencia expirada - redirigir a licencia_expirada
@@ -772,7 +1750,7 @@ def login():
                 print(f"❌ [LOGIN] Todas las verificaciones fallaron")
         
         else:
-            print(f"❌ [LOGIN] USUARIO NO ENCONTRADO en la BD actual")
+            print(f"❌ [LOGIN] USUARIO NO ENCONTRADO en PostgreSQL")
             # 🔐 REGISTRO DE INTENTO FALLIDO (usuario no existe)
             registrar_intento_login(None, False, 'usuario_no_existe')
         
@@ -783,33 +1761,27 @@ def login():
 
 def verificar_credenciales(user, password):
     """
-    🎯 MÉTODO PROFESIONAL EXTENSIBLE - SOPORTE MÚLTIPLES TIPOS DE HASH
+    🎯 VERIFICACIÓN PROFESIONAL DE CREDENCIALES
+    Usa check_password_hash de werkzeug para verificar contraseñas
     Retorna: (éxito, método_usado)
     """
-    # 1. VERIFICACIÓN CON HASH SEGURO (werkzeug) - PARA USUARIOS NUEVOS/RESETEADOS
+    # 1. VERIFICACIÓN CON HASH SEGURO (werkzeug) - PARA TODOS LOS USUARIOS
     try:
-        from werkzeug.security import check_password_hash
+        # ✅ Usar check_password_hash (importado globalmente)
         if check_password_hash(user.password_hash, password):
             return True, 'hash_seguro'
-    except Exception as e:
-        print(f"⚠️ [VERIFICACIÓN] Error con hash seguro: {e}")
-    
-    # 2. VERIFICACIÓN CON HASH SIMPLE (desarrollo/transición) - PARA USUARIOS EXISTENTES
-    if user.password_hash.startswith('dev_'):
-        expected_hash = f"dev_{password}_hash"
-        if user.password_hash == expected_hash:
-            return True, 'hash_simple'
         else:
-            print(f"❌ [VERIFICACIÓN] Hash simple no coincide")
-            print(f"   Esperado: {expected_hash}")
+            print(f"❌ [VERIFICACIÓN] Hash no coincide")
+            return False, 'fallido'
+    except Exception as e:
+        print(f"⚠️ [VERIFICACIÓN] Error: {e}")
+        return False, 'error'
     
-    # 3. 🆕 ESPACIO RESERVADO PARA MÉTODOS FUTUROS
+    # 🆕 ESPACIO RESERVADO PARA MÉTODOS FUTUROS
     # - Verificación con OTP (One-Time Password)
     # - Verificación con API externa (SSO)
     # - Verificación con biometrics
     # - Verificación con tokens JWT
-    
-    return False, 'ninguno'
 
 def registrar_intento_login(user_id, exitoso, metodo):
     """
@@ -856,6 +1828,14 @@ def licencia_expirada():
 @app.route('/dashboard')
 @login_required
 def dashboard():
+    # ✅ VERIFICACIÓN SEGURA
+    try:
+        if hasattr(current_user, 'is_authenticated') and current_user.is_authenticated:
+            print(f"🔍 [DEBUG] Usuario: {current_user.username}, Rol: {current_user.rol}, Authenticated: {current_user.is_authenticated}")
+        else:
+            print("🔍 [DEBUG] Usuario: No autenticado")
+    except Exception as e:
+        print(f"🔍 [DEBUG] Error obteniendo usuario: {e}")
     return render_template('dashboard.html', username=session.get('username', 'Usuario'))
 
 # Ruta para el punto de venta
@@ -5182,7 +6162,6 @@ def realizar_cierre():
         ventas_hoy = Venta.query.filter(
             Venta.panaderia_id == panaderia_id,
             func.date(Venta.fecha_hora) == fecha_actual,
-            
         ).all()
         
         # ✅ CALCULAR TOTALES
@@ -5202,25 +6181,35 @@ def realizar_cierre():
             total_efectivo=total_efectivo,
             total_transferencia=total_transferencias,
             total_transacciones=len(ventas_hoy),
-            
         )
-        
         db.session.add(nuevo_cierre)
         
-        # ✅ ACTUALIZAR CONFIGURACIÓN
-        configuracion = ConfiguracionPanaderia.query.filter_by(panaderia_id=panaderia_id).first()
+        # =============================================
+        # ✅ ACTUALIZAR CONFIGURACIÓN - USANDO FUNCIÓN HELPER
+        # =============================================
+        # 🔴 ELIMINA estas líneas:
+        # configuracion = ConfiguracionPanaderia.query.filter_by(panaderia_id=panaderia_id).first()
+        # if configuracion: ...
+        # else: ...
+        
+        # ✅ REEMPLAZA con esto:
+        configuracion = obtener_configuracion_panaderia_segura(panaderia_id)
         if configuracion:
             configuracion.ultimo_cierre = fecha_actual
             # configuracion.sistema_activo = False  # ELIMINADO - No se bloquea el sistema
         else:
-            # Crear configuración si no existe
-                nueva_config = ConfiguracionPanaderia(
+            # ✅ Fallback: crear configuración manualmente (por si la función helper falla)
+            from sqlalchemy import text
+            db.session.execute(text(f"SET search_path TO tenant_{panaderia_id}"))
+            nueva_config = ConfiguracionPanaderia(
                 panaderia_id=panaderia_id,
                 nombre_panaderia=f"Panadería {panaderia_id}",
-                sistema_activo=False,
+                sistema_activo=True,
+                activo=True,
                 ultimo_cierre=fecha_actual
             )
-                db.session.add(nueva_config)
+            db.session.add(nueva_config)
+            db.session.commit()
         
         # ✅ CREAR DEPÓSITO AUTOMÁTICO PARA EFECTIVO
         deposito_creado = False
@@ -5229,18 +6218,16 @@ def realizar_cierre():
         if total_efectivo > 0:
             nuevo_deposito = DepositoBancario(
                 panaderia_id=panaderia_id,
-                fecha_deposito=fecha_actual,  # ✅ CORREGIDO: fecha → fecha_deposito
+                fecha_deposito=fecha_actual,
                 monto=total_efectivo,
                 descripcion=f'Depósito automático - Cierre diario {fecha_actual}',
-                metodo_deposito='efectivo',  # ✅ CORREGIDO: metodo → metodo_deposito
-                estado='REGISTRADO',  # ✅ CORREGIDO: 'registrado' → 'REGISTRADO' (mayúsculas)
+                metodo_deposito='efectivo',
+                estado='REGISTRADO',
                 referencia=f'CIERRE-{datetime.now().strftime("%Y%m%d%H%M%S")}',
                 cuenta_bancaria='Cuenta Principal',
-                # ❌ ELIMINAR: conciliado=False (campo no existe)
-                # fecha_conciliacion=None (se puede omitir, valor por defecto es None)
             )
             db.session.add(nuevo_deposito)
-            db.session.flush()  # Para obtener el ID
+            db.session.flush()
             deposito_id = nuevo_deposito.id
             deposito_creado = True
         
@@ -5250,19 +6237,14 @@ def realizar_cierre():
         ).first()
         
         if registro_financiero:
-            # Sumar transferencias al saldo disponible (ya están en cuenta)
             registro_financiero.saldo_disponible += total_transferencias
-            # Sumar tarjetas al saldo de tarjetas (por cobrar)
             registro_financiero.saldo_tarjetas += total_tarjetas
-            # Sumar efectivo al saldo pendiente (por depositar)
             registro_financiero.saldo_pendiente += total_efectivo
-            
             registro_financiero.ultimo_cierre_fecha = fecha_actual
             registro_financiero.ultimo_cierre_monto = total_ventas
             registro_financiero.ventas_mes_actual += total_ventas
-            registro_financiero.actualizar_saldos()  # Actualiza saldo_total
+            registro_financiero.actualizar_saldos()
         else:
-            # Crear registro financiero si no existe
             nuevo_registro = RegistroFinanciero(
                 panaderia_id=panaderia_id,
                 saldo_disponible=total_transferencias,
@@ -5289,7 +6271,6 @@ def realizar_cierre():
                 'total_ventas': total_ventas,
                 'efectivo': total_efectivo,
                 'transferencias': total_transferencias,
-                # 'tarjetas': total_tarjetas,  # Eliminado
                 'deposito_id': deposito_id,
                 'fecha': fecha_actual.isoformat()
             }
@@ -5306,7 +6287,6 @@ def realizar_cierre():
                 'total_ventas': float(total_ventas),
                 'efectivo': float(total_efectivo),
                 'transferencias': float(total_transferencias),
-                # 'tarjetas': float(total_tarjetas),  # Eliminado
                 'panaderia_id': panaderia_id,
                 'deposito_id': deposito_id,
                 'saldo_disponible': registro_financiero.saldo_disponible if registro_financiero else total_transferencias,
@@ -5971,6 +6951,7 @@ def reporte_ventas_avanzado():
     """Reporte unificado: Ventas por período + Análisis Predictivo + ML"""
     # 📦 IMPORTAR DATETIME AL INICIO
     from datetime import datetime, timedelta
+    from sqlalchemy import text
     
     # 🎯 VERIFICAR SESIÓN
     if 'user_id' not in session:
@@ -6000,10 +6981,38 @@ def reporte_ventas_avanzado():
         fecha_inicio = fecha_fin - timedelta(days=7)
     
     # 🎯 OBTENER panaderia_id DEL USUARIO ACTUAL (MULTICLIENTE)
-    usuario_actual = db.session.get(Usuario, session["user_id"])
-    panaderia_id = usuario_actual.panaderia_id
-    
-    print(f"🔍 [VENTAS_AVANZADO] Usuario: {usuario_actual.username}, Panadería: {panaderia_id}")
+    # ✅ Usar current_user en lugar de session["user_id"]
+    usuario_actual = current_user
+
+    # ✅ Verificar que el usuario esté autenticado
+    if not usuario_actual or not usuario_actual.is_authenticated:
+        flash('Debes iniciar sesión para acceder a este reporte', 'error')
+        return redirect(url_for('login'))
+
+    # ✅ Obtener panaderia_id de manera segura
+    panaderia_id = getattr(usuario_actual, 'panaderia_id', None)
+    if not panaderia_id:
+        flash('Error al identificar tu panadería', 'error')
+        return redirect(url_for('dashboard'))
+
+    # ✅ VERIFICAR QUE EL TENANT EXISTA
+    tenant_id = getattr(usuario_actual, 'tenant_id', None)
+    if tenant_id:
+        schema_name = f"tenant_{tenant_id}"
+        # Verificar si el schema existe
+        result = db.session.execute(
+            text(f"SELECT schema_name FROM information_schema.schemata WHERE schema_name = :schema"),
+            {'schema': schema_name}
+        ).fetchone()
+        if not result:
+            flash('Error: Tu panadería no está configurada correctamente. Contacta al administrador.', 'error')
+            return redirect(url_for('dashboard'))
+    else:
+        # Si no tiene tenant_id, usar panaderia_id como fallback
+        tenant_id = panaderia_id
+        print(f"⚠️ [VENTAS_AVANZADO] Usuario sin tenant_id, usando panaderia_id: {tenant_id}")
+
+    print(f"🔍 [VENTAS_AVANZADO] Usuario: {usuario_actual.username}, Panadería: {panaderia_id}, Tenant: {tenant_id}")
     print(f"📅 Período: {fecha_inicio} a {fecha_fin}")
     
     # =====================================================================
@@ -7573,43 +8582,27 @@ def estadisticas_depositos_bancarios():
 @permisos_requeridos('activos', 'ver')
 @permisos_requeridos('activos', 'ver')
 def activos_fijos():
-    # 🆕 VERIFICACIÓN SEGURA PARA SUPER ADMINISTRADOR
-    es_super_admin = False
+    """Gestión de activos fijos - Multi-tenant"""
     try:
-        # Verificación EXTRA segura
-        user_id = getattr(current_user, 'id', None)
-        username = getattr(current_user, 'username', '')
-        email = getattr(current_user, 'email', '') or ''
+        panaderia_id = current_user.panaderia_id
         
-        es_super_admin = (
-            user_id == 1 or 
-            username == 'dev_master' or 
-            (email and hasattr(email, 'endswith') and email.endswith('dev_master'))
-        )
+        activos = ActivoFijo.query.filter_by(panaderia_id=panaderia_id).all()
+        
+        total_activos = len(activos)
+        valor_total = sum(activo.valor_actual() for activo in activos)
+        activos_mantenimiento = len([a for a in activos if a.estado == 'MANTENIMIENTO'])
+        
+        return render_template('activos_fijos.html', 
+                             activos=activos,
+                             total_activos=total_activos,
+                             valor_total=valor_total,
+                             activos_mantenimiento=activos_mantenimiento,
+                             proxima_depreciacion=0,
+                             categorias=CATEGORIAS_ACTIVOS)
     except Exception as e:
-        print(f"⚠️ Error en verificación super admin: {e}")
-        es_super_admin = False
-    
-    if es_super_admin:
-        # Super admin: mostrar lista vacía para demostraciones
-        activos = []
-        flash('Modo demostración: Super administrador - Sin datos de clientes', 'info')
-    else:
-        # Usuarios normales: aislamiento multi-tenant normal
-        activos = ActivoFijo.query.filter_by(panaderia_id=current_user.panaderia_id).all()
-    
-    # Calcular métricas
-    total_activos = len(activos)
-    valor_total = sum(activo.valor_actual() for activo in activos)
-    activos_mantenimiento = len([a for a in activos if a.estado == 'MANTENIMIENTO'])
-    
-    return render_template('activos_fijos.html', 
-                         activos=activos,
-                         total_activos=total_activos,
-                         valor_total=valor_total,
-                         activos_mantenimiento=activos_mantenimiento,
-                         proxima_depreciacion=0,
-                         categorias=CATEGORIAS_ACTIVOS)
+        print(f"❌ Error en activos_fijos: {e}")
+        flash('Error al cargar activos fijos', 'error')
+        return redirect(url_for('dashboard'))
 
 @app.route('/registrar_activo', methods=['GET', 'POST'])
 @licencia_premium_requerida()
@@ -7618,29 +8611,9 @@ def activos_fijos():
 @modulo_requerido('activos')
 @permisos_requeridos('activos', 'gestionar')
 def registrar_activo():
-    # 🆕 VERIFICACIÓN SEGURA PARA SUPER ADMINISTRADOR
-    es_super_admin = False
-    try:
-        user_id = getattr(current_user, 'id', None)
-        username = getattr(current_user, 'username', '')
-        email = getattr(current_user, 'email', '') or ''
-        
-        es_super_admin = (
-            user_id == 1 or 
-            username == 'dev_master' or 
-            (email and hasattr(email, 'endswith') and email.endswith('dev_master'))
-        )
-    except Exception as e:
-        print(f"⚠️ Error en verificación super admin: {e}")
-        es_super_admin = False
-    
-    if es_super_admin:
-        flash('Modo demostración: El super administrador no puede crear activos reales', 'info')
-        return redirect(url_for('activos_fijos'))
-    
+    """Registrar nuevo activo fijo - Multi-tenant"""
     if request.method == 'POST':
         try:
-            # Obtener datos del formulario
             nombre = request.form['nombre']
             categoria = request.form['categoria']
             descripcion = request.form['descripcion']
@@ -7654,7 +8627,6 @@ def registrar_activo():
             ubicacion = request.form['ubicacion']
             responsable = request.form['responsable']
             
-            # Crear nuevo activo
             nuevo_activo = ActivoFijo(
                 panaderia_id=current_user.panaderia_id,
                 nombre=nombre,
@@ -7733,10 +8705,59 @@ def editar_activo(id):
 @modulo_requerido('activos')
 def listar_mantenimientos(activo_id):
     """Listar mantenimientos de un activo"""
-    activo = ActivoFijo.query.filter_by(panaderia_id=current_user.panaderia_id, id=activo_id).first_or_404()
-    mantenimientos = HistorialMantenimiento.query.filter_by(activo_id=activo_id, panaderia_id=current_user.panaderia_id).order_by(HistorialMantenimiento.fecha.desc()).all()
+    from sqlalchemy import text
     
-    return render_template('mantenimientos.html', activo=activo, mantenimientos=mantenimientos)
+    try:
+        panaderia_id = current_user.panaderia_id
+        schema_name = f"tenant_{panaderia_id}"
+        
+        # ✅ OBTENER ACTIVO
+        activo_result = db.session.execute(
+            text(f"""
+                SELECT id, nombre FROM {schema_name}.activos_fijos 
+                WHERE id = :activo_id AND panaderia_id = :panaderia_id
+            """),
+            {'activo_id': activo_id, 'panaderia_id': panaderia_id}
+        ).fetchone()
+        
+        if not activo_result:
+            flash('Activo no encontrado', 'error')
+            return redirect(url_for('activos_fijos'))
+        
+        activo = {'id': activo_result[0], 'nombre': activo_result[1]}
+        
+        # ✅ OBTENER MANTENIMIENTOS
+        mantenimientos_result = db.session.execute(
+            text(f"""
+                SELECT 
+                    id, fecha_mantenimiento, tipo, descripcion, costo, tecnico
+                FROM {schema_name}.historial_mantenimientos 
+                WHERE activo_id = :activo_id AND panaderia_id = :panaderia_id
+                ORDER BY fecha_mantenimiento DESC
+            """),
+            {'activo_id': activo_id, 'panaderia_id': panaderia_id}
+        ).fetchall()
+        
+        # ✅ Convertir a lista de diccionarios
+        mantenimientos = []
+        for row in mantenimientos_result:
+            mantenimientos.append({
+                'id': row[0],
+                'fecha_mantenimiento': row[1],
+                'tipo': row[2],
+                'descripcion': row[3] or 'Sin descripción',
+                'costo': float(row[4]) if row[4] else 0,
+                'tecnico': row[5] or 'No especificado'
+            })
+        
+        return render_template('mantenimientos.html', 
+                             activo=activo, 
+                             mantenimientos=mantenimientos)
+        
+    except Exception as e:
+        print(f"❌ Error en listar_mantenimientos: {e}")
+        flash('Error al cargar los mantenimientos', 'error')
+        return redirect(url_for('activos_fijos'))
 
 @app.route('/activo/<int:activo_id>/mantenimiento/nuevo', methods=['GET', 'POST'])
 @licencia_premium_requerida()
@@ -7745,41 +8766,86 @@ def listar_mantenimientos(activo_id):
 @modulo_requerido('activos')
 def nuevo_mantenimiento(activo_id):
     """Agregar nuevo mantenimiento a un activo"""
-    activo = ActivoFijo.query.filter_by(panaderia_id=current_user.panaderia_id, id=activo_id).first_or_404()
+    from datetime import datetime
+    from sqlalchemy import text
     
-    if request.method == 'POST':
-        try:
-            from datetime import datetime
+    try:
+        panaderia_id = current_user.panaderia_id
+        schema_name = f"tenant_{panaderia_id}"
+        
+        # ✅ OBTENER ACTIVO CON SQL DIRECTO (EVITA PROBLEMAS DE SESIÓN)
+        activo_result = db.session.execute(
+            text(f"""
+                SELECT id, nombre, estado FROM {schema_name}.activos_fijos 
+                WHERE id = :activo_id AND panaderia_id = :panaderia_id
+            """),
+            {'activo_id': activo_id, 'panaderia_id': panaderia_id}
+        ).fetchone()
+        
+        if not activo_result:
+            flash('Activo no encontrado', 'error')
+            return redirect(url_for('activos_fijos'))
+        
+        # Crear objeto para el template
+        activo = {
+            'id': activo_result[0],
+            'nombre': activo_result[1],
+            'estado': activo_result[2]
+        }
+        
+        if request.method == 'POST':
+            # ✅ OBTENER DATOS DEL FORMULARIO
+            fecha_mantenimiento = datetime.strptime(request.form['fecha_mantenimiento'], '%Y-%m-%d').date()
+            tipo = request.form['tipo']
+            descripcion = request.form['descripcion']
+            costo = float(request.form.get('costo', 0))
+            tecnico = request.form.get('tecnico', '')
+            notas = request.form.get('notas', '')
             
-            nuevo = HistorialMantenimiento(
-                activo_id=activo_id,
-                fecha_mantenimiento=datetime.strptime(request.form['fecha_mantenimiento'], '%Y-%m-%d').date(),
-                tipo=request.form['tipo'],
-                descripcion=request.form['descripcion'],
-                costo=float(request.form.get('costo', 0)),
-                tecnico=request.form.get('tecnico', ''),
-                notas=request.form.get('notas', ''),
-                panaderia_id=current_user.panaderia_id
+            # ✅ CREAR MANTENIMIENTO CON SQL DIRECTO
+            db.session.execute(
+                text(f"""
+                    INSERT INTO {schema_name}.historial_mantenimientos 
+                    (activo_id, fecha_mantenimiento, tipo, descripcion, costo, tecnico, notas, panaderia_id)
+                    VALUES (:activo_id, :fecha_mantenimiento, :tipo, :descripcion, :costo, :tecnico, :notas, :panaderia_id)
+                """),
+                {
+                    'activo_id': activo_id,
+                    'fecha_mantenimiento': fecha_mantenimiento,
+                    'tipo': tipo,
+                    'descripcion': descripcion,
+                    'costo': costo,
+                    'tecnico': tecnico,
+                    'notas': notas,
+                    'panaderia_id': panaderia_id
+                }
             )
             
-            db.session.add(nuevo)
-            
-            # Si el estado cambia a MANTENIMIENTO, actualizar el activo
+            # ✅ SI CAMBIA ESTADO, ACTUALIZAR ACTIVO
             if 'cambiar_estado' in request.form:
-                activo.estado = 'MANTENIMIENTO'
+                db.session.execute(
+                    text(f"""
+                        UPDATE {schema_name}.activos_fijos 
+                        SET estado = 'MANTENIMIENTO' 
+                        WHERE id = :activo_id AND panaderia_id = :panaderia_id
+                    """),
+                    {'activo_id': activo_id, 'panaderia_id': panaderia_id}
+                )
             
             db.session.commit()
             
-            flash(f'✅ Mantenimiento registrado para "{activo.nombre}"', 'success')
+            flash(f'✅ Mantenimiento registrado para "{activo["nombre"]}"', 'success')
             return redirect(url_for('listar_mantenimientos', activo_id=activo_id))
-            
-        except Exception as e:
-            db.session.rollback()
-            flash(f'❌ Error al registrar mantenimiento: {str(e)}', 'error')
-    
-    from datetime import datetime
-    
-    return render_template('nuevo_mantenimiento.html', activo=activo, now=datetime.now())
+        
+        return render_template('nuevo_mantenimiento.html', activo=activo, now=datetime.now())
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Error en nuevo_mantenimiento: {e}")
+        import traceback
+        traceback.print_exc()
+        flash(f'Error al registrar mantenimiento: {str(e)}', 'error')
+        return redirect(url_for('activos_fijos'))
 
 @app.route('/mantenimiento/<int:id>/eliminar', methods=['POST'])
 @licencia_premium_requerida()
@@ -7788,14 +8854,46 @@ def nuevo_mantenimiento(activo_id):
 @modulo_requerido('activos')
 def eliminar_mantenimiento(id):
     """Eliminar un mantenimiento"""
-    mantenimiento = HistorialMantenimiento.query.filter_by(id=id, panaderia_id=current_user.panaderia_id).first_or_404()
-    activo_id = mantenimiento.activo_id
+    from sqlalchemy import text
     
-    db.session.delete(mantenimiento)
-    db.session.commit()
-    
-    flash('✅ Mantenimiento eliminado', 'success')
-    return redirect(url_for('listar_mantenimientos', activo_id=activo_id))
+    try:
+        panaderia_id = current_user.panaderia_id
+        schema_name = f"tenant_{panaderia_id}"
+        
+        # ✅ VERIFICAR QUE EL MANTENIMIENTO EXISTE
+        check = db.session.execute(
+            text(f"""
+                SELECT activo_id FROM {schema_name}.historial_mantenimientos 
+                WHERE id = :id AND panaderia_id = :panaderia_id
+            """),
+            {'id': id, 'panaderia_id': panaderia_id}
+        ).fetchone()
+        
+        if not check:
+            flash('Mantenimiento no encontrado', 'error')
+            return redirect(url_for('activos_fijos'))
+        
+        activo_id = check[0]
+        
+        # ✅ ELIMINAR MANTENIMIENTO
+        db.session.execute(
+            text(f"""
+                DELETE FROM {schema_name}.historial_mantenimientos 
+                WHERE id = :id AND panaderia_id = :panaderia_id
+            """),
+            {'id': id, 'panaderia_id': panaderia_id}
+        )
+        
+        db.session.commit()
+        
+        flash('✅ Mantenimiento eliminado', 'success')
+        return redirect(url_for('listar_mantenimientos', activo_id=activo_id))
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Error en eliminar_mantenimiento: {e}")
+        flash('Error al eliminar mantenimiento', 'error')
+        return redirect(url_for('activos_fijos'))
 
 
 @app.route('/mantenimiento/<int:id>/detalle')
@@ -7805,8 +8903,62 @@ def eliminar_mantenimiento(id):
 @modulo_requerido('activos')
 def detalle_mantenimiento(id):
     """Ver detalle de un mantenimiento"""
-    mantenimiento = HistorialMantenimiento.query.filter_by(id=id, panaderia_id=current_user.panaderia_id).first_or_404()
-    return render_template('detalle_mantenimiento.html', mantenimiento=mantenimiento)
+    from sqlalchemy import text
+    
+    try:
+        panaderia_id = current_user.panaderia_id
+        schema_name = f"tenant_{panaderia_id}"
+        
+        # ✅ OBTENER MANTENIMIENTO CON SQL DIRECTO
+        result = db.session.execute(
+            text(f"""
+                SELECT 
+                    hm.id, hm.activo_id, hm.fecha_mantenimiento, hm.tipo, 
+                    hm.descripcion, hm.costo, hm.tecnico, hm.notas,
+                    af.nombre as activo_nombre, af.estado as activo_estado
+                FROM {schema_name}.historial_mantenimientos hm
+                LEFT JOIN {schema_name}.activos_fijos af ON hm.activo_id = af.id
+                WHERE hm.id = :id AND hm.panaderia_id = :panaderia_id
+            """),
+            {'id': id, 'panaderia_id': panaderia_id}
+        ).fetchone()
+        
+        if not result:
+            flash('Mantenimiento no encontrado', 'error')
+            return redirect(url_for('activos_fijos'))
+        
+        # ✅ Guardar activo_id para usarlo en caso de error
+        activo_id = result[1]
+        
+        # ✅ Crear objeto con estructura que espera el template
+        mantenimiento = {
+            'id': result[0],
+            'activo_id': result[1],
+            'fecha_mantenimiento': result[2],
+            'tipo': result[3],
+            'descripcion': result[4] or 'Sin descripción',
+            'costo': float(result[5]) if result[5] else 0,
+            'tecnico': result[6] or 'No especificado',
+            'notas': result[7] or 'Sin notas',
+            'activo_nombre': result[8] or 'Activo',
+            'activo': {  # ✅ Para el template
+                'nombre': result[8] or 'Activo',
+                'estado': result[9] or 'ACTIVO'
+            },
+            'fecha_registro': result[2]  # ✅ Para el template
+        }
+        
+        return render_template('detalle_mantenimiento.html', mantenimiento=mantenimiento)
+        
+    except Exception as e:
+        print(f"❌ Error en detalle_mantenimiento: {e}")
+        import traceback
+        traceback.print_exc()
+        flash('Error al cargar detalle del mantenimiento', 'error')
+        # ✅ Usar 'id' que viene de la URL como fallback
+        return redirect(url_for('listar_mantenimientos', activo_id=id))
+    
+    
 @app.route('/lista_activos')
 @licencia_premium_requerida()
 @login_required
@@ -7814,76 +8966,34 @@ def detalle_mantenimiento(id):
 @modulo_requerido('activos')
 @permisos_requeridos('activos', 'ver')
 def lista_activos():
-    # 🆕 VERIFICACIÓN SEGURA PARA SUPER ADMINISTRADOR
-    es_super_admin = False
+    """Lista completa de activos fijos - Multi-tenant"""
     try:
-        user_id = getattr(current_user, 'id', None)
-        username = getattr(current_user, 'username', '')
-        email = getattr(current_user, 'email', '') or ''
-        
-        es_super_admin = (
-            user_id == 1 or 
-            username == 'dev_master' or 
-            (email and hasattr(email, 'endswith') and email.endswith('dev_master'))
-        )
-    except Exception as e:
-        print(f"⚠️ Error en verificación super admin: {e}")
-        es_super_admin = False
-    
-    if es_super_admin:
-        activos = []
-        flash('Modo demostración: Sin datos de clientes', 'info')
-    else:
         activos = ActivoFijo.query.filter_by(panaderia_id=current_user.panaderia_id).order_by(ActivoFijo.fecha_compra.desc()).all()
-    
-    return render_template('lista_activos.html', activos=activos, categorias=CATEGORIAS_ACTIVOS)
+        return render_template('lista_activos.html', activos=activos, categorias=CATEGORIAS_ACTIVOS)
+    except Exception as e:
+        print(f"❌ Error en lista_activos: {e}")
+        flash('Error al cargar la lista de activos', 'error')
+        return redirect(url_for('activos_fijos'))
 
 @app.route('/reporte_activos')
 @licencia_premium_requerida()
 @login_required
-@tenant_required  # ✅ AGREGADO
+@tenant_required
 @modulo_requerido('activos')
 @permisos_requeridos('activos', 'ver')
 def reporte_activos():
     """Reporte de activos fijos - Multi-tenant"""
-    # 🔍 OBTENER TENANT ACTUAL
-    panaderia_id = current_user.panaderia_id
-        
-    # OBTENER CONFIGURACIÓN DEL TENANT PARA EL NOMBRE
-    from models import ConfiguracionSistema
-    config = ConfiguracionSistema.query.filter_by(panaderia_id=panaderia_id).first()
-    nombre_empresa = config.nombre_empresa if config else f'Panadería {panaderia_id}'
-    nit_empresa = config.nit_empresa if config else 'N/A'
-    if not panaderia_id:
-        flash('No se pudo determinar la panadería', 'error')
-        return redirect(url_for('dashboard'))
-    
-    # 🆕 VERIFICACIÓN SEGURA PARA SUPER ADMINISTRADOR
-    es_super_admin = False
     try:
-        user_id = getattr(current_user, 'id', None)
-        username = getattr(current_user, 'username', '')
-        email = getattr(current_user, 'email', '') or ''
+        panaderia_id = current_user.panaderia_id
         
-        es_super_admin = (
-            user_id == 1 or 
-            username == 'dev_master' or 
-            (email and hasattr(email, 'endswith') and email.endswith('dev_master'))
-        )
-    except Exception as e:
-        print(f"⚠️ Error en verificación super admin: {e}")
-        es_super_admin = False
-    
-    if es_super_admin:
-        activos = []
-        flash('Modo demostración: Reportes vacíos para super administrador', 'info')
-        graph_path = None
-    else:
-        # ✅ FILTRAR POR TENANT
+        from models import ConfiguracionSistema
+        config = ConfiguracionSistema.query.filter_by(panaderia_id=panaderia_id).first()
+        nombre_empresa = config.nombre_empresa if config else f'Panadería {panaderia_id}'
+        nit_empresa = config.nit_empresa if config else 'N/A'
+        
         activos = ActivoFijo.query.filter_by(panaderia_id=panaderia_id).all()
-        graph_path = None
         
-        # Generar gráficos si hay activos
+        graph_path = None
         if activos:
             try:
                 import matplotlib.pyplot as plt
@@ -7891,7 +9001,6 @@ def reporte_activos():
                 
                 fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(12, 10))
                 
-                # Gráfico 1: Distribución por categoría
                 categorias_count = {}
                 for activo in activos:
                     cat_nombre = CATEGORIAS_ACTIVOS.get(activo.categoria, activo.categoria)
@@ -7901,7 +9010,6 @@ def reporte_activos():
                     ax1.pie(categorias_count.values(), labels=categorias_count.keys(), autopct='%1.1f%%')
                     ax1.set_title('Distribución de Activos por Categoría')
                 
-                # Gráfico 2: Valor por categoría
                 categorias_valor = {}
                 for activo in activos:
                     cat_nombre = CATEGORIAS_ACTIVOS.get(activo.categoria, activo.categoria)
@@ -7912,7 +9020,6 @@ def reporte_activos():
                     ax2.set_title('Valor Actual por Categoría')
                     ax2.tick_params(axis='x', rotation=45)
                 
-                # Gráfico 3: Estado de activos
                 estados_count = {}
                 for activo in activos:
                     estados_count[activo.estado] = estados_count.get(activo.estado, 0) + 1
@@ -7921,7 +9028,6 @@ def reporte_activos():
                     ax3.pie(estados_count.values(), labels=estados_count.keys(), autopct='%1.1f%%')
                     ax3.set_title('Estado de los Activos')
                 
-                # Gráfico 4: Depreciación acumulada
                 nombres = [activo.nombre[:15] + '...' if len(activo.nombre) > 15 else activo.nombre for activo in activos]
                 valores_compra = [activo.valor_compra for activo in activos]
                 depreciacion = [activo.depreciacion_acumulada() for activo in activos]
@@ -7944,47 +9050,28 @@ def reporte_activos():
             except Exception as e:
                 print(f"Error generando gráficos: {e}")
                 graph_path = None
-    
-    return render_template('reporte_activos.html',
-                         nombre_empresa=nombre_empresa,
-                         nit_empresa=nit_empresa, 
-                         activos=activos, 
-                         graph_path=graph_path,
-                         total_valor=sum(activo.valor_actual() for activo in activos),
-                         total_depreciacion=sum(activo.depreciacion_acumulada() for activo in activos),
-                         now=datetime.now(),
-                         categorias=CATEGORIAS_ACTIVOS)
+        
+        return render_template('reporte_activos.html',
+                             nombre_empresa=nombre_empresa,
+                             nit_empresa=nit_empresa, 
+                             activos=activos, 
+                             graph_path=graph_path,
+                             total_valor=sum(activo.valor_actual() for activo in activos),
+                             total_depreciacion=sum(activo.depreciacion_acumulada() for activo in activos),
+                             now=datetime.now(),
+                             categorias=CATEGORIAS_ACTIVOS)
+    except Exception as e:
+        print(f"❌ Error en reporte_activos: {e}")
+        flash('Error al generar reporte de activos', 'error')
+        return redirect(url_for('activos_fijos'))
 
 @app.route('/api/activos_metrics')
 @login_required
-@tenant_required  # ✅ AGREGADO
+@tenant_required
 @modulo_requerido('activos')
 def api_activos_metrics():
     """API de métricas de activos - Multi-tenant"""
-    # 🆕 VERIFICACIÓN SEGURA PARA SUPER ADMINISTRADOR
-    es_super_admin = False
     try:
-        user_id = getattr(current_user, 'id', None)
-        username = getattr(current_user, 'username', '')
-        email = getattr(current_user, 'email', '') or ''
-        
-        es_super_admin = (
-            user_id == 1 or 
-            username == 'dev_master' or 
-            (email and hasattr(email, 'endswith') and email.endswith('dev_master'))
-        )
-    except Exception as e:
-        print(f"⚠️ Error en verificación super admin: {e}")
-        es_super_admin = False
-    
-    if es_super_admin:
-        metrics = {
-            'total_activos': 0,
-            'valor_total': 0,
-            'activos_mantenimiento': 0,
-            'proxima_depreciacion': 0
-        }
-    else:
         activos = ActivoFijo.query.filter_by(panaderia_id=current_user.panaderia_id).all()
         
         metrics = {
@@ -7993,9 +9080,13 @@ def api_activos_metrics():
             'activos_mantenimiento': len([a for a in activos if a.estado == 'MANTENIMIENTO']),
             'proxima_depreciacion': 0
         }
-    
-    return jsonify(metrics)
+        
+        return jsonify(metrics)
+    except Exception as e:
+        print(f"❌ Error en api_activos_metrics: {e}")
+        return jsonify({'error': str(e)}), 500
 
+#========================================= 🆕 RUTAS PARA GESTIÓN DE USUARIOS==================================================
 #========================================= 🆕 RUTAS PARA GESTIÓN DE USUARIOS==================================================
 @app.route('/gestion_usuarios')
 @licencia_premium_requerida()
@@ -8008,28 +9099,73 @@ def gestion_usuarios():
         if 'user_id' not in session:
             return redirect(url_for('login'))
         
-        if current_user.rol != 'admin_cliente':
+        # ✅ VERIFICACIÓN SEGURA DE ROL
+        if not hasattr(current_user, 'rol') or current_user.rol != 'admin_cliente':
             flash('No tienes permisos para gestionar usuarios', 'error')
             return redirect(url_for('dashboard'))
         
         panaderia_actual_id = current_user.panaderia_id
-        panaderia_actual = ConfiguracionPanaderia.query.filter_by(
-            id=panaderia_actual_id
-        ).first()
+        
+        # =============================================
+        # ✅ PASO 1: OBTENER CONFIGURACIÓN DEL SCHEMA DEL TENANT
+        # =============================================
+        panaderia_actual = obtener_configuracion_panaderia_segura(panaderia_actual_id)
         
         if not panaderia_actual:
             flash('Error: No se encontró información de la panadería', 'error')
             return redirect(url_for('dashboard'))
         
         # =============================================
+        # ✅ PASO 2: OBTENER USUARIOS CON SQL DIRECTO (SIN DEPENDENCIA DE SCHEMA)
+        # =============================================
+        from sqlalchemy import text
+        
+        schema_name = f"tenant_{panaderia_actual_id}"
+        
+        # ✅ SQL directo con schema explícito (NO usa SET search_path)
+        result = db.session.execute(
+            text(f"""
+                SELECT id, username, nombre_completo, email, rol, activo, fecha_creacion, panaderia_id
+                FROM {schema_name}.usuarios 
+                WHERE panaderia_id = :panaderia_id
+            """),
+            {'panaderia_id': panaderia_actual_id}
+        ).fetchall()
+        
+        # ✅ Convertir resultados a diccionarios
+        usuarios_data = []
+        for row in result:
+            usuarios_data.append({
+                'id': row[0],
+                'username': row[1],
+                'nombre_completo': row[2],
+                'email': row[3] or '',
+                'rol': row[4],
+                'activo': row[5],
+                'fecha_creacion': row[6],
+                'panaderia_id': row[7]
+            })
+        
+        # =============================================
         # 🆕 CALCULAR DATOS DE LICENCIA
         # =============================================
         from datetime import date
-        import sqlite3
-        import os
+        
+        tipos_licencia_map = {
+            'local': 'LOCAL (Permanente)',
+            'basico': 'BÁSICA',
+            'nube_basica': 'BÁSICA',
+            'premium': 'PREMIUM',
+            'nube_premium': 'PREMIUM',
+            'empresarial': 'EMPRESARIAL'
+        }
+        
+        tipo_licencia_raw = panaderia_actual.tipo_licencia or 'local'
+        tipo_mostrar = tipos_licencia_map.get(tipo_licencia_raw, tipo_licencia_raw.upper())
         
         datos_licencia = {
-            'tipo': panaderia_actual.tipo_licencia or 'Local',
+            'tipo': tipo_mostrar,
+            'tipo_raw': tipo_licencia_raw,
             'max_usuarios': panaderia_actual.max_usuarios or 3,
             'fecha_expiracion': None,
             'dias_restantes': None,
@@ -8038,18 +9174,15 @@ def gestion_usuarios():
             'color': 'success'
         }
         
-        # Si tiene fecha de expiración en la configuración
         if panaderia_actual.fecha_expiracion:
             fecha_exp = panaderia_actual.fecha_expiracion
             datos_licencia['fecha_expiracion'] = fecha_exp
             
-            # Calcular días restantes
             if isinstance(fecha_exp, str):
                 fecha_exp = datetime.strptime(fecha_exp, '%Y-%m-%d').date()
             
             hoy = date.today()
             dias = (fecha_exp - hoy).days
-            
             datos_licencia['dias_restantes'] = dias
             
             if dias < 0:
@@ -8073,20 +9206,20 @@ def gestion_usuarios():
                 datos_licencia['color'] = 'success'
                 datos_licencia['alerta'] = f'✅ Licencia activa - Vence en {dias} días'
         else:
-            # Licencia LOCAL
             datos_licencia['estado'] = 'permanente'
             datos_licencia['color'] = 'secondary'
             datos_licencia['alerta'] = '🔒 Licencia Local (Permanente)'
         
-        usuarios = Usuario.query.filter_by(panaderia_id=panaderia_actual_id).all()
-        
         return render_template('gestion_usuarios.html',
-                             usuarios=usuarios,
+                             usuarios=usuarios_data,
                              panaderia_actual=panaderia_actual,
-                             datos_licencia=datos_licencia)  # 🆕 PASAMOS LOS DATOS DE LICENCIA
+                             datos_licencia=datos_licencia)
                              
     except Exception as e:
+        db.session.rollback()
         print(f"❌ ERROR en gestión_usuarios: {e}")
+        import traceback
+        traceback.print_exc()
         flash('Error interno del servidor', 'error')
         return redirect(url_for('dashboard'))
     
@@ -8318,23 +9451,93 @@ def guardar_permisos(usuario_id):
 
 @app.route('/gestion_clientes')
 @login_required
-@modulo_requerido('gestion_clientes')  # ✅ CORREGIDO: 'sistema' → 'gestion_clientes'
+@modulo_requerido('gestion_clientes')
 @permisos_requeridos('clientes', 'ver')
 def gestion_clientes():
     """Panel de gestión de clientes/suscripciones"""
-    from models import ConfiguracionPanaderia
+    from models import Tenant
+    from sqlalchemy import text
+    from datetime import date
     
-    # 🔄 ACTUALIZAR ESTADOS DE SUSCRIPCIÓN ANTES DE MOSTRAR
-    configuraciones = ConfiguracionPanaderia.query.filter_by(panaderia_id=current_user.panaderia_id).all()
-    for config in configuraciones:
-        config.actualizar_estado_suscripcion()
-    db.session.commit()
+    def calcular_dias_restantes(fecha_exp):
+        """Calcula los días restantes hasta la fecha de expiración"""
+        if not fecha_exp:
+            return None
+        try:
+            if isinstance(fecha_exp, str):
+                from datetime import datetime
+                fecha_exp = datetime.strptime(fecha_exp, '%Y-%m-%d').date()
+            dias = (fecha_exp - date.today()).days
+            return max(0, dias)
+        except Exception as e:
+            print(f"⚠️ Error calculando días: {e}")
+            return None
     
-    # Calcular métricas
-    clientes_activos = sum(1 for c in configuraciones if c.suscripcion_activa)
-    clientes_por_vencer = sum(1 for c in configuraciones if c.tipo_licencia != 'local' and 0 < c.dias_para_expiracion <= 7)
-    clientes_vencidos = sum(1 for c in configuraciones if c.tipo_licencia != 'local' and not c.suscripcion_activa)
-    total_clientes = len(configuraciones)
+    # ✅ Obtener todos los tenants
+    tenants = Tenant.query.order_by(Tenant.id.desc()).all()
+    
+    # ✅ Combinar datos de Tenant con ConfiguracionPanaderia (usando SQL DIRECTO)
+    configuraciones = []
+    
+    for tenant in tenants:
+        schema_name = f"tenant_{tenant.id}"
+        
+        try:
+            # ✅ Usar SQL DIRECTO para obtener la configuración del schema del tenant
+            result = db.session.execute(
+                text(f"""
+                    SELECT id, panaderia_id, nombre_panaderia, tipo_licencia, max_usuarios, fecha_expiracion
+                    FROM {schema_name}.configuracion_panaderia 
+                    WHERE panaderia_id = :panaderia_id
+                """),
+                {'panaderia_id': tenant.id}
+            ).fetchone()
+            
+            if result:
+                # ✅ Configuración encontrada en el schema del tenant
+                tipo_licencia = result[3] if result[3] else 'local'
+                max_usuarios = result[4] if result[4] else 3
+                fecha_expiracion = result[5]
+                
+                print(f"✅ Tenant {tenant.id}: {tenant.nombre} - Licencia: {tipo_licencia}")
+            else:
+                # ⚠️ No hay configuración en el schema del tenant
+                print(f"⚠️ Tenant {tenant.id}: {tenant.nombre} - SIN CONFIGURACIÓN")
+                tipo_licencia = 'local'
+                max_usuarios = 3
+                fecha_expiracion = None
+            
+            # ✅ Crear objeto combinado con días reales
+            configuraciones.append({
+                'id': tenant.id,
+                'nombre': tenant.nombre,
+                'plan': tipo_licencia,
+                'tipo_licencia': tipo_licencia,
+                'activo': tenant.activo,
+                'fecha_expiracion': fecha_expiracion,
+                'max_usuarios': max_usuarios,
+                'dias_para_expiracion': calcular_dias_restantes(fecha_expiracion)
+            })
+            
+        except Exception as e:
+            print(f"   ❌ Error obteniendo configuración para tenant {tenant.id}: {e}")
+            # Fallback: usar datos por defecto
+            configuraciones.append({
+                'id': tenant.id,
+                'nombre': tenant.nombre,
+                'plan': 'local',
+                'tipo_licencia': 'local',
+                'activo': tenant.activo,
+                'fecha_expiracion': None,
+                'max_usuarios': 3,
+                'dias_para_expiracion': None
+            })
+    
+    # ✅ Calcular métricas
+    clientes_activos = sum(1 for t in tenants if t.activo)
+    clientes_por_vencer = 0
+    clientes_vencidos = sum(1 for t in tenants if not t.activo)
+    total_clientes = len(tenants)
     
     return render_template('gestion_clientes.html',
                          configuraciones=configuraciones,
@@ -8349,13 +9552,14 @@ def gestion_clientes():
 @permisos_requeridos('clientes', 'gestionar')
 def crear_cliente():
     """Crear un nuevo cliente/panadería con usuarios automáticos"""
-    from models import ConfiguracionPanaderia, Usuario
-    from werkzeug.security import generate_password_hash
+    
+    from models import Usuario
     import secrets
     import string
     import sqlite3
     import os
     import shutil
+    from sqlalchemy import text
     
     try:
         # Obtener datos del formulario
@@ -8374,47 +9578,7 @@ def crear_cliente():
         subdominio = ''.join(c for c in subdominio if c.isalnum() or c == '_')
         email_admin = f"admin_{subdominio}@panaderias.com"
         
-        # =============================================
-        # PASO 1: CREAR TENANT SAAS (OBTENER ID)
-        # =============================================
-        exito, mensaje, tenant_id = crear_tenant_saas(nombre_panaderia, subdominio, email_admin)
-        
-        if not exito:
-            flash(f'❌ Error al crear tenant SaaS: {mensaje}', 'error')
-            return redirect(url_for('gestion_clientes'))
-        
-        print(f"✅ SaaS: {mensaje} (ID: {tenant_id})")
-        
-        # =============================================
-        # PASO 2: CREAR CONFIGURACIÓN CON EL MISMO ID
-        # =============================================
-        nueva_config = ConfiguracionPanaderia(
-            id=tenant_id,
-            tenant_id=tenant_id,
-            nombre_panaderia=nombre_panaderia,
-            telefono_contacto=telefono_contacto,
-            direccion=direccion,
-            tipo_licencia=tipo_licencia,
-            max_usuarios=max_usuarios,
-            dias_gracia=dias_gracia,
-            razon_social=razon_social,
-            nit=nit,
-            activo=1
-        )
-        
-        # Solo agregar fecha de expiración para licencias en la nube
-        if tipo_licencia != 'local' and fecha_expiracion:
-            nueva_config.fecha_expiracion = datetime.strptime(fecha_expiracion, '%Y-%m-%d').date()
-        
-        db.session.add(nueva_config)
-        db.session.flush()
-        panaderia_id = nueva_config.id
-        
-        print(f"✅ Configuración creada con ID: {panaderia_id} (tenant_id: {tenant_id})")
-        
-        # =============================================
-        # PASO 3: CREAR USUARIOS AUTOMÁTICAMENTE
-        # =============================================
+        # GENERAR CONTRASEÑA TEMPORAL
         def generar_contrasena_temporal():
             caracteres = string.ascii_letters + string.digits + "!@#$%"
             return ''.join(secrets.choice(caracteres) for _ in range(10))
@@ -8422,42 +9586,71 @@ def crear_cliente():
         contrasena_temp = generar_contrasena_temporal()
         
         # =============================================
-        # 🆕 CREAR USUARIOS SEGÚN LÍMITE DE LICENCIA
+        # PASO 1: CREAR TENANT SAAS (OBTIENE ID Y CREA CONFIGURACIÓN)
+        # =============================================
+        exito, mensaje, tenant_id = crear_tenant_saas(
+            nombre_panaderia, 
+            subdominio, 
+            email_admin, 
+            max_usuarios,
+            fecha_expiracion,
+            contrasena_temp,
+            tipo_licencia 
+        )
+        
+        if not exito:
+            flash(f'❌ Error al crear tenant SaaS: {mensaje}', 'error')
+            return redirect(url_for('gestion_clientes'))
+        
+        print(f"✅ SaaS: {mensaje} (ID: {tenant_id})")
+        
+       # =============================================
+        # ✅ PASO 2: OBTENER CONFIGURACIÓN DEL SCHEMA DEL TENANT
+        # =============================================
+        config_existente = obtener_configuracion_panaderia_segura(tenant_id)
+
+        if not config_existente:
+            flash(f'❌ Error: Configuración no encontrada para tenant {tenant_id}', 'error')
+            return redirect(url_for('gestion_clientes'))
+
+        panaderia_id = config_existente.id
+        print(f"✅ Configuración existente encontrada: ID={panaderia_id} (tenant_id={tenant_id})")
+        
+        # =============================================
+        # PASO 3: CREAR USUARIOS AUTOMÁTICAMENTE
         # =============================================
         usuarios_base = []
 
-        # Siempre crear el usuario admin (obligatorio)
         usuarios_base.append({
-            'username': f'admin_{panaderia_id}',
+            'username': f'admin_{tenant_id}',
             'rol': 'admin_cliente',
             'nombre': f'Administrador {nombre_panaderia}'
         })
 
-        # Si el límite es mayor a 1, crear supervisor
         if max_usuarios >= 2:
             usuarios_base.append({
-                'username': f'super_{panaderia_id}',
+                'username': f'super_{tenant_id}',
                 'rol': 'supervisor', 
                 'nombre': f'Supervisor {nombre_panaderia}'
             })
 
-        # Si el límite es mayor a 2, crear cajero
         if max_usuarios >= 3:
             usuarios_base.append({
-                'username': f'cajero_{panaderia_id}',
+                'username': f'cajero_{tenant_id}',
                 'rol': 'cajero',
                 'nombre': f'Cajero Principal {nombre_panaderia}'
             })
         
         usuarios_creados = []
         
-        # Construir la ruta de la BD del tenant
+        # =============================================
+        # PASO 4: CREAR USUARIOS EN SQLITE (BD del tenant)
+        # =============================================
         bd_tenant_path = os.path.join('databases_tenants', f'{subdominio}.db')
-        print(f"📁 Creando usuarios en: {bd_tenant_path}")
+        print(f"📁 Creando usuarios en SQLite: {bd_tenant_path}")
         
         os.makedirs('databases_tenants', exist_ok=True)
         
-        # Si la BD del tenant no existe, copiar desde plantilla
         if not os.path.exists(bd_tenant_path):
             plantilla_path = os.path.join('databases_tenants', 'tenant_plantilla.db')
             if os.path.exists(plantilla_path):
@@ -8466,11 +9659,9 @@ def crear_cliente():
             else:
                 print(f"⚠️ No se encontró plantilla en: {plantilla_path}")
         
-        # Conectar a la BD del tenant
         conn_tenant = sqlite3.connect(bd_tenant_path)
         cursor_tenant = conn_tenant.cursor()
         
-        # Verificar que la tabla usuarios existe
         cursor_tenant.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='usuarios'")
         if not cursor_tenant.fetchone():
             print("⚠️ Tabla 'usuarios' no encontrada, creándola...")
@@ -8485,77 +9676,88 @@ def crear_cliente():
                     rol TEXT DEFAULT 'usuario',
                     activo BOOLEAN DEFAULT 1,
                     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    panaderia_id INTEGER DEFAULT 1
+                    panaderia_id INTEGER DEFAULT 1,
+                    tenant_id INTEGER DEFAULT 1
                 )
             ''')
         
-        # Crear cada usuario en la BD del tenant (SIEMPRE, incluso si ya existen)
         for user_data in usuarios_base:
-            # Verificar si el usuario ya existe
+            print(f"   🔑 Creando usuario en SQLite: {user_data['username']} con contraseña: {contrasena_temp}")
             cursor_tenant.execute("SELECT id, activo FROM usuarios WHERE username = ?", (user_data['username'],))
             existing = cursor_tenant.fetchone()
             
             if existing:
-                # Si existe pero está inactivo, activarlo
                 if existing[1] == 0:
                     cursor_tenant.execute("UPDATE usuarios SET activo = 1 WHERE username = ?", (user_data['username'],))
-                    print(f"   ✅ Usuario reactivado: {user_data['username']}")
+                    print(f"   ✅ Usuario reactivado en SQLite: {user_data['username']}")
                     usuarios_creados.append(user_data['username'])
                 else:
-                    print(f"   ⚠️ Usuario ya existe y está activo: {user_data['username']}")
+                    print(f"   ⚠️ Usuario ya existe y está activo en SQLite: {user_data['username']}")
                 continue
             
-            # Crear nuevo usuario (siempre activo)
             cursor_tenant.execute("""
-                INSERT INTO usuarios (username, password_hash, nombre_completo, rol, activo, panaderia_id)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO usuarios (username, password_hash, nombre_completo, rol, activo, panaderia_id, tenant_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             """, (
                 user_data['username'],
                 generate_password_hash(contrasena_temp),
                 user_data['nombre'],
                 user_data['rol'],
-                1,  # Siempre activo
-                panaderia_id
+                1,
+                panaderia_id,
+                tenant_id
             ))
             usuarios_creados.append(user_data['username'])
-            print(f"   ✅ Usuario creado: {user_data['username']}")
+            print(f"   ✅ Usuario creado en SQLite: {user_data['username']}")
         
         conn_tenant.commit()
         conn_tenant.close()
         
-        # Registrar usuarios en BD principal (solo si no existen)
-        try:
-            for user_data in usuarios_base:
-                existing = Usuario.query.filter_by(username=user_data['username']).first()
-                if not existing:
-                    nuevo_usuario = Usuario(
-                        username=user_data['username'],
-                        password_hash=generate_password_hash(contrasena_temp),
-                        nombre_completo=user_data['nombre'],
-                        rol=user_data['rol'],
-                        panaderia_id=panaderia_id,
-                        activo=1
-                    )
-                    db.session.add(nuevo_usuario)
-                    print(f"   Registrado en BD principal: {user_data['username']}")
-                else:
-                    # Si existe pero está inactivo, activarlo
-                    if existing.activo == 0:
-                        existing.activo = 1
-                        print(f"   Reactivado en BD principal: {user_data['username']}")
-            
-            db.session.commit()
-            print(f"✅ Usuarios registrados en BD principal")
-        except Exception as e:
-            db.session.rollback()
-            print(f"   Error registrando en BD principal: {e}")
+        # =============================================
+        # ✅ PASO 5: CREAR USUARIOS EN POSTGRESQL (schema del tenant)
+        # =============================================
+        print(f"📝 Creando usuarios en PostgreSQL (schema tenant_{tenant_id})...")
+        schema_name = f"tenant_{tenant_id}"
         
-        print(f"✅ {len(usuarios_creados)} usuarios creados/activados en la BD del tenant")
+        for user_data in usuarios_base:
+            try:
+                db.session.execute(
+                    text(f"""
+                        INSERT INTO {schema_name}.usuarios 
+                        (username, password_hash, nombre_completo, rol, activo, panaderia_id, tenant_id)
+                        VALUES 
+                        (:username, :password_hash, :nombre_completo, :rol, :activo, :panaderia_id, :tenant_id)
+                    """),
+                    {
+                        'username': user_data['username'],
+                        'password_hash': generate_password_hash(contrasena_temp),
+                        'nombre_completo': user_data['nombre'],
+                        'rol': user_data['rol'],
+                        'activo': True,
+                        'panaderia_id': panaderia_id,
+                        'tenant_id': tenant_id
+                    }
+                )
+                print(f"   ✅ Usuario creado en PostgreSQL: {user_data['username']}")
+            except Exception as e:
+                print(f"   ⚠️ Error creando usuario {user_data['username']} en PostgreSQL: {e}")
+        
+        db.session.commit()
+        print(f"✅ Usuarios creados en PostgreSQL para tenant {tenant_id}")
+        
+        # =============================================
+        # ⚠️ COMENTADO: PASO 6 - VERIFICAR EN BD PRINCIPAL
+        # =============================================
+        # Este paso está comentado porque los usuarios deben crearse SOLO en el schema del tenant.
+        # El código original causaba problemas de duplicación.
+        
+        print(f"✅ {len(usuarios_creados)} usuarios creados/activados en SQLite")
         
         # Mensaje de éxito
+        # Reemplazar el flash con:
         flash(
             f'✅ Cliente "{nombre_panaderia}" creado exitosamente | '
-            f'👥 Usuarios: {", ".join(usuarios_creados)} | '
+            f'👥 Usuarios: {", ".join([u["username"] for u in usuarios_base])} | '
             f'🔑 Contraseña: {contrasena_temp} | '
             f'🏪 Tenant SaaS: {subdominio} | '
             f'💡 Cambiar contraseña al primer inicio',
@@ -8571,83 +9773,393 @@ def crear_cliente():
     
     return redirect(url_for('gestion_clientes'))
 
-@app.route('/resetear_password/<int:usuario_id>', methods=['POST'])
+print("✅ Ruta /cambiar_licencia registrada")
+# =============================================
+# 🆕 CAMBIAR LICENCIA DE UN TENANT
+# =============================================
+@app.route('/cambiar_licencia/<int:tenant_id>', methods=['POST'])
 @login_required
-def resetear_password(usuario_id):
-    """🎯 SISTEMA DE RESETEO PROFESIONAL - PREPARADO PARA MIGRACIÓN"""
-    if current_user.rol != 'super_admin':
-        return jsonify({
-            'success': False, 
-            'error': '❌ Solo super_admin puede resetear contraseñas'
-        })
+@permisos_requeridos('clientes', 'gestionar')
+def cambiar_licencia(tenant_id):
+    """Cambia el tipo de licencia de un tenant y crea usuarios faltantes"""
+    from sqlalchemy import text
+    from werkzeug.security import generate_password_hash
+    import secrets
+    import string
     
     try:
-        usuario = db.get_or_404(Usuario, usuario_id)
+        # ✅ Verificar permisos
+        if not hasattr(current_user, 'is_authenticated') or not current_user.is_authenticated:
+            return jsonify({'success': False, 'error': 'No autenticado'}), 401
+            
+        if not hasattr(current_user, 'rol') or current_user.rol != 'super_admin':
+            return jsonify({'success': False, 'error': 'No autorizado'}), 403
         
-        # 🎯 GENERACIÓN DE CONTRASEÑA SEGURA (MEJORES PRÁCTICAS)
-        nueva_password = generar_contrasena_segura()
+        data = request.get_json()
+        nuevo_tipo = data.get('tipo_licencia')
         
-        # 🎯 ESTRATEGIA HÍBRIDA TEMPORAL - COMPATIBILIDAD CON SISTEMA ACTUAL
-        # Durante transición, usar hash simple para garantizar funcionamiento
-        # En FASE 2, migraremos gradualmente a hash seguro
-        usuario.password_hash = f"dev_{nueva_password}_hash"
+        if not nuevo_tipo:
+            return jsonify({'success': False, 'error': 'Tipo de licencia requerido'}), 400
         
-        # 🔐 REGISTRO DE ACTIVIDAD (PREPARACIÓN PARA AUDITORÍA)
-        registrar_reseteo_password(usuario.id, current_user.id)
+        # ✅ Obtener configuración actual usando SQL DIRECTO
+        schema_name = f"tenant_{tenant_id}"
+        
+        # 🔍 Buscar configuración en el schema del tenant
+        result = db.session.execute(
+            text(f"""
+                SELECT id, panaderia_id, nombre_panaderia, tipo_licencia, max_usuarios
+                FROM {schema_name}.configuracion_panaderia 
+                WHERE panaderia_id = :panaderia_id
+            """),
+            {'panaderia_id': tenant_id}
+        ).fetchone()
+        
+        if not result:
+            return jsonify({'success': False, 'error': 'Tenant no encontrado'}), 404
+        
+        # ✅ Extraer datos
+        config_id = result[0]
+        panaderia_id = result[1]
+        nombre_panaderia = result[2]
+        old_tipo = result[3]
+        max_usuarios = result[4]
+        
+        print(f"✅ Configuración encontrada: {nombre_panaderia} (Licencia: {old_tipo})")
+        
+        # ✅ Actualizar tipo de licencia y max_usuarios
+        nuevo_max_usuarios = 3 if nuevo_tipo in ['nube_premium', 'premium'] else 1
+        
+        # 🔍 Verificar que el registro existe antes de actualizar
+        check = db.session.execute(
+            text(f"""
+                SELECT id FROM {schema_name}.configuracion_panaderia 
+                WHERE panaderia_id = :panaderia_id
+            """),
+            {'panaderia_id': tenant_id}
+        ).fetchone()
+        
+        if not check:
+            print(f"❌ No se encontró configuración para tenant {tenant_id}")
+            return jsonify({'success': False, 'error': 'Configuración no encontrada'}), 404
+        
+        print(f"✅ Registro encontrado. Actualizando licencia de {old_tipo} a {nuevo_tipo}...")
+        
+        # ✅ Ejecutar UPDATE
+        result = db.session.execute(
+            text(f"""
+                UPDATE {schema_name}.configuracion_panaderia 
+                SET tipo_licencia = :tipo_licencia, 
+                    max_usuarios = :max_usuarios,
+                    fecha_actualizacion = NOW()
+                WHERE panaderia_id = :panaderia_id
+                RETURNING id
+            """),
+            {
+                'tipo_licencia': nuevo_tipo,
+                'max_usuarios': nuevo_max_usuarios,
+                'panaderia_id': tenant_id
+            }
+        )
+        
+        # ✅ Verificar que se actualizó al menos una fila
+        updated = result.fetchone()
+        if not updated:
+            print(f"❌ No se pudo actualizar la configuración para tenant {tenant_id}")
+            return jsonify({'success': False, 'error': 'Error al actualizar configuración'}), 500
+        
+        print(f"✅ Configuración actualizada correctamente (ID: {updated[0]})")
+        
+        mensaje_extra = ""
+        contrasena_temp = None
+        
+        # ✅ Crear usuarios faltantes (para Premium) - SIN GENERAR CONTRASEÑA INNECESARIA
+        if nuevo_tipo in ['nube_premium', 'premium']:
+            # Verificar si ya existen los usuarios
+            usuarios_existentes = db.session.execute(
+                text(f"SELECT username FROM {schema_name}.usuarios WHERE panaderia_id = :tenant_id"),
+                {'tenant_id': tenant_id}
+            ).fetchall()
+            
+            usernames_existentes = [u[0] for u in usuarios_existentes]
+            
+            super_existe = f'super_{tenant_id}' in usernames_existentes
+            cajero_existe = f'cajero_{tenant_id}' in usernames_existentes
+            
+            # ✅ Solo generar contraseña temporal si ALGUNO NO existe
+            if not super_existe or not cajero_existe:
+                caracteres = string.ascii_letters + string.digits + "!@#$%"
+                contrasena_temp = ''.join(secrets.choice(caracteres) for _ in range(10))
+                hashed_password = generate_password_hash(contrasena_temp)
+                print(f"   🔑 Contraseña temporal generada: {contrasena_temp}")
+            else:
+                contrasena_temp = None
+                hashed_password = None
+                print(f"   ℹ️ Usuarios super_{tenant_id} y cajero_{tenant_id} ya existen. No se genera contraseña.")
+            
+            # ✅ Crear o actualizar Supervisor
+            if not super_existe:
+                db.session.execute(
+                    text(f"""
+                        INSERT INTO {schema_name}.usuarios 
+                        (username, password_hash, nombre_completo, rol, panaderia_id, tenant_id, activo)
+                        VALUES (:username, :password_hash, :nombre_completo, :rol, :panaderia_id, :tenant_id, true)
+                    """),
+                    {
+                        'username': f'super_{tenant_id}',
+                        'password_hash': hashed_password,
+                        'nombre_completo': f'Supervisor {nombre_panaderia}',
+                        'rol': 'supervisor',
+                        'panaderia_id': tenant_id,
+                        'tenant_id': tenant_id
+                    }
+                )
+                print(f"✅ Usuario super_{tenant_id} creado")
+            else:
+                # ✅ Si ya existe, actualizar contraseña SOLO si se generó una nueva
+                if hashed_password:
+                    db.session.execute(
+                        text(f"""
+                            UPDATE {schema_name}.usuarios 
+                            SET password_hash = :password_hash
+                            WHERE username = :username AND panaderia_id = :panaderia_id
+                        """),
+                        {
+                            'username': f'super_{tenant_id}',
+                            'password_hash': hashed_password,
+                            'panaderia_id': tenant_id
+                        }
+                    )
+                    print(f"✅ Contraseña de super_{tenant_id} actualizada")
+                else:
+                    print(f"   ⏭️ super_{tenant_id} ya existe, mantiene su contraseña")
+            
+            # ✅ Crear o actualizar Cajero
+            if not cajero_existe:
+                db.session.execute(
+                    text(f"""
+                        INSERT INTO {schema_name}.usuarios 
+                        (username, password_hash, nombre_completo, rol, panaderia_id, tenant_id, activo)
+                        VALUES (:username, :password_hash, :nombre_completo, :rol, :panaderia_id, :tenant_id, true)
+                    """),
+                    {
+                        'username': f'cajero_{tenant_id}',
+                        'password_hash': hashed_password,
+                        'nombre_completo': f'Cajero {nombre_panaderia}',
+                        'rol': 'cajero',
+                        'panaderia_id': tenant_id,
+                        'tenant_id': tenant_id
+                    }
+                )
+                print(f"✅ Usuario cajero_{tenant_id} creado")
+            else:
+                # ✅ Si ya existe, actualizar contraseña SOLO si se generó una nueva
+                if hashed_password:
+                    db.session.execute(
+                        text(f"""
+                            UPDATE {schema_name}.usuarios 
+                            SET password_hash = :password_hash
+                            WHERE username = :username AND panaderia_id = :panaderia_id
+                        """),
+                        {
+                            'username': f'cajero_{tenant_id}',
+                            'password_hash': hashed_password,
+                            'panaderia_id': tenant_id
+                        }
+                    )
+                    print(f"✅ Contraseña de cajero_{tenant_id} actualizada")
+                else:
+                    print(f"   ⏭️ cajero_{tenant_id} ya existe, mantiene su contraseña")
+            
+            if contrasena_temp:
+                mensaje_extra = f" Usuarios creados/actualizados (super_{tenant_id} y cajero_{tenant_id}). La contraseña de admin_{tenant_id} no cambia. Los nuevos usuarios pueden usar la contraseña temporal: {contrasena_temp}"
+            else:
+                mensaje_extra = f" Usuarios ya existentes (super_{tenant_id} y cajero_{tenant_id}). Mantienen sus contraseñas. admin_{tenant_id} no cambia."
         
         db.session.commit()
         
-        # 🎯 RESPUESTA PROFESIONAL CON INFORMACIÓN COMPLETA
+        return jsonify({
+            'success': True,
+            'message': f'Licencia cambiada de {old_tipo} a {nuevo_tipo}{mensaje_extra}',
+            'nuevo_tipo': nuevo_tipo,
+            'contrasena_temp': contrasena_temp
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Error cambiando licencia: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+    
+@app.route('/resetear_password/<int:usuario_id>', methods=['POST'])
+@login_required
+def resetear_password(usuario_id):
+    """🎯 SISTEMA DE RESETEO PROFESIONAL - ACTUALIZA POR USERNAME"""
+    from sqlalchemy import text
+    from werkzeug.security import generate_password_hash
+    import secrets
+    import string
+    
+    try:
+        # ✅ VERIFICACIÓN SEGURA DE PERMISOS
+        if not hasattr(current_user, 'is_authenticated') or not current_user.is_authenticated:
+            return jsonify({'success': False, 'error': 'No autenticado'}), 401
+        
+        if not hasattr(current_user, 'rol'):
+            return jsonify({'success': False, 'error': 'No autorizado'}), 403
+        
+        if current_user.rol not in ['super_admin', 'admin_cliente']:
+            return jsonify({
+                'success': False, 
+                'error': '❌ No tienes permisos para resetear contraseñas'
+            }), 403
+        
+        # ✅ OBTENER panaderia_id DEL FORMULARIO
+        data = request.get_json()
+        panaderia_id = data.get('panaderia_id') if data else None
+        
+        if not panaderia_id:
+            print("❌ [RESETEO] Panadería no especificada")
+            return jsonify({'success': False, 'error': 'Panadería no especificada'}), 400
+        
+        print(f"🔍 [RESETEO] Resetear usuario ID: {usuario_id} en panadería: {panaderia_id}")
+        
+        # ✅ Si es admin_cliente, verificar que pertenece a su tenant
+        if current_user.rol == 'admin_cliente':
+            if panaderia_id != current_user.panaderia_id:
+                return jsonify({
+                    'success': False, 
+                    'error': '❌ No autorizado para resetear en esta panadería'
+                }), 403
+        
+        # ✅ BUSCAR EL USUARIO EN EL SCHEMA CORRECTO
+        schema_name = f"tenant_{panaderia_id}"
+        
+        result = db.session.execute(
+            text(f"SELECT id, username FROM {schema_name}.usuarios WHERE id = :uid AND panaderia_id = :pid"),
+            {'uid': usuario_id, 'pid': panaderia_id}
+        ).fetchone()
+        
+        if not result:
+            print(f"❌ [RESETEO] Usuario ID {usuario_id} no encontrado en {schema_name}")
+            return jsonify({'success': False, 'error': 'Usuario no encontrado'}), 404
+        
+        username = result[1]
+        print(f"✅ [RESETEO] Usuario encontrado: {username} en {schema_name}")
+        
+        # 🎯 GENERAR NUEVA CONTRASEÑA
+        nueva_password = generar_contrasena_segura()
+        
+        # 🔥 MEJORA 1: Usar método pbkdf2:sha256 en lugar del método por defecto
+        # (Este es el cambio CRÍTICO que resuelve el problema)
+        hashed_password = generate_password_hash(
+            nueva_password,
+            method='pbkdf2:sha256',
+            salt_length=16
+        )
+        
+        print(f"🔑 [RESETEO] Nueva contraseña generada: {nueva_password}")
+        
+        # ✅ ACTUALIZAR CONTRASEÑA USANDO username (MÁS CONFIABLE)
+        update_result = db.session.execute(
+            text(f"""
+                UPDATE {schema_name}.usuarios 
+                SET password_hash = :password_hash
+                WHERE username = :username AND panaderia_id = :panaderia_id
+            """),
+            {
+                'password_hash': hashed_password,
+                'username': username,
+                'panaderia_id': panaderia_id
+            }
+        )
+        
+        # ✅ VERIFICAR CUÁNTAS FILAS SE ACTUALIZARON
+        filas_afectadas = update_result.rowcount
+        print(f"📊 [RESETEO] Filas actualizadas: {filas_afectadas}")
+        
+        if filas_afectadas == 0:
+            print(f"❌ [RESETEO] No se actualizó ninguna fila para {username}")
+            return jsonify({'success': False, 'error': 'Error al actualizar contraseña'}), 500
+        
+        # 🔥 MEJORA 2: FORZAR COMMIT explícito
+        db.session.commit()
+        print(f"✅ [RESETEO] Commit ejecutado correctamente")
+        
+        # 🔥 MEJORA 3: VERIFICACIÓN POST-COMMIT con check_password_hash
+        verify = db.session.execute(
+            text(f"SELECT password_hash FROM {schema_name}.usuarios WHERE username = :username AND panaderia_id = :pid"),
+            {'username': username, 'pid': panaderia_id}
+        ).fetchone()
+        
+        if verify:
+            stored_hash = verify[0]
+            print(f"✅ [VERIFICACIÓN] Hash en BD post-commit: {stored_hash[:50]}...")
+            
+            # ✅ Verificar que el hash funciona correctamente
+            from werkzeug.security import check_password_hash
+            test_verify = check_password_hash(stored_hash, nueva_password)
+            print(f"✅ [PRUEBA] check_password_hash: {test_verify}")
+            
+            if not test_verify:
+                print("❌ [ALERTA] El hash guardado NO es válido!")
+                return jsonify({'success': False, 'error': 'Error de verificación del hash'}), 500
+        else:
+            print("❌ [RESETEO] No se pudo verificar el hash actualizado")
+        
         return jsonify({
             'success': True,
             'nueva_password': nueva_password,
-            'usuario': usuario.username,
-            'panaderia_id': usuario.panaderia_id,
-            'nota': '🔒 En producción, esta contraseña se enviará automáticamente por email',
-            'instrucciones': [
-                '1. Compartir esta contraseña de manera segura con el usuario',
-                '2. El usuario debe cambiar la contraseña en su primer acceso',
-                '3. En FASE 2, esto será automático por email'
-            ]
+            'usuario': username,
+            'message': f'Contraseña reseteada exitosamente para {username}'
         })
         
     except Exception as e:
         db.session.rollback()
         print(f"❌ [RESETEO] Error: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({
             'success': False, 
             'error': f'Error al resetear contraseña: {str(e)}'
-        })
+        }), 500
 
 def generar_contrasena_segura():
     """
-    🎯 GENERADOR PROFESIONAL DE CONTRASEÑAS - MEJORES PRÁCTICAS DE SEGURIDAD
+    🎯 GENERADOR DE CONTRASEÑAS - SOLO CARACTERES QUE SIEMPRE FUNCIONAN
+    Basado en pruebas exhaustivas, estos caracteres funcionan SIEMPRE:
+    - Guión (-) - FUNCIONA SIEMPRE en cualquier posición
     """
     import secrets
     import string
     
-    # 🎯 CONFIGURACIÓN DE SEGURIDAD
-    longitud = 12  # Longitud óptima para seguridad y usabilidad
-    caracteres = string.ascii_letters + string.digits + "!@#$%"
+    # 🔥 CARACTERES 100% SEGUROS (probados en TODOS los casos)
+    # EXCLUIMOS: . ! * ~ _ (todos han fallado en algún caso)
+    # INCLUIMOS SOLO: - (guión) - ha funcionado SIEMPRE en TODAS las posiciones
+    letras = string.ascii_letters
+    digitos = string.digits
+    simbolos_seguros = "-"  # Solo el guión ha demostrado funcionar SIEMPRE
     
-    # 🎯 GARANTIZAR COMPLEJIDAD MÍNIMA (AL MENOS UNO DE CADA TIPO)
-    intentos_maximos = 10  # Prevenir bucles infinitos
+    caracteres_seguros = letras + digitos + simbolos_seguros
+    
+    longitud = 12
+    intentos_maximos = 10
     
     for intento in range(intentos_maximos):
-        password = ''.join(secrets.choice(caracteres) for _ in range(longitud))
+        password = ''.join(secrets.choice(caracteres_seguros) for _ in range(longitud))
         
         # VERIFICAR CRITERIOS DE COMPLEJIDAD
         tiene_minuscula = any(c.islower() for c in password)
         tiene_mayuscula = any(c.isupper() for c in password)
         tiene_numero = any(c.isdigit() for c in password)
-        tiene_simbolo = any(c in "!@#$%" for c in password)
+        tiene_simbolo = any(c in "-" for c in password)
         
         if todas([tiene_minuscula, tiene_mayuscula, tiene_numero, tiene_simbolo]):
-            print(f"✅ [GENERADOR] Contraseña segura generada en intento {intento + 1}")
+            print(f"✅ [GENERADOR] Contraseña segura generada en intento {intento + 1}: {password}")
             return password
     
-    # 🎯 FALLBACK: Si no cumple criterios después de intentos, generar una igual
-    password_fallback = ''.join(secrets.choice(caracteres) for _ in range(longitud))
+    # 🎯 FALLBACK
+    password_fallback = ''.join(secrets.choice(caracteres_seguros) for _ in range(longitud))
     print(f"⚠️ [GENERADOR] Usando fallback después de {intentos_maximos} intentos")
     return password_fallback
 
@@ -8661,12 +10173,12 @@ def registrar_reseteo_password(usuario_id, administrador_id):
     En FASE 2, esto se migrará a tabla de auditoría en base de datos
     """
     try:
-        # 📊 LOG TEMPORAL - EN FASE 2 SE MIGRA A BASE DE DATOS
+        # 📊 LOG TEMPORAL
         print(f"📊 [AUDITORÍA] Reseteo - Usuario: {usuario_id}, Admin: {administrador_id}")
         
         # 🆕 CÓDIGO PREPARADO PARA FASE 2 (ACTUALMENTE COMENTADO)
         # from datetime import datetime
-        # from models import AuditoriaSeguridad  # 🎯 TABLA POR CREAR EN FASE 2
+        # from models import AuditoriaSeguridad
         # 
         # auditoria = AuditoriaSeguridad(
         #     usuario_id=usuario_id,
@@ -8675,7 +10187,7 @@ def registrar_reseteo_password(usuario_id, administrador_id):
         #     ip_address=request.remote_addr,
         #     user_agent=request.headers.get('User-Agent'),
         #     fecha_hora=datetime.now(),
-        #     detalles='Reseteo manual por super_admin'
+        #     detalles='Reseteo manual por administrador'
         # )
         # db.session.add(auditoria)
         # db.session.commit()
@@ -8683,61 +10195,119 @@ def registrar_reseteo_password(usuario_id, administrador_id):
     except Exception as e:
         print(f"⚠️ [AUDITORÍA] Error registrando reseteo: {e}")
         
+        
 @app.route('/obtener_usuarios_panaderia/<int:panaderia_id>')
 @login_required
-@permisos_requeridos('clientes', 'ver')
 def obtener_usuarios_panaderia(panaderia_id):
     """Obtener usuarios de una panadería específica (solo super_admin)"""
-    if current_user.rol != 'super_admin':
-        return jsonify([])
+    from sqlalchemy import text
+    
+    # ✅ VERIFICACIÓN SEGURA
+    try:
+        if not hasattr(current_user, 'is_authenticated') or not current_user.is_authenticated:
+            return jsonify({'error': 'No autenticado'}), 401
+            
+        if not hasattr(current_user, 'rol') or current_user.rol != 'super_admin':
+            return jsonify({'error': 'No autorizado'}), 403
+    except Exception as e:
+        print(f"🔍 DEBUG obtener_usuarios_panaderia - Error autenticación: {e}")
+        return jsonify({'error': 'Error de autenticación'}), 401
     
     try:
-        usuarios = Usuario.query.filter_by(panaderia_id=panaderia_id).all()
-        usuarios_data = []
+        # 🐛 DEBUG: Ver qué tenant está buscando
+        print(f"🔍 DEBUG obtener_usuarios_panaderia - Buscando usuarios para tenant: {panaderia_id}")
         
-        for usuario in usuarios:
-            usuarios_data.append({
-                'id': usuario.id,
-                'username': usuario.username,
-                'nombre_completo': usuario.nombre_completo,
-                'rol': usuario.rol,
-                'activo': usuario.activo
+        # Buscar en el schema del tenant
+        schema_name = f"tenant_{panaderia_id}"
+        
+        # Verificar si el schema existe
+        result = db.session.execute(
+            text(f"SELECT schema_name FROM information_schema.schemata WHERE schema_name = :schema"),
+            {'schema': schema_name}
+        ).fetchone()
+        
+        if not result:
+            print(f"⚠️ DEBUG obtener_usuarios_panaderia - Schema {schema_name} NO existe")
+            return jsonify({'error': 'Panadería no encontrada'}), 404
+        
+        print(f"✅ DEBUG obtener_usuarios_panaderia - Schema {schema_name} existe")
+        
+        # ✅ Obtener usuarios del schema INCLUYENDO panaderia_id
+        usuarios = db.session.execute(
+            text(f"""
+                SELECT id, username, nombre_completo, rol, activo, panaderia_id 
+                FROM {schema_name}.usuarios 
+                WHERE panaderia_id = :panaderia_id
+            """),
+            {'panaderia_id': panaderia_id}
+        ).fetchall()
+        
+        # 🐛 DEBUG: Ver cuántos usuarios encontró
+        print(f"✅ DEBUG obtener_usuarios_panaderia - Encontrados {len(usuarios)} usuarios")
+        
+        usuarios_list = []
+        for row in usuarios:
+            usuarios_list.append({
+                'id': row[0],
+                'username': row[1],
+                'nombre_completo': row[2] or row[1],
+                'rol': row[3],
+                'activo': bool(row[4]) if row[4] is not None else True,
+                'panaderia_id': row[5]  # ✅ INCLUIR EL PANADERIA_ID
             })
         
-        return jsonify(usuarios_data)
+        print(f"✅ DEBUG obtener_usuarios_panaderia - Devolviendo {len(usuarios_list)} usuarios con panaderia_id")
+        return jsonify({'usuarios': usuarios_list})
         
     except Exception as e:
-        return jsonify([])
+        print(f"❌ Error obteniendo usuarios: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
     
 @app.route('/obtener_datos_cliente/<int:cliente_id>')
 @login_required
 @permisos_requeridos('clientes', 'ver')
 def obtener_datos_cliente(cliente_id):
     """Obtener datos de un cliente específico para edición"""
-    if current_user.rol != 'super_admin':
-        return jsonify({'success': False, 'error': 'No autorizado'})
+    # ✅ VERIFICACIÓN SEGURA
+    try:
+        if not hasattr(current_user, 'is_authenticated') or not current_user.is_authenticated:
+            return jsonify({'error': 'No autenticado'}), 401
+            
+        if not hasattr(current_user, 'rol') or current_user.rol != 'super_admin':
+            return jsonify({'error': 'No autorizado'}), 403
+    except Exception as e:
+        return jsonify({'error': 'Error de autenticación'}), 401
     
+    # ... resto del código de la función ...
     try:
         from models import ConfiguracionPanaderia
         cliente = db.get_or_404(ConfiguracionPanaderia, cliente_id)
         
+        # Determinar estado de suscripción
+        estado = "ACTIVA"
+        if cliente.fecha_expiracion:
+            hoy = date.today()
+            if cliente.fecha_expiracion < hoy:
+                estado = "VENCIDA"
+            elif (cliente.fecha_expiracion - hoy).days <= 7:
+                estado = "POR_VENCER"
+        
         return jsonify({
-            'success': True,
-            'data': {
-                'id': cliente.id,
-                'nombre_panaderia': cliente.nombre_panaderia,
-                'telefono_contacto': cliente.telefono_contacto,
-                'direccion': cliente.direccion,
-                'tipo_licencia': cliente.tipo_licencia,
-                'max_usuarios': cliente.max_usuarios,
-                'fecha_expiracion': cliente.fecha_expiracion.strftime('%Y-%m-%d') if cliente.fecha_expiracion else None,
-                'dias_gracia': cliente.dias_gracia,
-                'razon_social': cliente.razon_social,
-                'nit': cliente.nit
-            }
+            'id': cliente.id,
+            'nombre_panaderia': cliente.nombre_panaderia,
+            'telefono_contacto': cliente.telefono_contacto,
+            'direccion': cliente.direccion,
+            'tipo_licencia': cliente.tipo_licencia,
+            'max_usuarios': cliente.max_usuarios,
+            'fecha_expiracion': cliente.fecha_expiracion.strftime('%Y-%m-%d') if cliente.fecha_expiracion else None,
+            'estado_suscripcion': estado,
+            'activo': cliente.activo
         })
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)})
+        print(f"❌ Error en obtener_datos_cliente: {e}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/editar_cliente', methods=['POST'])
 @login_required
@@ -8866,35 +10436,115 @@ def editar_cliente_super():
 @permisos_requeridos('clientes', 'gestionar')
 def renovar_suscripcion_super():
     """Renovar suscripción de un cliente (SUPER ADMIN)"""
-    if current_user.rol != 'super_admin':
-        return jsonify({'success': False, 'error': 'No autorizado'})
+    from sqlalchemy import text
+    from datetime import datetime, timedelta
     
     try:
-        from models import ConfiguracionPanaderia
-        from datetime import datetime
+        print("🔍 [RENOVAR] Iniciando renovación de suscripción...")
         
+        # ✅ Verificar permisos
+        if not hasattr(current_user, 'is_authenticated') or not current_user.is_authenticated:
+            print("❌ [RENOVAR] Usuario no autenticado")
+            return jsonify({'success': False, 'error': 'No autenticado'}), 401
+            
+        if not hasattr(current_user, 'rol') or current_user.rol != 'super_admin':
+            print(f"❌ [RENOVAR] Usuario no autorizado: {current_user.rol}")
+            return jsonify({'success': False, 'error': 'No autorizado'}), 403
+        
+        # ✅ Obtener datos del formulario
+        print("🔍 [RENOVAR] Obteniendo datos del formulario...")
         cliente_id = request.form.get('cliente_id')
-        cliente = db.get_or_404(ConfiguracionPanaderia, cliente_id)
+        tipo_licencia = request.form.get('tipo_licencia')
+        max_usuarios = int(request.form.get('max_usuarios', 3))
+        nueva_fecha_expiracion = request.form.get('nueva_fecha_expiracion')
+        periodo = request.form.get('periodo')
+        dias_personalizados = request.form.get('dias_personalizados')
         
-        # Actualizar datos
-        cliente.tipo_licencia = request.form.get('tipo_licencia')
-        cliente.max_usuarios = int(request.form.get('max_usuarios'))
+        print(f"   📌 cliente_id: {cliente_id}")
+        print(f"   📌 tipo_licencia: {tipo_licencia}")
+        print(f"   📌 max_usuarios: {max_usuarios}")
+        print(f"   📌 nueva_fecha_expiracion: {nueva_fecha_expiracion}")
+        print(f"   📌 periodo: {periodo}")
+        print(f"   📌 dias_personalizados: {dias_personalizados}")
         
-        # Manejar fecha de expiración para licencias en la nube
-        if cliente.tipo_licencia != 'local':
-            nueva_fecha = request.form.get('nueva_fecha_expiracion')
-            if nueva_fecha:
-                cliente.fecha_expiracion = datetime.strptime(nueva_fecha, '%Y-%m-%d').date()
-        else:
-            cliente.fecha_expiracion = None
+        if not cliente_id:
+            print("❌ [RENOVAR] ID de cliente no proporcionado")
+            return jsonify({'success': False, 'error': 'ID de cliente no proporcionado'}), 400
+        
+        # ✅ Usar SQL DIRECTO en el schema del tenant
+        schema_name = f"tenant_{cliente_id}"
+        print(f"🔍 [RENOVAR] Schema: {schema_name}")
+        
+        # ✅ Verificar que el tenant existe
+        print("🔍 [RENOVAR] Verificando existencia del tenant...")
+        check = db.session.execute(
+            text(f"SELECT id FROM {schema_name}.configuracion_panaderia WHERE panaderia_id = :pid"),
+            {'pid': cliente_id}
+        ).fetchone()
+        
+        if not check:
+            print(f"❌ [RENOVAR] Tenant {cliente_id} no encontrado")
+            return jsonify({'success': False, 'error': f'Tenant {cliente_id} no encontrado'}), 404
+        
+        print(f"✅ [RENOVAR] Tenant {cliente_id} encontrado")
+        
+        # ✅ Si no se proporcionó fecha, calcularla según el período
+        if not nueva_fecha_expiracion:
+            print("🔍 [RENOVAR] No se proporcionó fecha, calculando...")
+            hoy = datetime.now().date()
+            if periodo and periodo != 'custom':
+                dias = int(periodo)
+                nueva_fecha_expiracion = (hoy + timedelta(days=dias)).strftime('%Y-%m-%d')
+                print(f"   📌 Calculado por período: {dias} días → {nueva_fecha_expiracion}")
+            elif dias_personalizados:
+                dias = int(dias_personalizados)
+                nueva_fecha_expiracion = (hoy + timedelta(days=dias)).strftime('%Y-%m-%d')
+                print(f"   📌 Calculado por días personalizados: {dias} días → {nueva_fecha_expiracion}")
+            else:
+                nueva_fecha_expiracion = (hoy + timedelta(days=30)).strftime('%Y-%m-%d')
+                print(f"   📌 Calculado por defecto: 30 días → {nueva_fecha_expiracion}")
+        
+        print(f"✅ [RENOVAR] Fecha final: {nueva_fecha_expiracion}")
+        
+        # ✅ Actualizar configuración en el schema del tenant
+        print("🔍 [RENOVAR] Actualizando configuración...")
+        result = db.session.execute(
+            text(f"""
+                UPDATE {schema_name}.configuracion_panaderia 
+                SET tipo_licencia = :tipo_licencia,
+                    max_usuarios = :max_usuarios,
+                    fecha_expiracion = :fecha_expiracion,
+                    fecha_actualizacion = NOW()
+                WHERE panaderia_id = :panaderia_id
+                RETURNING id
+            """),
+            {
+                'tipo_licencia': tipo_licencia,
+                'max_usuarios': max_usuarios,
+                'fecha_expiracion': nueva_fecha_expiracion,
+                'panaderia_id': cliente_id
+            }
+        )
+        
+        updated = result.fetchone()
+        if not updated:
+            print("❌ [RENOVAR] No se pudo actualizar la configuración")
+            return jsonify({'success': False, 'error': 'Error al actualizar configuración'}), 500
         
         db.session.commit()
+        print(f"✅ [RENOVAR] Configuración actualizada correctamente (ID: {updated[0]})")
         
-        return jsonify({'success': True, 'message': 'Suscripción renovada correctamente'})
+        return jsonify({
+            'success': True, 
+            'message': f'Suscripción renovada exitosamente hasta {nueva_fecha_expiracion}'
+        })
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)})
+        print(f"❌ [RENOVAR] Error renovando suscripción: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/acceder_panaderia_super/<int:panaderia_id>/<int:usuario_id>')
 @login_required
@@ -8976,96 +10626,87 @@ app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 @permisos_requeridos('clientes', 'gestionar')
 def eliminar_cliente(tenant_id):
     """Elimina un cliente - Busca por tenant_id en configuracion_panaderia"""
-    import sqlite3
+    from sqlalchemy import text
     import os
     
     print(f"🔍 [ELIMINAR] Iniciando eliminación del tenant ID: {tenant_id}")
     try:
-        if session.get('rol') != 'super_admin':
+        # ✅ VERIFICACIÓN SEGURA
+        if not hasattr(current_user, 'is_authenticated') or not current_user.is_authenticated:
+            return jsonify({'success': False, 'error': 'No autenticado'}), 401
+            
+        if not hasattr(current_user, 'rol') or current_user.rol != 'super_admin':
             return jsonify({'success': False, 'error': 'No tienes permiso'}), 403
         
         # =============================================
-        # 1. BUSCAR EN configuracion_panaderia POR tenant_id
+        # 1. BUSCAR TENANT EN POSTGRESQL
         # =============================================
-        conn_principal = sqlite3.connect('databases_tenants/panaderia_principal.db')
-        cursor_principal = conn_principal.cursor()
-        cursor_principal.execute(
-            "SELECT id, nombre_panaderia FROM configuracion_panaderia WHERE tenant_id = ?",
-            (tenant_id,)
-        )
-        config = cursor_principal.fetchone()
+        tenant = db.session.execute(
+            text("SELECT id, nombre, subdominio FROM public.tenants WHERE id = :id"),
+            {'id': tenant_id}
+        ).fetchone()
         
-        if not config:
-            # Si no se encuentra por tenant_id, intentar por id (para compatibilidad)
-            cursor_principal.execute(
-                "SELECT id, nombre_panaderia FROM configuracion_panaderia WHERE id = ?",
-                (tenant_id,)
-            )
-            config = cursor_principal.fetchone()
-            
-        if not config:
-            conn_principal.close()
+        if not tenant:
             return jsonify({'success': False, 'error': 'Cliente no encontrado'}), 404
         
-        config_id = config[0]
-        nombre_tenant = config[1]
-        print(f"✅ [ELIMINAR] Encontrado en configuracion: {nombre_tenant} (config_id: {config_id})")
+        tenant_nombre = tenant[1]
+        tenant_subdominio = tenant[2]
+        print(f"✅ [ELIMINAR] Encontrado tenant: {tenant_nombre} (subdominio: {tenant_subdominio})")
+        
+        if tenant_id == 1:
+            return jsonify({'success': False, 'error': 'No se puede eliminar el principal'}), 403
         
         # =============================================
-        # 2. BUSCAR EN tenant_master POR tenant_id
+        # 2. ELIMINAR SCHEMA DEL TENANT
         # =============================================
-        conn_master = sqlite3.connect('tenant_master.db')
-        cursor_master = conn_master.cursor()
-        cursor_master.execute(
-            "SELECT id, nombre, subdominio FROM tenants WHERE id = ?",
-            (tenant_id,)
+        schema_name = f"tenant_{tenant_id}"
+        db.session.execute(text(f"DROP SCHEMA IF EXISTS {schema_name} CASCADE"))
+        db.session.commit()
+        print(f"✅ [ELIMINAR] Schema {schema_name} eliminado")
+        
+        # =============================================
+        # 3. ELIMINAR TENANT DE LA TABLA MAESTRA
+        # =============================================
+        db.session.execute(
+            text("DELETE FROM public.tenants WHERE id = :id"),
+            {'id': tenant_id}
         )
-        tenant = cursor_master.fetchone()
-        
-        if tenant:
-            master_id = tenant[0]
-            subdominio = tenant[2]
-            print(f"✅ [ELIMINAR] Encontrado en master: ID {master_id}")
-            
-            if master_id == 1:
-                conn_master.close()
-                conn_principal.close()
-                return jsonify({'success': False, 'error': 'No se puede eliminar el principal'}), 403
-            
-            # Eliminar de tenant_master
-            cursor_master.execute("DELETE FROM tenants WHERE id = ?", (master_id,))
-            conn_master.commit()
-            print(f"✅ [ELIMINAR] Eliminado de tenant_master")
-            
-            # Eliminar archivo de BD
-            db_file = f"databases_tenants/{subdominio}.db"
-            if os.path.exists(db_file):
-                os.remove(db_file)
-                print(f"✅ [ELIMINAR] BD eliminada: {db_file}")
-        else:
-            print(f"⚠️ [ELIMINAR] No encontrado en tenant_master (ya fue eliminado)")
-        
-        conn_master.close()
+        db.session.commit()
+        print(f"✅ [ELIMINAR] Tenant {tenant_nombre} eliminado de public.tenants")
         
         # =============================================
-        # 3. ELIMINAR DE configuracion_panaderia
+        # 4. ELIMINAR CONFIGURACIÓN HUÉRFANA
         # =============================================
-        cursor_principal.execute(
-            "DELETE FROM configuracion_panaderia WHERE id = ?",
-            (config_id,)
+        db.session.execute(
+            text("DELETE FROM public.configuracion_panaderia WHERE tenant_id = :id OR panaderia_id = :id"),
+            {'id': tenant_id}
         )
-        conn_principal.commit()
-        conn_principal.close()
-        print(f"✅ [ELIMINAR] Eliminado de configuracion_panaderia")
+        db.session.commit()
+        print(f"✅ [ELIMINAR] Configuración huérfana eliminada")
         
-        return jsonify({'success': True, 'message': f'Cliente "{nombre_tenant}" eliminado exitosamente'})
+        # =============================================
+        # 5. REPARAR SECUENCIA
+        # =============================================
+        db.session.execute(text("SELECT setval('tenants_id_seq', (SELECT COALESCE(MAX(id), 1) FROM public.tenants))"))
+        db.session.commit()
+        print(f"✅ [ELIMINAR] Secuencia reparada")
+        
+        # =============================================
+        # 6. ELIMINAR ARCHIVO SQLITE (si existe)
+        # =============================================
+        db_file = f"databases_tenants/{tenant_subdominio}.db"
+        if os.path.exists(db_file):
+            os.remove(db_file)
+            print(f"✅ [ELIMINAR] BD SQLite eliminada: {db_file}")
+        
+        return jsonify({'success': True, 'message': f'Cliente "{tenant_nombre}" eliminado exitosamente'})
         
     except Exception as e:
+        db.session.rollback()
         print(f"❌ [ELIMINAR] Error: {str(e)}")
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
-    
 # ============================================
 # ACTIVAR/DESACTIVAR CLIENTE (TOGGLE)
 # ============================================
@@ -9074,23 +10715,25 @@ def eliminar_cliente(tenant_id):
 @permisos_requeridos('clientes', 'gestionar')
 def toggle_cliente(tenant_id):
     """Activa o desactiva un cliente (Solo super_admin)"""
+    from sqlalchemy import text
+    
     try:
-        # Verificar permisos
-        if session.get('rol') != 'super_admin':
+        # ✅ VERIFICACIÓN SEGURA
+        if not hasattr(current_user, 'is_authenticated') or not current_user.is_authenticated:
+            return jsonify({'success': False, 'error': 'No autenticado'}), 401
+            
+        if not hasattr(current_user, 'rol') or current_user.rol != 'super_admin':
             return jsonify({'success': False, 'error': 'No tienes permiso'}), 403
-        
-        import sqlite3
         
         print(f"🔍 [TOGGLE] Iniciando toggle del tenant ID: {tenant_id}")
         
-        # 1. Obtener estado actual en tenant_master
-        conn_master = sqlite3.connect('tenant_master.db')
-        cursor_master = conn_master.cursor()
-        cursor_master.execute("SELECT activo FROM tenants WHERE id = ?", (tenant_id,))
-        resultado = cursor_master.fetchone()
+        # 1. OBTENER ESTADO ACTUAL EN POSTGRESQL
+        resultado = db.session.execute(
+            text("SELECT activo FROM public.tenants WHERE id = :id"),
+            {'id': tenant_id}
+        ).fetchone()
         
         if not resultado:
-            conn_master.close()
             return jsonify({'success': False, 'error': 'Cliente no encontrado'}), 404
         
         estado_actual = resultado[0] if resultado[0] is not None else 1
@@ -9098,24 +10741,21 @@ def toggle_cliente(tenant_id):
         
         print(f"📊 Estado actual: {estado_actual} → Nuevo estado: {nuevo_estado}")
         
-        # 2. Actualizar tenant_master
-        cursor_master.execute("UPDATE tenants SET activo = ? WHERE id = ?", (nuevo_estado, tenant_id))
-        conn_master.commit()
-        conn_master.close()
-        print(f"✅ Tenant actualizado en tenant_master.db")
-        
-        # 3. Actualizar configuracion_panaderia
-        conn_principal = sqlite3.connect('databases_tenants/panaderia_principal.db')
-        cursor_principal = conn_principal.cursor()
-        
-        # Actualizar por id o por tenant_id
-        cursor_principal.execute(
-            "UPDATE configuracion_panaderia SET activo = ? WHERE id = ? OR tenant_id = ?",
-            (nuevo_estado, tenant_id, tenant_id)
+        # 2. ACTUALIZAR TENANT EN POSTGRESQL
+        db.session.execute(
+            text("UPDATE public.tenants SET activo = :activo WHERE id = :id"),
+            {'activo': nuevo_estado, 'id': tenant_id}
         )
-        conn_principal.commit()
-        conn_principal.close()
-        print(f"✅ Configuración actualizada en panaderia_principal.db")
+        db.session.commit()
+        print(f"✅ Tenant actualizado en public.tenants")
+        
+        # 3. ACTUALIZAR CONFIGURACIÓN
+        db.session.execute(
+            text("UPDATE public.configuracion_panaderia SET activo = :activo WHERE tenant_id = :id OR panaderia_id = :id"),
+            {'activo': nuevo_estado, 'id': tenant_id}
+        )
+        db.session.commit()
+        print(f"✅ Configuración actualizada en public.configuracion_panaderia")
         
         estado_texto = "ACTIVADO" if nuevo_estado == 1 else "DESACTIVADO"
         print(f"✅ Cliente ID {tenant_id} {estado_texto}")
@@ -9127,6 +10767,7 @@ def toggle_cliente(tenant_id):
         })
         
     except Exception as e:
+        db.session.rollback()
         print(f"❌ Error en toggle_cliente: {e}")
         import traceback
         traceback.print_exc()

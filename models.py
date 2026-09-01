@@ -28,7 +28,11 @@ class Usuario(UserMixin, db.Model):
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
     fecha_ultimo_acceso = db.Column(db.DateTime)
     sucursal_id = db.Column(db.Integer, db.ForeignKey('sucursales.id'), nullable=True)  # Para multi-sucursal futuro
-    panaderia_id = db.Column(db.Integer, db.ForeignKey('configuracion_panaderia.id'), nullable=False, default=1)
+    # COMENTADO TEMPORALMENTE PARA MIGRACIÓN:
+    # panaderia_id = db.Column(db.Integer, db.ForeignKey('configuracion_panaderia.id'), nullable=False, default=1)
+    # CAMPO TEMPORAL SIN FOREIGN KEY:
+    panaderia_id = db.Column(db.Integer, nullable=False, default=1)  # ✅ Sin Foreign Key
+    tenant_id = db.Column(db.Integer, nullable=True, default=1)
     
     # 🆕 RELACIÓN CON PERMISOS PERSONALIZADOS
     permisos_personalizados = db.relationship('PermisoUsuario', backref='usuario', lazy=True, cascade='all, delete-orphan')
@@ -154,23 +158,23 @@ ROLES_PERMISOS = {
     },
     
     'admin_cliente': {
-        # Acceso completo pero SOLO a SU panadería
+        # ✅ Acceso completo a TODOS los módulos EXCEPTO gestion_clientes
         'dashboard': ['ver'],
         'punto_venta': ['vender', 'ver_todas_ventas', 'anular_ventas', 'cierre_caja'],
         'productos': ['ver', 'crear', 'editar', 'eliminar'],
         'categorias': ['ver', 'gestionar'],
         'produccion': ['ver', 'producir', 'crear_recetas', 'editar_recetas'],
         'inventario': ['ver', 'gestionar'],
-        'clientes': ['ver', 'gestionar'],
+        # ❌ ELIMINADO: 'clientes' - NO debe tener acceso
         'proveedores': ['ver', 'gestionar'],
         'finanzas': ['ver_todo', 'gestionar'],
-        'reportes': ['ver_todos', 'exportar', 'analizar', 'ver_cierre'],  # 🆕 AGREGADO: ver_cierre
+        'reportes': ['ver_todos', 'exportar', 'analizar', 'ver_cierre'],
         'configuracion': ['ver', 'editar_parametros'],
-        'activos': ['ver', 'gestionar'],
-        'usuarios': ['gestionar', 'ver_perfil'],
-        'gestion_usuarios': ['gestionar', 'ver_perfil'],
+        'activos': ['ver', 'gestionar'],  # ✅ CORRECTO
+        'usuarios': ['gestionar', 'ver_perfil'],  # ✅ CORRECTO (se llama 'usuarios')
+        # ❌ ELIMINADO: 'gestion_usuarios' - no existe
         'sistema': ['diagnosticar']
-        # ❌ NO incluye: 'gestion_clientes' (gestión de múltiples clientes)
+        # ❌ NO incluye: 'clientes' (exclusivo de super_admin)
     },
     
     'super_admin': {
@@ -233,15 +237,16 @@ class Categoria(db.Model):
 
 class ConfiguracionPanaderia(db.Model):
     __tablename__ = 'configuracion_panaderia'
+    __table_args__ = {'schema': 'public'}
     
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)# ✅ PRIMARY KEY PRIMERO Y AUTOINCREMENT
     panaderia_id = db.Column(db.Integer, nullable=False, default=1)
-    id = db.Column(db.Integer, primary_key=True)
     
     # 🆕 CAMPO PARA SINCRONIZAR CON TENANT_MASTER
     tenant_id = db.Column(db.Integer, nullable=True)
     
     # 🆕 CAMPO PARA ACTIVAR/DESACTIVAR CLIENTE
-    activo = db.Column(db.Integer, default=1)
+    activo = db.Column(db.Boolean, default=True)
     
     # INFORMACIÓN BÁSICA DE LA PANADERÍA
     nombre_panaderia = db.Column(db.String(200), nullable=False, default='Mi Panadería')
@@ -382,11 +387,8 @@ class ConfiguracionPanaderia(db.Model):
 class Panaderia(db.Model):
     __tablename__ = 'panaderias'
     
-    # SOLO DEBE TENER UN ID COMO PRIMARY KEY
-    id = db.Column(db.Integer, primary_key=True)  # ESTE es el que usan las foreign keys
-    
-    # ELIMINA esta línea: panaderia_id = db.Column(db.Integer, nullable=False, default=1)
-    
+    id = db.Column(db.Integer, primary_key=True)
+    panaderia_id = db.Column(db.Integer, nullable=False, default=1)  # ✅ ACTIVADO (no comentado)
     nombre = db.Column(db.String(100), nullable=False)
     direccion = db.Column(db.String(200))
     telefono = db.Column(db.String(20))
@@ -401,7 +403,7 @@ class Panaderia(db.Model):
     
     # CONTROL
     activa = db.Column(db.Boolean, default=True)
-    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)  # Añade default
+    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
     fecha_actualizacion = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     def __repr__(self):
@@ -410,11 +412,13 @@ class Panaderia(db.Model):
     def to_dict(self):
         return {
             'id': self.id,
+            'panaderia_id': self.panaderia_id,
             'nombre': self.nombre,
             'direccion': self.direccion,
             'telefono': self.telefono,
             'email': self.email,
-            'moneda': self.moneda
+            'moneda': self.moneda,
+            'activa': self.activa
         }
         
 class Producto(db.Model):
@@ -2104,12 +2108,13 @@ class HistorialMantenimiento(db.Model):
     
     def __repr__(self):
         return f'<HistorialMantenimiento {self.activo.nombre} - {self.tipo} - {self.fecha_mantenimiento}>'
+    
 class ConsecutivoPOS(db.Model):
     """Maneja el consecutivo persistente para recibos POS"""
     __tablename__ = 'consecutivos_pos'
     
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)  # ✅ MOVER A PRIMERO Y autoincrement
     panaderia_id = db.Column(db.Integer, nullable=False, default=1)
-    id = db.Column(db.Integer, primary_key=True)
     numero_actual = db.Column(db.Integer, default=0)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow)
     
@@ -2598,15 +2603,15 @@ def generar_recomendaciones_personalizadas(panaderia_id, dias_historial=30):
                 'prioridad': 'media'
             })
         
-        # 4. RECOMENDACIÓN: Días de mayor venta (basado en tendencias)
+                # 4. RECOMENDACIÓN: Días de mayor venta (basado en tendencias)
         ventas_por_dia = db.session.query(
-            func.strftime('%w', Venta.fecha_hora).label('dia_semana'),
+            func.extract('dow', Venta.fecha_hora).label('dia_semana'),
             func.sum(Venta.total).label('total')
         ).filter(
             Venta.panaderia_id == panaderia_id,
             Venta.fecha_hora >= fecha_inicio
         ).group_by(
-            func.strftime('%w', Venta.fecha_hora)
+            func.extract('dow', Venta.fecha_hora)  # ✅ CORREGIDO: Usar EXTRACT en lugar de strftime
         ).order_by(
             func.sum(Venta.total).desc()
         ).all()
@@ -2703,6 +2708,64 @@ def filtrar_por_tenant(query, panaderia_id):
         return query.filter(model.panaderia_id == panaderia_id)
     return query
         
+# =============================================
+# MODELO PARA GESTIÓN DE TENANTS (SAAS)
+# =============================================
+
+class Tenant(db.Model):
+    __tablename__ = 'tenants'
+    __table_args__ = {'schema': 'public'}
+    
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False)
+    subdominio = db.Column(db.String(50), nullable=False, unique=True)
+    base_datos = db.Column(db.String(100), nullable=False)
+    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
+    activo = db.Column(db.Boolean, default=True)
+    plan = db.Column(db.String(20), default='basico')
+    fecha_vencimiento = db.Column(db.DateTime, nullable=True)
+    fecha_expiracion = db.Column(db.DateTime, nullable=True)  # ✅ CAMBIADO A DateTime
+    
+    
+    
+    def __repr__(self):
+        return f'<Tenant {self.nombre}>'
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'nombre': self.nombre,
+            'subdominio': self.subdominio,
+            'base_datos': self.base_datos,
+            'fecha_creacion': self.fecha_creacion.strftime('%Y-%m-%d %H:%M:%S') if self.fecha_creacion else None,
+            'activo': self.activo,
+            'plan': self.plan,
+            'fecha_vencimiento': self.fecha_vencimiento.strftime('%Y-%m-%d %H:%M:%S') if self.fecha_vencimiento else None,
+            'fecha_expiracion': self.fecha_expiracion.strftime('%Y-%m-%d %H:%M:%S') if self.fecha_expiracion else None
+            # ✅ ELIMINADO: 'configuracion_id': self.configuracion_id
+        }
+        
+    def dias_para_expiracion(self):
+        """Calcular días restantes para expiración"""
+        if not self.fecha_expiracion:
+            return None
+        from datetime import datetime
+        dias = (self.fecha_expiracion - datetime.now()).days
+        return dias if dias > 0 else 0
+    
+    
+    
+# =============================================
+# ✅ REGISTRAR TODOS LOS MODELOS EN EL METADATA
+# =============================================
+# Esto asegura que SQLAlchemy conozca todos los modelos
+__all__ = [
+    'ConfiguracionPanaderia',
+    'Tenant',
+    'Usuario',
+    'Panaderia',
+    # ... todos los demás modelos
+]
 # =============================================
 # FIN DE MODELS.PY
 # ============================================= 
