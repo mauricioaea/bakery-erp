@@ -490,6 +490,8 @@ bash
 # Verificar contraseña en .env
 # La contraseña correcta es: PanaderiaPro2026!
 
+# la contraseña 
+
 # O resetear contraseña de postgres
 # En pg_hba.conf cambiar a trust, luego:
 psql -U postgres -p 5433 -h localhost
@@ -593,7 +595,7 @@ Este código será la base para un servicio en la nube comercial. El repositorio
 Para información sobre licencias comerciales: Contactar al desarrollador.
 
 🙏 Agradecimientos
-A Dios por la sabiduria que me dio para este proyecto, mi familia Esposa e Hijos, y a los dueños de panaderías que inspiran este proyecto.
+A Dios por la sabiduria que me dio para este proyecto, mi familia Esposa e Matias y Mathin, y a los dueños de panaderías que inspiran este proyecto.
 
 "Crear software que realmente ayude a los negocios es mi pasión" 🎯
 

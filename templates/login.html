@@ -3,9 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Acceso - PanaderíaPro Multi</title>
+    <title>PanaderíaPro - Sistema ERP Multi-Tenant</title>
+        <!-- 🍞 FAVICON PERSONALIZADO - Logo PanaderíaPro -->
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230a0e17'/%3E%3Ctext x='50' y='72' font-family='Inter, sans-serif' font-size='62' font-weight='700' fill='%23f5b81b' text-anchor='middle'%3EP%3C/text%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        /* ============================================
+           RESET Y BASE
+           ============================================ */
         * {
             margin: 0;
             padding: 0;
@@ -13,80 +21,277 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0a0e17;
             min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             padding: 20px;
-        }
-
-        .login-container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 40px 35px;
-            border-radius: 20px;
-            box-shadow: 
-                0 20px 40px rgba(0, 0, 0, 0.15),
-                0 8px 25px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 420px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
             position: relative;
             overflow: hidden;
         }
 
-        .login-container::before {
+        /* Fondo con patrón de panadería sutil */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(245, 184, 27, 0.03) 0%, transparent 60%),
+                radial-gradient(circle at 80% 20%, rgba(245, 184, 27, 0.02) 0%, transparent 50%),
+                radial-gradient(circle at 50% 80%, rgba(245, 184, 27, 0.02) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        /* Decoración de fondo - granos de trigo estilizados */
+        body::after {
+            content: '🌾 🌾 🌾';
+            position: fixed;
+            bottom: 20px;
+            right: 40px;
+            font-size: 32px;
+            opacity: 0.04;
+            letter-spacing: 20px;
+            pointer-events: none;
+            transform: rotate(-15deg);
+        }
+
+        /* ============================================
+           CONTENEDOR PRINCIPAL
+           ============================================ */
+        .login-wrapper {
+            display: flex;
+            max-width: 1100px;
+            width: 100%;
+            min-height: 600px;
+            background: #ffffff;
+            border-radius: 28px;
+            box-shadow: 
+                0 30px 100px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.04);
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+            opacity: 0;
+            transform: translateY(30px) scale(0.98);
+            transition: all 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .login-wrapper.show {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        /* ============================================
+           PANEL IZQUIERDO - MARCA
+           ============================================ */
+        .login-brand {
+            flex: 0 0 42%;
+            background: linear-gradient(165deg, #1a1f2e 0%, #0f141f 100%);
+            padding: 48px 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Efecto de luz en panel izquierdo */
+        .login-brand::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #2563eb, #1d4ed8, #2563eb);
+            top: -40%;
+            right: -30%;
+            width: 80%;
+            height: 80%;
+            background: radial-gradient(circle, rgba(245, 184, 27, 0.05) 0%, transparent 70%);
+            pointer-events: none;
         }
 
-        .brand-header {
-            text-align: center;
-            margin-bottom: 35px;
+        .login-brand::after {
+            content: '';
+            position: absolute;
+            bottom: -20%;
+            left: -20%;
+            width: 60%;
+            height: 60%;
+            background: radial-gradient(circle, rgba(245, 184, 27, 0.03) 0%, transparent 70%);
+            pointer-events: none;
         }
 
-        .logo {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, #2563eb, #1d4ed8);
-            border-radius: 50%;
-            margin: 0 auto 15px;
-            display: flex;
+        .brand-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .brand-icon {
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
+            width: 72px;
+            height: 72px;
+            background: rgba(245, 184, 27, 0.08);
+            border-radius: 20px;
+            border: 1px solid rgba(245, 184, 27, 0.12);
+            margin-bottom: 28px;
         }
 
-        .logo i {
-            font-size: 32px;
-            color: white;
+        .brand-icon svg {
+            width: 36px;
+            height: 36px;
+            color: #f5b81b;
         }
 
         .brand-title {
-            font-size: 24px;
-            font-weight: 700;
-            color: #1e293b;
-            margin-bottom: 5px;
-            line-height: 1.3;
+            font-size: 2.4rem;
+            font-weight: 800;
+            color: #ffffff;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+            margin-bottom: 10px;
         }
 
-        .brand-subtitle {
+        .brand-title span {
+            color: #f5b81b;
+            position: relative;
+        }
+
+        /* Línea decorativa bajo el título */
+        .brand-title span::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, #f5b81b, transparent);
+            border-radius: 4px;
+        }
+
+        .brand-tagline {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: 400;
+            letter-spacing: 0.04em;
+            margin-bottom: 8px;
+        }
+
+        .brand-description {
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.35);
+            font-weight: 300;
+            line-height: 1.6;
+            max-width: 320px;
+            margin-bottom: 32px;
+        }
+
+        .brand-features {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .brand-feature {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.85rem;
+            font-weight: 400;
+            transition: color 0.3s ease;
+        }
+
+        .brand-feature:hover {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .brand-feature .dot {
+            width: 6px;
+            height: 6px;
+            background: #f5b81b;
+            border-radius: 50%;
+            flex-shrink: 0;
+            opacity: 0.6;
+        }
+
+        .brand-feature i {
+            color: #f5b81b;
             font-size: 14px;
-            color: #64748b;
-            font-weight: 500;
-            letter-spacing: 0.5px;
+            width: 20px;
+            text-align: center;
+            opacity: 0.6;
+        }
+
+        /* Badge de versión */
+        .version-badge {
+            display: inline-block;
+            margin-top: 32px;
+            padding: 6px 16px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 100px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.25);
+            letter-spacing: 0.06em;
+            align-self: flex-start;
+        }
+
+        /* ============================================
+           PANEL DERECHO - FORMULARIO
+           ============================================ */
+        .login-form-panel {
+            flex: 1;
+            padding: 48px 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #ffffff;
+        }
+
+        .form-wrapper {
+            width: 100%;
+            max-width: 380px;
+        }
+
+        .form-header {
+            margin-bottom: 32px;
+        }
+
+        .form-header h2 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #0a0e17;
+            letter-spacing: -0.01em;
+            margin-bottom: 6px;
+        }
+
+        .form-header p {
+            color: #94a3b8;
+            font-size: 0.95rem;
+        }
+
+        /* ============================================
+           FORMULARIO
+           ============================================ */
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
         }
 
         .form-group {
-            margin-bottom: 25px;
-            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
         }
 
         .input-with-icon {
@@ -95,95 +300,164 @@
 
         .input-icon {
             position: absolute;
-            left: 15px;
+            left: 14px;
             top: 50%;
             transform: translateY(-50%);
-            color: #2563eb;
-            font-size: 18px;
+            color: #94a3b8;
+            font-size: 14px;
             z-index: 2;
+            transition: color 0.3s ease;
+            pointer-events: none;
+        }
+
+        .form-group:focus-within .input-icon {
+            color: #f5b81b;
         }
 
         input[type="text"], 
         input[type="password"] {
             width: 100%;
-            padding: 15px 15px 15px 50px;
+            padding: 13px 15px 13px 44px;
             border: 2px solid #e2e8f0;
             border-radius: 12px;
-            font-size: 16px;
+            font-size: 0.95rem;
             background: #f8fafc;
             transition: all 0.3s ease;
-            font-family: 'Segoe UI', sans-serif;
-            color: #1e293b;
+            font-family: 'Inter', sans-serif;
+            color: #0a0e17;
+            outline: none;
         }
 
         input[type="text"]:focus, 
         input[type="password"]:focus {
-            border-color: #2563eb;
-            background: white;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-            outline: none;
+            border-color: #f5b81b;
+            background: #ffffff;
+            box-shadow: 0 0 0 4px rgba(245, 184, 27, 0.08);
+        }
+
+        input[type="text"]::placeholder,
+        input[type="password"]::placeholder {
+            color: #94a3b8;
         }
 
         .password-toggle {
             position: absolute;
-            right: 15px;
+            right: 14px;
             top: 50%;
             transform: translateY(-50%);
             background: none;
             border: none;
-            color: #64748b;
+            color: #94a3b8;
             cursor: pointer;
-            font-size: 16px;
-            padding: 5px;
+            font-size: 14px;
+            padding: 4px;
             transition: color 0.3s ease;
+            z-index: 2;
+            border-radius: 6px;
         }
 
         .password-toggle:hover {
-            color: #2563eb;
+            color: #f5b81b;
+            background: rgba(245, 184, 27, 0.06);
         }
 
+        /* ============================================
+           OPCIONES DEL FORMULARIO
+           ============================================ */
+        .form-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 4px 0 4px;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: #64748b;
+            cursor: pointer;
+        }
+
+        .remember-me input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #f5b81b;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .forgot-link {
+            font-size: 0.85rem;
+            color: #f5b81b;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .forgot-link:hover {
+            color: #d49a0a;
+            text-decoration: underline;
+        }
+
+        /* ============================================
+           BOTÓN DE LOGIN
+           ============================================ */
         .btn-login {
             width: 100%;
-            padding: 15px;
-            background: linear-gradient(135deg, #2563eb, #1d4ed8);
-            color: white;
+            padding: 15px 20px;
+            background: linear-gradient(145deg, #f5b81b, #d49a0a);
+            color: #ffffff;
             border: none;
             border-radius: 12px;
-            font-size: 16px;
+            font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
-            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+            box-shadow: 0 4px 20px rgba(245, 184, 27, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-family: 'Inter', sans-serif;
+            margin-top: 4px;
         }
 
         .btn-login:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4);
+            box-shadow: 0 8px 35px rgba(245, 184, 27, 0.35);
         }
 
         .btn-login:active {
             transform: translateY(0);
         }
 
-        .btn-login.loading {
-            pointer-events: none;
-            opacity: 0.8;
+        .btn-login:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
-        .btn-login.loading::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
+        .btn-login .spinner {
+            display: none;
             width: 20px;
             height: 20px;
-            margin: -10px 0 0 -10px;
             border: 2px solid transparent;
-            border-top: 2px solid white;
+            border-top: 2px solid #ffffff;
             border-radius: 50%;
-            animation: spin 1s linear infinite;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .btn-login.loading .spinner {
+            display: inline-block;
+        }
+
+        .btn-login.loading .btn-text {
+            opacity: 0.7;
         }
 
         @keyframes spin {
@@ -191,255 +465,409 @@
             100% { transform: rotate(360deg); }
         }
 
+        /* ============================================
+           MENSAJES FLASH
+           ============================================ */
         .flash-messages {
             margin-bottom: 20px;
         }
 
-        .error, .success, .info {
-            padding: 12px 15px;
+        .alert {
+            padding: 12px 16px;
             border-radius: 10px;
-            margin-bottom: 10px;
-            font-size: 14px;
+            font-size: 0.9rem;
             font-weight: 500;
             display: flex;
             align-items: center;
             gap: 10px;
             border-left: 4px solid;
+            animation: slideIn 0.3s ease;
         }
 
-        .error {
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .alert-error {
             background: #fef2f2;
             color: #dc2626;
             border-left-color: #dc2626;
         }
 
-        .success {
+        .alert-success {
             background: #f0fdf4;
             color: #16a34a;
             border-left-color: #16a34a;
         }
 
-        .info {
+        .alert-info {
             background: #f0f9ff;
             color: #0ea5e9;
             border-left-color: #0ea5e9;
         }
 
-        .credential-info {
-            margin-top: 25px;
-            padding: 15px;
-            background: #f8fafc;
-            border-radius: 10px;
-            border: 1px solid #e2e8f0;
-            text-align: center;
-            position: relative;
+        .alert i {
+            font-size: 16px;
         }
 
-        .credential-toggle {
-            background: none;
-            border: none;
-            color: #2563eb;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            padding: 8px 12px;
-            border-radius: 6px;
-            transition: all 0.3s ease;
-        }
+       
 
-        .credential-toggle:hover {
-            background: rgba(37, 99, 235, 0.1);
-        }
-
-        .credentials {
-            margin-top: 10px;
-            padding: 15px;
-            background: white;
-            border-radius: 8px;
-            border: 1px solid #e2e8f0;
-            display: none;
-        }
-
-        .credentials.show {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .credential-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid #f1f5f9;
-        }
-
-        .credential-item:last-child {
-            border-bottom: none;
-        }
-
-        .credential-label {
-            font-weight: 600;
-            color: #475569;
-        }
-
-        .credential-value {
-            font-family: 'Courier New', monospace;
-            background: #f8fafc;
-            padding: 6px 10px;
-            border-radius: 6px;
-            font-size: 13px;
-            color: #1e293b;
-            border: 1px solid #e2e8f0;
-        }
-
-        .developer-credit {
-            margin-top: 20px;
-            padding-top: 15px;
+        /* ============================================
+           FOOTER
+           ============================================ */
+        .form-footer {
+            margin-top: 24px;
+            padding-top: 18px;
             border-top: 1px solid #e2e8f0;
             text-align: center;
         }
 
-        .developer-text {
-            font-size: 0.75rem;
-            color: #64748b;
+        .form-footer p {
+            font-size: 0.8rem;
+            color: #94a3b8;
         }
 
-        .developer-link {
-            color: #2563eb;
+        .form-footer a {
+            color: #f5b81b;
             text-decoration: none;
-            transition: color 0.3s ease;
             font-weight: 500;
+            transition: color 0.3s ease;
         }
 
-        .developer-link:hover {
-            color: #1d4ed8;
+        .form-footer a:hover {
+            color: #d49a0a;
             text-decoration: underline;
         }
 
-        .copyright {
-            font-size: 0.7rem;
-            color: #94a3b8;
-            margin-top: 5px;
+        .form-footer .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 12px;
         }
 
-        /* Responsive */
+        .form-footer .social-links a {
+            color: #94a3b8;
+            font-size: 18px;
+            transition: all 0.3s ease;
+        }
+
+        .form-footer .social-links a:hover {
+            color: #f5b81b;
+            transform: translateY(-2px);
+        }
+
+        /* ============================================
+           BOTÓN SOLICITA DEMO
+           ============================================ */
+        .demo-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(145deg, #f5b81b, #d49a0a);
+            color: #ffffff !important;
+            padding: 8px 18px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+            margin-top: 4px;
+            border: none;
+        }
+
+        .demo-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(245, 184, 27, 0.4);
+            color: #ffffff !important;
+            text-decoration: none !important;
+        }
+
+        .demo-link i {
+            font-size: 14px;
+        }
+
+        /* ============================================
+           RESPONSIVE
+           ============================================ */
+        @media (max-width: 900px) {
+            .login-wrapper {
+                flex-direction: column;
+                min-height: auto;
+                border-radius: 24px;
+                max-width: 480px;
+            }
+
+            .login-brand {
+                flex: none;
+                padding: 32px 28px;
+                min-height: 220px;
+            }
+
+            .brand-title {
+                font-size: 1.8rem;
+            }
+
+            .brand-description {
+                display: none;
+            }
+
+            .brand-features {
+                display: none;
+            }
+
+            .version-badge {
+                margin-top: 12px;
+            }
+
+            .login-form-panel {
+                padding: 32px 28px;
+            }
+
+            .form-wrapper {
+                max-width: 100%;
+            }
+
+            .brand-feature {
+                font-size: 0.8rem;
+            }
+        }
+
         @media (max-width: 480px) {
-            .login-container {
-                padding: 30px 25px;
+            .login-wrapper {
+                border-radius: 20px;
                 margin: 10px;
             }
-            
-            .brand-title {
-                font-size: 22px;
+
+            .login-brand {
+                padding: 24px 20px;
+                min-height: 180px;
             }
-            
+
+            .brand-title {
+                font-size: 1.5rem;
+            }
+
+            .brand-icon {
+                width: 56px;
+                height: 56px;
+                margin-bottom: 16px;
+            }
+
+            .brand-icon svg {
+                width: 28px;
+                height: 28px;
+            }
+
+            .login-form-panel {
+                padding: 24px 16px;
+            }
+
+            .form-options {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .btn-login {
+                font-size: 0.9rem;
+                padding: 13px 16px;
+            }
+
+            .form-header h2 {
+                font-size: 1.3rem;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .login-brand {
+                padding: 20px 16px;
+                min-height: 150px;
+            }
+
+            .brand-title {
+                font-size: 1.3rem;
+            }
+
+            .brand-tagline {
+                font-size: 0.8rem;
+            }
+
+            .login-form-panel {
+                padding: 20px 14px;
+            }
+
             input[type="text"], 
             input[type="password"] {
-                padding: 12px 12px 12px 45px;
+                padding: 11px 12px 11px 38px;
+                font-size: 0.85rem;
             }
-        }
-
-        /* Efectos de focus mejorados */
-        .form-group:focus-within .input-icon {
-            color: #1d4ed8;
-        }
-
-        /* Animación sutil para el logo */
-        .logo {
-            animation: float 3s ease-in-out infinite;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-5px); }
         }
     </style>
 </head>
 <body>
-    <div class="login-container">
-        <div class="brand-header">
-            <div class="logo">
-                <i class="fas fa-bread-slice"></i>
+
+    <div class="login-wrapper" id="loginWrapper">
+        <!-- Panel Izquierdo - Marca -->
+        <div class="login-brand">
+            <div class="brand-content" style="text-align: left; padding-left: 10px;">
+                <div class="brand-icon" style="margin: 0 0 16px 0;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                        <polyline points="9 22 9 12 15 12 15 22"/>
+                        <path d="M12 2v5"/>
+                        <path d="M8 7h8"/>
+                    </svg>
+                </div>
+                
+                <!-- ERP Multi-Tenant - BLANCO BRILLANTE -->
+                <p style="color: #a8a8b0; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 2px; font-weight: 600;">ERP Multi-Tenant</p>
+                
+                <!-- PanaderíaPro -->
+                <h1 class="brand-title" style="font-size: 2.4rem; margin-bottom: 0px; font-weight: 700;">Panadería<span style="color: #f5b81b;">Pro</span></h1>
+                
+                <!-- Línea decorativa DEBAJO DE "Pro" - FORZADA A LA IZQUIERDA -->
+                <div style="width: 45px; height: 3px; background: linear-gradient(90deg, #f5b81b, #d49a0a); margin: 2px 0 10px 0; border-radius: 4px;"></div>
+                
+                <!-- Eslogan - BLANCO BRILLANTE -->
+                <p style="font-size: 0.95rem; font-weight: 400; color: #c0c0c8; margin-bottom: 14px; letter-spacing: 0.02em;">🎯 Controla tu panadería desde el horno hasta la venta</p>
+                
+                <!-- Microtexto de features - BLANCO BRILLANTE -->
+                <div style="background: rgba(245, 184, 27, 0.06); border-radius: 50px; padding: 5px 18px; display: inline-block; margin: 4px 0 12px 0; border: 1px solid rgba(245, 184, 27, 0.06);">
+                    <span style="font-size: 0.65rem; color: #8888a0; font-weight: 400; letter-spacing: 0.03em;">
+                        ⚡ IA predictiva • Utilidad real • Stock automático • Alertas inteligentes
+                    </span>
+                </div>
+                
+                <p class="brand-description" style="color: #77778f; font-size: 0.85rem; line-height: 1.5; margin-bottom: 16px;">
+                    Sistema profesional de gestión para panaderías. 
+                    Controla ventas, inventario, producción y finanzas en un solo lugar.
+                </p>
+                
+                <div class="brand-features" style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px;">
+                    <div class="brand-feature" style="color: #8888a0; font-size: 0.85rem; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-store" style="color: #f5b81b; width: 18px;"></i>
+                        Punto de Venta
+                    </div>
+                    <div class="brand-feature" style="color: #8888a0; font-size: 0.85rem; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-cubes" style="color: #f5b81b; width: 18px;"></i>
+                        Inventario & Producción
+                    </div>
+                    <div class="brand-feature" style="color: #8888a0; font-size: 0.85rem; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-chart-line" style="color: #f5b81b; width: 18px;"></i>
+                        Reportes & Analytics
+                    </div>
+                </div>
+                
+                <span class="version-badge" style="color: #55556b; font-size: 0.6rem; border: 1px solid rgba(255, 255, 255, 0.04); padding: 4px 14px; border-radius: 50px; display: inline-block;">
+                    <i class="fas fa-code-branch"></i> v1.0.0
+                </span>
             </div>
-            <h1 class="brand-title">👋 Bienvenido a PanaderíaPro</h1>
-            <p class="brand-subtitle">Sistema Multi-Panadería</p>
         </div>
-        
-        <div class="flash-messages">
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="{{ category }}">
-                            <i class="fas fa-{% if category == 'error' %}exclamation-circle{% elif category == 'success' %}check-circle{% else %}info-circle{% endif %}"></i>
-                            {{ message }}
+
+        <!-- Panel Derecho - Formulario -->
+        <div class="login-form-panel">
+            <div class="form-wrapper">
+                <div class="form-header">
+                    <h2>Iniciar Sesión</h2>
+                    <p>Accede a tu panel de control</p>
+                </div>
+
+                <!-- Mensajes Flash -->
+                <div class="flash-messages">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }}">
+                                    <i class="fas fa-{% if category == 'error' %}exclamation-circle{% elif category == 'success' %}check-circle{% else %}info-circle{% endif %}"></i>
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                </div>
+
+                <form method="POST" id="loginForm" class="login-form">
+                    <div class="form-group">
+                        <label for="username">Usuario</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-user input-icon"></i>
+                            <input type="text" id="username" name="username" placeholder="Ingresa tu usuario" required autofocus>
                         </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-        </div>
+                    </div>
 
-        <form method="POST" id="loginForm">
-            <div class="form-group">
-                <div class="input-with-icon">
-                    <i class="fas fa-user input-icon"></i>
-                    <input type="text" id="username" name="username" placeholder="Ingresa tu usuario" required>
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <div class="input-with-icon">
-                    <i class="fas fa-lock input-icon"></i>
-                    <input type="password" id="password" name="password" placeholder="Ingresa tu contraseña" required>
-                    <button type="button" class="password-toggle" onclick="togglePassword()">
-                        <i class="fas fa-eye"></i>
+                    <div class="form-group">
+                        <label for="password">Contraseña</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-lock input-icon"></i>
+                            <input type="password" id="password" name="password" placeholder="••••••••" required>
+                            <button type="button" class="password-toggle" onclick="togglePassword()" aria-label="Mostrar contraseña">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-options">
+                        <label class="remember-me">
+                            <input type="checkbox" name="remember" id="remember">
+                            Recordarme
+                        </label>
+                        <a href="{{ url_for('recuperar_password') }}" class="forgot-link">¿Olvidaste tu contraseña?</a>
+                    </div>
+
+                    <button type="submit" class="btn-login" id="loginBtn">
+                        <span class="btn-text"><i class="fas fa-sign-in-alt"></i> Ingresar al Sistema</span>
+                        <span class="spinner"></span>
                     </button>
-                </div>
-            </div>
-            
-            <button type="submit" class="btn-login" id="loginBtn">
-                <i class="fas fa-sign-in-alt"></i> Ingresar al Sistema
-            </button>
-        </form>
-        
-        <div class="credential-info">
-            <button type="button" class="credential-toggle" onclick="toggleCredentials()">
-                <i class="fas fa-key"></i> Mostrar Credenciales de Prueba
-            </button>
-            
-            <div class="credentials" id="credentials">
-                <div class="credential-item">
-                    <span class="credential-label">👤 Usuario:</span>
-                    <span class="credential-value">admin</span>
-                </div>
-                <div class="credential-item">
-                    <span class="credential-label">🔑 Contraseña:</span>
-                    <span class="credential-value">admin123</span>
-                </div>
-            </div>
-        </div>
+                </form>
 
-        <!-- Créditos del desarrollador -->
-        <div class="developer-credit">
-            <div class="developer-text">
-                Desarrollado por 
-                <a href="https://www.mauricioerazo.com" target="_blank" 
-                   class="developer-link" 
-                   title="Visitar portafolio de Mauricio Erazo">
-                    Mauricio Erazo
-                </a>
-            </div>
-            <div class="copyright">
-                &copy; 2024 PanaderíaPro Multi - Todos los derechos reservados - www.mauricioerazo.com
+                
+
+                <!-- Footer -->
+                <div class="form-footer">
+                    <p>
+                        ¿Eres nuevo? 
+                        <a href="{{ url_for('solicitar_demo') }}" class="demo-link">
+                            <i class="fas fa-rocket"></i> Solicita una demo
+                        </a>
+                    </p>
+                    <div class="social-links">
+                        <a href="https://github.com/mauricioaea" target="_blank" title="GitHub">
+                            <i class="fab fa-github"></i>
+                        </a>
+                        <a href="https://www.linkedin.com/in/mauricioerazoarango/" target="_blank" title="LinkedIn">
+                            <i class="fab fa-linkedin-in"></i>
+                        </a>
+                        <a href="https://www.mauricioerazo.com" target="_blank" title="Portafolio">
+                            <i class="fas fa-globe"></i>
+                        </a>
+                    </div>
+                    <p style="margin-top:12px; font-size:0.7rem; color:#cbd5e1;">
+                        &copy; 2026 PanaderíaPro - Desarrollado por 
+                        <a href="https://www.mauricioerazo.com" target="_blank" style="color:#f5b81b; text-decoration:none;">
+                            Mauricio Erazo Arango
+                        </a>    
+                    </p>    
+                </div>
             </div>
         </div>
     </div>
 
     <script>
+        // ============================================
+        // 1. ANIMACIÓN DE ENTRADA
+        // ============================================
+        document.addEventListener('DOMContentLoaded', function() {
+            const wrapper = document.getElementById('loginWrapper');
+            setTimeout(() => {
+                wrapper.classList.add('show');
+            }, 150);
+        });
+
+        // ============================================
+        // 2. TOGGLE DE CONTRASEÑA
+        // ============================================
         function togglePassword() {
             const passwordInput = document.getElementById('password');
             const toggleIcon = document.querySelector('.password-toggle i');
@@ -453,54 +881,69 @@
             }
         }
 
-        function toggleCredentials() {
-            const credentials = document.getElementById('credentials');
-            const toggleBtn = document.querySelector('.credential-toggle');
-            
-            credentials.classList.toggle('show');
-            
-            if (credentials.classList.contains('show')) {
-                toggleBtn.innerHTML = '<i class="fas fa-eye-slash"></i> Ocultar Credenciales';
-            } else {
-                toggleBtn.innerHTML = '<i class="fas fa-key"></i> Mostrar Credenciales de Prueba';
-            }
-        }
-
-        // Simular loading al enviar el formulario
+        // ============================================
+        // 3. LOADING EN EL BOTÓN
+        // ============================================
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             const btn = document.getElementById('loginBtn');
             btn.classList.add('loading');
-            btn.innerHTML = '';
-            
-            // Simular delay para mostrar la animación
-            setTimeout(() => {
-                btn.classList.remove('loading');
-                btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Ingresar al Sistema';
-            }, 2000);
+            btn.querySelector('.btn-text').innerHTML = 'Ingresando...';
         });
 
-        // Efecto de focus mejorado
+        // ============================================
+        // 4. VALIDACIÓN EN CLIENTE
+        // ============================================
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+
+            if (!username) {
+                e.preventDefault();
+                document.getElementById('username').style.borderColor = '#dc2626';
+                showFlash('Por favor, ingresa tu usuario.', 'error');
+                return;
+            }
+
+            if (!password) {
+                e.preventDefault();
+                document.getElementById('password').style.borderColor = '#dc2626';
+                showFlash('Por favor, ingresa tu contraseña.', 'error');
+                return;
+            }
+        });
+
+        // ============================================
+        // 5. LIMPIAR ERRORES AL ESCRIBIR
+        // ============================================
         document.querySelectorAll('input').forEach(input => {
-            input.addEventListener('focus', function() {
-                this.parentElement.parentElement.classList.add('focused');
-            });
-            
-            input.addEventListener('blur', function() {
-                this.parentElement.parentElement.classList.remove('focused');
+            input.addEventListener('input', function() {
+                this.style.borderColor = '';
             });
         });
 
-        // Efecto de carga inicial
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelector('.login-container').style.opacity = '0';
-            document.querySelector('.login-container').style.transform = 'translateY(20px)';
-            
+        // ============================================
+        // 6. MOSTRAR MENSAJES FLASH EN CLIENTE
+        // ============================================
+        function showFlash(message, type) {
+            const container = document.querySelector('.flash-messages');
+            const existing = container.querySelector('.alert');
+            if (existing) existing.remove();
+
+            const flash = document.createElement('div');
+            flash.className = `alert alert-${type}`;
+            flash.innerHTML = `
+                <i class="fas fa-${type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                ${message}
+            `;
+            container.appendChild(flash);
+
             setTimeout(() => {
-                document.querySelector('.login-container').style.transition = 'all 0.5s ease';
-                document.querySelector('.login-container').style.opacity = '1';
-                document.querySelector('.login-container').style.transform = 'translateY(0)';
-            }, 100);
-        });
+                flash.style.opacity = '0';
+                flash.style.transition = 'opacity 0.4s ease';
+                setTimeout(() => flash.remove(), 500);
+            }, 5000);
+        }
     </script>
+
 </body>
 </html>

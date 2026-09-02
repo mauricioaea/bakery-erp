@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitar Demo - PanaderíaPro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0a0e17;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .demo-container {
+            max-width: 600px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 40px 35px;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
+            animation: slideUp 0.6s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .demo-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .demo-icon {
+            font-size: 48px;
+            color: #f5b81b;
+            margin-bottom: 15px;
+        }
+
+        .demo-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #0a0e17;
+            margin-bottom: 8px;
+        }
+
+        .demo-subtitle {
+            color: #64748b;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .benefits {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 25px 0;
+        }
+
+        .benefit-item {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+
+        .benefit-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .benefit-item i {
+            font-size: 24px;
+            color: #f5b81b;
+            margin-bottom: 8px;
+        }
+
+        .benefit-item h4 {
+            font-size: 14px;
+            color: #0a0e17;
+            margin-bottom: 4px;
+        }
+
+        .benefit-item p {
+            font-size: 12px;
+            color: #94a3b8;
+        }
+
+        .contact-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .contact-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 14px 20px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .contact-btn.whatsapp {
+            background: #25D366;
+            color: white;
+        }
+
+        .contact-btn.whatsapp:hover {
+            background: #1da851;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(37, 211, 102, 0.3);
+        }
+
+        .contact-btn.email {
+            background: #f1f5f9;
+            color: #0a0e17;
+            border: 1px solid #e2e8f0;
+        }
+
+        .contact-btn.email:hover {
+            background: #e2e8f0;
+            transform: translateY(-2px);
+        }
+
+        .btn-back {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 25px;
+            background: transparent;
+            color: #64748b;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-align: center;
+            width: 100%;
+        }
+
+        .btn-back:hover {
+            background: #f1f5f9;
+            border-color: #94a3b8;
+        }
+
+        @media (max-width: 480px) {
+            .benefits {
+                grid-template-columns: 1fr;
+            }
+
+            .demo-container {
+                padding: 30px 20px;
+            }
+        }
+
+
+            /* ============================================
+           VALOR DIFERENCIAL - INTELIGENCIA ARTIFICIAL
+           ============================================ */
+        .value-highlight {
+            background: linear-gradient(135deg, #fef8e7, #fdf2d0);
+            border-radius: 16px;
+            padding: 24px 28px;
+            margin: 25px 0 20px 0;
+            border: 2px solid #f5b81b;
+            border-left: 6px solid #d49a0a;
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .value-highlight-icon {
+            flex-shrink: 0;
+            font-size: 40px;
+            color: #d49a0a;
+            background: rgba(245, 184, 27, 0.1);
+            padding: 12px;
+            border-radius: 16px;
+        }
+
+        .value-highlight-content h3 {
+            font-size: 18px;
+            color: #0a0e17;
+            margin-bottom: 8px;
+        }
+
+        .value-highlight-content p {
+            font-size: 14px;
+            color: #475569;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .value-highlight-content ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .value-highlight-content ul li {
+            font-size: 13px;
+            color: #475569;
+            padding: 4px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .value-highlight-content ul li::before {
+            content: '✅';
+            color: #16a34a;
+        }
+
+        @media (max-width: 480px) {
+            .value-highlight {
+                flex-direction: column;
+                padding: 20px;
+            }
+
+            .value-highlight-icon {
+                align-self: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-header">
+            <div class="demo-icon">
+                <i class="fas fa-rocket"></i>
+            </div>
+            <h1 class="demo-title">🚀 Solicita una Demo</h1>
+            <p class="demo-subtitle">
+                Descubre cómo PanaderíaPro puede transformar tu negocio.<br>
+                Agenda una demostración personalizada sin costo.
+            </p>
+        </div>
+
+        <div class="benefits">
+            <div class="benefit-item">
+                <i class="fas fa-store"></i>
+                <h4>Punto de Venta</h4>
+                <p>Vende más rápido</p>
+            </div>
+            <div class="benefit-item">
+                <i class="fas fa-cubes"></i>
+                <h4>Inventario</h4>
+                <p>Control total</p>
+            </div>
+            <div class="benefit-item">
+                <i class="fas fa-chart-line"></i>
+                <h4>Reportes IA</h4>
+                <p>Decisiones inteligentes</p>
+            </div>
+            <div class="benefit-item">
+                <i class="fas fa-users"></i>
+                <h4>Multi-tenant</h4>
+                <p>Gestiona tu negocio</p>
+            </div>
+        </div>
+    
+            <!-- VALOR DIFERENCIAL - INTELIGENCIA ARTIFICIAL -->
+            <div class="value-highlight">
+                <div class="value-highlight-icon">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <div class="value-highlight-content">
+                    <h3>🤖 Inteligencia Artificial para tu panadería</h3>
+                    <p>
+                        PanaderíaPro utiliza <strong>modelos predictivos</strong> que aprenden de tus datos históricos 
+                        para darte <strong>alertas automáticas</strong>, <strong>recomendaciones personalizadas</strong> 
+                        y la <strong>utilidad real</strong> de cada producto.
+                    </p>
+                    <ul>
+                        <li>Predicciones de ventas a 7 días</li>
+                        <li>Alertas de stock crítico automáticas</li>
+                        <li>Utilidad real por producto (no estimaciones)</li>
+                    </ul>
+                </div>
+            </div>
+
+        <div class="contact-options">
+            <a href="https://wa.me/573102482881?text=Hola%20Mauricio%2C%20me%20interesa%20conocer%20Panader%C3%ADaPro%20y%20solicitar%20una%20demo%20para%20mi%20panader%C3%ADa" 
+               target="_blank" 
+               class="contact-btn whatsapp">
+                <i class="fab fa-whatsapp fa-lg"></i>
+                Contactar por WhatsApp
+            </a>
+            <a href="mailto:mauricioandreserazo@outlook.com?subject=Demo%20Panader%C3%ADaPro&body=Hola%20Mauricio%2C%20me%20gustar%C3%ADa%20solicitar%20una%20demo%20de%20Panader%C3%ADaPro%20para%20mi%20negocio." 
+               class="contact-btn email">
+                <i class="fas fa-envelope"></i>
+                Enviar Email
+            </a>
+        </div>
+
+        <a href="{{ url_for('login') }}" class="btn-back">
+            <i class="fas fa-arrow-left"></i> Volver al Login
+        </a>
+    </div>
+</body>
+</html>

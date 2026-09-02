@@ -1757,7 +1757,38 @@ def login():
         flash('Usuario o contraseña incorrectos', 'error')
         print(f"❌ [LOGIN] Login fallido para: {username}")
     
-    return render_template('login.html')
+    # =============================================
+    # 🔍 OBTENER TENANT PARA MOSTRAR EN EL LOGIN
+    # =============================================
+    # Obtener nombre del tenant para mostrarlo en el login
+    tenant_actual = "Panadería Principal"
+    tenant_id = session.get('tenant_id', 1)
+    
+    # Si hay un tenant en sesión, obtener su nombre
+    if 'tenant_id' in session:
+        try:
+            from models import Tenant
+            tenant = Tenant.query.get(session['tenant_id'])
+            if tenant:
+                tenant_actual = tenant.nombre
+        except Exception as e:
+            print(f"⚠️ Error obteniendo tenant para login: {e}")
+    
+    # Si el usuario está autenticado, usar su panadería
+    if hasattr(current_user, 'is_authenticated') and current_user.is_authenticated:
+        try:
+            if hasattr(current_user, 'panaderia_id') and current_user.panaderia_id:
+                from models import Tenant
+                tenant = Tenant.query.get(current_user.panaderia_id)
+                if tenant:
+                    tenant_actual = tenant.nombre
+                    tenant_id = current_user.panaderia_id
+        except Exception as e:
+            print(f"⚠️ Error obteniendo tenant del usuario: {e}")
+    
+    return render_template('login.html', 
+                         tenant_actual=tenant_actual,
+                         tenant_id=tenant_id)
 
 def verificar_credenciales(user, password):
     """
@@ -1837,6 +1868,16 @@ def dashboard():
     except Exception as e:
         print(f"🔍 [DEBUG] Error obteniendo usuario: {e}")
     return render_template('dashboard.html', username=session.get('username', 'Usuario'))
+
+@app.route('/recuperar_password')
+def recuperar_password():
+    """Página de recuperación de contraseña - Fase actual: Contacto con administrador"""
+    return render_template('recuperar_password.html')
+
+@app.route('/solicitar_demo')
+def solicitar_demo():
+    """Página para solicitar demo del sistema"""
+    return render_template('solicitar_demo.html')
 
 # Ruta para el punto de venta
 @app.route('/punto_venta')

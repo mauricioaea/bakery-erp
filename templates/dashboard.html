@@ -3,428 +3,469 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Panadería</title>
+    <title>Dashboard - PanaderíaPro</title>
+        <!-- 🍞 FAVICON PERSONALIZADO - Logo PanaderíaPro -->
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230a0e17'/%3E%3Ctext x='50' y='72' font-family='Inter, sans-serif' font-size='62' font-weight='700' fill='%23f5b81b' text-anchor='middle'%3EP%3C/text%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        /* ============================================
+           RESET Y BASE - APPLE STYLE
+           ============================================ */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f1f5f9;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f5f5f7;
             min-height: 100vh;
             padding: 20px;
-            color: #2d3748;
+            color: #1d1d1f;
+            -webkit-font-smoothing: antialiased;
         }
+
         .dashboard-container {
             max-width: 1200px;
             margin: 0 auto;
         }
-        .header {
-            background: #f7fafc;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.06);
-            margin-bottom: 30px;
-            text-align: center;
-            border-left: 5px solid #2b6cb0;
-        }
-        .header h1 {
-            color: #1a365d;
-            margin-bottom: 10px;
-            font-size: 2.5em;
-            font-weight: 700;
-        }
-        .welcome {
-            color: #4a5568;
-            font-size: 1.2em;
-            margin-bottom: 5px;
-        }
-        .modules-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 25px;
-            margin-bottom: 30px;
-        }
-        .card {
-            background: #f7fafc;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.06);
-            text-align: center;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            border: 2px solid #e2e8f0;
-            position: relative;
-            overflow: hidden;
-        }
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.04), 0 4px 6px rgba(0, 0, 0, 0.06);
-        }
-        .card-icon {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 20px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2em;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.04);
-        }
-        .card h3 {
-            color: #1a365d;
-            margin-bottom: 15px;
-            font-size: 1.4em;
-            font-weight: 600;
-        }
-        .card p {
-            color: #4a5568;
-            margin-bottom: 20px;
-            line-height: 1.5;
-        }
-        .card-btn {
-            display: inline-block;
-            background: linear-gradient(135deg, #2b6cb0 0%, #3182ce 100%);
-            color: white;
-            padding: 12px 25px;
-            border-radius: 25px;
-            text-decoration: none;
-            font-weight: bold;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 10px rgba(43, 108, 176, 0.3);
-            border: 2px solid #2b6cb0;
-        }
-        .card-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 6px 15px rgba(43, 108, 176, 0.4);
-            background: linear-gradient(135deg, #2c5282 0%, #2b6cb0 100%);
-        }
-        .card-btn.disabled {
-            background: #a8a8a8;
-            cursor: not-allowed;
-            opacity: 0.6;
-            box-shadow: none;
-            border-color: #a8a8a8;
-        }
-        .card-btn.disabled:hover {
-            transform: none;
-            box-shadow: none;
-        }
-        .logout-section {
-            text-align: center;
-            margin-top: 40px;
-        }
-        .logout-btn {
-            background: #c53030;
-            color: white;
-            padding: 12px 30px;
-            border-radius: 25px;
-            text-decoration: none;
-            font-weight: bold;
-            transition: all 0.3s ease;
-            border: none;
-            cursor: pointer;
-            font-size: 1em;
-            box-shadow: 0 4px 10px rgba(196, 94, 60, 0.3);
-            border: 2px solid #c53030;
-        }
-        .logout-btn:hover {
-            background: #a84d2e;
-            transform: scale(1.05);
-            box-shadow: 0 6px 15px rgba(196, 94, 60, 0.4);
-        }
+
+        /* ============================================
+           MENSAJES FLASH
+           ============================================ */
         .flash-messages {
             margin-bottom: 20px;
         }
+
         .alert {
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 15px;
+            padding: 14px 20px;
+            border-radius: 12px;
             text-align: center;
             font-weight: 500;
+            font-size: 0.9rem;
+            border-left: 4px solid;
+            background: #ffffff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
         }
+
         .alert-success {
-            background: #e8f5e9;
             color: #276749;
-            border: 2px solid #c8e6c9;
+            border-left-color: #276749;
         }
+
         .alert-error {
-            background: #ffebee;
-            color: #c53030;
-            border: 2px solid #ffcdd2;
+            color: #dc2626;
+            border-left-color: #dc2626;
         }
-        
-        /* Nuevos estilos para el módulo de producción */
-        .production-highlight {
-            border: 3px solid #276749;
-            position: relative;
-            overflow: hidden;
+
+        .alert-warning {
+            color: #d69e2e;
+            border-left-color: #d69e2e;
         }
-        .production-highlight::before {
-            content: "NUEVO";
-            position: absolute;
-            top: 10px;
-            right: -25px;
-            background: #276749;
-            color: white;
-            padding: 5px 30px;
-            transform: rotate(45deg);
-            font-size: 0.8em;
-            font-weight: bold;
+
+        /* ============================================
+           HEADER - APPLE STYLE
+           ============================================ */
+        .header {
+            background: #ffffff;
+            padding: 28px 32px;
+            border-radius: 18px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.02);
+            margin-bottom: 28px;
+            border: 1px solid rgba(0, 0, 0, 0.04);
         }
-        .card-icon-production {
-            background: linear-gradient(135deg, #276749 0%, #38a169 100%) !important;
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
         }
-        
-        /* Estilos para productos externos */
-        .external-highlight {
-            border: 3px solid #d69e2e;
-            position: relative;
-            overflow: hidden;
+
+        .header-left h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #1d1d1f;
+            letter-spacing: -0.02em;
         }
-        .external-highlight::before {
-            content: "NUEVO";
-            position: absolute;
-            top: 10px;
-            right: -25px;
-            background: #d69e2e;
-            color: white;
-            padding: 5px 30px;
-            transform: rotate(45deg);
-            font-size: 0.8em;
-            font-weight: bold;
+
+        .header-left h1 span {
+            color: #d49a0a;
         }
-        .card-icon-external {
-            background: linear-gradient(135deg, #d69e2e 0%, #ecc94b 100%) !important;
+
+        .header-left .welcome {
+            color: #6e6e73;
+            font-size: 0.95rem;
+            margin-top: 2px;
         }
-        
-        /* Estilos para reportes activos */
-        .reports-active {
-            border: 3px solid #2b6cb0;
-        }
-        .card-icon-reports {
-            background: linear-gradient(135deg, #2b6cb0 0%, #3182ce 100%) !important;
-        }
-        
-        /* Navegación rápida */
-        .quick-nav {
-            background: #f7fafc;
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.06);
-            margin-bottom: 25px;
-            border-left: 5px solid #2b6cb0;
-        }
-        .quick-nav h3 {
-            color: #1a365d;
-            margin-bottom: 15px;
-            text-align: center;
+
+        .header-left .welcome strong {
+            color: #1d1d1f;
             font-weight: 600;
         }
-        .nav-buttons {
+
+        .header-right {
             display: flex;
-            justify-content: center;
+            align-items: center;
+            gap: 12px;
             flex-wrap: wrap;
-            gap: 10px;
-        }
-        .nav-btn {
-            background: linear-gradient(135deg, #2b6cb0 0%, #3182ce 100%);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 20px;
-            text-decoration: none;
-            font-weight: bold;
-            transition: all 0.3s ease;
-            font-size: 0.9em;
-            box-shadow: 0 4px 8px rgba(43, 108, 176, 0.3);
-            border: 2px solid #2b6cb0;
-        }
-        .nav-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 6px 12px rgba(43, 108, 176, 0.4);
-            background: linear-gradient(135deg, #2c5282 0%, #2b6cb0 100%);
-        }
-        .nav-btn.external {
-            background: linear-gradient(135deg, #d69e2e 0%, #ecc94b 100%);
-            border-color: #d69e2e;
-        }
-        .nav-btn.reports {
-            background: linear-gradient(135deg, #2b6cb0 0%, #3182ce 100%);
-            border-color: #2b6cb0;
         }
 
-        /* Estilos para tarjeta de activos fijos */
-        .assets-highlight {
-            border: 3px solid #d69e2e;
+        .tenant-badge-dashboard {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f5f5f7;
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            color: #6e6e73;
+            border: 1px solid rgba(0, 0, 0, 0.04);
+        }
+
+        .tenant-badge-dashboard i {
+            color: #d49a0a;
+        }
+
+        .logout-btn-header {
+            background: #f5f5f7;
+            color: #6e6e73;
+            padding: 8px 18px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0, 0, 0, 0.04);
+        }
+
+        .logout-btn-header:hover {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        /* ============================================
+           TARJETAS - APPLE STYLE CON COLORES
+           ============================================ */
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 28px;
+        }
+
+        .card {
+            background: #ffffff;
+            padding: 24px 22px;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.02);
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0, 0, 0, 0.04);
             position: relative;
         }
-        .assets-highlight::before {
-            content: "NUEVO";
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06), 0 16px 48px rgba(0, 0, 0, 0.04);
+        }
+
+        .card-icon {
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 14px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0, 0, 0, 0.04);
+        }
+
+        /* Colores por módulo - Estilo Apple */
+        .card-icon-pos { background: rgba(43, 108, 176, 0.10) !important; color: #2b6cb0; }
+        .card-icon-production { background: rgba(39, 103, 73, 0.10) !important; color: #276749; }
+        .card-icon-external { background: rgba(214, 158, 46, 0.10) !important; color: #d69e2e; }
+        .card-icon-recipes { background: rgba(156, 39, 176, 0.10) !important; color: #9c27b0; }
+        .card-icon-materials { background: rgba(43, 108, 176, 0.10) !important; color: #2b6cb0; }
+        .card-icon-suppliers { background: rgba(156, 39, 176, 0.10) !important; color: #9c27b0; }
+        .card-icon-financial { background: rgba(39, 103, 73, 0.10) !important; color: #276749; }
+        .card-icon-reports { background: rgba(43, 108, 176, 0.10) !important; color: #2b6cb0; }
+        .card-icon-assets { background: rgba(214, 158, 46, 0.10) !important; color: #d69e2e; }
+        .card-icon-users { background: rgba(156, 39, 176, 0.10) !important; color: #9c27b0; }
+
+        .card h3 {
+            color: #1d1d1f;
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .card p {
+            color: #6e6e73;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+
+        .card-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #1d1d1f;
+            color: #ffffff;
+            padding: 10px 22px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+
+        .card-btn:hover {
+            background: #000000;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-btn i {
+            font-size: 14px;
+        }
+
+        .card-btn.disabled {
+            background: #f5f5f7;
+            color: #a1a1a6;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .card-btn.disabled:hover {
+            transform: none;
+            box-shadow: none;
+            background: #f5f5f7;
+        }
+
+        /* Badge "NUEVO" */
+        .badge-new {
             position: absolute;
-            top: 10px;
-            right: -25px;
-            background: #d69e2e;
-            color: white;
-            padding: 5px 30px;
-            transform: rotate(45deg);
-            font-size: 0.8em;
-            font-weight: bold;
+            top: 12px;
+            right: 12px;
+            background: #d49a0a;
+            color: #ffffff;
+            font-size: 0.55rem;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 50px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            box-shadow: 0 2px 8px rgba(212, 154, 10, 0.2);
         }
-        .card-icon-assets {
-            background: linear-gradient(135deg, #d69e2e 0%, #ecc94b 100%) !important;
-        }
-        
-        /* Botones para activos fijos */
+
+        /* ============================================
+           BOTONES ESPECIALES (Activos Fijos)
+           ============================================ */
         .assets-buttons {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             justify-content: center;
-            margin-top: 15px;
+            margin-top: 2px;
+            flex-wrap: wrap;
         }
+
         .btn-manage {
-            background: #d69e2e;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #f5f5f7;
+            color: #1d1d1f;
+            padding: 8px 18px;
+            border-radius: 50px;
             text-decoration: none;
-            font-weight: bold;
+            font-weight: 500;
+            font-size: 0.8rem;
             transition: all 0.3s ease;
-            border: 2px solid #d69e2e;
-            box-shadow: 0 4px 8px rgba(214, 158, 46, 0.3);
+            border: 1px solid rgba(0, 0, 0, 0.04);
         }
-        .btn-new {
-            background: transparent;
-            color: #2d3748;
-            padding: 10px 20px;
-            border-radius: 20px;
-            text-decoration: none;
-            font-weight: bold;
-            transition: all 0.3s ease;
-            border: 2px solid #d69e2e;
-        }
-        .btn-manage:hover, .btn-new:hover {
-            transform: scale(1.05);
-            box-shadow: 0 5px 15px rgba(214, 158, 46, 0.3);
-        }
+
         .btn-manage:hover {
-            background: #b8860b;
+            background: #ebebed;
+            transform: translateY(-1px);
         }
+
+        .btn-new {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #d49a0a;
+            color: #ffffff;
+            padding: 8px 18px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
         .btn-new:hover {
-            background: #d69e2e;
-            color: white;
+            background: #b8860b;
+            transform: translateY(-1px);
         }
 
-        /* Estilos para gestión de usuarios */
-        .card-users {
-            border: 2px solid #9c27b0;
-        }
-        .card-icon-users {
-            background: linear-gradient(135deg, #9c27b0 0%, #ba68c8 100%) !important;
+        /* ============================================
+           PROVEEDORES ALIADOS - PUBLICIDAD NO INVASIVA
+           ============================================ */
+        .sponsor-section {
+            margin-top: 30px;
+            padding: 16px 24px;
+            background: #ffffff;
+            border-radius: 16px;
+            border: 1px solid rgba(0, 0, 0, 0.04);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+            transition: all 0.3s ease;
         }
 
-        /* Responsive Design */
+        .sponsor-section:hover {
+            border-color: rgba(212, 154, 10, 0.15);
+        }
+
+        .sponsor-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            color: #6e6e73;
+            font-size: 0.8rem;
+            font-weight: 500;
+            padding: 4px 14px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            background: #f8f8fa;
+            border: 1px solid rgba(0,0,0,0.02);
+        }
+
+        .sponsor-link:hover {
+            background: #f0f0f2;
+            transform: translateY(-2px);
+            color: #1d1d1f;
+            border-color: rgba(212, 154, 10, 0.2);
+        }
+
+        .sponsor-link .emoji {
+            font-size: 1rem;
+        }
+
+        /* ============================================
+           RESPONSIVE
+           ============================================ */
         @media (max-width: 768px) {
+            .modules-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .header {
+                padding: 20px;
+            }
+
+            .header-content {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: center;
+            }
+
+            .header-right {
+                justify-content: center;
+            }
+
+            .header-left h1 {
+                font-size: 1.4rem;
+            }
+
+            .sponsor-section {
+                padding: 14px 16px;
+            }
+        }
+
+        @media (max-width: 560px) {
             .modules-grid {
                 grid-template-columns: 1fr;
             }
-            .header h1 {
-                font-size: 2em;
+
+            body {
+                padding: 12px;
             }
+
+            .header {
+                padding: 16px;
+            }
+
+            .header-left h1 {
+                font-size: 1.2rem;
+            }
+
             .card {
-                padding: 20px;
+                padding: 18px 16px;
             }
-            .nav-buttons {
-                flex-direction: column;
-                align-items: center;
-            }
-            .nav-btn {
-                width: 100%;
-                max-width: 250px;
-                text-align: center;
-            }
+
             .assets-buttons {
                 flex-direction: column;
                 align-items: center;
             }
+
             .btn-manage, .btn-new {
                 width: 100%;
-                max-width: 200px;
+                max-width: 180px;
+                justify-content: center;
+            }
+
+            .sponsor-section {
+                padding: 12px 14px;
             }
         }
 
-        @media (max-width: 480px) {
-            body {
-                padding: 10px;
-            }
-            .header {
-                padding: 20px;
-            }
-            .header h1 {
-                font-size: 1.7em;
-            }
-            .welcome {
-                font-size: 1em;
-            }
-            .card-icon {
-                width: 60px;
-                height: 60px;
-                font-size: 1.5em;
-            }
-            .card h3 {
-                font-size: 1.2em;
-            }
-        }
-
-        /* Efectos decorativos adicionales */
-        .card::after {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: linear-gradient(90deg, #2b6cb0, #3182ce);
-            transform: scaleX(0);
-            transition: transform 0.3s ease;
-        }
-        .card:hover::after {
-            transform: scaleX(1);
-        }
-
-        .production-highlight::after {
-            background: linear-gradient(90deg, #276749, #38a169);
-        }
-
-        .external-highlight::after {
-            background: linear-gradient(90deg, #d69e2e, #ecc94b);
-        }
-
-        .assets-highlight::after {
-            background: linear-gradient(90deg, #d69e2e, #ecc94b);
-        }
-
-        /* Colores específicos para cada módulo según la paleta oficial */
-        .card-icon-pos {
-            background: linear-gradient(135deg, #2b6cb0 0%, #3182ce 100%) !important;
+        /* ============================================
+           ANIMACIÓN LÍNEA DECORATIVA DEL LOGO
+           ============================================ */
+        @keyframes shimmerLine {
+            0%, 100% { background-position: 0% 0%; }
+            50% { background-position: 100% 0%; }
         }
         
-        .card-icon-financial {
-            background: linear-gradient(135deg, #276749 0%, #38a169 100%) !important;
+                /* ============================================
+           ALIADOS COMERCIALES - ESTILOS PROFESIONALES
+           ============================================ */
+        .sponsor-section {
+            transition: all 0.3s ease;
         }
-        
-        .card-icon-recipes {
-            background: linear-gradient(135deg, #d69e2e 0%, #ecc94b 100%) !important;
+
+        .sponsor-section:hover {
+            border-color: rgba(212, 154, 10, 0.12);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
         }
-        
-        .card-icon-suppliers {
-            background: linear-gradient(135deg, #9c27b0 0%, #ba68c8 100%) !important;
+
+        .sponsor-section a {
+            transition: all 0.3s ease;
         }
+
+        .sponsor-section a:hover {
+            background: #f0f0f2 !important;
+            border-color: rgba(212, 154, 10, 0.15) !important;
+            transform: translateY(-2px);
+            color: #1d1d1f !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        }
+
     </style>
 </head>
 <body>
     <div class="dashboard-container">
+
         <!-- Mensajes Flash -->
         <div class="flash-messages">
             {% with messages = get_flashed_messages(with_categories=true) %}
@@ -436,24 +477,46 @@
             {% endwith %}
         </div>
 
+        <!-- HEADER -->
         <div class="header">
-            <h1> Panel Principal  </h1>
-            <p class="welcome">Bienvenido/a, <strong>{{ username }}</strong>! 👋</p>
-            <p>Selecciona un módulo para comenzar a gestionar tu panadería</p>
-        </div>
-
-        <!-- Navegación Rápida -->
-        <div class="quick-nav">
-            <h3>🚀 Acceso Rápido</h3>
-            <div class="nav-buttons">
-                <a href="/gestion_financiera" class="nav-btn">💳 Punto de Venta</a>
-                <a href="{{ url_for('produccion_diaria') }}" class="nav-btn">🏭 Producción</a>
-                <a href="{{ url_for('productos_externos') }}" class="nav-btn external">🥤 Productos Externos</a>
-                <a href="{{ url_for('activos_fijos') }}" class="nav-btn">🏢 Activos Fijos</a>
+            <div class="header-content">
+                <div class="header-left">
+                    <div style="display: flex; align-items: center; gap: 16px;">
+                        <!-- Logo PanaderíaPro - BLANCO + DORADO -->
+                        <div style="background: #0a0e17; border-radius: 12px; padding: 8px 18px 10px 18px; border: 1px solid rgba(245, 184, 27, 0.12); flex-shrink: 0; text-align: right; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);">
+                            <div>
+                                <!-- Panadería en BLANCO + Pro en DORADO -->
+                                <span style="font-family: 'Inter', sans-serif; font-size: 1.2rem; font-weight: 700; color: #ffffff;">Panadería</span>
+                                <span style="font-family: 'Inter', sans-serif; font-size: 1.2rem; font-weight: 700; color: #d49a0a;">Pro</span>
+                            </div>
+                            <!-- Línea decorativa DEBAJO DE "Pro" - alineada a la derecha -->
+                            <div style="width: 40px; height: 2px; background: linear-gradient(90deg, #d49a0a, #f5b81b); margin: 2px 0 0 auto; border-radius: 4px;"></div>
+                        </div>
+                        <div>
+                            <h1 style="font-size: 1.6rem; font-weight: 700; color: #1d1d1f; letter-spacing: -0.02em; margin: 0;">Panel <span style="color: #d49a0a;">Principal</span></h1>
+                            <p class="welcome" style="margin: 0; color: #6e6e73; font-size: 0.95rem;">Bienvenido/a, <strong style="color: #1d1d1f;">{{ username }}</strong> 👋</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="tenant-badge-dashboard">
+                        <i class="fas fa-store"></i>
+                        {% if session.get('tenant_actual') %}
+                            {{ session.get('tenant_actual') }}
+                        {% else %}
+                            Panadería Principal
+                        {% endif %}
+                    </div>
+                    <a href="{{ url_for('logout') }}" class="logout-btn-header">
+                        <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                    </a>
+                </div>
             </div>
         </div>
 
+        <!-- MÓDULOS -->
         <div class="modules-grid">
+
             <!-- Punto de Venta -->
             <div class="card">
                 <div class="card-icon card-icon-pos">💰</div>
@@ -462,19 +525,21 @@
                 <a href="{{ url_for('punto_venta') }}" class="card-btn">¡Clic para empezar!</a>
             </div>
 
-            <!-- 🆕 MÓDULO: PRODUCCIÓN DIARIA -->
-            <div class="card production-highlight">
+            <!-- Producción Diaria -->
+            <div class="card">
+                <span class="badge-new">NUEVO</span>
                 <div class="card-icon card-icon-production">🏭</div>
                 <h3>Producción Diaria</h3>
-                <p>Gestión de stock en vitrina, órdenes de producción y alertas inteligentes en tiempo real</p>
-                <a href="{{ url_for('produccion_diaria') }}" class="card-btn">🚀 ¡Ir a Producción!</a>
+                <p>Gestión de stock en vitrina, órdenes de producción y alertas inteligentes</p>
+                <a href="{{ url_for('produccion_diaria') }}" class="card-btn">🚀 Ir a Producción</a>
             </div>
 
-            <!-- 🆕 MÓDULO: PRODUCTOS EXTERNOS -->
-            <div class="card external-highlight">
+            <!-- Productos Externos -->
+            <div class="card">
+                <span class="badge-new">NUEVO</span>
                 <div class="card-icon card-icon-external">🥤</div>
                 <h3>Productos Externos</h3>
-                <p>Gestionar bebidas, helados y productos externos con control de stock y utilidades</p>
+                <p>Gestionar bebidas, helados y productos externos con control de stock</p>
                 <a href="{{ url_for('productos_externos') }}" class="card-btn">➕ Agregar Productos</a>
             </div>
 
@@ -482,19 +547,19 @@
             <div class="card">
                 <div class="card-icon card-icon-recipes">👨‍🍳</div>
                 <h3>Recetas y Fórmulas</h3>
-                <p>Crear y editar recetas, calcular costos automáticos y análisis de rentabilidad</p>
+                <p>Crear y editar recetas, calcular costos automáticos y rentabilidad</p>
                 <a href="{{ url_for('recetas') }}" class="card-btn">📋 Ver Recetas</a>
             </div>
 
-            <!-- Gestión de Materias Primas -->
+            <!-- Materias Primas -->
             <div class="card">
-                <div class="card-icon card-icon-pos">📦</div>
+                <div class="card-icon card-icon-materials">📦</div>
                 <h3>Gestión de Materias Primas</h3>
                 <p>Administrar ingredientes, costos, stock y alertas de inventario</p>
                 <a href="{{ url_for('materias_primas') }}" class="card-btn">¡Clic para empezar!</a>
             </div>
 
-            <!-- Gestión de Proveedores -->
+            <!-- Proveedores -->
             <div class="card">
                 <div class="card-icon card-icon-suppliers">🏢</div>
                 <h3>Gestión de Proveedores</h3>
@@ -507,7 +572,7 @@
                 <div class="card-icon card-icon-financial">💰</div>
                 <h3>Gestión Financiera</h3>
                 <p>Control diario de dinero, gastos operativos, ingresos y flujo de caja</p>
-                <a href="{{ url_for('gestion_financiera') }}" class="card-btn">💰 Gestión Financiera</a>
+                <a href="{{ url_for('gestion_financiera') }}" class="card-btn">Gestión Financiera</a>
             </div>
 
             <!-- Reportes -->
@@ -518,128 +583,105 @@
                 <a href="{{ url_for('reportes') }}" class="card-btn">📈 Ver Reportes</a>
             </div>
 
-            <!-- MÓDULO: ACTIVOS FIJOS -->
-            <div class="card assets-highlight">
-                <div class="card-icon card-icon-assets">🏢</div>
+            <!-- Activos Fijos -->
+            <div class="card">
+                <span class="badge-new">NUEVO</span>
+                <div class="card-icon card-icon-assets">🏗️</div>
                 <h3>Activos Fijos</h3>
-                <p>Gestionar equipos, herramientas, mobiliario y todas las inversiones de la panadería</p>
-                
-                <!-- Botones de gestión - SIN MÉTRICAS NUMÉRICAS -->
+                <p>Gestionar equipos, herramientas, mobiliario e inversiones</p>
                 <div class="assets-buttons">
-                    <a href="{{ url_for('activos_fijos') }}" class="btn-manage">Gestionar</a>
-                    <a href="{{ url_for('registrar_activo') }}" class="btn-new">Nuevo</a>
+                    <a href="{{ url_for('activos_fijos') }}" class="btn-manage"><i class="fas fa-cog"></i> Gestionar</a>
+                    <a href="{{ url_for('registrar_activo') }}" class="btn-new"><i class="fas fa-plus"></i> Nuevo</a>
                 </div>
             </div>
 
             <!-- Gestión de Usuarios -->
-            <div class="card card-users">
+            <div class="card">
                 <div class="card-icon card-icon-users">👥</div>
                 <h3>Gestión de Usuarios</h3>
                 <p>Administrar empleados, permisos y roles del sistema</p>
-                
                 {% if current_user.is_authenticated and current_user.tiene_permiso('usuarios', 'gestionar') %}
-                    <a href="{{ url_for('gestion_usuarios') }}" class="card-btn">
-                        ⚙️ Administrar
-                    </a>
+                    <a href="{{ url_for('gestion_usuarios') }}" class="card-btn">⚙️ Administrar</a>
                 {% else %}
                     <span class="card-btn disabled">🔒 Solo administradores</span>
                 {% endif %}
             </div>
         </div>
 
-        <!-- Información del Sistema -->
-        <div class="quick-nav">
-            <h3>ℹ️ Información del Sistema</h3>
-        <!-- Botón de Desbloqueo (solo administradores) -->
-        {% if current_user.is_authenticated and current_user.rol == 'super_admin' %}
-        <div class="admin-actions mt-3" style="background: #fff3cd; padding: 15px; border-radius: 10px; border-left: 4px solid #ffc107;">
-            <h4><i class="fas fa-unlock-alt"></i> Acciones de Administración</h4>
-            <button class="btn btn-warning" onclick="desbloquearPuntoVenta()">
-                <i class="fas fa-unlock"></i> Desbloquear Punto de Venta
-            </button>
-            <small class="text-muted d-block mt-1">⚠️ Solo para emergencias (si el cierre diario fue accidental)</small>
-        </div>
-        {% endif %}
+            <!-- ============================================
+           ALIADOS COMERCIALES - CON INICIALES
+           ============================================ -->
+        <div class="sponsor-section" style="margin-top: 30px; padding: 20px 28px; background: #ffffff; border-radius: 16px; border: 1px solid rgba(0, 0, 0, 0.04); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);">
+            <!-- Línea decorativa superior -->
+            <div style="width: 60px; height: 3px; background: linear-gradient(90deg, #d49a0a, #f5b81b); border-radius: 4px; margin-bottom: 16px;"></div>
+            
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+                <!-- Lado izquierdo: Título y descripción -->
+                <div style="flex: 1; min-width: 180px;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+                        <span style="font-size: 0.85rem; font-weight: 600; color: #1d1d1f;">🤝 Aliados Comerciales</span>
+                        <span style="font-size: 0.5rem; color: #ffffff; background: #d49a0a; padding: 2px 10px; border-radius: 50px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;">Confianza</span>
+                    </div>
+                    <p style="font-size: 0.75rem; color: #a1a1a6; margin: 0; line-height: 1.4;">
+                        Proveedores recomendados para tu panadería
+                    </p>
+                </div>
 
-            <div class="nav-buttons">
-                {% if current_user.is_authenticated and current_user.rol == 'super_admin' %}
-                    <a href="{{ url_for('gestion_clientes') }}" class="nav-btn">👑 Gestión de Clientes</a>
-                {% endif %}
-                <a href="/debug_api_productos" class="nav-btn" target="_blank">📦 Ver Productos API</a>
-                <a href="/crear_productos_prueba" class="nav-btn" target="_blank">🧪 Crear Productos Prueba</a>
+                <!-- Lado derecho: Proveedores con iniciales -->
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <!-- Dagusto -->
+                    <a href="#" target="_blank" style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: #6e6e73; font-size: 0.8rem; font-weight: 500; padding: 4px 16px 4px 4px; border-radius: 50px; transition: all 0.3s ease; background: #f8f8fa; border: 1px solid transparent;">
+                        <span style="background: #d49a0a; color: #ffffff; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700;">D</span>
+                        <span>agusto</span>
+                    </a>
+                    <!-- Haz de Oros -->
+                    <a href="#" target="_blank" style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: #6e6e73; font-size: 0.8rem; font-weight: 500; padding: 4px 16px 4px 4px; border-radius: 50px; transition: all 0.3s ease; background: #f8f8fa; border: 1px solid transparent;">
+                        <span style="background: #d49a0a; color: #ffffff; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700;">H</span>
+                        <span>az de Oros</span>
+                    </a>
+                    <!-- La Especial -->
+                    <a href="#" target="_blank" style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: #6e6e73; font-size: 0.8rem; font-weight: 500; padding: 4px 16px 4px 4px; border-radius: 50px; transition: all 0.3s ease; background: #f8f8fa; border: 1px solid transparent;">
+                        <span style="background: #d49a0a; color: #ffffff; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700;">L</span>
+                        <span>a Especial</span>
+                    </a>
+                    <!-- Alimentos Finos -->
+                    <a href="#" target="_blank" style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: #6e6e73; font-size: 0.8rem; font-weight: 500; padding: 4px 16px 4px 4px; border-radius: 50px; transition: all 0.3s ease; background: #f8f8fa; border: 1px solid transparent;">
+                        <span style="background: #d49a0a; color: #ffffff; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700;">A</span>
+                        <span>limentos Finos</span>
+                    </a>
+                </div>
             </div>
         </div>
 
-        <div class="logout-section">
-            <a href="{{ url_for('logout') }}" class="logout-btn">🚪 Cerrar Sesión</a>
-        </div>
     </div>
 
     <script>
-        // Efectos especiales para tarjetas destacadas
-        document.addEventListener('DOMContentLoaded', function() {
-            // Efecto para producción
-            const productionCard = document.querySelector('.production-highlight');
-            if (productionCard) {
-                setInterval(() => {
-                    productionCard.style.boxShadow = productionCard.style.boxShadow ? 
-                        '0 4px 6px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.06)' : 
-                        '0 10px 15px rgba(39, 103, 73, 0.1), 0 4px 6px rgba(39, 103, 73, 0.05)';
-                }, 1000);
+        // ============================================
+        // FUNCIÓN DESBLOQUEAR PUNTO DE VENTA
+        // ============================================
+        function desbloquearPuntoVenta() {
+            if (!confirm('⚠️ ¿Estás seguro de DESBLOQUEAR el punto de venta?\n\nEsto permitirá realizar ventas nuevamente.\n\nSolo usa esta opción si fue un cierre accidental.\n\n¿Deseas continuar?')) {
+                return;
             }
-            
-            // Efecto para productos externos
-            const externalCard = document.querySelector('.external-highlight');
-            if (externalCard) {
-                setInterval(() => {
-                    externalCard.style.boxShadow = externalCard.style.boxShadow ? 
-                        '0 4px 6px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.06)' : 
-                        '0 10px 15px rgba(214, 158, 46, 0.1), 0 4px 6px rgba(214, 158, 46, 0.05)';
-                }, 1200);
-            }
-            
-            // Efecto para activos fijos
-            const assetsCard = document.querySelector('.assets-highlight');
-            if (assetsCard) {
-                setInterval(() => {
-                    assetsCard.style.boxShadow = assetsCard.style.boxShadow ? 
-                        '0 4px 6px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.06)' : 
-                        '0 10px 15px rgba(214, 158, 46, 0.1), 0 4px 6px rgba(214, 158, 46, 0.05)';
-                }, 1100);
-            }
-            
-            console.log('🎯 Dashboard cargado. Módulos activos:');
-            console.log('- 💳 Punto de Venta');
-            console.log('- 🏭 Producción Diaria'); 
-            console.log('- 🥤 Productos Externos');
-            console.log('- 🏢 Activos Fijos (sin métricas)');
-        });
-    </script>
 
-<script>
-function desbloquearPuntoVenta() {
-    if (!confirm('⚠️ ¿Estás seguro de DESBLOQUEAR el punto de venta?\n\nEsto permitirá realizar ventas nuevamente.\n\nSolo usa esta opción si fue un cierre accidental.\n\n¿Deseas continuar?')) {
-        return;
-    }
-    
-    fetch('/api/desbloquear_cierre', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'}
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert('✅ Punto de venta desbloqueado correctamente.');
-            location.reload();
-        } else {
-            alert('❌ Error al desbloquear: ' + (data.error || 'Error desconocido'));
+            fetch('/api/desbloquear_cierre', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'}
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✅ Punto de venta desbloqueado correctamente.');
+                    location.reload();
+                } else {
+                    alert('❌ Error al desbloquear: ' + (data.error || 'Error desconocido'));
+                }
+            })
+            .catch(error => {
+                alert('❌ Error de conexión: ' + error.message);
+            });
         }
-    })
-    .catch(error => {
-        alert('❌ Error de conexión: ' + error.message);
-    });
-}
-</script>
+    </script>
 
 </body>
 </html>
