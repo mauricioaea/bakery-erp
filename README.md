@@ -39,6 +39,7 @@ Desarrollé este sistema para ayudar a pequeños y medianos empresarios de panad
 - [Contribución](#-contribución)
 - [Registro de Cambios](#-registro-de-cambios)
 - [Contacto y Soporte](#-contacto-y-soporte)
+- [Registro de Cambios](#-registro-de-cambios)
 
 ---
 
@@ -565,6 +566,41 @@ Advertencias de SQLAlchemy (métodos legacy)
 Sincronización de IDs entre bases de datos
 
 Caracteres problemáticos en generación de contraseñas
+
+### [Versión 1.0.1] - 2026-09-02
+
+#### 🎨 Rediseño Profesional del Frontend
+
+**Login Page:**
+- ✅ Rediseño completo con identidad de marca PanaderíaPro
+- ✅ Logo "PanaderíaPro" con línea decorativa en dorado
+- ✅ Paleta de colores: Negro elegante (#0a0e17) + Dorado (#f5b81b)
+- ✅ Nuevo eslogan: "Controla tu panadería desde el horno hasta la venta"
+- ✅ Microtexto con valor diferencial: IA predictiva • Utilidad real • Stock automático • Alertas inteligentes
+- ✅ Favicon personalizado con "P" estilizada
+
+**Dashboard:**
+- ✅ Rediseño estilo Apple con fondo claro y tarjetas blancas
+- ✅ Header con logo PanaderíaPro (blanco + dorado)
+- ✅ Colores distintivos por módulo (10 módulos con identidad visual única)
+- ✅ Badges "NUEVO" para funcionalidades recientes
+- ✅ Sección "Aliados Comerciales" para monetización con proveedores
+- ✅ Estilo consistente con la identidad de marca
+
+**Nuevas Páginas:**
+- ✅ `recuperar_password.html` - Página de recuperación de contraseña con información de contacto
+- ✅ `solicitar_demo.html` - Página para solicitar demo con WhatsApp y Email
+
+**Mejoras Técnicas:**
+- ✅ Favicon funcionando en todos los templates
+- ✅ Estilos CSS optimizados y consistentes
+- ✅ Mejora en la experiencia de usuario
+- ✅ Preparación para futura migración a logos reales de proveedores
+
+**Monetización:**
+- ✅ Sección "Aliados Comerciales" no invasiva para publicidad
+- ✅ Diseño profesional con iniciales en círculos dorados
+- ✅ Preparado para escalar a logos reales y enlaces web
 
 
 📞 Contacto y Soporte
