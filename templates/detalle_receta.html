@@ -3,64 +3,554 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ receta.nombre }} - Detalles</title>
+    <title>{{ receta.nombre }} - PanaderíaPro</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        .card-header { background-color: #f8f9fa; }
-        .breadcrumb { background-color: #e9ecef; }
-        .table th { background-color: #f8f9fa; }
-        .utilidad-card { border-left: 4px solid #28a745; }
-        .precio-real-input {
-            width: 140px;
-            padding: 6px 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 0.95em;
-            text-align: right;
+        :root {
+            --primary: #d49a0a;
+            --primary-dark: #b8860b;
+            --success: #28a745;
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --info: #17a2b8;
+            --dark: #1a1f2e;
         }
-        .precio-real-input:focus {
-            border-color: #28a745;
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.2);
+
+        body {
+            background: #f5f5f7;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 20px;
         }
-        .badge-rentabilidad {
-            padding: 4px 8px;
-            border-radius: 8px;
-            font-size: 0.8em;
-            font-weight: bold;
+
+        .container {
+            max-width: 1200px;
         }
-        .loading-spinner {
-            display: inline-block;
-            width: 14px;
-            height: 14px;
-            border: 2px solid #f3f3f3;
-            border-top: 2px solid #3498db;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-left: 8px;
+
+        /* Breadcrumb */
+        .breadcrumb-custom {
+            background: #ffffff;
+            padding: 12px 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            margin-bottom: 24px;
+            border: 1px solid rgba(0,0,0,0.04);
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+
+        .breadcrumb-custom a {
+            color: #d49a0a;
+            text-decoration: none;
         }
-        .metric-card {
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+        .breadcrumb-custom a:hover {
+            color: #b8860b;
+            text-decoration: underline;
         }
-        .metric-card:hover {
+
+        /* Header */
+        .header-receta {
+            background: #ffffff;
+            padding: 24px 32px;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            margin-bottom: 24px;
+            border: 1px solid rgba(0,0,0,0.04);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .header-receta h2 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #1d1d1f;
+            margin: 0;
+        }
+
+        .header-receta h2 span {
+            color: #d49a0a;
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-edit {
+            background: #d49a0a;
+            color: #ffffff;
+            padding: 10px 24px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-edit:hover {
+            background: #b8860b;
             transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 16px rgba(212, 154, 10, 0.3);
+            color: #ffffff;
+        }
+
+        .btn-back {
+            background: #f5f5f7;
+            color: #1d1d1f;
+            padding: 10px 24px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0,0,0,0.04);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-eliminar {
+            background: #dc3545;
+            color: #ffffff;
+            padding: 10px 24px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .btn-eliminar:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(220, 53, 69, 0.3);
+            color: #ffffff;
+        }
+
+        .btn-back:hover {
+            background: #ebebed;
+            transform: translateY(-2px);
+        }
+
+        .btn-toggle {
+            padding: 10px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .btn-desactivar {
+            background: #dc3545;
+            color: #ffffff;
+        }
+
+        .btn-desactivar:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(220, 53, 69, 0.3);
+            color: #ffffff;
+        }
+
+        .btn-activar {
+            background: #28a745;
+            color: #ffffff;
+        }
+
+        .btn-activar:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(40, 167, 69, 0.3);
+            color: #ffffff;
+        }
+
+        /* Métricas rápidas */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .metric-card {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border: 1px solid rgba(0,0,0,0.04);
+            transition: all 0.3s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+        }
+
+        .metric-card .label {
+            font-size: 0.75rem;
+            color: #6e6e73;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            font-weight: 600;
+        }
+
+        .metric-card .value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #1d1d1f;
+            margin: 4px 0;
+        }
+
+        .metric-card .sub {
+            font-size: 0.8rem;
+            color: #6e6e73;
+        }
+
+        .metric-card .value.primary { color: #d49a0a; }
+        .metric-card .value.success { color: #28a745; }
+        .metric-card .value.danger { color: #dc3545; }
+        .metric-card .value.warning { color: #d69e2e; }
+        .metric-card .value.info { color: #17a2b8; }
+
+        /* Tarjetas de información */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .info-card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 20px 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border: 1px solid rgba(0,0,0,0.04);
+        }
+
+        .info-card h5 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #6e6e73;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 12px;
+        }
+
+        .info-card table {
+            width: 100%;
+        }
+
+        .info-card td {
+            padding: 6px 0;
+            font-size: 0.95rem;
+            color: #1d1d1f;
+        }
+
+        .info-card td:first-child {
+            color: #6e6e73;
+            width: 45%;
+        }
+
+        /* Rentabilidad */
+        .rentabilidad-card {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border: 1px solid rgba(0,0,0,0.04);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+
+        .rentabilidad-header {
+            background: linear-gradient(145deg, #1a1f2e, #0f141f);
+            padding: 16px 24px;
+            color: #ffffff;
+        }
+
+        .rentabilidad-header h5 {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .rentabilidad-body {
+            padding: 24px;
+        }
+
+        .rentabilidad-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        .rentabilidad-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #f5f5f7;
+        }
+
+        .rentabilidad-item .label {
+            color: #6e6e73;
+            font-size: 0.9rem;
+        }
+
+        .rentabilidad-item .value {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .rentabilidad-item .value.success { color: #28a745; }
+        .rentabilidad-item .value.danger { color: #dc3545; }
+        .rentabilidad-item .value.warning { color: #d69e2e; }
+
+        .badge-rentabilidad {
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .badge-rentabilidad.alta { background: #28a745; }
+        .badge-rentabilidad.media { background: #ffc107; color: #1d1d1f; }
+        .badge-rentabilidad.baja { background: #fd7e14; }
+        .badge-rentabilidad.minima { background: #ff6b6b; }
+        .badge-rentabilidad.perdida { background: #dc3545; }
+
+        .recomendacion-box {
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin-top: 16px;
+        }
+
+        .recomendacion-box.success {
+            background: #f0fdf4;
+            border-left: 4px solid #28a745;
+        }
+
+        .recomendacion-box.warning {
+            background: #fffbeb;
+            border-left: 4px solid #d69e2e;
+        }
+
+        .recomendacion-box.danger {
+            background: #fef2f2;
+            border-left: 4px solid #dc3545;
+        }
+
+        /* Comparación Precio Real vs Teórico */
+        .comparacion-card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border: 1px solid rgba(0,0,0,0.04);
+            margin-bottom: 24px;
+        }
+
+        .comparacion-card h5 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1d1d1f;
+            margin-bottom: 16px;
+        }
+
+        .comparacion-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .comparacion-item {
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .comparacion-item.real {
+            background: #f0fdf4;
+            border: 2px solid #28a745;
+        }
+
+        .comparacion-item.real.warning {
+            background: #fffbeb;
+            border-color: #d69e2e;
+        }
+
+        .comparacion-item.teorico {
+            background: #f5f5f7;
+            border: 2px solid #d1d5db;
+        }
+
+        .comparacion-item .label {
+            font-size: 0.8rem;
+            color: #6e6e73;
+            font-weight: 500;
+        }
+
+        .comparacion-item .value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #1d1d1f;
+        }
+
+        .comparacion-item .status {
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-top: 4px;
+        }
+
+        .comparacion-item .status.bueno { color: #28a745; }
+        .comparacion-item .status.malo { color: #dc3545; }
+        .comparacion-item .status.neutral { color: #d69e2e; }
+
+        /* Tabla de ingredientes */
+        .table-receta {
+            margin-bottom: 0;
+        }
+
+        .table-receta thead th {
+            background: #f5f5f7;
+            font-weight: 600;
+            color: #6e6e73;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .table-receta tfoot td {
+            background: #f5f5f7;
+            font-weight: 600;
+            color: #1d1d1f;
+        }
+
+        /* Análisis de Costos */
+        .costos-card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border: 1px solid rgba(0,0,0,0.04);
+            margin-bottom: 24px;
+        }
+
+        .costos-card h5 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1d1d1f;
+            margin-bottom: 16px;
+        }
+
+        .costos-table td {
+            padding: 8px 0;
+            font-size: 0.95rem;
+        }
+
+        .costos-table td:first-child {
+            color: #6e6e73;
+            width: 50%;
+        }
+
+        .costos-table td:last-child {
+            font-weight: 500;
+            color: #1d1d1f;
+        }
+
+        .costos-table .total td {
+            font-weight: 700;
+            color: #1d1d1f;
+            border-top: 2px solid #e5e7eb;
+            padding-top: 12px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .rentabilidad-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .comparacion-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header-receta {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: center;
+            }
+
+            .header-buttons {
+                justify-content: center;
+            }
+
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            body {
+                padding: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header-receta h2 {
+                font-size: 1.3rem;
+            }
+
+            .metric-card .value {
+                font-size: 1.4rem;
+            }
+
+            .comparacion-item .value {
+                font-size: 1.4rem;
+            }
+        }
+
+        /* Mensajes Flash */
+        .alert {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
         }
     </style>
 </head>
 <body>
-    <div class="container mt-4">
+    <div class="container">
+
         <!-- Migas de pan -->
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
-                <li class="breadcrumb-item"><a href="{{ url_for('recetas') }}">Recetas</a></li>
-                <li class="breadcrumb-item active">{{ receta.nombre }}</li>
-            </ol>
+        <nav class="breadcrumb-custom">
+            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            <span style="color: #6e6e73; margin: 0 8px;">/</span>
+            <a href="{{ url_for('recetas') }}">Recetas</a>
+            <span style="color: #6e6e73; margin: 0 8px;">/</span>
+            <span style="color: #1d1d1f; font-weight: 600;">{{ receta.nombre }}</span>
         </nav>
 
         <!-- Mensajes Flash -->
@@ -75,257 +565,252 @@
             {% endif %}
         {% endwith %}
 
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2>📋 {{ receta.nombre }}</h2>
-            <div class="btn-group">
-                <a href="{{ url_for('editar_receta', id=receta.id) }}" class="btn btn-warning">✏️ Editar</a>
+        <!-- HEADER -->
+        <div class="header-receta">
+            <h2>📋 <span>{{ receta.nombre }}</span></h2>
+            <div class="header-buttons">
+                <a href="{{ url_for('editar_receta', id=receta.id) }}" class="btn-edit">
+                    <i class="fas fa-pencil-alt"></i> Editar
+                </a>
                 
-                <a href="{{ url_for('recetas') }}" class="btn btn-secondary">← Volver</a>
+                <!-- ✅ BOTÓN ACTIVAR/DESACTIVAR -->
+                <form method="POST" action="{{ url_for('toggle_receta', id=receta.id) }}" 
+                    style="display: inline-block;">
+                    <button type="submit" 
+                            class="btn-toggle {% if receta.activo %}btn-desactivar{% else %}btn-activar{% endif %}">
+                        {% if receta.activo %}
+                            🔴 Desactivar
+                        {% else %}
+                            🟢 Activar
+                        {% endif %}
+                    </button>
+                </form>
+                
+                <!-- ✅ BOTÓN ELIMINAR -->
+                <form method="POST" action="{{ url_for('eliminar_receta', id=receta.id) }}" 
+                    style="display: inline-block;" 
+                    onsubmit="return confirmarEliminacion('{{ receta.nombre }}')">
+                    <button type="submit" class="btn-eliminar">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </button>
+                </form>
+                
+                <a href="{{ url_for('recetas') }}" class="btn-back">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </a>
             </div>
         </div>
 
-        <!-- ✅ NUEVA SECCIÓN: MÉTRICAS RÁPIDAS DE RENTABILIDAD -->
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="card metric-card text-center">
-                    <div class="card-body">
-                        <h5 class="card-title text-primary">💰 Precio Real</h5>
-                        <h3 class="card-text">{{ receta.precio_venta_efectivo|currency }}</h3>
-                        <small class="text-muted">Precio de venta efectivo</small>
-                    </div>
-                </div>
+        <!-- MÉTRICAS RÁPIDAS -->
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="label">💰 Precio Real</div>
+                <div class="value primary">{{ receta.precio_venta_efectivo|currency }}</div>
+                <div class="sub">Precio de venta efectivo</div>
             </div>
-            <div class="col-md-3">
-                <div class="card metric-card text-center">
-                    <div class="card-body">
-                        <h5 class="card-title text-success">📈 Utilidad</h5>
-                        <h3 class="card-text" style="color: {% if receta.utilidad_real_pesos > 0 %}#28a745{% else %}#dc3545{% endif %};">
-                            ${{ receta.utilidad_real_pesos|round(0) }}
-                        </h3>
-                        <small class="text-muted">Por unidad</small>
-                    </div>
+            <div class="metric-card">
+                <div class="label">📈 Utilidad por Unidad</div>
+                <div class="value {% if receta.utilidad_real_pesos > 0 %}success{% else %}danger{% endif %}">
+                    {{ receta.utilidad_real_pesos|currency }}
                 </div>
+                <div class="sub">{{ receta.utilidad_real_porcentaje|round(1) }}% de margen</div>
             </div>
-            <div class="col-md-3">
-                <div class="card metric-card text-center">
-                    <div class="card-body">
-                        <h5 class="card-title text-info">🎯 Margen</h5>
-                        <h3 class="card-text" style="color: {% if receta.utilidad_real_porcentaje > 0 %}#17a2b8{% else %}#dc3545{% endif %};">
-                            {{ receta.utilidad_real_porcentaje|round(1) }}%
-                        </h3>
-                        <small class="text-muted">Porcentaje de ganancia</small>
-                    </div>
+            <div class="metric-card">
+                <div class="label">🎯 Margen Real</div>
+                <div class="value {% if receta.utilidad_real_porcentaje >= 25 %}success{% elif receta.utilidad_real_porcentaje >= 15 %}warning{% else %}danger{% endif %}">
+                    {{ receta.utilidad_real_porcentaje|round(1) }}%
                 </div>
+                <div class="sub">Ganancia sobre el precio</div>
             </div>
-            <div class="col-md-3">
-                <div class="card metric-card text-center">
-                    <div class="card-body">
-                        <h5 class="card-title text-warning">⚖️ Equilibrio</h5>
-                        <h3 class="card-text">{{ receta.punto_equilibrio_unidades }}</h3>
-                        <small class="text-muted">Unidades para cubrir costos</small>
-                    </div>
-                </div>
+            <div class="metric-card">
+                <div class="label">⚖️ Punto de Equilibrio</div>
+                <div class="value info">{{ receta.punto_equilibrio_unidades }}</div>
+                <div class="sub">Unidades para cubrir costos</div>
             </div>
         </div>
 
-        <!-- Información general de la receta -->
-        <div class="row mb-4">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">📊 Información General</h5>
-                    </div>
-                    <div class="card-body">
-                        <table class="table table-bordered">
-                            <tr>
-                                <td><strong>Categoría:</strong></td>
-                                <td>{{ receta.categoria }}</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Peso por unidad:</strong></td>
-                                <td>{{ receta.peso_unidad_gramos|round(1) }}g</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Peso total masa:</strong></td>
-                                <td>{{ receta.peso_total_masa|round(1) }}g</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Unidades obtenidas:</strong></td>
-                                <td>{{ receta.unidades_obtenidas }}</td>
-                            </tr>
-                        </table>
-                    </div>
-                </div>
+        <!-- INFORMACIÓN GENERAL -->
+        <div class="info-grid">
+            <div class="info-card">
+                <h5>📊 Información General</h5>
+                <table>
+                    <tr><td>Categoría</td><td>{{ receta.categoria|capitalize }}</td></tr>
+                    <tr><td>Peso por unidad</td><td>{{ receta.peso_unidad_gramos|round(1) }}g</td></tr>
+                    <tr><td>Peso total masa</td><td>{{ receta.peso_total_masa|round(1) }}g</td></tr>
+                    <tr><td>Unidades obtenidas</td><td><strong>{{ receta.unidades_obtenidas }}</strong></td></tr>
+                </table>
             </div>
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">🔥 Información de Horneado</h5>
-                    </div>
-                    <div class="card-body">
-                        <table class="table table-bordered">
-                            <tr>
-                                <td><strong>Peso horneado/unidad:</strong></td>
-                                <td>{{ receta.peso_horneado_unidad|round(1) }}g</td>
-                            </tr>
-                            <tr>
-                                <td><strong>% Pérdida:</strong></td>
-                                <td>{{ receta.porcentaje_perdida|round(1) }}%</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Descripción:</strong></td>
-                                <td>{{ receta.descripcion or 'Sin descripción' }}</td>
-                            </tr>
-                        </table>
-                    </div>
-                </div>
+            <div class="info-card">
+                <h5>🔥 Información de Horneado</h5>
+                <table>
+                    <tr><td>Peso horneado/unidad</td><td>{{ receta.peso_horneado_unidad|round(1) }}g</td></tr>
+                    <tr><td>% Pérdida por horneado</td><td>{{ receta.porcentaje_perdida|round(1) }}%</td></tr>
+                    <tr><td>% Merma por manejo</td><td>{{ receta.porcentaje_merma_manejo|round(1) }}%</td></tr>
+                    <tr><td>Descripción</td><td>{{ receta.descripcion or 'Sin descripción' }}</td></tr>
+                </table>
             </div>
         </div>
 
-        <!-- ✅ NUEVA SECCIÓN: ANÁLISIS DE RENTABILIDAD REAL -->
-        <div class="card mb-4 utilidad-card">
-            <div class="card-header bg-success text-white">
-                <h5 class="mb-0">💰 Análisis de Rentabilidad Real</h5>
+        <!-- RENTABILIDAD REAL -->
+        <div class="rentabilidad-card">
+            <div class="rentabilidad-header">
+                <h5><i class="fas fa-coins" style="color: #f5b81b;"></i> Análisis de Rentabilidad Real</h5>
             </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label class="form-label"><strong>Precio de Venta Real:</strong></label>
-                            <div class="input-group">
-                                <input type="number" 
-                                       class="precio-real-input"
-                                       value="{{ receta.precio_venta_efectivo|round(0) }}" 
-                                       data-receta-id="{{ receta.id }}"
-                                       placeholder="Ingrese precio real"
-                                       step="1"
-                                       min="0">
-                                <span id="loading-precio" class="loading-spinner" style="display: none;"></span>
-                            </div>
-                            <small class="text-muted">Precio al que realmente vendes este producto</small>
+            <div class="rentabilidad-body">
+                <div class="rentabilidad-grid">
+                    <div>
+                        <div class="rentabilidad-item">
+                            <span class="label">Precio de Venta Real</span>
+                            <span class="value">{{ receta.precio_venta_efectivo|currency }}</span>
                         </div>
-                        
-                        <table class="table table-bordered">
-                            <tr>
-                                <td width="60%"><strong>Rentabilidad: 
-        <span style="cursor: help; border-bottom: 1px dashed #6c757d;" 
-              title="Porcentaje de ganancia sobre el costo de producción. 
-                     Calculado como: (Precio de Venta - Costo Unitario) / Precio de Venta * 100">
-            <i class="fas fa-info-circle" style="color: #17a2b8; font-size: 0.8em;"></i>
-        </span></strong></td>
-                                <td>
-                                    <span class="badge-rentabilidad" 
-                                          style="background: 
-                                            {% if receta.rentabilidad_categoria == 'Alta' %}#28a745
-                                            {% elif receta.rentabilidad_categoria == 'Media' %}#ffc107
-                                            {% elif receta.rentabilidad_categoria == 'Baja' %}#fd7e14
-                                            {% elif receta.rentabilidad_categoria == 'Mínima' %}#ff6b6b
-                                            {% else %}#dc3545{% endif %};
-                                            color: white;">
-                                        {{ receta.rentabilidad_categoria }}
-                                    </span>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><strong>Utilidad por Unidad:</strong></td>
-                                <td style="color: {% if receta.utilidad_real_pesos > 0 %}#28a745{% else %}#dc3545{% endif %};">
-                                    <strong>{{ receta.utilidad_real_pesos|currency }}</strong>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><strong>Margen de Ganancia:</strong></td>
-                                <td style="color: {% if receta.utilidad_real_porcentaje > 0 %}#28a745{% else %}#dc3545{% endif %};">
-                                    <strong>{{ receta.utilidad_real_porcentaje|round(1) }}%</strong>
-                                </td>
-                            </tr>
-                        </table>
+                        <div class="rentabilidad-item">
+                            <span class="label">Costo por Unidad</span>
+                            <span class="value">{{ receta.costo_unitario|currency }}</span>
+                        </div>
+                        <div class="rentabilidad-item">
+                            <span class="label">Utilidad por Unidad</span>
+                            <span class="value {% if receta.utilidad_real_pesos > 0 %}success{% else %}danger{% endif %}">
+                                {{ receta.utilidad_real_pesos|currency }}
+                            </span>
+                        </div>
+                        <div class="rentabilidad-item">
+                            <span class="label">Margen de Ganancia Real</span>
+                            <span class="value {% if receta.utilidad_real_porcentaje >= 25 %}success{% elif receta.utilidad_real_porcentaje >= 15 %}warning{% else %}danger{% endif %}">
+                                {{ receta.utilidad_real_porcentaje|round(1) }}%
+                            </span>
+                        </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="alert alert-info">
-                            <h6>
-        <!-- HISTORIAL DE PRECIOS -->
-        <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #17a2b8;">
-            <h4 style="margin-bottom: 15px;">
-                📊 Historial de Precios
-                <span id="totalCambios" style="font-size: 0.7em; color: #6c757d;"></span>
-            </h4>
-            <div id="historialPrecios" style="max-height: 300px; overflow-y: auto;">
-                <div style="text-align: center; padding: 20px; color: #6c757d;">
-                    <i class="fas fa-spinner fa-spin"></i> Cargando historial...
+                    <div>
+                        <div class="rentabilidad-item">
+                            <span class="label">Rentabilidad</span>
+                            <span>
+                                <span class="badge-rentabilidad 
+                                    {% if receta.rentabilidad_categoria == 'Alta' %}alta
+                                    {% elif receta.rentabilidad_categoria == 'Media' %}media
+                                    {% elif receta.rentabilidad_categoria == 'Baja' %}baja
+                                    {% elif receta.rentabilidad_categoria == 'Mínima' %}minima
+                                    {% else %}perdida{% endif %}">
+                                    {{ receta.rentabilidad_categoria }}
+                                </span>
+                            </span>
+                        </div>
+                        <div class="rentabilidad-item">
+                            <span class="label">Punto de Equilibrio</span>
+                            <span class="value info">{{ receta.punto_equilibrio_unidades }} unidades</span>
+                        </div>
+                        <div class="rentabilidad-item">
+                            <span class="label">Utilidad Total del Lote</span>
+                            <span class="value success">{{ receta.utilidad_total_lote|currency }}</span>
+                        </div>
+                        <div class="rentabilidad-item">
+                            <span class="label">Valor Total de Producción</span>
+                            <span class="value">{{ receta.valor_produccion_total|currency }}</span>
+                        </div>
+                        <div class="rentabilidad-item">
+                            <span class="label">
+                                Eficiencia de costos
+                                <span style="cursor: help; border-bottom: 1px dashed #6c757d; margin-left: 4px;" 
+                                    title="Qué porcentaje del precio de venta se va en costos. 
+                                            Ejemplo: 73.7% significa que de cada $100 que cobras, 
+                                            $73.70 son para cubrir costos y $26.30 son tu ganancia.">
+                                    <i class="fas fa-info-circle" style="color: #17a2b8; font-size: 0.8em;"></i>
+                                </span>
+                            </span>
+                            <span class="value">{{ receta.eficiencia_costo|round(1) }}%</span>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div style="margin-top: 10px; font-size: 0.85em; color: #6c757d;">
-                <i class="fas fa-info-circle"></i> 
-                Se muestran los últimos 5 cambios de precio
+
+                <!-- Recomendación -->
+                <div class="recomendacion-box 
+                    {% if receta.rentabilidad_categoria in ['Alta', 'Media'] %}success
+                    {% elif receta.rentabilidad_categoria == 'Baja' %}warning
+                    {% else %}danger{% endif %}">
+                    <strong>
+                        {% if receta.rentabilidad_categoria == 'Alta' %}
+                        ✅ EXCELENTE RENTABILIDAD
+                        {% elif receta.rentabilidad_categoria == 'Media' %}
+                        ✅ RENTABILIDAD ACEPTABLE
+                        {% elif receta.rentabilidad_categoria == 'Baja' %}
+                        ⚠️ RENTABILIDAD BAJA
+                        {% elif receta.rentabilidad_categoria == 'Mínima' %}
+                        ⚠️ RENTABILIDAD MÍNIMA
+                        {% else %}
+                        ❌ PÉRDIDA
+                        {% endif %}
+                    </strong>
+                    <span style="margin-left: 12px; font-weight: 400;">
+                        {% if receta.rentabilidad_categoria == 'Alta' %}
+                        Este producto tiene una excelente rentabilidad. Considera aumentar la producción.
+                        {% elif receta.rentabilidad_categoria == 'Media' %}
+                        Rentabilidad aceptable. Mantén este producto en tu portafolio.
+                        {% elif receta.rentabilidad_categoria == 'Baja' %}
+                        Rentabilidad baja. Considera revisar costos o ajustar precio.
+                        {% elif receta.rentabilidad_categoria == 'Mínima' %}
+                        Rentabilidad mínima. Revisa costos o precios.
+                        {% else %}
+                        Estás perdiendo dinero con este producto. Revisa urgentemente.
+                        {% endif %}
+                    </span>
+                </div>
             </div>
         </div>
 
-📈 Análisis de Rentabilidad</h6>
-                            <p class="mb-1"><strong>Punto de Equilibrio:</strong> {{ receta.punto_equilibrio_unidades }} unidades</p>
-                            <p class="mb-1"><strong>Utilidad Total del Lote:</strong> {{ receta.utilidad_total_lote|currency }}</p>
-                            <p class="mb-1"><strong>Valor Total de Producción:</strong> {{ receta.valor_produccion_total|currency }}</p>
-                            <p class="mb-0"><strong>Eficiencia de Costos: 
-        <span style="cursor: help; border-bottom: 1px dashed #6c757d;" 
-              title="Relación entre el costo de producción y el precio de venta. 
-                     Un valor bajo (como 10.8%) significa que el costo representa una pequeña parte del precio final, 
-                     indicando alta rentabilidad.">
-            <i class="fas fa-info-circle" style="color: #17a2b8; font-size: 0.8em;"></i>
-        </span></strong> {{ receta.eficiencia_costo|round(1) }}%</p>
-                        </div>
-                        
-                        {% if receta.utilidad_real_pesos > 0 %}
-                        <div class="alert alert-success">
-                            <h6>✅ Recomendación</h6>
-                            <p class="mb-0">
-                                {% if receta.rentabilidad_categoria == 'Alta' %}
-                                Este producto tiene una excelente rentabilidad. Considera aumentar la producción.
-                                {% elif receta.rentabilidad_categoria == 'Media' %}
-                                Rentabilidad aceptable. Mantén este producto en tu portafolio.
-                                {% elif receta.rentabilidad_categoria == 'Baja' %}
-                                Rentabilidad baja. Considera revisar costos o ajustar precio.
-                                {% else %}
-                                Rentabilidad crítica. Se recomienda revisar urgentemente.
-                                {% endif %}
-                            </p>
-                        </div>
+        <!-- COMPARACIÓN: PRECIO REAL VS TEÓRICO -->
+        <div class="comparacion-card">
+            <h5>📊 Comparación: Precio Real vs Teórico</h5>
+            <div class="comparacion-grid">
+                <div class="comparacion-item real {% if receta.precio_venta_real >= receta.precio_venta_unitario %}real{% else %}warning{% endif %}">
+                    <div class="label">💰 Precio Real</div>
+                    <div class="value">{{ receta.precio_venta_real|currency }}</div>
+                    <div class="status {% if receta.precio_venta_real >= receta.precio_venta_unitario %}bueno{% else %}malo{% endif %}">
+                        {% if receta.precio_venta_real >= receta.precio_venta_unitario %}
+                        ✅ Por encima del precio teórico
+                        {% else %}
+                        ⚠️ Por debajo del precio teórico
                         {% endif %}
                     </div>
                 </div>
+                <div class="comparacion-item teorico">
+                    <div class="label">📐 Precio Teórico</div>
+                    <div class="value">{{ receta.precio_venta_unitario|currency }}</div>
+                    <div class="status neutral">Calculado con margen {{ receta.margen_deseado|int }}%</div>
+                </div>
             </div>
         </div>
 
-        <!-- Fórmula para el panadero -->
-        <div class="card mb-4">
-            <div class="card-header bg-info text-white">
-                <h5 class="mb-0">👨‍🍳 Fórmula para Producción</h5>
+        <!-- INGREDIENTES -->
+        <div class="card mb-4" style="border-radius: 16px; border: 1px solid rgba(0,0,0,0.04);">
+            <div class="card-header" style="background: #1a1f2e; color: #ffffff; border-radius: 16px 16px 0 0; padding: 16px 24px;">
+                <h5 class="mb-0"><i class="fas fa-list-ul" style="color: #f5b81b;"></i> Fórmula para Producción</h5>
             </div>
-            <div class="card-body">
+            <div class="card-body" style="padding: 24px;">
                 <div class="table-responsive">
-                    <table class="table table-striped">
+                    <table class="table table-receta">
                         <thead>
                             <tr>
                                 <th>Ingrediente</th>
-                                <th>Porcentaje</th>
-                                <th>Cantidad (gramos)</th>
-                                <th>Costo</th>
+                                <th class="text-center">%</th>
+                                <th class="text-end">Cantidad (g)</th>
+                                <th class="text-end">Costo</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for ingrediente in receta.ingredientes %}
                             <tr>
                                 <td>{{ ingrediente.materia_prima.nombre }}</td>
-                                <td>{{ ingrediente.porcentaje_aplicado|round(1) }}%</td>
-                                <td>{{ ingrediente.cantidad_gramos|round(1) }}g</td>
-                                <td>{{ ingrediente.costo_ingrediente|currency }}</td>
+                                <td class="text-center">{{ ingrediente.porcentaje_aplicado|round(1) }}%</td>
+                                <td class="text-end">{{ ingrediente.cantidad_gramos|round(1) }}g</td>
+                                <td class="text-end">{{ ingrediente.costo_ingrediente|currency }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
                         <tfoot>
-                            <tr class="table-primary">
+                            <tr>
                                 <td><strong>TOTAL</strong></td>
-                                <td><strong>100%</strong></td>
-                                <td><strong>{{ receta.peso_total_masa|round(1) }}g</strong></td>
-                                <td><strong>{{ receta.costo_materias_primas|currency }}</strong></td>
+                                <td class="text-center"><strong>100%</strong></td>
+                                <td class="text-end"><strong>{{ receta.peso_total_masa|round(1) }}g</strong></td>
+                                <td class="text-end"><strong>{{ receta.costo_materias_primas|currency }}</strong></td>
                             </tr>
                         </tfoot>
                     </table>
@@ -333,232 +818,146 @@
             </div>
         </div>
 
-        <!-- Análisis de costos -->
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">📊 Análisis de Costos Teóricos</h5>
+        <!-- ANÁLISIS DE COSTOS TEÓRICOS -->
+        <div class="costos-card">
+            <h5>📊 Análisis de Costos Teóricos</h5>
+            <table class="costos-table">
+                <tr>
+                    <td>Costo Materias Primas</td>
+                    <td>{{ receta.costo_materias_primas|currency }}</td>
+                </tr>
+                <tr>
+                    <td>Costo Indirecto (CIF {{ receta.porcentaje_cif|int }}%)</td>
+                    <td>{{ receta.costo_indirecto|currency }}</td>
+                </tr>
+                <tr>
+                    <td>Costo Total Producción</td>
+                    <td>{{ receta.costo_total|currency }}</td>
+                </tr>
+                <tr>
+                    <td>Costo por Unidad</td>
+                    <td>{{ receta.costo_unitario|currency }}</td>
+                </tr>
+                <tr>
+                    <td>Margen Ganancia Teórico ({{ receta.margen_deseado|int }}%)</td>
+                    <td>{{ receta.margen_ganancia|currency }}</td>
+                </tr>
+                <tr class="total">
+                    <td><strong>Precio Venta Unitario Teórico (PVU)</strong></td>
+                    <td><strong>{{ receta.precio_venta_unitario|currency }}</strong></td>
+                </tr>
+                <tr>
+                    <td>Precio por gramo teórico</td>
+                    <td>{{ receta.precio_por_gramo|currency }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- HISTORIAL DE PRECIOS -->
+        <div class="card" style="border-radius: 16px; border: 1px solid rgba(0,0,0,0.04); margin-bottom: 24px;">
+            <div class="card-header" style="background: #f5f5f7; border-radius: 16px 16px 0 0; padding: 16px 24px;">
+                <h5 class="mb-0"><i class="fas fa-history" style="color: #d49a0a;"></i> Historial de Precios <span id="totalCambios" style="font-size: 0.7rem; color: #6e6e73;"></span></h5>
             </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-bordered">
-                        <tr>
-                            <td width="40%"><strong>Costo Materias Primas:</strong></td>
-                            <td>{{ receta.costo_materias_primas|currency }}</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Costo Indirecto (CIF 45%):</strong></td>
-                            <td>{{ receta.costo_indirecto|currency }}</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Costo Total Producción:</strong></td>
-                            <td>{{ receta.costo_total|currency }}</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Costo por Unidad:</strong></td>
-                            <td>{{ receta.costo_unitario|currency }}</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Margen Ganancia Teórico (45%):</strong></td>
-                            <td>{{ receta.margen_ganancia|currency }}</td>
-                        </tr>
-                        <tr class="table-info">
-                            <td><strong>Precio Venta Unitario Teórico (PVU):</strong></td>
-                            <td><strong>{{ receta.precio_venta_unitario|currency }}</strong></td>
-                        </tr>
-                        <tr>
-                            <td><strong>Precio por gramo teórico:</strong></td>
-                            <td>{{ receta.precio_por_gramo|currency }}</td>
-                        </tr>
-                    </table>
-                </div>
-                
-                <!-- ✅ COMPARACIÓN PRECIO REAL VS TEÓRICO -->
-                {% if receta.precio_venta_real > 0 %}
-                <div class="mt-4 p-3 bg-light rounded">
-                    <h6>📊 Comparación: Precio Real vs Teórico</h6>
-                    <div class="row text-center">
-                        <div class="col-md-6">
-                            <div class="p-3 {% if receta.precio_venta_real >= receta.precio_venta_unitario %}bg-success text-white{% else %}bg-warning{% endif %} rounded">
-                                <h5>Precio Real</h5>
-                                <h3>{{ receta.precio_venta_real|currency }}</h3>
-                                <small>
-                                    {% if receta.precio_venta_real >= receta.precio_venta_unitario %}
-                                    ✅ Por encima del precio teórico
-                                    {% else %}
-                                    ⚠️ Por debajo del precio teórico
-                                    {% endif %}
-                                </small>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="p-3 bg-secondary text-white rounded">
-                                <h5>Precio Teórico</h5>
-                                <h3>{{ receta.precio_venta_unitario|currency }}</h3>
-                                <small>Calculado automáticamente</small>
-                            </div>
-                        </div>
+            <div class="card-body" style="padding: 24px;">
+                <div id="historialPrecios" style="max-height: 300px; overflow-y: auto;">
+                    <div style="text-align: center; padding: 20px; color: #6e6e73;">
+                        <i class="fas fa-spinner fa-spin"></i> Cargando historial...
                     </div>
                 </div>
-                {% endif %}
+                <div style="margin-top: 12px; font-size: 0.75rem; color: #6e6e73;">
+                    <i class="fas fa-info-circle"></i> Se muestran los últimos 5 cambios de precio
+                </div>
             </div>
         </div>
 
-        <!-- Botones de acción -->
-        <div class="row mt-4">
-            <div class="col-12 text-center">
-                <div class="btn-group">
-                    <a href="{{ url_for('editar_receta', id=receta.id) }}" class="btn btn-warning btn-lg">✏️ Editar Receta</a>
-                    
-                    <a href="{{ url_for('recetas') }}" class="btn btn-secondary btn-lg">📋 Ver Todas las Recetas</a>
-                </div>
+        <!-- BOTONES DE ACCIÓN -->
+        <div class="text-center" style="padding: 20px 0 40px;">
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('editar_receta', id=receta.id) }}" class="btn-edit" style="border-radius: 50px 0 0 50px;">
+                    <i class="fas fa-pencil-alt"></i> Editar
+                </a>
+                <a href="{{ url_for('recetas') }}" class="btn-back" style="border-radius: 0 50px 50px 0; border-left: 1px solid rgba(0,0,0,0.04);">
+                    <i class="fas fa-list"></i> Ver Todas
+                </a>
             </div>
         </div>
+
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    
     <script>
-        // ✅ MANEJADOR PARA ACTUALIZAR PRECIOS REALES EN TIEMPO REAL
-        document.addEventListener('DOMContentLoaded', function() {
-            const precioInput = document.querySelector('.precio-real-input');
-            const loadingElement = document.getElementById('loading-precio');
-            let timeoutId;
+        // ============================================
+        // CARGAR HISTORIAL DE PRECIOS
+        // ============================================
+        function cargarHistorialPrecios(recetaId) {
+            const contenedor = document.getElementById('historialPrecios');
+            const totalCambios = document.getElementById('totalCambios');
             
-            if (precioInput) {
-                precioInput.addEventListener('input', function() {
-                    const recetaId = this.getAttribute('data-receta-id');
-                    const nuevoPrecio = parseFloat(this.value) || 0;
-                    
-                    // Mostrar loading
-                    loadingElement.style.display = 'inline-block';
-                    
-                    // Limpiar timeout anterior
-                    clearTimeout(timeoutId);
-                    
-                    // Esperar 1.5 segundos después de que el usuario deje de escribir
-                    timeoutId = setTimeout(() => {
-                        actualizarPrecioReal(recetaId, nuevoPrecio);
-                    }, 1500);
-                });
-
-                // También actualizar al perder el foco (por si acaso)
-                precioInput.addEventListener('blur', function() {
-                    const recetaId = this.getAttribute('data-receta-id');
-                    const nuevoPrecio = parseFloat(this.value) || 0;
-                    
-                    clearTimeout(timeoutId);
-                    actualizarPrecioReal(recetaId, nuevoPrecio);
-                });
-            }
-        });
-
-        // ✅ FUNCIÓN PARA ACTUALIZAR PRECIO REAL VIA API
-        function actualizarPrecioReal(recetaId, nuevoPrecio) {
-            const loadingElement = document.getElementById('loading-precio');
+            if (!contenedor) return;
             
-            if (nuevoPrecio < 0) {
-                loadingElement.style.display = 'none';
-                alert('❌ El precio no puede ser negativo');
-                return;
-            }
-
-            fetch(`/api/actualizar_precio_real/${recetaId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ precio_real: nuevoPrecio })
-            })
-            .then(response => response.json())
-            .then(data => {
-                loadingElement.style.display = 'none';
-                
-                if (data.success) {
-                    // Recargar la página para ver todos los cambios actualizados
-                    location.reload();
-                } else {
-                    alert('❌ Error al actualizar el precio: ' + (data.error || 'Error desconocido'));
-                }
-            })
-            .catch(error => {
-                loadingElement.style.display = 'none';
-                console.error('Error:', error);
-                alert('❌ Error de conexión al actualizar el precio');
-            });
-        }
-    </script>
-
-    <script>
-    function cargarHistorialPrecios(recetaId) {
-        const contenedor = document.getElementById('historialPrecios');
-        const totalCambios = document.getElementById('totalCambios');
-        
-        if (!contenedor) return;
-        
-        fetch(`/api/historial_precios/${recetaId}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success && data.historial.length > 0) {
-                    if (totalCambios) {
-                        totalCambios.textContent = `(${data.total_cambios} cambios)`;
-                    }
-                    
-                    let html = '<div style="display: flex; flex-direction: column; gap: 8px;">';
-                    
-                    data.historial.forEach(item => {
-                        const esAumento = item.precio_nuevo > item.precio_anterior;
-                        const color = esAumento ? '#28a745' : '#dc3545';
-                        const flecha = esAumento ? '▲' : '▼';
+            fetch(`/api/historial_precios/${recetaId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.historial.length > 0) {
+                        if (totalCambios) {
+                            totalCambios.textContent = `(${data.total_cambios} cambios)`;
+                        }
                         
-                        html += `
-                            <div style="display: flex; justify-content: space-between; align-items: center; 
-                                        padding: 10px 15px; background: white; border-radius: 6px; 
-                                        border-left: 3px solid ${color}; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                                <div>
-                                    <span style="font-weight: bold;">${item.precio_anterior.toFixed(0)}</span>
-                                    <span style="color: ${color}; margin: 0 8px;">${flecha}</span>
-                                    <span style="font-weight: bold; color: ${color};">${item.precio_nuevo.toFixed(0)}</span>
-                                    <span style="font-size: 0.8em; color: #6c757d; margin-left: 10px;">${item.motivo}</span>
+                        let html = '<div style="display: flex; flex-direction: column; gap: 8px;">';
+                        
+                        data.historial.forEach(item => {
+                            const esAumento = item.precio_nuevo > item.precio_anterior;
+                            const color = esAumento ? '#28a745' : '#dc3545';
+                            const flecha = esAumento ? '▲' : '▼';
+                            
+                            html += `
+                                <div style="display: flex; justify-content: space-between; align-items: center; 
+                                            padding: 10px 16px; background: #f8fafc; border-radius: 8px; 
+                                            border-left: 3px solid ${color};">
+                                    <div>
+                                        <span style="font-weight: 600;">${item.precio_anterior.toFixed(0)}</span>
+                                        <span style="color: ${color}; margin: 0 8px;">${flecha}</span>
+                                        <span style="font-weight: 600; color: ${color};">${item.precio_nuevo.toFixed(0)}</span>
+                                        <span style="font-size: 0.75rem; color: #6e6e73; margin-left: 10px;">${item.motivo}</span>
+                                    </div>
+                                    <div style="font-size: 0.7rem; color: #6e6e73;">
+                                        ${item.fecha}
+                                    </div>
                                 </div>
-                                <div style="font-size: 0.75em; color: #6c757d;">
-                                    ${item.fecha}
-                                </div>
+                            `;
+                        });
+                        
+                        html += '</div>';
+                        contenedor.innerHTML = html;
+                    } else {
+                        contenedor.innerHTML = `
+                            <div style="text-align: center; padding: 20px; color: #6e6e73;">
+                                <i class="fas fa-history" style="font-size: 1.5rem; display: block; margin-bottom: 10px;"></i>
+                                No hay cambios de precio registrados para esta receta.
                             </div>
                         `;
-                    });
-                    
-                    html += '</div>';
-                    contenedor.innerHTML = html;
-                } else {
+                        if (totalCambios) {
+                            totalCambios.textContent = '(0 cambios)';
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error cargando historial:', error);
                     contenedor.innerHTML = `
-                        <div style="text-align: center; padding: 20px; color: #6c757d;">
-                            <i class="fas fa-history" style="font-size: 1.5em; display: block; margin-bottom: 10px;"></i>
-                            No hay cambios de precio registrados para esta receta.
+                        <div style="text-align: center; padding: 20px; color: #dc3545;">
+                            <i class="fas fa-exclamation-circle"></i> Error al cargar el historial
                         </div>
                     `;
-                    if (totalCambios) {
-                        totalCambios.textContent = '(0 cambios)';
-                    }
-                }
-            })
-            .catch(error => {
-                console.error('Error cargando historial:', error);
-                contenedor.innerHTML = `
-                    <div style="text-align: center; padding: 20px; color: #dc3545;">
-                        <i class="fas fa-exclamation-circle"></i> Error al cargar el historial
-                    </div>
-                `;
-            });
-    }
-    
-    // Cargar historial al cargar la página
-    document.addEventListener('DOMContentLoaded', function() {
-        // Obtener el ID de la receta desde la URL o desde un elemento
-        const recetaId = window.location.pathname.split('/').pop();
-        if (recetaId) {
-            cargarHistorialPrecios(recetaId);
+                });
         }
-    });
+        
+        // Cargar historial al cargar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            const recetaId = window.location.pathname.split('/').pop();
+            if (recetaId) {
+                cargarHistorialPrecios(recetaId);
+            }
+        });
     </script>
 
 </body>

@@ -619,6 +619,9 @@ class Receta(db.Model):
     precio_venta = db.Column(db.Float, default=0)
     activo = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    porcentaje_cif = db.Column(db.Float, default=45.0)  # 45% por defecto
+    porcentaje_merma_manejo = db.Column(db.Float, default=2.0)
+    margen_deseado = db.Column(db.Float, default=30.0)
     
     # NUEVOS CAMPOS PARA EL SISTEMA DE PRECIOS REALES
     precio_venta_real = db.Column(db.Float, default=0)  # ✅ PRECIO REAL DE VENTA
@@ -1015,15 +1018,29 @@ class Gasto(db.Model):
 
 class RecetaIngrediente(db.Model):
     __tablename__ = 'receta_ingredientes'
+    
+    # =============================================
+    # CAMPOS EXISTENTES
+    # =============================================
     panaderia_id = db.Column(db.Integer, nullable=False, default=1)
     id = db.Column(db.Integer, primary_key=True)
     receta_id = db.Column(db.Integer, db.ForeignKey('recetas.id'), nullable=False)
     materia_prima_id = db.Column(db.Integer, db.ForeignKey('materias_primas.id'), nullable=False)
+    cantidad = db.Column(db.Float, nullable=False, default=0) 
     porcentaje_aplicado = db.Column(db.Float, nullable=False)  # % sobre el total
     cantidad_gramos = db.Column(db.Float, nullable=False, default=0)
     costo_ingrediente = db.Column(db.Float, default=0)
     
-    # Relación con materia prima
+    # =============================================
+    # 🆕 NUEVOS CAMPOS - Costo histórico
+    # =============================================
+    unidad_medida = db.Column(db.String(20), nullable=True)  # Unidad usada (g, kg, etc.)
+    costo_unitario = db.Column(db.Float, default=0)  # Costo por gramo en el momento de la receta
+    costo_total = db.Column(db.Float, default=0)  # Costo total del ingrediente en la receta
+    
+    # =============================================
+    # RELACIONES
+    # =============================================
     materia_prima = db.relationship('MateriaPrima', backref='recetas_ingredientes')
 
 class OrdenProduccion(db.Model):

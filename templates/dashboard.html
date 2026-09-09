@@ -499,18 +499,28 @@
                     </div>
                 </div>
                 <div class="header-right">
-                    <div class="tenant-badge-dashboard">
-                        <i class="fas fa-store"></i>
-                        {% if session.get('tenant_actual') %}
-                            {{ session.get('tenant_actual') }}
-                        {% else %}
-                            Panadería Principal
-                        {% endif %}
-                    </div>
-                    <a href="{{ url_for('logout') }}" class="logout-btn-header">
-                        <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
-                    </a>
+                <!-- Badge del tenant -->
+                <div class="tenant-badge-dashboard">
+                    <i class="fas fa-store"></i>
+                    {% if session.get('tenant_actual') %}
+                        {{ session.get('tenant_actual') }}
+                    {% else %}
+                        Panadería Principal
+                    {% endif %}
                 </div>
+                
+                <!-- BOTÓN GESTIÓN DE CLIENTES - Solo visible para super_admin -->
+                {% if current_user.is_authenticated and current_user.rol == 'super_admin' %}
+                <a href="{{ url_for('gestion_clientes') }}" class="btn-clientes" style="display: inline-flex; align-items: center; gap: 6px; background: #d49a0a; color: #ffffff; padding: 8px 18px; border-radius: 50px; text-decoration: none; font-size: 0.8rem; font-weight: 600; transition: all 0.3s ease; border: none;">
+                    <i class="fas fa-crown"></i> Gestión de Clientes
+                </a>
+                {% endif %}
+                
+                <!-- Botón Cerrar Sesión -->
+                <a href="{{ url_for('logout') }}" class="logout-btn-header">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </a>
+            </div>
             </div>
         </div>
 

@@ -269,6 +269,57 @@
                 <small style="color: #666; font-size: 12px;">Porcentaje de masa que se pierde durante el horneado</small>
             </div>
 
+            <!-- ✅ MERMA POR MANEJO -->
+            <div class="form-group">
+                <label for="porcentaje_merma_manejo">% Merma por Manejo</label>
+                <input type="number" name="porcentaje_merma_manejo" step="0.5" 
+                       value="{{ receta.porcentaje_merma_manejo if receta and receta.porcentaje_merma_manejo is not none else '0' }}" 
+                       min="0" max="10" placeholder="0"
+                       oninput="actualizarCalculosCompletos()"
+                       id="porcentaje_merma_manejo">
+                <div style="display: flex; justify-content: space-between; font-size: 12px; color: #666; margin-top: 4px;">
+                    <span>0% (sin pérdidas)</span>
+                    <span>3% (recomendado)</span>
+                    <span>10% (máximo)</span>
+                </div>
+                <small style="color: #666; font-size: 12px; display: block; margin-top: 4px;">
+                    ⚠️ <strong>¿Qué es la merma por manejo?</strong> Pan que se cae, se quema, se rompe o se aplasta durante la producción.
+                    <br>📌 <strong>Importante:</strong> Este porcentaje <strong>sí afecta el costo</strong> porque reduce las unidades disponibles para la venta.
+                    <br>💡 <strong>Ejemplo:</strong> Si produces 100 panes y tienes 3% de merma, solo podrás vender 97 panes. El costo de los 100 panes se reparte entre 97.
+                </small>
+            </div>
+
+            <!-- ✅ NUEVO CAMPO: % COSTOS INDIRECTOS (CIF) -->
+            <div class="form-group">
+                <label>% Costos Indirectos (CIF)</label>
+                <input type="number" name="porcentaje_cif" step="0.5" value="{{ receta.porcentaje_cif if receta and receta.porcentaje_cif is not none else '45.0' }}" min="0" max="100" placeholder="45.0"
+                       oninput="actualizarCalculosCompletos()">
+                <small style="color: #666; font-size: 12px;">
+                    Porcentaje de costos indirectos sobre materias primas (mano de obra, energía, arriendo, etc.)
+                </small>
+            </div>
+
+            <!-- ✅ MARGEN DESEADO -->
+            <div class="form-group">
+                <label for="margen_deseado">% Margen Deseado</label>
+                <input type="number" name="margen_deseado" step="0.5" 
+                       value="{{ receta.margen_deseado if receta and receta.margen_deseado is not none else '30' }}" 
+                       min="0" max="100" placeholder="30"
+                       oninput="actualizarCalculosCompletos()"
+                       id="margen_deseado">
+                <div style="display: flex; justify-content: space-between; font-size: 12px; color: #666; margin-top: 4px;">
+                    <span>0% (sin ganancia)</span>
+                    <span>30% (recomendado)</span>
+                    <span>50% (alto)</span>
+                </div>
+                <small style="color: #666; font-size: 12px; display: block; margin-top: 4px;">
+                    💰 <strong>¿Qué es el margen deseado?</strong> Es el porcentaje de ganancia que quieres obtener sobre el precio de venta.
+                    <br>📌 <strong>Importante:</strong> El precio teórico se calcula con este margen. 
+                    <br>💡 <strong>Ejemplo:</strong> Si tu costo es $382 y quieres 30% de margen, el precio teórico será $382 / 0.70 = $546.
+                    <br>🔍 <strong>Recomendación:</strong> Para panaderías, el margen suele estar entre 20% y 35%.
+                </small>
+            </div>
+
             <!-- ✅ NUEVA SECCIÓN: CÁLCULOS AUTOMÁTICOS CON 45% CIF + 45% GANANCIA -->
             <div class="calculos-section">
                 <h3>📊 <div class="form-group">

@@ -90,3 +90,7 @@ __pycache__/
 instance/ 
 backup_final_20260630/ 
 backup_temp/ 
+backups_postgresql/ 
+*.sql 
+*.backup 
+*.dump 

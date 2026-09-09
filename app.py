@@ -14,7 +14,9 @@ def crear_tablas_en_orden(schema_name):
     
     print(f"   📝 Creando tablas en orden para {schema_name}...")
     
+    # =============================================
     # 1. panaderias (no depende de nadie)
+    # =============================================
     db.session.execute(text(f'''
         CREATE TABLE IF NOT EXISTS {schema_name}.panaderias (
             id INTEGER PRIMARY KEY,
@@ -34,7 +36,9 @@ def crear_tablas_en_orden(schema_name):
         )
     '''))
     
+    # =============================================
     # 2. categorias (depende de panaderias)
+    # =============================================
     db.session.execute(text(f'''
         CREATE TABLE IF NOT EXISTS {schema_name}.categorias (
             id SERIAL PRIMARY KEY,
@@ -44,30 +48,9 @@ def crear_tablas_en_orden(schema_name):
         )
     '''))
     
-    # 3. productos (depende de categorias y panaderias)
-    db.session.execute(text(f'''
-        CREATE TABLE IF NOT EXISTS {schema_name}.productos (
-            id SERIAL PRIMARY KEY,
-            nombre VARCHAR(100) NOT NULL,
-            descripcion TEXT,
-            categoria_id INTEGER NOT NULL REFERENCES {schema_name}.categorias(id),
-            stock_actual INTEGER DEFAULT 0,
-            stock_minimo INTEGER DEFAULT 10,
-            precio_venta FLOAT NOT NULL,
-            codigo_barras VARCHAR(50) UNIQUE,
-            activo BOOLEAN DEFAULT TRUE,
-            vida_util_dias INTEGER DEFAULT 3,
-            es_pan BOOLEAN DEFAULT TRUE,
-            fecha_creacion TIMESTAMP DEFAULT NOW(),
-            tipo_producto VARCHAR(20) DEFAULT 'produccion',
-            costo_compra FLOAT DEFAULT 0,
-            proveedor_externo VARCHAR(100),
-            receta_id INTEGER,
-            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
-        )
-    '''))
-    
-    # 4. usuarios (depende de panaderias)
+    # =============================================
+    # 3. usuarios (depende de panaderias)
+    # =============================================
     db.session.execute(text(f'''
         CREATE TABLE IF NOT EXISTS {schema_name}.usuarios (
             id SERIAL PRIMARY KEY,
@@ -86,7 +69,9 @@ def crear_tablas_en_orden(schema_name):
         )
     '''))
     
-    # 5. configuracion_panaderia (depende de panaderias)
+    # =============================================
+    # 4. configuracion_panaderia (depende de panaderias)
+    # =============================================
     db.session.execute(text(f'''
         CREATE TABLE IF NOT EXISTS {schema_name}.configuracion_panaderia (
             id SERIAL PRIMARY KEY,
@@ -117,7 +102,9 @@ def crear_tablas_en_orden(schema_name):
         )
     '''))
     
-    # 6. consecutivos_pos (depende de panaderias)
+    # =============================================
+    # 5. consecutivos_pos (depende de panaderias)
+    # =============================================
     db.session.execute(text(f'''
         CREATE TABLE IF NOT EXISTS {schema_name}.consecutivos_pos (
             id SERIAL PRIMARY KEY,
@@ -125,6 +112,675 @@ def crear_tablas_en_orden(schema_name):
             numero_actual INTEGER DEFAULT 0,
             updated_at TIMESTAMP DEFAULT NOW()
         )
+    '''))
+    
+    # =============================================
+    # 6. sucursal (depende de panaderias)
+    # =============================================
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.sucursal (
+            id SERIAL PRIMARY KEY,
+            nombre VARCHAR(100) NOT NULL,
+            direccion TEXT,
+            telefono VARCHAR(20),
+            email VARCHAR(100),
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
+        )
+    '''))
+    
+    # =============================================
+    # 7. proveedor (depende de panaderias)
+    # =============================================
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.proveedor (
+            id SERIAL PRIMARY KEY,
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),
+            nombre VARCHAR(100) NOT NULL,
+            contacto VARCHAR(100),
+            telefono VARCHAR(20),
+            email VARCHAR(100),
+            direccion TEXT,
+            productos_que_suministra TEXT,
+            tiempo_entrega_dias INTEGER,
+            evaluacion INTEGER,
+            activo BOOLEAN DEFAULT TRUE,
+            fecha_registro TIMESTAMP DEFAULT NOW()
+        )
+    '''))
+    
+    # =============================================
+    # 8. materias_primas (depende de panaderias)
+    # =============================================
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.materias_primas (
+            id SERIAL PRIMARY KEY,
+            nombre VARCHAR(100) NOT NULL,
+            proveedor_id INTEGER,
+            unidad_medida VARCHAR(20) NOT NULL,
+            costo_promedio FLOAT DEFAULT 0,
+            stock_actual FLOAT DEFAULT 0,
+            stock_minimo FLOAT DEFAULT 0,
+            fecha_ultima_actualizacion TIMESTAMP DEFAULT NOW(),
+            fecha_vencimiento DATE,
+            activo BOOLEAN DEFAULT TRUE,
+            unidad_compra VARCHAR(20),
+            gramos_por_empaque FLOAT,
+            stock_minimo_empaques INTEGER DEFAULT 0,
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
+        )
+    '''))
+    
+    # =============================================
+    # 9. productos (depende de categorias y panaderias)
+    # =============================================
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.productos (
+            id SERIAL PRIMARY KEY,
+            nombre VARCHAR(100) NOT NULL,
+            descripcion TEXT,
+            categoria_id INTEGER NOT NULL REFERENCES {schema_name}.categorias(id),
+            stock_actual INTEGER DEFAULT 0,
+            stock_minimo INTEGER DEFAULT 10,
+            precio_venta FLOAT NOT NULL,
+            codigo_barras VARCHAR(50) UNIQUE,
+            activo BOOLEAN DEFAULT TRUE,
+            vida_util_dias INTEGER DEFAULT 3,
+            es_pan BOOLEAN DEFAULT TRUE,
+            fecha_creacion TIMESTAMP DEFAULT NOW(),
+            tipo_producto VARCHAR(20) DEFAULT 'produccion',
+            costo_compra FLOAT DEFAULT 0,
+            proveedor_externo VARCHAR(100),
+            receta_id INTEGER,
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
+        )
+    '''))
+    
+    # =============================================
+    # 10. stock_productos (depende de productos y panaderias)
+    # =============================================
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.stock_productos (
+            id SERIAL PRIMARY KEY,
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),
+            producto_id INTEGER NOT NULL REFERENCES {schema_name}.productos(id),
+            stock_actual INTEGER DEFAULT 0,
+            stock_minimo INTEGER DEFAULT 0,
+            stock_maximo INTEGER DEFAULT 0,
+            fecha_actualizacion TIMESTAMP DEFAULT NOW()
+        )
+    '''))
+    
+    # =============================================
+    # 11. historial_inventario (depende de productos, usuarios y panaderias)
+    # =============================================
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.historial_inventario (
+            id SERIAL PRIMARY KEY,
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),
+            producto_id INTEGER NOT NULL REFERENCES {schema_name}.productos(id),
+            cantidad_anterior INTEGER DEFAULT 0,
+            cantidad_nueva INTEGER DEFAULT 0,
+            tipo_movimiento VARCHAR(50),
+            usuario_id INTEGER REFERENCES {schema_name}.usuarios(id),
+            fecha_movimiento TIMESTAMP DEFAULT NOW(),
+            observaciones TEXT
+        )
+    '''))
+    
+    # =============================================
+    # 12. historial_rotacion_producto (depende de productos y panaderias)
+    # =============================================
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.historial_rotacion_producto (
+            id SERIAL PRIMARY KEY,
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),
+            producto_id INTEGER NOT NULL REFERENCES {schema_name}.productos(id),
+            rotacion FLOAT DEFAULT 0,
+            fecha_calculo TIMESTAMP DEFAULT NOW()
+        )
+    '''))
+    
+    # =============================================
+    # 13. control_vida_util (depende de productos y panaderias)
+    # =============================================
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.control_vida_util (
+            id SERIAL PRIMARY KEY,
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),
+            producto_id INTEGER NOT NULL REFERENCES {schema_name}.productos(id),
+            dias_restantes INTEGER DEFAULT 0,
+            fecha_control TIMESTAMP DEFAULT NOW()
+        )
+    '''))
+    
+    # =============================================
+    # 14. compras (depende de proveedor y panaderias)
+    # =============================================
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.compras (
+            id SERIAL PRIMARY KEY,
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),
+            proveedor_id INTEGER REFERENCES {schema_name}.proveedor(id),
+            fecha_compra TIMESTAMP DEFAULT NOW(),
+            total FLOAT DEFAULT 0,
+            estado VARCHAR(20) DEFAULT 'pendiente',
+            observaciones TEXT
+        )
+    '''))
+    
+    # =============================================
+    # 15. detalles_compra (depende de compras y productos)
+    # =============================================
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.detalles_compra (
+            id SERIAL PRIMARY KEY,
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),
+            compra_id INTEGER NOT NULL REFERENCES {schema_name}.compras(id),
+            producto_id INTEGER NOT NULL REFERENCES {schema_name}.productos(id),
+            cantidad INTEGER NOT NULL DEFAULT 0,
+            precio_unitario FLOAT DEFAULT 0,
+            subtotal FLOAT DEFAULT 0
+        )
+    '''))
+    
+    # =============================================
+    # 16. historial_compras (depende de materias_primas y panaderias)
+    # =============================================
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.historial_compras (
+            id SERIAL PRIMARY KEY,
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),
+            materia_prima_id INTEGER NOT NULL REFERENCES {schema_name}.materias_primas(id),
+            fecha_compra TIMESTAMP DEFAULT NOW(),
+            cantidad_empaques INTEGER NOT NULL DEFAULT 0,
+            precio_total FLOAT DEFAULT 0,
+            precio_unitario_empaque FLOAT DEFAULT 0,
+            usuario_id INTEGER REFERENCES {schema_name}.usuarios(id)
+        )
+    '''))
+    
+    # =============================================
+    # 17. productos_externos (depende de panaderias)
+    # =============================================
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.productos_externos (
+            id SERIAL PRIMARY KEY,
+            nombre VARCHAR(100) NOT NULL,
+            descripcion TEXT,
+            precio_compra FLOAT DEFAULT 0,
+            precio_venta FLOAT NOT NULL,
+            stock_actual INTEGER DEFAULT 0,
+            stock_minimo INTEGER DEFAULT 0,
+            codigo_barras VARCHAR(50),
+            fecha_vencimiento DATE,
+            activo BOOLEAN DEFAULT TRUE,
+            proveedor VARCHAR(100),
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
+        )
+    '''))
+    
+    # =============================================
+    # 18. compras_externas (depende de productos_externos y panaderias)
+    # =============================================
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.compras_externas (
+            id SERIAL PRIMARY KEY,
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),
+            producto_externo_id INTEGER NOT NULL REFERENCES {schema_name}.productos_externos(id),
+            fecha_compra TIMESTAMP DEFAULT NOW(),
+            cantidad INTEGER NOT NULL DEFAULT 0,
+            precio_unitario FLOAT DEFAULT 0,
+            total FLOAT DEFAULT 0,
+            proveedor VARCHAR(100),
+            factura VARCHAR(50),
+            observaciones TEXT,
+            usuario_id INTEGER REFERENCES {schema_name}.usuarios(id)
+        )
+    '''))
+    
+        # =============================================
+    # 19 recetas (depende de panaderias)
+    # =============================================
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.recetas (
+            id SERIAL PRIMARY KEY,
+            nombre VARCHAR(255) NOT NULL,
+            descripcion TEXT,
+            categoria VARCHAR(100),
+            peso_unidad_gramos FLOAT DEFAULT 0,
+            porcentaje_perdida FLOAT DEFAULT 10.0,
+            porcentaje_merma_manejo FLOAT DEFAULT 0.0,
+            porcentaje_cif FLOAT DEFAULT 45.0, 
+            margen_deseado FLOAT DEFAULT 30.0,
+            costo_total FLOAT DEFAULT 0,
+            precio_venta FLOAT DEFAULT 0,
+            activo BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMP DEFAULT NOW(),
+            precio_venta_real FLOAT DEFAULT 0,
+            precio_venta_unitario FLOAT DEFAULT 0,
+            precio_por_gramo FLOAT DEFAULT 0,
+            peso_total_masa FLOAT DEFAULT 0,
+            unidades_obtenidas INTEGER DEFAULT 0,
+            peso_horneado_unidad FLOAT DEFAULT 0,
+            costo_materias_primas FLOAT DEFAULT 0,
+            costo_indirecto FLOAT DEFAULT 0,
+            margen_ganancia FLOAT DEFAULT 0,
+            producto_id INTEGER,
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
+        )
+    '''))
+    
+        # =============================================
+        # =============================================
+        # =============================================
+    # receta_ingredientes (depende de recetas y materias_primas)
+    # =============================================
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.receta_ingredientes (
+            id SERIAL PRIMARY KEY,
+            receta_id INTEGER NOT NULL REFERENCES {schema_name}.recetas(id),
+            materia_prima_id INTEGER NOT NULL REFERENCES {schema_name}.materias_primas(id),
+            porcentaje_aplicado FLOAT DEFAULT 0,
+            cantidad_gramos FLOAT DEFAULT 0,
+            costo_ingrediente FLOAT DEFAULT 0,
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),
+            unidad_medida VARCHAR(20),
+            costo_unitario FLOAT DEFAULT 0,
+            costo_total FLOAT DEFAULT 0
+        )
+    '''))
+    
+    # =============================================
+    # 21. historial_precios_receta (depende de recetas y panaderias)
+    # =============================================
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.historial_precios_receta (
+            id SERIAL PRIMARY KEY,
+            receta_id INTEGER NOT NULL REFERENCES {schema_name}.recetas(id),
+            precio_anterior FLOAT DEFAULT 0,
+            precio_nuevo FLOAT DEFAULT 0,
+            fecha_cambio TIMESTAMP DEFAULT NOW(),
+            usuario_id INTEGER REFERENCES {schema_name}.usuarios(id)
+        )
+    '''))
+    
+    # =============================================
+    # 22. clientes (depende de panaderias)
+    # =============================================
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.clientes (
+            id SERIAL PRIMARY KEY,
+            nombre VARCHAR(100) NOT NULL,
+            apellido VARCHAR(100),
+            documento VARCHAR(20) UNIQUE,
+            email VARCHAR(100),
+            telefono VARCHAR(20),
+            direccion TEXT,
+            tipo_cliente VARCHAR(20) DEFAULT 'regular',
+            activo BOOLEAN DEFAULT TRUE,
+            fecha_registro TIMESTAMP DEFAULT NOW(),
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
+        )
+    '''))
+    
+    # =============================================
+    # 23. ventas (depende de clientes, usuarios y panaderias)
+    # =============================================
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.ventas (
+            id SERIAL PRIMARY KEY,
+            cliente_id INTEGER REFERENCES {schema_name}.clientes(id),
+            usuario_id INTEGER NOT NULL REFERENCES {schema_name}.usuarios(id),
+            fecha_hora TIMESTAMP DEFAULT NOW(),
+            total_venta FLOAT NOT NULL DEFAULT 0,
+            total_donacion FLOAT DEFAULT 0,
+            impuesto FLOAT DEFAULT 0,
+            descuento FLOAT DEFAULT 0,
+            metodo_pago VARCHAR(50) NOT NULL,
+            estado VARCHAR(20) DEFAULT 'completada',
+            consecutivo VARCHAR(20),
+            observaciones TEXT,
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
+        )
+    '''))
+    
+    # =============================================
+    # 24. detalles_venta (depende de ventas y productos)
+    # =============================================
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.detalles_venta (
+            id SERIAL PRIMARY KEY,
+            venta_id INTEGER NOT NULL REFERENCES {schema_name}.ventas(id),
+            producto_id INTEGER NOT NULL REFERENCES {schema_name}.productos(id),
+            cantidad INTEGER NOT NULL,
+            precio_unitario FLOAT NOT NULL,
+            subtotal FLOAT NOT NULL,
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
+        )
+    '''))
+    
+    # =============================================
+    # 25. jornada_ventas (depende de usuarios y panaderias)
+    # =============================================
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.jornada_ventas (
+            id SERIAL PRIMARY KEY,
+            usuario_id INTEGER NOT NULL REFERENCES {schema_name}.usuarios(id),
+            fecha_apertura TIMESTAMP DEFAULT NOW(),
+            fecha_cierre TIMESTAMP,
+            saldo_inicial FLOAT DEFAULT 0,
+            saldo_final FLOAT DEFAULT 0,
+            total_ventas FLOAT DEFAULT 0,
+            estado VARCHAR(20) DEFAULT 'abierta',
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
+        )
+    '''))
+    
+    # =============================================
+    # 26. registros_diarios (depende de panaderias)
+    # =============================================
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.registros_diarios (
+            id SERIAL PRIMARY KEY,
+            fecha DATE NOT NULL,
+            total_ventas FLOAT DEFAULT 0,
+            total_gastos FLOAT DEFAULT 0,
+            total_donaciones FLOAT DEFAULT 0,
+            saldo_inicial FLOAT DEFAULT 0,
+            saldo_final FLOAT DEFAULT 0,
+            observaciones TEXT,
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
+        )
+    '''))
+    
+    # =============================================
+    # 27. ordenes_produccion (depende de recetas, usuarios y panaderias)
+    # =============================================
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.ordenes_produccion (
+            id SERIAL PRIMARY KEY,
+            receta_id INTEGER NOT NULL REFERENCES {schema_name}.recetas(id),
+            cantidad_producir INTEGER NOT NULL DEFAULT 0,
+            cantidad_real INTEGER DEFAULT 0,
+            fecha_orden TIMESTAMP DEFAULT NOW(),
+            fecha_produccion DATE,
+            estado VARCHAR(20) DEFAULT 'pendiente',
+            observaciones TEXT,
+            usuario_creacion_id INTEGER REFERENCES {schema_name}.usuarios(id),
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
+        )
+    '''))
+    
+    # =============================================
+    # 28. activos_fijos (depende de panaderias)
+    # =============================================
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.activos_fijos (
+            id SERIAL PRIMARY KEY,
+            nombre VARCHAR(100) NOT NULL,
+            descripcion TEXT,
+            categoria VARCHAR(50),
+            valor_compra FLOAT DEFAULT 0,
+            valor_actual FLOAT DEFAULT 0,
+            fecha_compra DATE,
+            vida_util_meses INTEGER DEFAULT 0,
+            depreciacion_mensual FLOAT DEFAULT 0,
+            ubicacion VARCHAR(100),
+            estado VARCHAR(20) DEFAULT 'activo',
+            proveedor VARCHAR(100),
+            factura_compra VARCHAR(50),
+            serial VARCHAR(50),
+            activo BOOLEAN DEFAULT TRUE,
+            fecha_registro TIMESTAMP DEFAULT NOW(),
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
+        )
+    '''))
+    
+    # =============================================
+    # 29. historial_mantenimientos (depende de activos_fijos y panaderias)
+    # =============================================
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.historial_mantenimientos (
+            id SERIAL PRIMARY KEY,
+            activo_fijo_id INTEGER NOT NULL REFERENCES {schema_name}.activos_fijos(id),
+            fecha_mantenimiento DATE NOT NULL,
+            descripcion TEXT,
+            costo FLOAT DEFAULT 0,
+            tipo VARCHAR(50) DEFAULT 'correctivo',
+            realizado_por VARCHAR(100),
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
+        )
+    '''))
+    
+    # =============================================
+    # 30. depositos_bancarios (depende de usuarios y panaderias)
+    # =============================================
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.depositos_bancarios (
+            id SERIAL PRIMARY KEY,
+            banco VARCHAR(100) NOT NULL,
+            monto FLOAT NOT NULL,
+            fecha_deposito DATE NOT NULL,
+            referencia VARCHAR(100),
+            tipo VARCHAR(50),
+            estado VARCHAR(20) DEFAULT 'pendiente',
+            observaciones TEXT,
+            usuario_id INTEGER REFERENCES {schema_name}.usuarios(id),
+            fecha_registro TIMESTAMP DEFAULT NOW(),
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
+        )
+    '''))
+    
+    # =============================================
+    # 31. saldos_banco (depende de panaderias)
+    # =============================================
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.saldos_banco (
+            id SERIAL PRIMARY KEY,
+            banco VARCHAR(100) NOT NULL,
+            saldo_actual FLOAT DEFAULT 0,
+            fecha_actualizacion TIMESTAMP DEFAULT NOW(),
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
+        )
+    '''))
+    
+    # =============================================
+    # 32. pagos_individuales (depende de usuarios y panaderias)
+    # =============================================
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.pagos_individuales (
+            id SERIAL PRIMARY KEY,
+            concepto VARCHAR(100) NOT NULL,
+            monto FLOAT NOT NULL,
+            fecha_pago TIMESTAMP DEFAULT NOW(),
+            metodo_pago VARCHAR(50),
+            referencia VARCHAR(100),
+            observaciones TEXT,
+            usuario_id INTEGER REFERENCES {schema_name}.usuarios(id),
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
+        )
+    '''))
+    
+    # =============================================
+    # 33. configuracion_produccion (depende de panaderias)
+    # =============================================
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.configuracion_produccion (
+            id SERIAL PRIMARY KEY,
+            produccion_automatica BOOLEAN DEFAULT TRUE,
+            alerta_stock_minimo BOOLEAN DEFAULT TRUE,
+            dias_historial_ventas INTEGER DEFAULT 30,
+            inventario_seguridad FLOAT DEFAULT 20,
+            rotacion_recomendada FLOAT DEFAULT 10,
+            vida_util_pan_dias INTEGER DEFAULT 3,
+            activar_alertas BOOLEAN DEFAULT TRUE,
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
+        )
+    '''))
+    
+    # =============================================
+    # 34. configuracion_sistema (depende de panaderias)
+    # =============================================
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.configuracion_sistema (
+            id SERIAL PRIMARY KEY,
+            nombre_sistema VARCHAR(100) DEFAULT 'PanaderíaPro',
+            version VARCHAR(20) DEFAULT '1.0.0',
+            modo_mantenimiento BOOLEAN DEFAULT FALSE,
+            ultima_actualizacion TIMESTAMP DEFAULT NOW(),
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
+        )
+    '''))
+    
+    # =============================================
+    # 35. cierres_diarios (depende de usuarios, depositos_bancarios y panaderias)
+    # =============================================
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.cierres_diarios (
+            id SERIAL PRIMARY KEY,
+            fecha_cierre DATE NOT NULL,
+            total_ventas FLOAT DEFAULT 0,
+            total_efectivo FLOAT DEFAULT 0,
+            total_tarjeta FLOAT DEFAULT 0,
+            total_transferencia FLOAT DEFAULT 0,
+            total_donaciones FLOAT DEFAULT 0,
+            deposito_bancario_id INTEGER REFERENCES {schema_name}.depositos_bancarios(id),
+            observaciones TEXT,
+            usuario_id INTEGER REFERENCES {schema_name}.usuarios(id),
+            estado VARCHAR(20) DEFAULT 'abierto',
+            fecha_registro TIMESTAMP DEFAULT NOW(),
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
+        )
+    '''))
+    
+    # =============================================
+    # 36. gastos (depende de usuarios y panaderias)
+    # =============================================
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.gastos (
+            id SERIAL PRIMARY KEY,
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),
+            concepto VARCHAR(100) NOT NULL,
+            monto FLOAT NOT NULL,
+            fecha_gasto TIMESTAMP DEFAULT NOW(),
+            categoria VARCHAR(50),
+            observaciones TEXT,
+            usuario_id INTEGER REFERENCES {schema_name}.usuarios(id)
+        )
+    '''))
+    
+    # =============================================
+    # 37. registro_financiero (depende de usuarios y panaderias)
+    # =============================================
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.registro_financiero (
+            id SERIAL PRIMARY KEY,
+            fecha DATE NOT NULL,
+            tipo VARCHAR(50) NOT NULL,
+            descripcion TEXT,
+            ingreso FLOAT DEFAULT 0,
+            egreso FLOAT DEFAULT 0,
+            saldo FLOAT DEFAULT 0,
+            usuario_id INTEGER REFERENCES {schema_name}.usuarios(id),
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
+        )
+    '''))
+    
+    # =============================================
+    # 38. permisos_usuarios (depende de usuarios y panaderias)
+    # =============================================
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.permisos_usuarios (
+            id SERIAL PRIMARY KEY,
+            usuario_id INTEGER NOT NULL REFERENCES {schema_name}.usuarios(id),
+            modulo VARCHAR(50) NOT NULL,
+            accion VARCHAR(50) NOT NULL,
+            permitido BOOLEAN DEFAULT TRUE,
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
+        )
+    '''))
+    
+    # =============================================
+    # 39. logs_sistema (depende de usuarios y panaderias)
+    # =============================================
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.logs_sistema (
+            id SERIAL PRIMARY KEY,
+            usuario_id INTEGER REFERENCES {schema_name}.usuarios(id),
+            accion VARCHAR(100) NOT NULL,
+            descripcion TEXT,
+            ip_origen VARCHAR(50),
+            fecha_log TIMESTAMP DEFAULT NOW(),
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
+        )
+    '''))
+    
+    # =============================================
+    # ÍNDICES ADICIONALES PARA MEJORAR RENDIMIENTO
+    # =============================================
+    db.session.execute(text(f'''
+        CREATE INDEX IF NOT EXISTS idx_materias_primas_panaderia 
+        ON {schema_name}.materias_primas(panaderia_id)
+    '''))
+    
+    db.session.execute(text(f'''
+        CREATE INDEX IF NOT EXISTS idx_productos_panaderia 
+        ON {schema_name}.productos(panaderia_id)
+    '''))
+    
+    db.session.execute(text(f'''
+        CREATE INDEX IF NOT EXISTS idx_recetas_panaderia 
+        ON {schema_name}.recetas(panaderia_id)
+    '''))
+    
+    db.session.execute(text(f'''
+        CREATE INDEX IF NOT EXISTS idx_ventas_panaderia 
+        ON {schema_name}.ventas(panaderia_id)
+    '''))
+    
+    db.session.execute(text(f'''
+        CREATE INDEX IF NOT EXISTS idx_clientes_panaderia 
+        ON {schema_name}.clientes(panaderia_id)
+    '''))
+    
+    db.session.execute(text(f'''
+        CREATE INDEX IF NOT EXISTS idx_activos_fijos_panaderia 
+        ON {schema_name}.activos_fijos(panaderia_id)
+    '''))
+    
+    db.session.execute(text(f'''
+        CREATE INDEX IF NOT EXISTS idx_ordenes_produccion_panaderia 
+        ON {schema_name}.ordenes_produccion(panaderia_id)
+    '''))
+    
+    db.session.execute(text(f'''
+        CREATE INDEX IF NOT EXISTS idx_cierres_diarios_panaderia 
+        ON {schema_name}.cierres_diarios(panaderia_id)
+    '''))
+    
+    db.session.execute(text(f'''
+        CREATE INDEX IF NOT EXISTS idx_materias_primas_proveedor 
+        ON {schema_name}.materias_primas(proveedor_id)
+    '''))
+    
+    db.session.execute(text(f'''
+        CREATE INDEX IF NOT EXISTS idx_receta_ingredientes_receta 
+        ON {schema_name}.receta_ingredientes(receta_id)
+    '''))
+    
+    db.session.execute(text(f'''
+        CREATE INDEX IF NOT EXISTS idx_detalles_venta_venta 
+        ON {schema_name}.detalles_venta(venta_id)
+    '''))
+    
+    db.session.execute(text(f'''
+        CREATE INDEX IF NOT EXISTS idx_ordenes_produccion_receta 
+        ON {schema_name}.ordenes_produccion(receta_id)
+    '''))
+    
+    db.session.execute(text(f'''
+        CREATE INDEX IF NOT EXISTS idx_historial_mantenimientos_activo 
+        ON {schema_name}.historial_mantenimientos(activo_fijo_id)
     '''))
     
     db.session.commit()
@@ -3540,6 +4196,58 @@ def agregar_materia_prima():
             if not proveedor_id:
                 flash('Debe seleccionar un proveedor', 'error')
                 return redirect(url_for('agregar_materia_prima'))
+            
+            # =============================================
+            # 🔍 INVESTIGACIÓN: LOGS DE DEPURACIÓN
+            # =============================================
+            print("=" * 70)
+            print("🔍 [INVESTIGACIÓN] AGREGAR MATERIA PRIMA")
+            print("=" * 70)
+            
+            # 1. Verificar el ID del proveedor recibido
+            print(f"📌 proveedor_id recibido: {proveedor_id}")
+            print(f"📌 panaderia_id actual: {current_user.panaderia_id}")
+            print(f"📌 session['user_id']: {session.get('user_id')}")
+            
+            # 2. Verificar si el proveedor existe en la base de datos
+            from sqlalchemy import text
+            proveedor_check = db.session.execute(
+                text(f"SELECT id, nombre, activo, panaderia_id FROM proveedor WHERE id = :id AND panaderia_id = :panaderia_id"),
+                {'id': proveedor_id, 'panaderia_id': current_user.panaderia_id}
+            ).fetchone()
+            
+            if proveedor_check:
+                print(f"✅ [DB] Proveedor encontrado en BD:")
+                print(f"   - ID: {proveedor_check[0]}")
+                print(f"   - Nombre: {proveedor_check[1]}")
+                print(f"   - Activo: {proveedor_check[2]}")
+                print(f"   - panaderia_id: {proveedor_check[3]}")
+            else:
+                print(f"❌ [DB] Proveedor NO encontrado en BD con ID: {proveedor_id}")
+            
+            # 3. Verificar el objeto Proveedor en la sesión de SQLAlchemy
+            try:
+                proveedor_obj = Proveedor.query.get(proveedor_id)
+                if proveedor_obj:
+                    print(f"✅ [ORM] Proveedor encontrado en ORM:")
+                    print(f"   - ID: {proveedor_obj.id}")
+                    print(f"   - Nombre: {proveedor_obj.nombre}")
+                    print(f"   - ¿Está en sesión? {db.session.object_session(proveedor_obj) is not None}")
+                else:
+                    print(f"❌ [ORM] Proveedor NO encontrado en ORM con ID: {proveedor_id}")
+            except Exception as e:
+                print(f"⚠️ [ORM] Error al obtener proveedor: {e}")
+            
+            # 4. Verificar el estado de la sesión
+            print(f"📌 Estado de la sesión: {db.session.is_active}")
+            # 4. Verificar el estado de la sesión
+            print(f"📌 Estado de la sesión: {db.session.is_active}")
+            print(f"📌 Transacción activa: {db.session.is_active}")  # ✅ CORREGIDO
+            
+            print("=" * 70)
+            # =============================================
+            # FIN DE LOGS DE DEPURACIÓN
+            # =============================================
                 
             if gramos_por_empaque <= 0:
                 flash('El peso por empaque debe ser mayor a 0', 'error')
@@ -3587,10 +4295,14 @@ def agregar_materia_prima():
                 cantidad_empaques=cantidad_empaques_comprados,
                 precio_total=precio_total_compra,
                 precio_unitario_empaque=precio_unitario_empaque,
-                usuario_id=session['user_id']
+                usuario_id=session['user_id'],
+                panaderia_id=current_user.panaderia_id 
             )
             db.session.add(nueva_compra)
             db.session.commit()
+            
+            # ✅ Forzar refresco de la sesión para evitar objetos "detached"
+            db.session.refresh(nueva_materia)
             
             flash(f'Materia prima "{nombre}" agregada con {stock_inicial} {unidad_medida} de stock inicial', 'success')
             return redirect(url_for('materias_primas'))
@@ -3754,8 +4466,7 @@ def historial_compras(materia_prima_id):
 from tenant_decorators import tenant_required  # Asegúrate de importar el decorador
 
 @app.route('/recetas')
-@permisos_requeridos('recetas', 'ver')
-@permisos_requeridos('recetas', 'ver')
+@permisos_requeridos('recetas', 'ver')  # Solo uno (eliminé el duplicado)
 @login_required
 @tenant_required  # ✅ NUEVO: Decorador multi-tenant
 def recetas():
@@ -3769,16 +4480,47 @@ def recetas():
     # ✅ BLOQUE SUPER USUARIO (MEJORADO)
     if es_super_usuario() and not session.get('panaderia_remota'):
         flash("🔧 Como super usuario, usa 'Acceder a esta panadería' para ver recetas específicas", "info")
-        return render_template('recetas.html', recetas=[])
+        return render_template('recetas.html', recetas=[], total_activas=0, total_inactivas=0, estado='activas')
     
-    # ✅ CORREGIDO: Solo recetas de ESTA panadería
-    recetas_panaderia = Receta.query.filter_by(panaderia_id=panaderia_actual, activo=True).all()
+    # 🆕 OBTENER PARÁMETRO DE FILTRO (NUEVO)
+    estado = request.args.get('estado', 'activas')  # 'activas', 'inactivas', 'todas'
+    busqueda = request.args.get('busqueda', '')  # 🆕 Búsqueda opcional
+    
+    # 🆕 CONSTRUIR CONSULTA SEGÚN ESTADO (NUEVO)
+    query = Receta.query.filter_by(panaderia_id=panaderia_actual)
+    
+    # Aplicar filtro de estado
+    if estado == 'activas':
+        query = query.filter_by(activo=True)
+    elif estado == 'inactivas':
+        query = query.filter_by(activo=False)
+    # Si estado == 'todas', no aplicar filtro de activo
+    
+    # 🆕 APLICAR BÚSQUEDA SI EXISTE (NUEVO)
+    if busqueda:
+        query = query.filter(Receta.nombre.ilike(f'%{busqueda}%'))
+    
+    # Ordenar por nombre
+    recetas_panaderia = query.order_by(Receta.nombre).all()
+    
+    # 🆕 CALCULAR TOTALES PARA BADGES (NUEVO)
+    total_activas = Receta.query.filter_by(panaderia_id=panaderia_actual, activo=True).count()
+    total_inactivas = Receta.query.filter_by(panaderia_id=panaderia_actual, activo=False).count()
     
     print(f"🔍 DEBUG RECETAS: Recetas encontradas para panadería {panaderia_actual}: {len(recetas_panaderia)}")
+    print(f"   - Activas: {total_activas}, Inactivas: {total_inactivas}, Filtro: {estado}")
     for receta in recetas_panaderia:
-        print(f"   - {receta.nombre} (ID: {receta.id})")
+        print(f"   - {receta.nombre} (ID: {receta.id}, Activo: {receta.activo})")
     
-    return render_template('recetas.html', recetas=recetas_panaderia)
+    # 🆕 PASAR TODAS LAS VARIABLES AL TEMPLATE (ACTUALIZADO)
+    return render_template(
+        'recetas.html', 
+        recetas=recetas_panaderia,
+        estado=estado,
+        busqueda=busqueda,
+        total_activas=total_activas,
+        total_inactivas=total_inactivas
+    )
 
 @app.route('/detalle_receta/<int:id>')
 @login_required
@@ -4108,9 +4850,12 @@ def crear_receta():
                 categoria=request.form['categoria'],
                 peso_unidad_gramos=float(request.form['peso_unidad_gramos']),
                 porcentaje_perdida=float(request.form.get('porcentaje_perdida', 10.0)),
+                porcentaje_merma_manejo=float(request.form.get('porcentaje_merma_manejo', 0.0)),
+                porcentaje_cif=float(request.form.get('porcentaje_cif', 45.0)),
+                margen_deseado=float(request.form.get('margen_deseado', 30.0)),
                 activo=True,
                 precio_venta_real=precio_venta_real,
-                panaderia_id=panaderia_actual  # ✅ CORREGIDO: Usar current_user.panaderia_id
+                panaderia_id=panaderia_actual
             )
             
             db.session.add(nueva_receta)
@@ -4125,7 +4870,7 @@ def crear_receta():
             i = 0
             while f'ingredientes[{i}][materia_prima_id]' in request.form:
                 materia_prima_id = request.form[f'ingredientes[{i}][materia_prima_id]']
-                gramos = float(request.form[f'ingredientes[{i}][gramos]'])  # Gramos directos
+                gramos = float(request.form[f'ingredientes[{i}][gramos]'])
                 
                 # ✅ CORREGIDO: Filtrar materia prima por tenant
                 materia_prima = MateriaPrima.query.filter_by(
@@ -4136,12 +4881,21 @@ def crear_receta():
                     cantidad_gramos = gramos
                     costo_ingrediente = cantidad_gramos * materia_prima.costo_promedio
                     
+                    # ✅ Obtener costo unitario
+                    costo_unitario = materia_prima.costo_promedio if materia_prima.costo_promedio else 0
+                    costo_total_ingrediente = cantidad_gramos * costo_unitario
+                    
                     ingrediente = RecetaIngrediente(
                         receta_id=nueva_receta.id,
                         materia_prima_id=materia_prima_id,
-                        porcentaje_aplicado=0,  # Se calculará después
+                        cantidad=cantidad_gramos,
+                        porcentaje_aplicado=0,
                         cantidad_gramos=cantidad_gramos,
-                        costo_ingrediente=costo_ingrediente
+                        costo_ingrediente=costo_ingrediente,
+                        unidad_medida=materia_prima.unidad_medida,
+                        costo_unitario=costo_unitario,
+                        costo_total=costo_total_ingrediente,
+                        panaderia_id=panaderia_actual 
                     )
                     
                     db.session.add(ingrediente)
@@ -4156,16 +4910,31 @@ def crear_receta():
                 if peso_total_masa > 0:
                     ingrediente.porcentaje_aplicado = (ingrediente.cantidad_gramos / peso_total_masa) * 100
             
-            # CALCULAR DATOS DE PRODUCCIÓN
-            unidades_obtenidas = int(peso_total_masa / nueva_receta.peso_unidad_gramos) if nueva_receta.peso_unidad_gramos > 0 else 0
-            peso_horneado_unidad = nueva_receta.peso_unidad_gramos - (nueva_receta.peso_unidad_gramos * (nueva_receta.porcentaje_perdida / 100))
-            costo_indirecto = costo_total_materias_primas * 0.45  # 45% CIF
+            # ✅ CALCULAR UNIDADES CON MERMA DE MANEJO (SOLO ESTA AFECTA EL COSTO)
+            # La pérdida por horneado NO afecta el número de unidades vendibles
+            # Solo la merma por manejo (pan que se cae, quema, rompe) reduce las unidades
+            
+            merma_manejo = nueva_receta.porcentaje_merma_manejo / 100
+            unidades_teoricas = int(peso_total_masa / nueva_receta.peso_unidad_gramos) if nueva_receta.peso_unidad_gramos > 0 else 0
+            unidades_obtenidas = int(unidades_teoricas * (1 - merma_manejo))
+            
+            # ✅ Peso horneado (SOLO INFORMATIVO - para etiquetas)
+            peso_horneado_unidad = nueva_receta.peso_unidad_gramos * (1 - (nueva_receta.porcentaje_perdida / 100))
+            
+            # ✅ Costos (NO se ajustan por horneado, solo por manejo)
+            cif_porcentaje = nueva_receta.porcentaje_cif / 100
+            costo_indirecto = costo_total_materias_primas * cif_porcentaje
             costo_total_produccion = costo_total_materias_primas + costo_indirecto
-            margen_ganancia = costo_total_produccion * 0.45  # 45% de ganancia
-            precio_venta_unitario = (costo_total_produccion + margen_ganancia) / unidades_obtenidas if unidades_obtenidas > 0 else 0
+            
+            # ✅ Precio teórico con margen deseado del usuario
+            margen_objetivo = nueva_receta.margen_deseado / 100
+            costo_unitario = costo_total_produccion / unidades_obtenidas if unidades_obtenidas > 0 else 0
+            precio_venta_unitario = costo_unitario / (1 - margen_objetivo) if unidades_obtenidas > 0 and costo_unitario > 0 and margen_objetivo < 1 else 0
+            
+            margen_ganancia = precio_venta_unitario * margen_objetivo if unidades_obtenidas > 0 else 0
             precio_por_gramo = precio_venta_unitario / nueva_receta.peso_unidad_gramos if nueva_receta.peso_unidad_gramos > 0 else 0
             
-            # ✅ ACTUALIZAR RECETA CON TODOS LOS DATOS CALCULADOS (INCLUYENDO PRECIO REAL)
+            # ✅ ACTUALIZAR RECETA CON TODOS LOS DATOS CALCULADOS
             nueva_receta.peso_total_masa = peso_total_masa
             nueva_receta.unidades_obtenidas = unidades_obtenidas
             nueva_receta.peso_horneado_unidad = peso_horneado_unidad
@@ -4176,26 +4945,25 @@ def crear_receta():
             nueva_receta.precio_venta_unitario = precio_venta_unitario
             nueva_receta.precio_por_gramo = precio_por_gramo
             nueva_receta.precio_venta = precio_venta_unitario * unidades_obtenidas
-            # ✅ precio_venta_real ya fue asignado al crear la receta
             
             # ✅ NUEVO: CREAR PRODUCTO AUTOMÁTICAMENTE A PARTIR DE LA RECETA
             producto_automatico = Producto(
                 nombre=nueva_receta.nombre,
                 descripcion=nueva_receta.descripcion,
-                categoria_id=obtener_categoria_id(nueva_receta.categoria, panaderia_actual),  # ✅ CORREGIDO: Pasar panaderia_id
+                categoria_id=obtener_categoria_id(nueva_receta.categoria, panaderia_actual),
                 precio_venta=precio_venta_real if precio_venta_real > 0 else precio_venta_unitario,
-                stock_actual=0,  # Inicialmente sin stock - se llena con producción
+                stock_actual=0,
                 stock_minimo=10,
                 codigo_barras=f"PROD{nueva_receta.id:06d}",
                 tipo_producto='produccion',
                 es_pan=True if 'pan' in nueva_receta.nombre.lower() else False,
                 receta_id=nueva_receta.id,
                 activo=True,
-                panaderia_id=panaderia_actual  # ✅ CORREGIDO: Usar current_user.panaderia_id
+                panaderia_id=panaderia_actual
             )
             
             db.session.add(producto_automatico)
-            db.session.flush()  # Para obtener el ID del producto
+            db.session.flush()
             
             # ✅ ASIGNAR EL PRODUCTO A LA RECETA (relación bidireccional)
             nueva_receta.producto_id = producto_automatico.id
@@ -4210,7 +4978,6 @@ def crear_receta():
             
             if precio_venta_real > 0:
                 mensaje += f' | Precio real: ${precio_venta_real:,.0f}'
-                # ✅ CALCULAR Y MOSTRAR UTILIDAD REAL INMEDIATAMENTE
                 utilidad_pesos = nueva_receta.utilidad_real_pesos
                 utilidad_porcentaje = nueva_receta.utilidad_real_porcentaje
                 mensaje += f' | Utilidad: ${utilidad_pesos:,.0f} ({utilidad_porcentaje:.1f}%)'
@@ -4270,10 +5037,13 @@ def editar_receta(id):
             receta.categoria = request.form['categoria']
             receta.peso_unidad_gramos = float(request.form['peso_unidad_gramos'])
             receta.porcentaje_perdida = float(request.form.get('porcentaje_perdida', 10.0))
-            receta.precio_venta_real = nuevo_precio_real  # ✅ ACTUALIZAR PRECIO REAL
+            receta.porcentaje_merma_manejo = float(request.form.get('porcentaje_merma_manejo', 0.0))
+            receta.porcentaje_cif = float(request.form.get('porcentaje_cif', 45.0))
+            receta.margen_deseado = float(request.form.get('margen_deseado', 30.0)) 
+            receta.precio_venta_real = nuevo_precio_real
             
             # ✅ ELIMINAR INGREDIENTES EXISTENTES Y AGREGAR NUEVOS
-            RecetaIngrediente.query.filter_by(receta_id=receta.id).delete()  # ✅ Ya tiene receta_id que está asociada a panadería
+            RecetaIngrediente.query.filter_by(receta_id=receta.id).delete()
             
             # Reprocesar ingredientes (misma lógica que crear)
             costo_total_materias_primas = 0
@@ -4294,12 +5064,21 @@ def editar_receta(id):
                     cantidad_gramos = gramos
                     costo_ingrediente = cantidad_gramos * materia_prima.costo_promedio
                     
+                    # ✅ Obtener costo unitario
+                    costo_unitario = materia_prima.costo_promedio if materia_prima.costo_promedio else 0
+                    costo_total_ingrediente = cantidad_gramos * costo_unitario
+                    
                     ingrediente = RecetaIngrediente(
                         receta_id=receta.id,
                         materia_prima_id=materia_prima_id,
+                        cantidad=cantidad_gramos,
                         porcentaje_aplicado=0,
                         cantidad_gramos=cantidad_gramos,
-                        costo_ingrediente=costo_ingrediente
+                        costo_ingrediente=costo_ingrediente,
+                        unidad_medida=materia_prima.unidad_medida,
+                        costo_unitario=costo_unitario,
+                        costo_total=costo_total_ingrediente,
+                        panaderia_id=current_user.panaderia_id
                     )
                     
                     db.session.add(ingrediente)
@@ -4314,13 +5093,27 @@ def editar_receta(id):
                 if peso_total_masa > 0:
                     ingrediente.porcentaje_aplicado = (ingrediente.cantidad_gramos / peso_total_masa) * 100
             
-            # ✅ RECALCULAR TODOS LOS DATOS DE PRODUCCIÓN
-            unidades_obtenidas = int(peso_total_masa / receta.peso_unidad_gramos) if receta.peso_unidad_gramos > 0 else 0
-            peso_horneado_unidad = receta.peso_unidad_gramos - (receta.peso_unidad_gramos * (receta.porcentaje_perdida / 100))
-            costo_indirecto = costo_total_materias_primas * 0.45
+            # ✅ CALCULAR UNIDADES CON MERMA DE MANEJO (SOLO ESTA AFECTA EL COSTO)
+            # La pérdida por horneado NO afecta el número de unidades vendibles
+            
+            merma_manejo = receta.porcentaje_merma_manejo / 100
+            unidades_teoricas = int(peso_total_masa / receta.peso_unidad_gramos) if receta.peso_unidad_gramos > 0 else 0
+            unidades_obtenidas = int(unidades_teoricas * (1 - merma_manejo))
+            
+            # ✅ Peso horneado (SOLO INFORMATIVO - para etiquetas)
+            peso_horneado_unidad = receta.peso_unidad_gramos * (1 - (receta.porcentaje_perdida / 100))
+            
+            # ✅ Costos (NO se ajustan por horneado, solo por manejo)
+            cif_porcentaje = receta.porcentaje_cif / 100
+            costo_indirecto = costo_total_materias_primas * cif_porcentaje
             costo_total_produccion = costo_total_materias_primas + costo_indirecto
-            margen_ganancia = costo_total_produccion * 0.45
-            precio_venta_unitario = (costo_total_produccion + margen_ganancia) / unidades_obtenidas if unidades_obtenidas > 0 else 0
+            
+            # ✅ Precio teórico con margen deseado del usuario
+            margen_objetivo = receta.margen_deseado / 100
+            costo_unitario = costo_total_produccion / unidades_obtenidas if unidades_obtenidas > 0 else 0
+            precio_venta_unitario = costo_unitario / (1 - margen_objetivo) if unidades_obtenidas > 0 and costo_unitario > 0 and margen_objetivo < 1 else 0
+            
+            margen_ganancia = precio_venta_unitario * margen_objetivo if unidades_obtenidas > 0 else 0
             precio_por_gramo = precio_venta_unitario / receta.peso_unidad_gramos if receta.peso_unidad_gramos > 0 else 0
             
             # ✅ ACTUALIZAR CAMPOS RECALCULADOS
@@ -4351,6 +5144,71 @@ def editar_receta(id):
                          materias_primas=materias_primas, 
                          editar=True)
     
+    
+@app.route('/eliminar_receta/<int:id>', methods=['POST'])
+@login_required
+@permisos_requeridos('recetas', 'gestionar')
+@tenant_required
+def eliminar_receta(id):
+    """Elimina una receta - SOLO ADMINISTRADORES"""
+    try:
+        # Verificar que la receta existe y pertenece al tenant actual
+        receta = Receta.query.filter_by(id=id, panaderia_id=current_user.panaderia_id).first()
+        
+        if not receta:
+            flash('❌ Receta no encontrada', 'error')
+            return redirect(url_for('recetas'))
+        
+        # Guardar nombre para el mensaje
+        nombre_receta = receta.nombre
+        
+        # Verificar si la receta está siendo usada por algún producto
+        producto_asociado = Producto.query.filter_by(receta_id=id, panaderia_id=current_user.panaderia_id).first()
+        
+        if producto_asociado:
+            flash(f'⚠️ No se puede eliminar "{nombre_receta}" porque está asociada al producto "{producto_asociado.nombre}". Desactiva la receta en lugar de eliminarla.', 'warning')
+            return redirect(url_for('detalle_receta', id=id))
+        
+        # Eliminar ingredientes primero (cascade debería hacerlo, pero por seguridad)
+        RecetaIngrediente.query.filter_by(receta_id=id, panaderia_id=current_user.panaderia_id).delete()
+        
+        # Eliminar la receta
+        db.session.delete(receta)
+        db.session.commit()
+        
+        flash(f'✅ Receta "{nombre_receta}" eliminada exitosamente', 'success')
+        return redirect(url_for('recetas'))
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'❌ Error al eliminar la receta: {str(e)}', 'error')
+        return redirect(url_for('recetas'))
+    
+@app.route('/toggle_receta/<int:id>', methods=['POST'])
+@login_required
+@permisos_requeridos('recetas', 'gestionar')
+@tenant_required
+def toggle_receta(id):
+    """Activa o desactiva una receta"""
+    try:
+        receta = Receta.query.filter_by(id=id, panaderia_id=current_user.panaderia_id).first()
+        
+        if not receta:
+            flash('❌ Receta no encontrada', 'error')
+            return redirect(url_for('recetas'))
+        
+        # Cambiar estado
+        receta.activo = not receta.activo
+        db.session.commit()
+        
+        estado = "activada" if receta.activo else "desactivada"
+        flash(f'✅ Receta "{receta.nombre}" {estado} exitosamente', 'success')
+        return redirect(url_for('detalle_receta', id=receta.id))
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'❌ Error al cambiar estado: {str(e)}', 'error')
+        return redirect(url_for('recetas'))
 
 # =============================================
 # RUTA DE DIAGNÓSTICO - PRODUCTOS Y PUNTO DE VENTA

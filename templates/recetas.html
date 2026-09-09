@@ -490,17 +490,50 @@
             <div>
                 <h1>👨‍🍳 Gestión de Recetas</h1>
                 <p class="fecha-creacion">Crea y gestiona las fórmulas de producción de tu panadería</p>
+                <!-- 🆕 BOTONES DE FILTRO POR ESTADO -->
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin: 15px 0;">
+                    <a href="{{ url_for('recetas', estado='activas', busqueda=busqueda) }}" 
+                    class="btn {% if estado == 'activas' %}btn-success{% else %}btn-secondary{% endif %}"
+                    style="padding: 8px 20px; border-radius: 20px; text-decoration: none; font-size: 0.9em;">
+                        ✅ Activas <span class="badge bg-light text-dark">{{ total_activas }}</span>
+                    </a>
+                    <a href="{{ url_for('recetas', estado='inactivas', busqueda=busqueda) }}" 
+                    class="btn {% if estado == 'inactivas' %}btn-danger{% else %}btn-secondary{% endif %}"
+                    style="padding: 8px 20px; border-radius: 20px; text-decoration: none; font-size: 0.9em;">
+                        ❌ Inactivas <span class="badge bg-light text-dark">{{ total_inactivas }}</span>
+                    </a>
+                    <a href="{{ url_for('recetas', estado='todas', busqueda=busqueda) }}" 
+                    class="btn {% if estado == 'todas' %}btn-primary{% else %}btn-secondary{% endif %}"
+                    style="padding: 8px 20px; border-radius: 20px; text-decoration: none; font-size: 0.9em;">
+                        📋 Todas <span class="badge bg-light text-dark">{{ total_activas + total_inactivas }}</span>
+                    </a>
+                </div>
+
                 <div class="navigation-links">
                     <a href="{{ url_for('dashboard') }}" class="btn-secondary">🏠 Volver al Dashboard</a>
                 </div>
-        <!-- BARRA DE BÚSQUEDA Y FILTROS -->
+        <!-- 🆕 BARRA DE BÚSQUEDA Y FILTROS (ACTUALIZADA) -->
         <div style="display: flex; flex-wrap: wrap; gap: 15px; margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; align-items: center;">
             <div style="flex: 1; min-width: 250px;">
-                <input type="text" id="buscadorRecetas" placeholder="🔍 Buscar recetas por nombre, categoría..." 
-                       style="width: 100%; padding: 10px 15px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;"
-                       onkeyup="filtrarRecetas()">
+                <form method="GET" action="{{ url_for('recetas') }}" style="display: flex; gap: 10px;">
+                    <input type="hidden" name="estado" value="{{ estado }}">
+                    <input type="text" id="buscadorRecetas" name="busqueda" 
+                        placeholder="🔍 Buscar recetas por nombre..." 
+                        value="{{ busqueda or '' }}"
+                        style="flex: 1; padding: 10px 15px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
+                    <button type="submit" class="btn" style="background: #667eea; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">
+                        Buscar
+                    </button>
+                    {% if busqueda %}
+                    <a href="{{ url_for('recetas', estado=estado) }}" 
+                    style="padding: 10px 15px; background: #dc3545; color: white; border-radius: 8px; text-decoration: none;">
+                        ✕
+                    </a>
+                    {% endif %}
+                </form>
             </div>
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <!-- El filtro de categoría y rentabilidad aún son JavaScript, pero los dejamos -->
                 <select id="filtroCategoria" onchange="filtrarRecetas()" 
                         style="padding: 10px 15px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; background: white;">
                     <option value="">Todas las categorías</option>
@@ -511,24 +544,18 @@
                         {% endif %}
                     {% endfor %}
                 </select>
-                <select id="filtroEstado" onchange="filtrarRecetas()" 
-                        style="padding: 10px 15px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; background: white;">
-                    <option value="">Todos los estados</option>
-                    <option value="activa">Activas</option>
-                    <option value="inactiva">Inactivas</option>
-                </select>
                 <select id="filtroRentabilidad" onchange="filtrarRecetas()" 
                         style="padding: 10px 15px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; background: white;">
                     <option value="">Todas las rentabilidades</option>
-                    <option value="Alta">Alta</option>
-                    <option value="Media">Media</option>
-                    <option value="Baja">Baja</option>
-                    <option value="Mínima">Mínima</option>
-                    <option value="Negativa">Negativa</option>
+                    <option value="Alta">🟢 Alta</option>
+                    <option value="Media">🟡 Media</option>
+                    <option value="Baja">🟠 Baja</option>
+                    <option value="Mínima">🔴 Mínima</option>
+                    <option value="Pérdida">⚫ Pérdida</option>
                 </select>
                 <button onclick="limpiarFiltros()" 
                         style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer;">
-                    Limpiar Filtros
+                    🔄 Limpiar Filtros
                 </button>
             </div>
         </div>
@@ -591,7 +618,7 @@
                             <span class="costo-value">{{ receta.costo_materias_primas|currency if receta.costo_materias_primas else '$0' }}</span>
                         </div>
                         <div class="costo-item">
-                            <span class="costo-label">Costo Indirecto (CIF 45%):</span>
+                            <span class="costo-label">Costo Indirecto (CIF {{ receta.porcentaje_cif|int if receta.porcentaje_cif else 45 }}%):</span>
                             <span class="costo-value">{{ receta.costo_indirecto|currency if receta.costo_indirecto else '$0' }}</span>
                         </div>
                         <div class="costo-item">
@@ -660,13 +687,29 @@
                         </span>
                     </div>
                 </div>
-                <!-- BOTONES DE ACCIÓN -->
-                <div class="receta-actions">
+                <!-- BOTONES DE ACCIÓN - ACTUALIZADO CON ELIMINAR -->
+                <div class="receta-actions" style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 12px;">
                     <a href="{{ url_for('detalle_receta', id=receta.id) }}" 
                        class="action-btn" 
-                       style="background: #17a2b8; color: white;">
+                       style="background: #17a2b8; color: white; padding: 6px 14px; border-radius: 6px; text-decoration: none; font-size: 0.85rem;">
                        📋 Detalles
                     </a>
+                    <a href="{{ url_for('editar_receta', id=receta.id) }}" 
+                       class="action-btn" 
+                       style="background: #ffc107; color: #1d1d1f; padding: 6px 14px; border-radius: 6px; text-decoration: none; font-size: 0.85rem;">
+                       ✏️ Editar
+                    </a>
+                    
+                    <!-- ✅ BOTÓN ELIMINAR CON CONFIRMACIÓN -->
+                    <form method="POST" action="{{ url_for('eliminar_receta', id=receta.id) }}" 
+                          style="display: inline-block;" 
+                          onsubmit="return confirmarEliminacion('{{ receta.nombre }}')">
+                        <button type="submit" 
+                                class="action-btn" 
+                                style="background: #dc3545; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
+                            🗑️ Eliminar
+                        </button>
+                    </form>
                 </div>
                 <!-- FECHA DE CREACIÓN -->
                 <div class="fecha-creacion" style="text-align: center; margin-top: 10px;">
@@ -677,11 +720,31 @@
         </div>
         {% else %}
         <div class="empty-state">
-            <h3>📝 No hay recetas creadas</h3>
-            <p>Comienza creando tu primera receta para el sistema de producción</p>
+            <h3>
+                {% if estado == 'inactivas' %}
+                    📭 No hay recetas inactivas
+                {% elif estado == 'activas' %}
+                    📝 No hay recetas activas
+                {% else %}
+                    📝 No hay recetas creadas
+                {% endif %}
+            </h3>
+            <p>
+                {% if estado == 'inactivas' %}
+                    Todas las recetas están activas. 
+                    <a href="{{ url_for('recetas', estado='activas') }}">Ver recetas activas</a>
+                {% elif estado == 'activas' %}
+                    No hay recetas activas. 
+                    <a href="{{ url_for('recetas', estado='inactivas') }}">Ver recetas inactivas</a>
+                {% else %}
+                    Comienza creando tu primera receta para el sistema de producción
+                {% endif %}
+            </p>
+            {% if estado != 'inactivas' %}
             <a href="{{ url_for('crear_receta') }}" class="btn btn-success" style="margin-top: 15px;">
                 🍞 Crear Primera Receta
             </a>
+            {% endif %}
         </div>
         {% endif %}
         <!-- ESTADÍSTICAS RÁPIDAS -->
@@ -761,6 +824,17 @@
                 });
             });
         });
+
+        // ============================================
+        // CONFIRMAR ELIMINACIÓN DE RECETA
+        // ============================================
+        function confirmarEliminacion(nombreReceta) {
+            if (!nombreReceta) {
+                nombreReceta = 'esta receta';
+            }
+            return confirm(`⚠️ ¿Estás seguro de que quieres eliminar "${nombreReceta}"?\n\nEsta acción no se puede deshacer.\n\nLos ingredientes asociados también se eliminarán.\n\n¿Deseas continuar?`);
+        }
+
         function actualizarPrecioReal(recetaId, nuevoPrecio, loadingElement) {
             if (nuevoPrecio < 0) {
                 loadingElement.style.display = 'none';
@@ -789,70 +863,132 @@
                 alert('❌ Error de conexión al actualizar el precio');
             });
         }
-    // ============================================
-    // FILTROS Y BÚSQUEDA PARA RECETAS
-    // ============================================
-    function filtrarRecetas() {
-        const busqueda = document.getElementById('buscadorRecetas').value.toLowerCase();
-        const categoria = document.getElementById('filtroCategoria').value;
-        const estado = document.getElementById('filtroEstado').value;
-        const rentabilidad = document.getElementById('filtroRentabilidad').value;
-        const cards = document.querySelectorAll('.receta-card');
-        let visibleCount = 0;
-        cards.forEach(card => {
-            const nombre = card.dataset.nombre || '';
-            const cat = card.dataset.categoria || '';
-            const activo = card.dataset.activo === 'True';
-            const rent = card.dataset.rentabilidad || '';
-            let visible = true;
-            // Filtro por búsqueda
-            if (busqueda && !nombre.includes(busqueda) && !cat.toLowerCase().includes(busqueda)) {
-                visible = false;
+
+        // ============================================
+        // FILTROS Y BÚSQUEDA PARA RECETAS (CORREGIDO)
+        // ============================================
+
+        function filtrarRecetas() {
+            console.log('🔍 Filtrando recetas...');
+            
+            // Obtener elementos con verificación
+            const buscador = document.getElementById('buscadorRecetas');
+            const categoriaSelect = document.getElementById('filtroCategoria');
+            const rentabilidadSelect = document.getElementById('filtroRentabilidad');
+            
+            // Verificar que todos los elementos existan
+            if (!buscador) {
+                console.error('❌ Elemento "buscadorRecetas" no encontrado');
+                return;
             }
-            // Filtro por categoría
-            if (categoria && cat !== categoria) {
-                visible = false;
+            if (!categoriaSelect) {
+                console.error('❌ Elemento "filtroCategoria" no encontrado');
+                return;
             }
-            // Filtro por estado
-            if (estado === 'activa' && !activo) {
-                visible = false;
+            if (!rentabilidadSelect) {
+                console.error('❌ Elemento "filtroRentabilidad" no encontrado');
+                return;
             }
-            if (estado === 'inactiva' && activo) {
-                visible = false;
+            
+            // Obtener valores
+            const busqueda = buscador.value.toLowerCase().trim();
+            const categoria = categoriaSelect.value;
+            const rentabilidad = rentabilidadSelect.value;
+            
+            console.log('📊 Filtros:', { busqueda, categoria, rentabilidad });
+            
+            // Obtener todas las tarjetas
+            const cards = document.querySelectorAll('.receta-card');
+            console.log('📊 Tarjetas encontradas:', cards.length);
+            
+            if (cards.length === 0) {
+                console.warn('⚠️ No se encontraron tarjetas de recetas');
+                return;
             }
-            // Filtro por rentabilidad
-            if (rentabilidad && rent !== rentabilidad) {
-                visible = false;
+            
+            let visibleCount = 0;
+            
+            cards.forEach(card => {
+                const nombre = (card.dataset.nombre || '').toLowerCase();
+                const cat = card.dataset.categoria || '';
+                const rent = card.dataset.rentabilidad || '';
+                let visible = true;
+                
+                // Filtro por búsqueda (nombre o categoría)
+                if (busqueda && !nombre.includes(busqueda) && !cat.toLowerCase().includes(busqueda)) {
+                    visible = false;
+                }
+                
+                // Filtro por categoría
+                if (categoria && cat !== categoria) {
+                    visible = false;
+                }
+                
+                // Filtro por rentabilidad
+                if (rentabilidad) {
+                    // Normalizar: "Negativa" → "Pérdida" para que coincida con el modelo
+                    const rentabilidadNormalizada = rentabilidad === 'Negativa' ? 'Pérdida' : rentabilidad;
+                    const rentNormalizada = rent === 'Negativa' ? 'Pérdida' : rent;
+                    
+                    if (rentNormalizada !== rentabilidadNormalizada) {
+                        visible = false;
+                    }
+                }
+                
+                // Aplicar visibilidad
+                card.style.display = visible ? '' : 'none';
+                if (visible) visibleCount++;
+            });
+            
+            console.log('✅ Tarjetas visibles:', visibleCount);
+            
+            // Actualizar contador de resultados
+            const contador = document.getElementById('resultadosContador');
+            if (contador) {
+                contador.textContent = `Mostrando ${visibleCount} recetas`;
             }
-            card.style.display = visible ? '' : 'none';
-            if (visible) visibleCount++;
+        }
+
+        function limpiarFiltros() {
+            console.log('🧹 Limpiando filtros...');
+            
+            const buscador = document.getElementById('buscadorRecetas');
+            const categoriaSelect = document.getElementById('filtroCategoria');
+            const rentabilidadSelect = document.getElementById('filtroRentabilidad');
+            
+            if (buscador) buscador.value = '';
+            if (categoriaSelect) categoriaSelect.value = '';
+            if (rentabilidadSelect) rentabilidadSelect.value = '';
+            
+            filtrarRecetas();
+        }
+
+        // Ejecutar filtros al cargar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📄 Página cargada, inicializando filtros...');
+            
+            // Verificar elementos
+            console.log('🔍 Elementos encontrados:');
+            console.log('  - buscadorRecetas:', document.getElementById('buscadorRecetas'));
+            console.log('  - filtroCategoria:', document.getElementById('filtroCategoria'));
+            console.log('  - filtroRentabilidad:', document.getElementById('filtroRentabilidad'));
+            console.log('  - receta-card:', document.querySelectorAll('.receta-card').length);
+            
+            // Agregar contador de resultados si no existe
+            if (!document.getElementById('resultadosContador')) {
+                const header = document.querySelector('.header');
+                if (header) {
+                    const contador = document.createElement('div');
+                    contador.id = 'resultadosContador';
+                    contador.style.cssText = 'color: #666; font-size: 0.9em; margin-top: 5px;';
+                    contador.textContent = `Mostrando ${document.querySelectorAll('.receta-card').length} recetas`;
+                    header.appendChild(contador);
+                }
+            }
+            
+            // Aplicar filtros iniciales
+            setTimeout(filtrarRecetas, 100);
         });
-        // Actualizar contador de resultados
-        const contador = document.getElementById('resultadosContador');
-        if (contador) {
-            contador.textContent = `Mostrando ${visibleCount} recetas`;
-        }
-    }
-    function limpiarFiltros() {
-        document.getElementById('buscadorRecetas').value = '';
-        document.getElementById('filtroCategoria').value = '';
-        document.getElementById('filtroEstado').value = '';
-        document.getElementById('filtroRentabilidad').value = '';
-        filtrarRecetas();
-    }
-    // Ejecutar filtros al cargar la página
-    document.addEventListener('DOMContentLoaded', function() {
-        // Agregar contador de resultados
-        const header = document.querySelector('.header');
-        if (header) {
-            const contador = document.createElement('div');
-            contador.id = 'resultadosContador';
-            contador.style.cssText = 'color: #666; font-size: 0.9em; margin-top: 5px;';
-            contador.textContent = `Mostrando ${document.querySelectorAll('.receta-card').length} recetas`;
-            header.appendChild(contador);
-        }
-        filtrarRecetas();
-    });
-</script>
+    </script>
 </body>
 </html>
