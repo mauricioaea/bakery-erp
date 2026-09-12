@@ -129,16 +129,43 @@
                                     <i class="fas fa-building"></i> Información de la Empresa
                                 </h5>
                                 
+                                <!-- 🆕 AVISO DE DATOS INCOMPLETOS -->
+                                {% if not config.nit_empresa or not config.direccion_empresa %}
+                                <div class="alert alert-warning mb-3">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <strong>⚠️ Completa los datos para personalizar tus recibos</strong>
+                                    <br>
+                                    <small>Esta información aparecerá en los recibos POS y facturas electrónicas.</small>
+                                </div>
+                                {% endif %}
+                                
+                                <!-- 🆕 BOTÓN PARA COPIAR DATOS DESDE configuracion_panaderia -->
+                                {% if not config.nit_empresa %}
+                                <div class="alert alert-info mb-3 d-flex justify-content-between align-items-center">
+                                    <span>
+                                        <i class="fas fa-magic"></i>
+                                        <strong>Sugerencia:</strong> ¿Quieres que intentemos cargar tus datos automáticamente?
+                                    </span>
+                                    <button type="button" class="btn btn-sm btn-primary" onclick="cargarDatosDesdeConfigPanaderia()">
+                                        <i class="fas fa-sync"></i> Cargar datos
+                                    </button>
+                                </div>
+                                {% endif %}
+                                
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
-                                        <label for="nombre_empresa" class="form-label">Nombre de la Empresa *</label>
+                                        <label for="nombre_empresa" class="form-label">
+                                            Nombre de la Empresa <span class="text-danger">*</span>
+                                        </label>
                                         <input type="text" class="form-control" id="nombre_empresa" name="nombre_empresa" 
-                                               value="{{ config.nombre_empresa }}" required>
+                                            value="{{ config.nombre_empresa }}" required>
                                     </div>
                                     <div class="col-md-6 mb-3">
-                                        <label for="nit_empresa" class="form-label">NIT *</label>
+                                        <label for="nit_empresa" class="form-label">
+                                            NIT <span class="text-danger">*</span>
+                                        </label>
                                         <input type="text" class="form-control" id="nit_empresa" name="nit_empresa" 
-                                               value="{{ config.nit_empresa }}" required>
+                                            value="{{ config.nit_empresa }}" required>
                                     </div>
                                 </div>
                                 
@@ -146,12 +173,12 @@
                                     <div class="col-md-6 mb-3">
                                         <label for="direccion_empresa" class="form-label">Dirección</label>
                                         <input type="text" class="form-control" id="direccion_empresa" name="direccion_empresa" 
-                                               value="{{ config.direccion_empresa }}">
+                                            value="{{ config.direccion_empresa }}">
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label for="ciudad_empresa" class="form-label">Ciudad</label>
                                         <input type="text" class="form-control" id="ciudad_empresa" name="ciudad_empresa" 
-                                               value="{{ config.ciudad_empresa }}">
+                                            value="{{ config.ciudad_empresa }}">
                                     </div>
                                 </div>
                                 
@@ -159,7 +186,7 @@
                                     <div class="col-md-6 mb-3">
                                         <label for="telefono_empresa" class="form-label">Teléfono</label>
                                         <input type="text" class="form-control" id="telefono_empresa" name="telefono_empresa" 
-                                               value="{{ config.telefono_empresa }}">
+                                            value="{{ config.telefono_empresa }}">
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label for="regimen_empresa" class="form-label">Régimen</label>
@@ -270,6 +297,36 @@
 
         // Cargar datos al iniciar
         document.addEventListener('DOMContentLoaded', cargarConsecutivo);
+
+        // 🆕 Cargar datos desde configuracion_panaderia
+        async function cargarDatosDesdeConfigPanaderia() {
+            try {
+                const response = await fetch('/api/cargar-datos-panaderia');
+                const data = await response.json();
+                
+                if (data.success) {
+                    if (data.nombre_panaderia) {
+                        document.getElementById('nombre_empresa').value = data.nombre_panaderia;
+                    }
+                    if (data.nit) {
+                        document.getElementById('nit_empresa').value = data.nit;
+                    }
+                    if (data.direccion) {
+                        document.getElementById('direccion_empresa').value = data.direccion;
+                    }
+                    if (data.telefono_contacto) {
+                        document.getElementById('telefono_empresa').value = data.telefono_contacto;
+                    }
+                    
+                    alert('✅ Datos cargados. Verifica y guarda los cambios.');
+                } else {
+                    alert('⚠️ No se pudieron cargar los datos: ' + (data.error || 'Desconocido'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Error de conexión al cargar datos');
+            }
+        }
     </script>
 </body>
 </html>

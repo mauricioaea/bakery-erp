@@ -312,10 +312,10 @@
                             <select class="form-select" id="periodo" onchange="seleccionarPeriodoRapido()">
                                 <option value="hoy">Hoy</option>
                                 <option value="ayer">Ayer</option>
-                                <option value="semana_actual" selected>Esta Semana</option>
+                                <option value="semana_actual">Esta Semana</option>
                                 <option value="mes_actual">Este Mes</option>
                                 <option value="mes_anterior">Mes Anterior</option>
-                                <option value="personalizado">Personalizado</option>
+                                <option value="personalizado" selected>Personalizado</option>
                             </select>
                         </div>
                         <div class="col-md-3">
@@ -572,7 +572,7 @@
                 window.ventasDonChart = new Chart(ctxVentasDon, {
                     type: 'pie',
                     data: {
-                        labels: ['Ventas Reales', 'Donaciones'],
+                        labels: ['Ventas Reales', 'Salidas No Comerciales'],
                         datasets: [{
                             data: [{{ porcentaje_ventas }}, {{ porcentaje_donaciones }}],
                             backgroundColor: ['#27ae60', '#e74c3c'],
@@ -631,11 +631,15 @@
                     fechaFin = new Date(hoy.getFullYear(), hoy.getMonth(), 0);
                     break;
                 case 'personalizado':
+                    // ✅ NO sobrescribir fechas en modo personalizado
                     return;
             }
 
-            document.getElementById('fecha_inicio').value = fechaInicio.toISOString().split('T')[0];
-            document.getElementById('fecha_fin').value = fechaFin.toISOString().split('T')[0];
+            // ✅ Solo actualizar si se seleccionó un período rápido
+            if (fechaInicio && fechaFin) {
+                document.getElementById('fecha_inicio').value = fechaInicio.toISOString().split('T')[0];
+                document.getElementById('fecha_fin').value = fechaFin.toISOString().split('T')[0];
+            }
         }
 
         function actualizarReporte() {
@@ -656,8 +660,8 @@
 
         // Inicializar cuando el DOM esté listo
         document.addEventListener('DOMContentLoaded', function() {
-            seleccionarPeriodoRapido();
-            // Pequeño delay para asegurar que los contenedores estén renderizados
+            // ✅ NO llamar a seleccionarPeriodoRapido() al cargar
+            // Las fechas vienen del URL (backend) y deben respetarse
             setTimeout(inicializarGraficos, 100);
         });
 

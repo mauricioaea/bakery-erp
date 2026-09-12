@@ -547,17 +547,19 @@ class CompraExterna(db.Model):
     
     panaderia_id = db.Column(db.Integer, nullable=False, default=1)
     id = db.Column(db.Integer, primary_key=True)
+    producto_externo_id = db.Column(db.Integer, db.ForeignKey('productos_externos.id'))
     proveedor_id = db.Column(db.Integer, db.ForeignKey('proveedor.id'))
-    producto_id = db.Column(db.Integer, db.ForeignKey('productos_externos.id'))
     cantidad = db.Column(db.Integer, nullable=False)
-    precio_compra = db.Column(db.Float, nullable=False)
-    total_compra = db.Column(db.Float, nullable=False)
+    precio_unitario = db.Column(db.Float, nullable=False)
+    total = db.Column(db.Float, nullable=False)
     fecha_compra = db.Column(db.DateTime, default=datetime.utcnow)
-    notas = db.Column(db.Text)
+    factura = db.Column(db.String(50))
+    observaciones = db.Column(db.Text)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
     
-    # RELACIONES
-    proveedor = db.relationship('Proveedor', backref='compras')
-    producto = db.relationship('ProductoExterno', backref='compras')
+    # ✅ RELACIONES (ambas FK existen ahora)
+    producto = db.relationship('ProductoExterno', backref='compras_externas')
+    proveedor = db.relationship('Proveedor', backref='compras_externas')
 
 
 class MateriaPrima(db.Model):
@@ -1370,30 +1372,33 @@ class CierreDiario(db.Model):
     
     panaderia_id = db.Column(db.Integer, nullable=False, default=1)
     id = db.Column(db.Integer, primary_key=True)
-    fecha = db.Column(db.Date, nullable=False, unique=True)
-    jornada_id = db.Column(db.Integer, db.ForeignKey('jornadas_ventas.id'))
+    fecha_cierre = db.Column(db.Date, nullable=False)
+    deposito_bancario_id = db.Column(db.Integer, db.ForeignKey('depositos_bancarios.id'))
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
     
     # TOTALES CALCULADOS
-    total_ventas = db.Column(db.Float, nullable=False)
-    total_efectivo = db.Column(db.Float, nullable=False)
-    total_transferencia = db.Column(db.Float, nullable=False)
+    total_ventas = db.Column(db.Float, nullable=False, default=0)
+    total_efectivo = db.Column(db.Float, nullable=False, default=0)
+    total_tarjeta = db.Column(db.Float, default=0)
+    total_transferencia = db.Column(db.Float, nullable=False, default=0)
+    total_donaciones = db.Column(db.Float, default=0)
     
-    total_transacciones = db.Column(db.Integer, nullable=False)
-    
-    # PRODUCTOS MÁS VENDIDOS (serializado como JSON)
-    productos_top = db.Column(db.Text)  # JSON con productos más vendidos
-    
-    # COMPARATIVAS
+    # ✅ MANTENER: Se usan en reportes IA y cierre de caja
+    total_transacciones = db.Column(db.Integer, default=0)
+    productos_top = db.Column(db.Text)
     ventas_dia_anterior = db.Column(db.Float, default=0)
-    tendencia = db.Column(db.Float, default=0)  # % vs día anterior
+    tendencia = db.Column(db.Float, default=0)
     
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    # CONTROL
+    estado = db.Column(db.String(20), default='cerrado')
+    observaciones = db.Column(db.Text)
+    fecha_registro = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # Relación
-    jornada = db.relationship('JornadaVentas', backref=db.backref('cierre', uselist=False))
+    # Relación con usuario
+    usuario = db.relationship('Usuario', backref='cierres_diarios')
     
     def __repr__(self):
-        return f'<CierreDiario {self.fecha} - ${self.total_ventas:,.0f}>'
+        return f'<CierreDiario {self.fecha_cierre} - ${self.total_ventas:,.0f}>'
     
     
 class PermisoUsuario(db.Model):
@@ -1633,6 +1638,7 @@ def generar_recomendacion_stock(producto_id, proyeccion):
 def generar_alertas_inteligentes(panaderia_id=None):
     """
     Genera alertas inteligentes basadas en análisis ML
+    ✅ INCLUYE productos internos Y externos
     Args:
         panaderia_id: ID del tenant (si no se pasa, se intenta obtener del contexto)
     """
@@ -1644,13 +1650,13 @@ def generar_alertas_inteligentes(panaderia_id=None):
         if 'panaderia_id' in session:
             panaderia_id = session['panaderia_id']
         else:
-            # Si no hay contexto, retornar lista vacía
             return alertas
     
     try:
-        # 📊 1. Alertas de stock crítico (SOLO del tenant actual)
+        # 📊 1. Alertas de stock crítico - PRODUCTOS INTERNOS
         productos_bajo_stock = Producto.query.filter(
             Producto.panaderia_id == panaderia_id,
+            Producto.activo == True,
             Producto.stock_actual <= Producto.stock_minimo
         ).all()
         
@@ -1661,26 +1667,49 @@ def generar_alertas_inteligentes(panaderia_id=None):
                 'prioridad': 'ALTA',
                 'producto': producto.nombre,
                 'stock_actual': producto.stock_actual,
-                'stock_minimo': producto.stock_minimo
+                'stock_minimo': producto.stock_minimo,
+                'origen': 'interno'
             })
         
-        # 📊 2. Alertas de productos sin movimiento (SOLO del tenant actual)
+        # 📊 1.b Alertas de stock crítico - PRODUCTOS EXTERNOS (🆕 NUEVO)
+        try:
+            from models import ProductoExterno
+            productos_externos_bajo_stock = ProductoExterno.query.filter(
+                ProductoExterno.panaderia_id == panaderia_id,
+                ProductoExterno.activo == True,
+                ProductoExterno.stock_actual <= ProductoExterno.stock_minimo
+            ).all()
+            
+            for producto in productos_externos_bajo_stock:
+                alertas.append({
+                    'tipo': 'STOCK_CRITICO',
+                    'mensaje': f'🔴 Stock crítico: {producto.nombre} ({producto.stock_actual} unidades)',
+                    'prioridad': 'ALTA',
+                    'producto': producto.nombre,
+                    'stock_actual': producto.stock_actual,
+                    'stock_minimo': producto.stock_minimo,
+                    'origen': 'externo'
+                })
+        except Exception as e:
+            print(f"Error generando alertas de productos externos: {e}")
+        
+        # 📊 2. Alertas de productos sin movimiento
         try:
             productos_sin_ventas = obtener_productos_sin_ventas_recientes(panaderia_id)
             for producto in productos_sin_ventas:
+                origen = 'externo' if hasattr(producto, 'marca') else 'interno'
                 alertas.append({
                     'tipo': 'SIN_MOVIMIENTO',
                     'mensaje': f'🟡 Sin ventas recientes: {producto.nombre}',
                     'prioridad': 'MEDIA',
-                    'producto': producto.nombre
+                    'producto': producto.nombre,
+                    'origen': origen
                 })
         except Exception as e:
             print(f"Error generando alertas de productos sin movimiento: {e}")
-            # Continuar sin estas alertas en lugar de fallar completamente
         
-        # 📊 3. Resumen (para mostrar en el dashboard)
+        # 📊 3. Resumen
         if alertas:
-            # Agregar resumen al inicio
             total_criticas = sum(1 for a in alertas if a.get('prioridad') == 'ALTA')
             total_media = sum(1 for a in alertas if a.get('prioridad') == 'MEDIA')
             alertas.insert(0, {
@@ -1699,6 +1728,8 @@ def generar_alertas_inteligentes(panaderia_id=None):
         
     except Exception as e:
         print(f"Error general en generar_alertas_inteligentes: {e}")
+        import traceback
+        traceback.print_exc()
         return [{
             'tipo': 'ERROR',
             'mensaje': '⚠️ Error al generar alertas. Intenta nuevamente.',
@@ -2552,25 +2583,37 @@ def generar_recomendaciones_personalizadas(panaderia_id, dias_historial=30):
         recomendaciones = []
         tiene_datos = False
         
-        # 1. RECOMENDACIÓN: Productos con stock crítico
+        # 1. RECOMENDACIÓN: Productos con stock crítico (INTERNOS + EXTERNOS)
         productos_criticos = Producto.query.filter(
             Producto.panaderia_id == panaderia_id,
             Producto.stock_actual <= Producto.stock_minimo,
             Producto.activo == True
         ).all()
         
-        if productos_criticos:
+        productos_externos_criticos = ProductoExterno.query.filter(
+            ProductoExterno.panaderia_id == panaderia_id,
+            ProductoExterno.stock_actual <= ProductoExterno.stock_minimo,
+            ProductoExterno.activo == True
+        ).all()
+        
+        total_criticos = len(productos_criticos) + len(productos_externos_criticos)
+        
+        if total_criticos > 0:
             tiene_datos = True
+            nombres_criticos = (
+                [p.nombre for p in productos_criticos[:3]] +
+                [p.nombre for p in productos_externos_criticos[:2]]
+            )
             recomendaciones.append({
                 'categoria': 'stock_critico',
                 'titulo': '🔴 Stock Crítico',
-                'mensaje': f'Tienes {len(productos_criticos)} productos con stock por debajo del mínimo.',
+                'mensaje': f'Tienes {total_criticos} productos con stock por debajo del mínimo.',
                 'accion': 'Revisa y reabastece estos productos urgentemente.',
-                'productos': [p.nombre for p in productos_criticos[:5]],
+                'productos': nombres_criticos,
                 'prioridad': 'alta'
             })
         
-        # 2. RECOMENDACIÓN: Productos más rentables
+        # 2. RECOMENDACIÓN: Productos más vendidos (INTERNOS + EXTERNOS)
         productos_rentables = db.session.query(
             Producto,
             db.func.sum(DetalleVenta.cantidad).label('total_vendido')
@@ -2582,18 +2625,36 @@ def generar_recomendaciones_personalizadas(panaderia_id, dias_historial=30):
             db.desc('total_vendido')
         ).limit(5).all()
         
-        if productos_rentables:
+        # 🆕 Productos externos más vendidos
+        productos_externos_rentables = db.session.query(
+            ProductoExterno,
+            db.func.sum(DetalleVenta.cantidad).label('total_vendido')
+        ).join(DetalleVenta).join(Venta).filter(
+            Venta.panaderia_id == panaderia_id,
+            Venta.fecha_hora >= fecha_inicio,
+            DetalleVenta.producto_externo_id.isnot(None)
+        ).group_by(ProductoExterno.id).order_by(
+            db.desc('total_vendido')
+        ).limit(5).all()
+        
+        total_rentables = len(productos_rentables) + len(productos_externos_rentables)
+        
+        if total_rentables > 0:
             tiene_datos = True
+            nombres_populares = (
+                [p.nombre for p, t in productos_rentables[:2]] +
+                [p.nombre for p, t in productos_externos_rentables[:2]]
+            )
             recomendaciones.append({
                 'categoria': 'productos_populares',
                 'titulo': '📈 Productos Más Vendidos',
                 'mensaje': 'Estos productos generan la mayoría de tus ingresos.',
                 'accion': 'Asegura suficiente stock y considera promociones cruzadas.',
-                'productos': [p.nombre for p, total in productos_rentables[:3]],
+                'productos': nombres_populares,
                 'prioridad': 'media'
             })
         
-        # 3. RECOMENDACIÓN: Productos sin ventas recientes
+        # 3. RECOMENDACIÓN: Productos sin ventas recientes (INTERNOS + EXTERNOS)
         productos_olvidados = Producto.query.filter(
             Producto.panaderia_id == panaderia_id,
             Producto.activo == True
@@ -2609,14 +2670,36 @@ def generar_recomendaciones_personalizadas(panaderia_id, dias_historial=30):
             if ventas_recientes == 0 and producto.stock_actual > 0:
                 productos_sin_ventas.append(producto)
         
-        if productos_sin_ventas:
+        # 🆕 Productos externos sin ventas
+        productos_externos_olvidados = ProductoExterno.query.filter(
+            ProductoExterno.panaderia_id == panaderia_id,
+            ProductoExterno.activo == True
+        ).all()
+        
+        productos_externos_sin_ventas = []
+        for producto in productos_externos_olvidados:
+            ventas_recientes = DetalleVenta.query.join(Venta).filter(
+                Venta.panaderia_id == panaderia_id,
+                DetalleVenta.producto_externo_id == producto.id,
+                Venta.fecha_hora >= fecha_inicio
+            ).count()
+            if ventas_recientes == 0 and producto.stock_actual > 0:
+                productos_externos_sin_ventas.append(producto)
+        
+        total_sin_ventas = len(productos_sin_ventas) + len(productos_externos_sin_ventas)
+        
+        if total_sin_ventas > 0:
             tiene_datos = True
+            nombres_sin_movimiento = (
+                [p.nombre for p in productos_sin_ventas[:2]] +
+                [p.nombre for p in productos_externos_sin_ventas[:2]]
+            )
             recomendaciones.append({
                 'categoria': 'productos_inactivos',
                 'titulo': '📉 Productos Sin Movimiento',
-                'mensaje': f'Tienes {len(productos_sin_ventas)} productos que no han vendido en {dias_historial} días.',
+                'mensaje': f'Tienes {total_sin_ventas} productos que no han vendido en {dias_historial} días.',
                 'accion': 'Considera promociones especiales o descuentos para reactivarlos.',
-                'productos': [p.nombre for p in productos_sin_ventas[:3]],
+                'productos': nombres_sin_movimiento,
                 'prioridad': 'media'
             })
         
@@ -2651,8 +2734,8 @@ def generar_recomendaciones_personalizadas(panaderia_id, dias_historial=30):
                     'prioridad': 'baja'
                 })
         
-        # 5. RECOMENDACIÓN: Análisis de tendencia general
-        if len(productos_rentables) > 0 or len(productos_sin_ventas) > 0:
+        # 5. RECOMENDACIÓN: Análisis de tendencia general (INTERNOS + EXTERNOS)
+        if total_rentables > 0 or total_sin_ventas > 0:
             tendencia_recomendacion = {
                 'categoria': 'tendencia_general',
                 'titulo': '📊 Resumen de Análisis',
@@ -2662,17 +2745,34 @@ def generar_recomendaciones_personalizadas(panaderia_id, dias_historial=30):
                 'prioridad': 'media'
             }
             
-            if productos_rentables:
-                tendencia_recomendacion['productos'].append(
-                    f'✅ Mantén stock de: {", ".join([p.nombre for p, _ in productos_rentables[:2]])}'
+            # ✅ Productos más vendidos (internos + externos)
+            if total_rentables > 0:
+                nombres_top = (
+                    [p.nombre for p, _ in productos_rentables[:2]] +
+                    [p.nombre for p, _ in productos_externos_rentables[:2]]
                 )
-            if productos_sin_ventas:
                 tendencia_recomendacion['productos'].append(
-                    f'⚠️ Revisa promociones para: {", ".join([p.nombre for p in productos_sin_ventas[:2]])}'
+                    f'✅ Mantén stock de: {", ".join(nombres_top)}'
                 )
-            if productos_criticos:
+            
+            # ⚠️ Productos sin movimiento (internos + externos)
+            if total_sin_ventas > 0:
+                nombres_sin_mov = (
+                    [p.nombre for p in productos_sin_ventas[:2]] +
+                    [p.nombre for p in productos_externos_sin_ventas[:2]]
+                )
                 tendencia_recomendacion['productos'].append(
-                    f'🔴 Urgente: Reabastece {", ".join([p.nombre for p in productos_criticos[:2]])}'
+                    f'⚠️ Revisa promociones para: {", ".join(nombres_sin_mov)}'
+                )
+            
+            # 🔴 Productos críticos (internos + externos)
+            if total_criticos > 0:
+                nombres_crit = (
+                    [p.nombre for p in productos_criticos[:2]] +
+                    [p.nombre for p in productos_externos_criticos[:2]]
+                )
+                tendencia_recomendacion['productos'].append(
+                    f'🔴 Urgente: Reabastece {", ".join(nombres_crit)}'
                 )
             
             if len(tendencia_recomendacion['productos']) > 0:

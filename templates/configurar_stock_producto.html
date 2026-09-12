@@ -8,19 +8,63 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
         .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #667eea; }
-        .btn { background: #667eea; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; border: none; cursor: pointer; display: inline-block; }
-        .btn:hover { background: #5a6fd8; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #667eea; flex-wrap: wrap; gap: 15px; }
+        .header h1 { font-size: 1.5em; }
+        .header p { color: #666; margin-top: 5px; }
+        .btn { background: #667eea; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; border: none; cursor: pointer; display: inline-block; transition: all 0.3s ease; }
+        .btn:hover { background: #5a6fd8; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3); }
+        .btn-success { background: #28a745; }
+        .btn-success:hover { background: #218838; box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3); }
+        .btn-danger { background: #dc3545; }
+        .btn-danger:hover { background: #c82333; box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3); }
         .form-group { margin-bottom: 20px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; color: #333; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 1em; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 1em; transition: border-color 0.3s ease; }
+        input:focus, select:focus { border-color: #667eea; outline: none; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15); }
         .stats-card { background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        .stat-item { text-align: center; padding: 10px; background: white; border-radius: 5px; border-left: 4px solid #667eea; }
-        .stat-value { font-size: 1.5em; font-weight: bold; color: #667eea; }
-        .stat-label { font-size: 0.9em; color: #666; }
+        .stat-item { text-align: center; padding: 15px; background: white; border-radius: 5px; border-left: 4px solid #667eea; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .stat-value { font-size: 1.8em; font-weight: bold; color: #667eea; }
+        .stat-label { font-size: 0.85em; color: #666; }
         .suggestions { background: #e7f3ff; padding: 15px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #1890ff; }
-        small { color: #666; font-size: 0.85em; }
+        .suggestions h3 { color: #1890ff; margin-bottom: 8px; font-size: 1em; }
+        .suggestions p { margin: 5px 0; color: #333; }
+        small { color: #666; font-size: 0.85em; display: block; margin-top: 4px; }
+        .form-actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+
+        /* Mejora visual para el select de tendencia */
+        #tendencia_ventas {
+            font-weight: 500;
+            background-color: #f8f9fa;
+            transition: all 0.3s ease;
+        }
+
+        #tendencia_ventas:hover {
+            border-color: #d49a0a;
+            background-color: #ffffff;
+        }
+
+        #tendencia_ventas:focus {
+            border-color: #d49a0a;
+            box-shadow: 0 0 0 0.25rem rgba(212, 154, 10, 0.25);
+        }
+
+        /* Estilos para las opciones (COMPATIBLE CON TODOS LOS NAVEGADORES) */
+        .tendencia-baja { color: #6c757d; }
+        .tendencia-normal { color: #0d6efd; }
+        .tendencia-alta { color: #28a745; }
+        .tendencia-muy-alta { color: #dc3545; font-weight: bold; }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .container { padding: 20px; }
+            .header { flex-direction: column; align-items: flex-start; }
+            .header h1 { font-size: 1.2em; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .stat-value { font-size: 1.4em; }
+            .form-actions { flex-direction: column; }
+            .form-actions .btn { width: 100%; text-align: center; }
+        }
     </style>
 </head>
 <body>
@@ -37,15 +81,15 @@
         <div class="stats-grid">
             <div class="stat-item">
                 <div class="stat-value">{{ stock_actual }}</div>
-                <div class="stat-label">Stock Actual</div>
+                <div class="stat-label">📦 Stock Actual</div>
             </div>
             <div class="stat-item">
                 <div class="stat-value">{{ ventas_ultima_semana }}</div>
-                <div class="stat-label">Ventas (7 días)</div>
+                <div class="stat-label">📊 Ventas (7 días)</div>
             </div>
             <div class="stat-item">
                 <div class="stat-value">{{ ((ventas_ultima_semana / 7) if ventas_ultima_semana > 0 else 0)|round(1) }}</div>
-                <div class="stat-label">Promedio Diario</div>
+                <div class="stat-label">📈 Promedio Diario</div>
             </div>
         </div>
 
@@ -54,9 +98,9 @@
         {% if promedio_diario > 0 %}
         <div class="suggestions">
             <h3>💡 Sugerencias basadas en ventas reales:</h3>
-            <p><strong>Stock mínimo recomendado:</strong> {{ (promedio_diario * 1.5)|round|int }} unidades (1.5 días de venta)</p>
-            <p><strong>Stock objetivo recomendado:</strong> {{ (promedio_diario * 3)|round|int }} unidades (3 días de venta)</p>
-            <p><strong>Rotación diaria esperada:</strong> {{ promedio_diario|round(1) }} unidades/día</p>
+            <p><strong>📦 Stock mínimo recomendado:</strong> {{ (promedio_diario * 1.5)|round|int }} unidades (1.5 días de venta)</p>
+            <p><strong>🎯 Stock objetivo recomendado:</strong> {{ (promedio_diario * 3)|round|int }} unidades (3 días de venta)</p>
+            <p><strong>🔄 Rotación diaria esperada:</strong> {{ promedio_diario|round(1) }} unidades/día</p>
         </div>
         {% endif %}
 
@@ -65,44 +109,52 @@
                 <label for="stock_minimo">📦 Stock Mínimo (Punto de Reorden):</label>
                 <input type="number" id="stock_minimo" name="stock_minimo" 
                        value="{{ config.stock_minimo }}" min="1" required>
-                <small>Nivel crítico - Se generan alertas cuando el stock llega a este punto</small>
+                <small>🔴 Nivel crítico - Se generan alertas cuando el stock llega a este punto</small>
             </div>
 
             <div class="form-group">
                 <label for="stock_objetivo">🎯 Stock Objetivo:</label>
                 <input type="number" id="stock_objetivo" name="stock_objetivo" 
                        value="{{ config.stock_objetivo }}" min="1" required>
-                <small>Nivel ideal de stock para satisfacer la demanda normal</small>
+                <small>✅ Nivel ideal de stock para satisfacer la demanda normal</small>
             </div>
 
             <div class="form-group">
                 <label for="stock_maximo">📈 Stock Máximo:</label>
                 <input type="number" id="stock_maximo" name="stock_maximo" 
                        value="{{ config.stock_maximo }}" min="1" required>
-                <small>Límite superior para evitar sobreproducción</small>
+                <small>⛔ Límite superior para evitar sobreproducción</small>
             </div>
 
             <div class="form-group">
                 <label for="rotacion_diaria_esperada">🔄 Rotación Diaria Esperada:</label>
                 <input type="number" id="rotacion_diaria_esperada" name="rotacion_diaria_esperada" 
                        value="{{ config.rotacion_diaria_esperada }}" step="0.1" min="0" required>
-                <small>Unidades que esperas vender por día (para proyecciones)</small>
+                <small>📊 Unidades que esperas vender por día (para proyecciones de producción)</small>
             </div>
 
             <div class="form-group">
-                <label for="tendencia_ventas">📊 Factor de Tendencia de Ventas:</label>
-                <select id="tendencia_ventas" name="tendencia_ventas">
-                    <option value="0.5" {{ 'selected' if config.tendencia_ventas == 0.5 }}>Baja (0.5x)</option>
-                    <option value="1.0" {{ 'selected' if config.tendencia_ventas == 1.0 }}>Normal (1.0x)</option>
-                    <option value="1.5" {{ 'selected' if config.tendencia_ventas == 1.5 }}>Alta (1.5x)</option>
-                    <option value="2.0" {{ 'selected' if config.tendencia_ventas == 2.0 }}>Muy Alta (2.0x)</option>
+                <label for="tendencia_ventas" class="fw-bold">
+                    📈 ¿Cómo esperas que se comporten las ventas?
+                    <small class="text-muted d-block fw-normal" style="font-size: 0.85rem; margin-top: 2px; font-weight: normal;">
+                        Esto ayuda al sistema a recomendar cuánto producir
+                    </small>
+                </label>
+                <select id="tendencia_ventas" name="tendencia_ventas" class="form-select" style="border-radius: 8px; padding: 10px 12px; border: 2px solid #e9ecef;">
+                    <option value="0.5" class="tendencia-baja" {{ 'selected' if config.tendencia_ventas == 0.5 }}>🐢 Ventas bajas (poco movimiento)</option>
+                    <option value="1.0" class="tendencia-normal" {{ 'selected' if config.tendencia_ventas == 1.0 }}>📊 Ventas normales (estables)</option>
+                    <option value="1.5" class="tendencia-alta" {{ 'selected' if config.tendencia_ventas == 1.5 }}>📈 Ventas altas (buena demanda)</option>
+                    <option value="2.0" class="tendencia-muy-alta" {{ 'selected' if config.tendencia_ventas == 2.0 }}>🔥 Ventas muy altas (mucha demanda)</option>
                 </select>
-                <small>Ajusta según temporada o tendencia de ventas</small>
+                <small class="text-muted" style="font-size: 0.8rem; display: block; margin-top: 6px;">
+                    💡 <strong>Ejemplo:</strong> Si es temporada alta de este producto (ej: Navidad, Día de la Madre), 
+                    selecciona "Ventas altas" para que el sistema recomiende producir más.
+                </small>
             </div>
 
-            <div style="display: flex; gap: 10px;">
-                <button type="submit" class="btn" style="background: #28a745;">💾 Guardar Configuración</button>
-                <a href="{{ url_for('produccion_diaria') }}" class="btn" style="background: #6c757d;">❌ Cancelar</a>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-success">💾 Guardar Configuración</button>
+                <a href="{{ url_for('produccion_diaria') }}" class="btn btn-danger">❌ Cancelar</a>
             </div>
         </form>
     </div>

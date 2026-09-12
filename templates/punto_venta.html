@@ -202,19 +202,22 @@
                                 </div>
                             </div>
 
-                            <!-- TOGGLE DE DONACIÓN -->
+                            <!-- TOGGLE DE CONSUMO INTERNO / DONACIÓN -->
                             <div class="donacion-toggle mt-3">
                                 <div class="form-check form-switch">
                                     <input class="form-check-input" type="checkbox" id="modoDonacion" 
                                         onchange="toggleModoDonacion()">
                                     <label class="form-check-label text-warning" for="modoDonacion">
-                                        <i class="fas fa-gift me-1"></i> Modo Donación
+                                        <i class="fas fa-gift me-1"></i> Consumo Interno / Donación
                                     </label>
                                 </div>
                                 <div id="campoMotivoDonacion" class="mt-2" style="display: none;">
                                     <input type="text" class="form-control form-control-sm" 
-                                        id="motivoDonacion" placeholder="Motivo (opcional): Ej. Donación a institución...">
-                                    <small class="text-muted">El total será $0 y los productos se descargarán del inventario</small>
+                                        id="motivoDonacion" placeholder="Motivo (opcional): Ej. Café empleados, Prueba de calidad, Donación...">
+                                    <small class="text-muted">
+                                        El total será $0 y los productos se descargarán del inventario.<br>
+                                        <strong>Úsalo para:</strong> Consumo de empleados, pruebas de calidad o donaciones.
+                                    </small>
                                 </div>
                             </div>
 
@@ -933,7 +936,7 @@ function mostrarNotificacion(mensaje, tipo = 'info') {
                     return;
                 }
                 
-                if (!confirm('🎁 ¿Confirmar DONACIÓN?\n\nLos productos se descargarán del inventario pero el ingreso será $0.\n¿Continuar?')) {
+                if (!confirm('🎁 ¿Confirmar CONSUMO INTERNO / DONACIÓN?\n\nLos productos se descargarán del inventario pero el ingreso será $0.\n¿Continuar?')) {
                     return;
                 }
                 
@@ -1027,8 +1030,8 @@ function mostrarNotificacion(mensaje, tipo = 'info') {
 
                 if (resultado.success) {
                     if (resultado.es_donacion) {
-                        document.getElementById('modalTitulo').textContent = 'Donación Registrada';
-                        document.getElementById('modalMessage').textContent = 'Donación procesada correctamente';
+                        document.getElementById('modalTitulo').textContent = 'Consumo Interno / Donación Registrado';
+                        document.getElementById('modalMessage').textContent = 'Salida no comercial registrada correctamente';
                         document.getElementById('btnImprimirTexto').textContent = 'Imprimir Comprobante';
                         document.getElementById('modalDocumento').textContent = 'COMPROBANTE DONACIÓN';
                     } else {
@@ -1085,8 +1088,8 @@ function mostrarNotificacion(mensaje, tipo = 'info') {
 
                 if (resultado.success) {
                     if (resultado.es_donacion) {
-                        document.getElementById('modalTitulo').textContent = 'Donación Registrada';
-                        document.getElementById('modalMessage').textContent = 'Donación procesada correctamente';
+                        document.getElementById('modalTitulo').textContent = 'Consumo Interno / Donación Registrado';
+                        document.getElementById('modalMessage').textContent = 'Salida no comercial registrada correctamente';
                         document.getElementById('btnImprimirTexto').textContent = 'Imprimir Comprobante';
                         document.getElementById('modalDocumento').textContent = 'COMPROBANTE DONACIÓN';
                     } else {
@@ -1094,7 +1097,7 @@ function mostrarNotificacion(mensaje, tipo = 'info') {
                     }
                     
                     document.getElementById('modalTotal').textContent = `$${resultado.total.toLocaleString()}`;
-                    document.getElementById('modalMetodo').textContent = resultado.es_donacion ? 'DONACIÓN' : metodoPago.charAt(0).toUpperCase() + metodoPago.slice(1);
+                    document.getElementById('modalMetodo').textContent = resultado.es_donacion ? 'CONSUMO INTERNO' : metodoPago.charAt(0).toUpperCase() + metodoPago.slice(1);
                     
                     const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
                     modal.show();
@@ -1275,7 +1278,7 @@ function mostrarNotificacion(mensaje, tipo = 'info') {
                 }
                 
                 // 🆕 CONFIRMAR DONACIÓN DIRECTAMENTE
-                if (!confirm('🎁 ¿Confirmar DONACIÓN?\n\nLos productos se descargarán del inventario pero el ingreso será $0.\n¿Continuar?')) {
+                if (!confirm('🎁 ¿Confirmar CONSUMO INTERNO / DONACIÓN?\n\nLos productos se descargarán del inventario pero el ingreso será $0.\n¿Continuar?')) {
                     return;
                 }
                 
@@ -1488,52 +1491,89 @@ function mostrarNotificacion(mensaje, tipo = 'info') {
                 console.error('❌ Error en reinicio:', error);
             }
         }
-        
-        // 🆕 FUNCIÓN CORREGIDA PARA RESETEAR INTERFAZ
-        function reiniciarSistemaParaNuevaVenta() {
-            console.log('🔄 Iniciando reinicio del sistema...');
+
+        // =============================================
+        // 🆕 FUNCIÓN PARA RESETEAR LA INTERFAZ DE VENTA
+        // =============================================
+        function resetearInterfazVenta() {
+            console.log('🧹 Reseteando interfaz de venta...');
             
             try {
-                // 🆕 1. LIMPIAR EVENT LISTENERS DEL ENTER PRIMERO (EVITA BLOQUEO)
-                if (typeof limpiarEventListenersEnter === 'function') {
-                    limpiarEventListenersEnter();
-                } else {
-                    console.log('ℹ️ Función limpiarEventListenersEnter no disponible');
+                // 1. RESETEAR MODO DONACIÓN
+                const modoDonacion = document.getElementById('modoDonacion');
+                if (modoDonacion) {
+                    modoDonacion.checked = false;
                 }
                 
-                // 2. CERRAR TODOS LOS MODALES ABIERTOS
-                const modales = ['confirmModal', 'cambioModal', 'clienteModal', 'modalMotivoDonacion'];
-                modales.forEach(modalId => {
-                    const modalElement = document.getElementById(modalId);
-                    if (modalElement) {
-                        const modal = bootstrap.Modal.getInstance(modalElement);
-                        if (modal) {
-                            modal.hide();
-                        }
-                    }
-                });
+                const campoMotivo = document.getElementById('campoMotivoDonacion');
+                if (campoMotivo) {
+                    campoMotivo.style.display = 'none';
+                }
                 
-                // 3. REINICIAR VARIABLES TEMPORALES
-                window.clienteActual = null;
-                window.ultimaVentaId = null;
+                const motivoInput = document.getElementById('motivoDonacion');
+                if (motivoInput) {
+                    motivoInput.value = '';
+                }
+                
+                // 2. RESETEAR MÉTODO DE PAGO A EFECTIVO
+                const efectivoRadio = document.getElementById('efectivo');
+                if (efectivoRadio) {
+                    efectivoRadio.checked = true;
+                }
+                
+                // 3. RESETEAR VARIABLES GLOBALES
+                window.carrito = [];
+                window.totalVentaActual = 0;
                 window.efectivoRecibido = 0;
                 window.cambioCalculado = 0;
-                window.totalVentaActual = 0;
+                window.ultimaVentaId = null;
+                window.tipoDocumento = 'POS';
+                window.clienteActual = null;
                 
-                // 4. RESETEAR INTERFAZ
-                resetearInterfazVenta();
-                
-                // 🆕 5. FORZAR ACTUALIZACIÓN VISUAL DEL MODO DONACIÓN (SOLUCIÓN AL PROBLEMA)
-                if (typeof toggleModoDonacion === 'function') {
-                    toggleModoDonacion();
-                } else {
-                    console.log('ℹ️ Función toggleModoDonacion no disponible');
+                // 4. LIMPIAR CARRITO EN LOCALSTORAGE
+                if (typeof tenant_id !== 'undefined') {
+                    localStorage.removeItem('carrito_' + tenant_id);
                 }
                 
-                console.log('✅ Sistema reiniciado para nueva venta');
+                // 5. ACTUALIZAR CARRITO VISUAL
+                if (typeof actualizarCarrito === 'function') {
+                    actualizarCarrito();
+                }
+                if (typeof actualizarCarritoMobile === 'function') {
+                    actualizarCarritoMobile();
+                }
+                
+                // 6. LIMPIAR BÚSQUEDA
+                const searchInput = document.getElementById('searchInput');
+                if (searchInput) {
+                    searchInput.value = '';
+                }
+                
+                const codigoBarrasInput = document.getElementById('codigoBarrasInput');
+                if (codigoBarrasInput) {
+                    codigoBarrasInput.value = '';
+                }
+                
+                // 7. RESTAURAR COLORES NORMALES EN TOTAL
+                const totalElement = document.getElementById('total');
+                if (totalElement) {
+                    totalElement.classList.remove('text-warning');
+                }
+                
+                const subtotalElement = document.getElementById('subtotal');
+                if (subtotalElement) {
+                    subtotalElement.classList.remove('text-warning');
+                }
+                
+                // 8. REHABILITAR MÉTODOS DE PAGO
+                document.querySelectorAll('.metodo-pago-container .btn').forEach(btn => {
+                    btn.classList.remove('disabled');
+                });
+                
+                console.log('✅ Interfaz de venta reseteada');
                 
             } catch (error) {
-                console.error('❌ Error en reinicio:', error);
+                console.error('❌ Error reseteando interfaz:', error);
             }
         }
 
@@ -1591,82 +1631,79 @@ function mostrarNotificacion(mensaje, tipo = 'info') {
     let timerCodigoBarras = null;
     
     function detectarCodigoBarras(event) {
-    console.log("🔑 Tecla presionada:", event.key);
-    
-    if (event.key === "Enter") {
-        var input = document.getElementById("codigoBarrasInput");
-        var codigo = input.value.trim();
-        console.log("📝 Código ingresado:", codigo);
+        console.log("🔑 Tecla presionada:", event.key);
         
-        if (codigo.length > 3) {
-            event.preventDefault();
-            console.log("🔍 Buscando código:", codigo);
-            buscarProductoPorCodigo(codigo);
-            input.value = "";
-        } else {
-            console.log("⚠️ Código demasiado corto:", codigo);
-        }
-        return;
-    }
-}
-
-function buscarProductoPorCodigo(codigo) {
-    console.log("🔍 Buscando producto por código:", codigo);
-    mostrarNotificacion("🔍 Buscando producto...", "info");
-    
-    fetch("/api/buscar_por_codigo_barras/" + codigo)
-        .then(function(response) { return response.json(); })
-        .then(function(data) {
-            if (data.success) {
-                var producto = data.producto;
-                
-                if (producto.stock_actual <= 0) {
-                    mostrarNotificacion("❌ Producto sin stock disponible", "error");
-                    return;
-                }
-                
-                var item = {
-                    id: producto.id,
-                    nombre: producto.nombre,
-                    precio: producto.precio_venta,
-                    cantidad: 1,
-                    tipo: "externo"
-                };
-                
-                var existente = carrito.findIndex(function(p) { 
-                    return p.id === item.id && p.tipo === "externo"; 
-                });
-                
-                if (existente !== -1) {
-                    carrito[existente].cantidad += 1;
-                } else {
-                    carrito.push(item);
-                }
-                
-                actualizarCarrito();
-                guardarCarritoPersistente();
-                
-                mostrarNotificacion("✅ " + producto.nombre + " agregado al carrito", "success");
-                document.getElementById("codigoBarrasInput").value = "";
-                codigoBarrasBuffer = "";
+        if (event.key === "Enter") {
+            var input = document.getElementById("codigoBarrasInput");
+            var codigo = input.value.trim();
+            console.log("📝 Código ingresado:", codigo);
+            
+            if (codigo.length > 3) {
+                event.preventDefault();
+                console.log("🔍 Buscando código:", codigo);
+                buscarProductoPorCodigo(codigo);
+                input.value = "";
             } else {
-                mostrarNotificacion("❌ Producto no encontrado: " + codigo, "error");
+                console.log("⚠️ Código demasiado corto:", codigo);
             }
-        })
-        .catch(function(error) {
-            console.error("Error:", error);
-            mostrarNotificacion("❌ Error al buscar producto", "error");
-        });
-}
-</script>
+            return;
+        }
+    }
 
-<script>
+    function buscarProductoPorCodigo(codigo) {
+        console.log("🔍 Buscando producto por código:", codigo);
+        mostrarNotificacion("🔍 Buscando producto...", "info");
+        
+        fetch("/api/buscar_por_codigo_barras/" + codigo)
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    var producto = data.producto;
+                    
+                    if (producto.stock_actual <= 0) {
+                        mostrarNotificacion("❌ Producto sin stock disponible", "error");
+                        return;
+                    }
+                    
+                    var item = {
+                        id: producto.id,
+                        nombre: producto.nombre,
+                        precio: producto.precio_venta,
+                        cantidad: 1,
+                        tipo: "externo"
+                    };
+                    
+                    var existente = carrito.findIndex(function(p) { 
+                        return p.id === item.id && p.tipo === "externo"; 
+                    });
+                    
+                    if (existente !== -1) {
+                        carrito[existente].cantidad += 1;
+                    } else {
+                        carrito.push(item);
+                    }
+                    
+                    actualizarCarrito();
+                    guardarCarritoPersistente();
+                    
+                    mostrarNotificacion("✅ " + producto.nombre + " agregado al carrito", "success");
+                    document.getElementById("codigoBarrasInput").value = "";
+                    codigoBarrasBuffer = "";
+                } else {
+                    mostrarNotificacion("❌ Producto no encontrado: " + codigo, "error");
+                }
+            })
+            .catch(function(error) {
+                console.error("Error:", error);
+                mostrarNotificacion("❌ Error al buscar producto", "error");
+            });
+    }
+
     function limpiarCodigoBarras() {
         document.getElementById('codigoBarrasInput').value = '';
         codigoBarrasBuffer = '';
         clearTimeout(timerCodigoBarras);
     }
-
-</script>
+    </script>
 </body>
 </html>

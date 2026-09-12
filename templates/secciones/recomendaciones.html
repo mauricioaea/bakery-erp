@@ -9,16 +9,29 @@
                     <div class="alert alert-success">
                         <h5><i class="fas fa-thumbs-up"></i> Fortalezas Identificadas</h5>
                         <ul class="mb-0">
-                            {% if tendencia > 0 %}
+                            {# 🆕 MEJORA: Crecimiento solo si hay suficientes días #}
+                            {% if tendencia > 0 and dias_actividad >= 7 %}
+                            <li>Crecimiento del <strong>{{ "{:.1f}".format(tendencia) }}%</strong> vs período anterior</li>
+                            {% elif dias_actividad < 7 %}
+                            <li>
+                                📊 <strong>Acumulando datos</strong> para análisis de tendencias
+                                <br>
+                                <small class="text-muted">Faltan {{ 7 - dias_actividad }} días para comparar períodos</small>
+                            </li>
+                            {% elif tendencia > 0 %}
                             <li>Crecimiento del <strong>{{ "{:.1f}".format(tendencia) }}%</strong> vs período anterior</li>
                             {% endif %}
+                            
                             {% if promedio_venta > 500 %}
                             <li>Ticket promedio saludable: <strong>${{ "{:,.2f}".format(promedio_venta) }}</strong></li>
                             {% endif %}
+                            
                             {% if total_transacciones > 50 %}
                             <li>Alto volumen de transacciones: <strong>{{ total_transacciones }}</strong></li>
                             {% endif %}
-                            {% if not tendencia > 0 and not promedio_venta > 500 and not total_transacciones > 50 %}
+                            
+                            {# Si no hay ninguna fortaleza, mostrar mensaje base #}
+                            {% if not tendencia > 0 and not promedio_venta > 500 and not total_transacciones > 50 and dias_actividad >= 7 %}
                             <li>Base estable para optimizaciones</li>
                             {% endif %}
                         </ul>

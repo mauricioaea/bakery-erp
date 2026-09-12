@@ -3,34 +3,84 @@
 <div class="row mb-4 no-break">
     <div class="col-12">
         <div class="metric-card metric-card-ml">
-            <h4><i class="fas fa-exclamation-triangle"></i> Alertas Inteligentes</h4>
-            <div class="row mt-3">
-                {% for alerta in alertas %}
-                <div class="col-md-6 mb-3">
-                    <div class="alerta-card {% if alerta.prioridad == 'ALTA' %}alerta-alta
-                                        {% elif alerta.prioridad == 'MEDIA' %}alerta-media
-                                        {% else %}alerta-baja{% endif %}">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <h6 class="mb-1">
-                                    {% if alerta.tipo == 'STOCK_CRITICO' %}
-                                        <i class="fas fa-boxes text-danger"></i>
-                                    {% else %}
-                                        <i class="fas fa-chart-line text-warning"></i>
-                                    {% endif %}
-                                    {{ alerta.mensaje }}
-                                </h6>
-                                <small class="text-muted no-print">Detección automática por IA</small>
-                            </div>
-                            <span class="badge {% if alerta.prioridad == 'ALTA' %}bg-danger
-                                        {% elif alerta.prioridad == 'MEDIA' %}bg-warning text-dark
-                                        {% else %}bg-info{% endif %}">
-                                {{ alerta.prioridad }}
-                            </span>
-                        </div>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Alertas Inteligentes</h4>
+                <small class="text-muted">Detección automática por IA</small>
+            </div>
+            
+            <!-- 🆕 AGRUPACIÓN POR TIPO -->
+            {% set alertas_stock = alertas|selectattr('tipo', 'equalto', 'STOCK_CRITICO')|list %}
+            {% set alertas_ventas = alertas|selectattr('tipo', 'equalto', 'SIN_MOVIMIENTO')|list %}
+            
+            <!-- 🔴 GRUPO 1: STOCK CRÍTICO -->
+            {% if alertas_stock %}
+            <div class="alert alert-danger mb-3" style="border-left: 5px solid #dc3545;">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <h5 class="mb-1">
+                            <i class="fas fa-boxes"></i> 
+                            STOCK CRÍTICO
+                            <span class="badge bg-danger ms-2">{{ alertas_stock|length }} productos</span>
+                        </h5>
+                        <small class="text-muted">Productos por debajo del stock mínimo</small>
                     </div>
+                    <span class="badge bg-danger">PRIORIDAD ALTA</span>
                 </div>
-                {% endfor %}
+                
+                <!-- Lista de productos (compacta) -->
+                <div class="row mt-2" style="font-size: 0.85rem;">
+                    {% for alerta in alertas_stock %}
+                    <div class="col-md-4 col-6 mb-1">
+                        <i class="fas fa-circle text-danger" style="font-size: 0.5rem;"></i>
+                        {{ alerta.producto }}
+                        <span class="text-muted">({{ alerta.stock_actual }} unid.)</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="mt-2 pt-2" style="border-top: 1px dashed #dc3545;">
+                    <small><strong>💡 Acción:</strong> Reabastece estos productos urgentemente</small>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- 🟡 GRUPO 2: SIN VENTAS RECIENTES -->
+            {% if alertas_ventas %}
+            <div class="alert alert-warning mb-3" style="border-left: 5px solid #ffc107;">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <h5 class="mb-1">
+                            <i class="fas fa-chart-line"></i> 
+                            SIN VENTAS RECIENTES
+                            <span class="badge bg-warning text-dark ms-2">{{ alertas_ventas|length }} productos</span>
+                        </h5>
+                        <small class="text-muted">Productos sin movimiento en los últimos 7 días</small>
+                    </div>
+                    <span class="badge bg-warning text-dark">PRIORIDAD MEDIA</span>
+                </div>
+                
+                <!-- Lista de productos (compacta) -->
+                <div class="row mt-2" style="font-size: 0.85rem;">
+                    {% for alerta in alertas_ventas %}
+                    <div class="col-md-4 col-6 mb-1">
+                        <i class="fas fa-circle text-warning" style="font-size: 0.5rem;"></i>
+                        {{ alerta.producto }}
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="mt-2 pt-2" style="border-top: 1px dashed #ffc107;">
+                    <small><strong>💡 Acción:</strong> Considera promociones para reactivar estos productos</small>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- 📊 RESUMEN GENERAL -->
+            <div class="text-center mt-3 pt-3" style="border-top: 1px solid #dee2e6;">
+                <small class="text-muted">
+                    <strong>📋 Total:</strong> {{ alertas|length }} alertas activas
+                    ({{ alertas_stock|length }} críticas, {{ alertas_ventas|length }} media)
+                </small>
             </div>
         </div>
     </div>
@@ -49,25 +99,103 @@
 {% endif %}
 
 <!-- ============================================= -->
-<!-- NOTA INFORMATIVA SOBRE IA                    -->
+<!-- 🎓 FASE DE APRENDIZAJE DE LA IA              -->
 <!-- ============================================= -->
-<div class="alert alert-info mt-4 no-break">
+<div class="alert alert-info mt-4 no-break" style="background: linear-gradient(135deg, #e7f3ff, #d1ecf1); border: 2px solid #17a2b8;">
     <h5>🤖 ¿Cómo funciona la Inteligencia Artificial?</h5>
-    <p>La IA aprende de los datos históricos de tu panadería para generar predicciones precisas.</p>
-    <div class="row">
-        <div class="col-md-6">
-            <ul class="mb-0">
-                <li><strong>📊 Fase de aprendizaje:</strong> La IA necesita al menos <strong>30 días de actividad</strong> para identificar patrones de venta.</li>
-                <li><strong>📈 Proyecciones:</strong> Una vez tenga suficientes datos, generará predicciones de ventas para los próximos 7 días.</li>
-            </ul>
+    <p class="mb-3">La IA aprende de los datos históricos de tu panadería para generar predicciones precisas.</p>
+    
+    <!-- 🆕 BARRA DE PROGRESO DE APRENDIZAJE -->
+    <div class="aprendizaje-container" style="background: white; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <strong>🎓 Fase de Aprendizaje</strong>
+            <span class="badge bg-primary">Día {{ dias_actividad }} de 30</span>
         </div>
-        <div class="col-md-6">
-            <ul class="mb-0">
-                <li><strong>🔄 Mejora continua:</strong> Cuantos más datos tenga, más precisas serán las predicciones.</li>
-                <li><strong>📅 Estado actual:</strong> {{ dias_actividad }} días de datos disponibles.</li>
-            </ul>
+        
+        {% set progreso = (dias_actividad / 30 * 100)|round(0)|int %}
+        {% set progreso = 100 if progreso > 100 else progreso %}
+        
+        <div class="progress" style="height: 25px; border-radius: 12px; background: #e9ecef;">
+            <div class="progress-bar progress-bar-striped progress-bar-animated 
+                        {% if progreso >= 100 %}bg-success
+                        {% elif progreso >= 60 %}bg-info
+                        {% elif progreso >= 30 %}bg-warning
+                        {% else %}bg-danger{% endif %}" 
+                 role="progressbar" 
+                 style="width: {{ progreso }}%; font-size: 0.85rem; font-weight: bold;"
+                 aria-valuenow="{{ progreso }}" 
+                 aria-valuemin="0" 
+                 aria-valuemax="100">
+                {{ progreso }}%
+            </div>
+        </div>
+        
+        <!-- 🆕 MÓDULOS QUE SE DESBLOQUEAN -->
+        <div class="row mt-4 g-3">
+            <div class="col-md-3 col-6">
+                <div class="d-flex align-items-center p-2" style="background: #f0fdf4; border-radius: 8px; border-left: 4px solid #28a745;">
+                    {% if dias_actividad >= 1 %}
+                        <i class="fas fa-check-circle text-success me-2" style="font-size: 1.3rem;"></i>
+                    {% else %}
+                        <i class="fas fa-circle text-muted me-2" style="font-size: 1.3rem;"></i>
+                    {% endif %}
+                    <div>
+                        <div style="font-weight: 600; font-size: 0.9rem;">Análisis Básico</div>
+                        <div style="font-size: 0.75rem; color: #28a745;">✅ Activo</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 col-6">
+                <div class="d-flex align-items-center p-2" style="background: {% if dias_actividad >= 7 %}#f0fdf4{% else %}#fffbeb{% endif %}; border-radius: 8px; border-left: 4px solid {% if dias_actividad >= 7 %}#28a745{% else %}#f59e0b{% endif %};">
+                    {% if dias_actividad >= 7 %}
+                        <i class="fas fa-check-circle text-success me-2" style="font-size: 1.3rem;"></i>
+                    {% else %}
+                        <i class="fas fa-hourglass-half text-warning me-2" style="font-size: 1.3rem;"></i>
+                    {% endif %}
+                    <div>
+                        <div style="font-weight: 600; font-size: 0.9rem;">Tendencias</div>
+                        <div style="font-size: 0.75rem; color: {% if dias_actividad >= 7 %}#28a745{% else %}#f59e0b{% endif %};">
+                            {% if dias_actividad >= 7 %}✅ Activo{% else %}⏳ Faltan {{ 7 - dias_actividad }} días{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 col-6">
+                <div class="d-flex align-items-center p-2" style="background: {% if dias_actividad >= 7 %}#f0fdf4{% else %}#fffbeb{% endif %}; border-radius: 8px; border-left: 4px solid {% if dias_actividad >= 7 %}#28a745{% else %}#f59e0b{% endif %};">
+                    {% if dias_actividad >= 7 %}
+                        <i class="fas fa-check-circle text-success me-2" style="font-size: 1.3rem;"></i>
+                    {% else %}
+                        <i class="fas fa-hourglass-half text-warning me-2" style="font-size: 1.3rem;"></i>
+                    {% endif %}
+                    <div>
+                        <div style="font-weight: 600; font-size: 0.9rem;">Predicciones</div>
+                        <div style="font-size: 0.75rem; color: {% if dias_actividad >= 7 %}#28a745{% else %}#f59e0b{% endif %};">
+                            {% if dias_actividad >= 7 %}✅ Activo{% else %}⏳ Faltan {{ 7 - dias_actividad }} días{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 col-6">
+                <div class="d-flex align-items-center p-2" style="background: {% if dias_actividad >= 30 %}#f0fdf4{% else %}#fffbeb{% endif %}; border-radius: 8px; border-left: 4px solid {% if dias_actividad >= 30 %}#28a745{% else %}#f59e0b{% endif %};">
+                    {% if dias_actividad >= 30 %}
+                        <i class="fas fa-check-circle text-success me-2" style="font-size: 1.3rem;"></i>
+                    {% else %}
+                        <i class="fas fa-hourglass-half text-warning me-2" style="font-size: 1.3rem;"></i>
+                    {% endif %}
+                    <div>
+                        <div style="font-weight: 600; font-size: 0.9rem;">IA Completa</div>
+                        <div style="font-size: 0.75rem; color: {% if dias_actividad >= 30 %}#28a745{% else %}#f59e0b{% endif %};">
+                            {% if dias_actividad >= 30 %}✅ Activo{% else %}⏳ Faltan {{ 30 - dias_actividad }} días{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
+    
     <small class="text-muted">💡 La IA se actualiza automáticamente cada día con tus nuevas ventas.</small>
 </div>
 

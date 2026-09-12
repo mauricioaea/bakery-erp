@@ -299,46 +299,56 @@ def crear_tablas_en_orden(schema_name):
         )
     '''))
     
-    # =============================================
+        # =============================================
     # 17. productos_externos (depende de panaderias)
     # =============================================
     db.session.execute(text(f'''
         CREATE TABLE IF NOT EXISTS {schema_name}.productos_externos (
             id SERIAL PRIMARY KEY,
-            nombre VARCHAR(100) NOT NULL,
+            codigo_barras VARCHAR(100) UNIQUE,
+            nombre VARCHAR(200) NOT NULL,
             descripcion TEXT,
-            precio_compra FLOAT DEFAULT 0,
-            precio_venta FLOAT NOT NULL,
-            stock_actual INTEGER DEFAULT 0,
-            stock_minimo INTEGER DEFAULT 0,
-            codigo_barras VARCHAR(50),
-            fecha_vencimiento DATE,
-            activo BOOLEAN DEFAULT TRUE,
+            categoria VARCHAR(100),
+            marca VARCHAR(100),
+            proveedor_id INTEGER,
             proveedor VARCHAR(100),
-            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),
+            stock_actual INTEGER DEFAULT 0,
+            stock_minimo INTEGER DEFAULT 5,
+            fecha_vencimiento DATE,
+            precio_compra FLOAT DEFAULT 0,
+            precio_venta FLOAT DEFAULT 0,
+            total_ventas INTEGER DEFAULT 0,
+            total_ingresos FLOAT DEFAULT 0.0,
+            utilidad_total FLOAT DEFAULT 0.0,
+            activo BOOLEAN DEFAULT TRUE,
+            fecha_creacion TIMESTAMP DEFAULT NOW(),
+            fecha_ultima_compra TIMESTAMP,
+            fecha_ultima_venta TIMESTAMP
         )
     '''))
     
     # =============================================
-    # 18. compras_externas (depende de productos_externos y panaderias)
+    # 18. compras_externas (depende de productos_externos, proveedor y panaderias)
     # =============================================
     db.session.execute(text(f'''
         CREATE TABLE IF NOT EXISTS {schema_name}.compras_externas (
             id SERIAL PRIMARY KEY,
             panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),
             producto_externo_id INTEGER NOT NULL REFERENCES {schema_name}.productos_externos(id),
+            proveedor_id INTEGER REFERENCES {schema_name}.proveedor(id),
             fecha_compra TIMESTAMP DEFAULT NOW(),
             cantidad INTEGER NOT NULL DEFAULT 0,
             precio_unitario FLOAT DEFAULT 0,
             total FLOAT DEFAULT 0,
-            proveedor VARCHAR(100),
             factura VARCHAR(50),
             observaciones TEXT,
             usuario_id INTEGER REFERENCES {schema_name}.usuarios(id)
         )
     '''))
     
-        # =============================================
+    
+    # =============================================
     # 19 recetas (depende de panaderias)
     # =============================================
     db.session.execute(text(f'''
@@ -410,16 +420,21 @@ def crear_tablas_en_orden(schema_name):
     db.session.execute(text(f'''
         CREATE TABLE IF NOT EXISTS {schema_name}.clientes (
             id SERIAL PRIMARY KEY,
-            nombre VARCHAR(100) NOT NULL,
-            apellido VARCHAR(100),
-            documento VARCHAR(20) UNIQUE,
-            email VARCHAR(100),
-            telefono VARCHAR(20),
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),
+            documento VARCHAR(20) NOT NULL,
+            nombre VARCHAR(200) NOT NULL,
+            tipo_documento VARCHAR(2) DEFAULT '31',
+            tipo_persona VARCHAR(1) DEFAULT 'J',
             direccion TEXT,
-            tipo_cliente VARCHAR(20) DEFAULT 'regular',
+            telefono VARCHAR(20),
+            email VARCHAR(100),
+            ciudad VARCHAR(100),
+            departamento VARCHAR(100),
+            regimen VARCHAR(50),
+            responsabilidades TEXT,
             activo BOOLEAN DEFAULT TRUE,
             fecha_registro TIMESTAMP DEFAULT NOW(),
-            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
+            fecha_actualizacion TIMESTAMP DEFAULT NOW()
         )
     '''))
     
@@ -432,13 +447,23 @@ def crear_tablas_en_orden(schema_name):
             cliente_id INTEGER REFERENCES {schema_name}.clientes(id),
             usuario_id INTEGER NOT NULL REFERENCES {schema_name}.usuarios(id),
             fecha_hora TIMESTAMP DEFAULT NOW(),
-            total_venta FLOAT NOT NULL DEFAULT 0,
+            total FLOAT NOT NULL DEFAULT 0,
+            total_venta FLOAT DEFAULT 0,
             total_donacion FLOAT DEFAULT 0,
             impuesto FLOAT DEFAULT 0,
             descuento FLOAT DEFAULT 0,
             metodo_pago VARCHAR(50) NOT NULL,
             estado VARCHAR(20) DEFAULT 'completada',
             consecutivo VARCHAR(20),
+            tipo_documento VARCHAR(20) DEFAULT 'POS',
+            consecutivo_pos INTEGER,
+            cufe VARCHAR(100),
+            estado_dian VARCHAR(50) DEFAULT 'NO_APLICA',
+            qr_factura TEXT,
+            respuesta_dian TEXT,
+            texto_legal TEXT DEFAULT 'Documento equivalente POS – No válido como factura electrónica de venta',
+            es_donacion BOOLEAN DEFAULT FALSE,
+            motivo_donacion VARCHAR(200),
             observaciones TEXT,
             panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
         )
@@ -504,9 +529,14 @@ def crear_tablas_en_orden(schema_name):
             cantidad_real INTEGER DEFAULT 0,
             fecha_orden TIMESTAMP DEFAULT NOW(),
             fecha_produccion DATE,
-            estado VARCHAR(20) DEFAULT 'pendiente',
+            estado VARCHAR(20) DEFAULT 'PENDIENTE',
             observaciones TEXT,
             usuario_creacion_id INTEGER REFERENCES {schema_name}.usuarios(id),
+            usuario_id INTEGER,
+            fecha_inicio TIMESTAMP,
+            fecha_fin TIMESTAMP,
+            costo_real FLOAT DEFAULT 0,
+            stock_generado BOOLEAN DEFAULT FALSE,
             panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
         )
     '''))
@@ -532,7 +562,8 @@ def crear_tablas_en_orden(schema_name):
             serial VARCHAR(50),
             activo BOOLEAN DEFAULT TRUE,
             fecha_registro TIMESTAMP DEFAULT NOW(),
-            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),
+            numero_serie VARCHAR(100)
         )
     '''))
     
@@ -614,7 +645,8 @@ def crear_tablas_en_orden(schema_name):
             rotacion_recomendada FLOAT DEFAULT 10,
             vida_util_pan_dias INTEGER DEFAULT 3,
             activar_alertas BOOLEAN DEFAULT TRUE,
-            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),
+            receta_id INTEGER
         )
     '''))
     
@@ -624,11 +656,19 @@ def crear_tablas_en_orden(schema_name):
     db.session.execute(text(f'''
         CREATE TABLE IF NOT EXISTS {schema_name}.configuracion_sistema (
             id SERIAL PRIMARY KEY,
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),
+            tipo_facturacion VARCHAR(20) DEFAULT 'POS',
+            nombre_empresa VARCHAR(200) DEFAULT 'Mi Panadería',
+            nit_empresa VARCHAR(20) DEFAULT '',
+            direccion_empresa VARCHAR(300) DEFAULT '',
+            telefono_empresa VARCHAR(20) DEFAULT '',
+            ciudad_empresa VARCHAR(100) DEFAULT '',
+            regimen_empresa VARCHAR(100) DEFAULT 'Simplificado',
             nombre_sistema VARCHAR(100) DEFAULT 'PanaderíaPro',
             version VARCHAR(20) DEFAULT '1.0.0',
             modo_mantenimiento BOOLEAN DEFAULT FALSE,
             ultima_actualizacion TIMESTAMP DEFAULT NOW(),
-            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
+            created_at TIMESTAMP DEFAULT NOW()
         )
     '''))
     
@@ -1056,40 +1096,15 @@ def crear_tenant_saas(nombre_panaderia, subdominio, email_contacto=None, max_usu
                 {'panaderia_id': tenant_id}
             ).fetchall()
             
-            # Crear diccionario con los IDs
+                       # Crear diccionario con los IDs
             cat_ids = {}
             for cat in categorias:
                 cat_ids[cat[1]] = cat[0]
             
-            # Crear productos con códigos de barras ÚNICOS por tenant
-            productos = [
-                ('Pan Mantequilla', cat_ids.get('Panadería', 1), f"{tenant_id}1001", 300),
-                ('Pan Integral', cat_ids.get('Panadería', 1), f"{tenant_id}1002", 4000),
-                ('Croissant', cat_ids.get('Panadería', 1), f"{tenant_id}1003", 1000),
-                ('Pastel de Chocolate', cat_ids.get('Pastelería', 2), f"{tenant_id}2001", 30000),
-                ('Galletas', cat_ids.get('Pastelería', 2), f"{tenant_id}2002", 1200),
-                ('Café', cat_ids.get('Bebidas', 3), f"{tenant_id}3001", 1000),
-                ('Jugo de Naranja', cat_ids.get('Bebidas', 3), f"{tenant_id}3002", 4000)
-            ]
-            
-            for nombre, cat_id, codigo, precio in productos:
-                db.session.execute(
-                    text(f"""
-                        INSERT INTO {schema_name}.productos 
-                        (nombre, categoria_id, precio_venta, codigo_barras, panaderia_id, stock_actual, stock_minimo, es_pan, vida_util_dias, tipo_producto)
-                        VALUES (:nombre, :categoria_id, :precio_venta, :codigo_barras, :panaderia_id, 0, 10, true, 3, 'produccion')
-                    """),
-                    {
-                        'nombre': nombre,
-                        'categoria_id': cat_id,
-                        'precio_venta': precio,
-                        'codigo_barras': codigo,
-                        'panaderia_id': tenant_id
-                    }
-                )
-            
+            # ✅ NUEVO: NO crear productos de prueba automáticamente
+            # Los productos se crean cuando el usuario los registra
             db.session.commit()
-            print(f"   ✅ {len(productos)} productos creados para tenant_id: {tenant_id}")
+            print(f"   ✅ Categorías creadas para tenant_id: {tenant_id} (sin productos de prueba)")
             
         except Exception as e:
             print(f"   ⚠️ Error creando categorías/productos: {e}")
@@ -1607,98 +1622,9 @@ def verificar_y_crear_datos_tenant(tenant_id):
         
             
         
-        # ✅ Verificar productos (solo si hay categorías)
-        if categorias:
-            productos_existentes = Producto.query.filter_by(panaderia_id=tenant_id).count()
-            
-            
-            if productos_existentes == 0:
-                
-                
-                # ✅ Crear productos con códigos de barras únicos por tenant
-                productos_default = [
-                    Producto(
-                        nombre="Pan Mantequilla",
-                        categoria_id=categorias[0].id,
-                        precio_venta=300,
-                        stock_minimo=10,
-                        stock_actual=0,
-                        codigo_barras=f"{tenant_id}1001",
-                        es_pan=True,
-                        vida_util_dias=3,
-                        tipo_producto='produccion',
-                        panaderia_id=tenant_id
-                    ),
-                    Producto(
-                        nombre="Pan Integral",
-                        categoria_id=categorias[0].id,
-                        precio_venta=4000,
-                        stock_minimo=10,
-                        stock_actual=0,
-                        codigo_barras=f"{tenant_id}1002",
-                        es_pan=True,
-                        vida_util_dias=3,
-                        tipo_producto='produccion',
-                        panaderia_id=tenant_id
-                    ),
-                    Producto(
-                        nombre="Croissant",
-                        categoria_id=categorias[0].id,
-                        precio_venta=1000,
-                        stock_minimo=10,
-                        stock_actual=0,
-                        codigo_barras=f"{tenant_id}1003",
-                        es_pan=True,
-                        vida_util_dias=3,
-                        tipo_producto='produccion',
-                        panaderia_id=tenant_id
-                    ),
-                    Producto(
-                        nombre="Galletas",
-                        categoria_id=categorias[1].id,
-                        precio_venta=1200,
-                        stock_minimo=10,
-                        stock_actual=0,
-                        codigo_barras=f"{tenant_id}2002",
-                        es_pan=True,
-                        vida_util_dias=3,
-                        tipo_producto='produccion',
-                        panaderia_id=tenant_id
-                    ),
-                    Producto(
-                        nombre="Café",
-                        categoria_id=categorias[2].id,
-                        precio_venta=1000,
-                        stock_minimo=10,
-                        stock_actual=0,
-                        codigo_barras=f"{tenant_id}3001",
-                        es_pan=True,
-                        vida_util_dias=3,
-                        tipo_producto='produccion',
-                        panaderia_id=tenant_id
-                    ),
-                    Producto(
-                        nombre="Jugo de Naranja",
-                        categoria_id=categorias[2].id,
-                        precio_venta=4000,
-                        stock_minimo=10,
-                        stock_actual=0,
-                        codigo_barras=f"{tenant_id}3002",
-                        es_pan=True,
-                        vida_util_dias=3,
-                        tipo_producto='produccion',
-                        panaderia_id=tenant_id
-                    )
-                ]
-                
-                for prod in productos_default:
-                    db.session.add(prod)
-                
-                db.session.commit()
-                
-            
-        else:
-            print(f"⚠️ No hay categorías para crear productos en tenant {tenant_id}")
+                # ✅ NUEVO: NO crear productos de prueba automáticamente
+        # Los productos se crean cuando el usuario los registra
+        print(f"   ℹ️ Tenant {tenant_id}: Sin productos de prueba (se crearán por el usuario)")
         
         
         return True
@@ -2051,28 +1977,54 @@ def antes_de_cada_peticion():
             
             config_sistema = ConfiguracionSistema.query.filter_by(panaderia_id=tenant_id).first()
             if not config_sistema:
+                # ✅ OBTENER DATOS REALES DESDE configuracion_panaderia
+                nombre_real = f'Panadería {tenant_id}'
+                nit_real = ''
+                direccion_real = ''
+                telefono_real = ''
+                
+                try:
+                    result_config = db.session.execute(
+                        text(f"""
+                            SELECT nombre_panaderia, nit, direccion, telefono_contacto
+                            FROM {tenant_schema}.configuracion_panaderia 
+                            WHERE panaderia_id = :panaderia_id LIMIT 1
+                        """),
+                        {"panaderia_id": tenant_id}
+                    ).fetchone()
+                    
+                    if result_config:
+                        nombre_real = result_config[0] or nombre_real
+                        nit_real = result_config[1] or ''
+                        direccion_real = result_config[2] or ''
+                        telefono_real = result_config[3] or ''
+                        print(f"   ✅ Datos obtenidos desde configuracion_panaderia: {nombre_real}")
+                except Exception as e:
+                    print(f"   ⚠️ No se pudo obtener configuracion_panaderia: {e}")
+                
                 config_inicial = ConfiguracionSistema(
                     tipo_facturacion='POS',
-                    nombre_empresa='Panadería y Pasteleria Semillas',
-                    nit_empresa='900000000-1',
-                    direccion_empresa='Cra. 18 # 9-45 Atahualpa',
-                    telefono_empresa='+57 3189098818',
-                    ciudad_empresa='Pasto',
+                    nombre_empresa=nombre_real,
+                    nit_empresa=nit_real,
+                    direccion_empresa=direccion_real,
+                    telefono_empresa=telefono_real,
+                    ciudad_empresa='',
                     regimen_empresa='Simplificado',
                     panaderia_id=tenant_id
                 )
                 db.session.add(config_inicial)
                 print(f"✅ Configuración del sistema inicial creada para tenant {tenant_id}")
             
+                        # =============================================
+            # 📦 VERIFICAR CATEGORÍAS (SIN PRODUCTOS DE PRUEBA)
             # =============================================
-            # 📦 CREAR CATEGORÍAS Y PRODUCTOS DE PRUEBA (SOLO SI NO EXISTEN)
-            # =============================================
+            # ✅ NUEVO: Solo crear categorías básicas, SIN productos de prueba
+            # Los productos se crean cuando el usuario los registra
+            
             categoria_existente = Categoria.query.filter_by(panaderia_id=tenant_id).first()
             
             if not categoria_existente:
-                
-                
-                # 1. Crear categorías
+                # Crear solo las categorías básicas
                 panaderia_cat = Categoria(
                     nombre="Panadería",
                     panaderia_id=panaderia.id
@@ -2088,74 +2040,18 @@ def antes_de_cada_peticion():
                 
                 db.session.add_all([panaderia_cat, pasteleria, bebidas])
                 db.session.flush()
-                
-                print(f"   ✅ Categorías creadas: Panadería (ID: {panaderia_cat.id}), Pastelería (ID: {pasteleria.id}), Bebidas (ID: {bebidas.id})")
-                
-                # 2. Crear productos usando códigos de barras ÚNICOS por tenant
-                productos = [
-                    Producto(
-                        nombre="Pan Mantequilla",
-                        categoria_id=panaderia_cat.id,
-                        precio_venta=300,
-                        codigo_barras=f"{tenant_id}1001",  # ✅ Único por tenant
-                        panaderia_id=panaderia.id
-                    ),
-                    Producto(
-                        nombre="Pan Integral",
-                        categoria_id=panaderia_cat.id,
-                        precio_venta=4000,
-                        codigo_barras=f"{tenant_id}1002",  # ✅ Único por tenant
-                        panaderia_id=panaderia.id
-                    ),
-                    Producto(
-                        nombre="Croissant",
-                        categoria_id=panaderia_cat.id,
-                        precio_venta=1000,
-                        codigo_barras=f"{tenant_id}1003",  # ✅ Único por tenant
-                        panaderia_id=panaderia.id
-                    ),
-                    Producto(
-                        nombre="Pastel de Chocolate",
-                        categoria_id=pasteleria.id,
-                        precio_venta=30000,
-                        codigo_barras=f"{tenant_id}2001",  # ✅ Único por tenant
-                        panaderia_id=panaderia.id
-                    ),
-                    Producto(
-                        nombre="Galletas",
-                        categoria_id=pasteleria.id,
-                        precio_venta=1200,
-                        codigo_barras=f"{tenant_id}2002",  # ✅ Único por tenant
-                        panaderia_id=panaderia.id
-                    ),
-                    Producto(
-                        nombre="Café",
-                        categoria_id=bebidas.id,
-                        precio_venta=1000,
-                        codigo_barras=f"{tenant_id}3001",  # ✅ Único por tenant
-                        panaderia_id=panaderia.id
-                    ),
-                    Producto(
-                        nombre="Jugo de Naranja",
-                        categoria_id=bebidas.id,
-                        precio_venta=4000,
-                        codigo_barras=f"{tenant_id}3002",  # ✅ Único por tenant
-                        panaderia_id=panaderia.id
-                    )
-                ]
-                
-                db.session.add_all(productos)
-                db.session.flush()
                 db.session.commit()
-                print(f"✅ {len(productos)} productos de prueba creados para tenant {tenant_id}")
+                
+                print(f"   ✅ Categorías creadas: Panadería, Pastelería, Bebidas")
+                print(f"   ℹ️ Sin productos de prueba (se crearán por el usuario)")
             else:
-                print(f"✅ Categorías ya existen para tenant {tenant_id}")
+                print(f"   ✅ Categorías ya existen para tenant {tenant_id}")
             
             db.session.commit()
             
         except Exception as e:
             db.session.rollback()
-            print(f"❌ Error en fallback creando categorías y productos para tenant {tenant_id}: {e}")
+            print(f"❌ Error creando categorías para tenant {tenant_id}: {e}")
             import traceback
             traceback.print_exc()
     
@@ -2748,99 +2644,131 @@ def debug_productos_punto_venta():
 
 
 def obtener_consecutivo_pos():
-    """Obtiene y incrementa el consecutivo POS DIRECTAMENTE desde la BD del tenant"""
+    """Obtiene y incrementa el consecutivo POS desde PostgreSQL (multi-tenant)"""
     try:
-        import sqlite3
-        from flask import g
+        from sqlalchemy import text as sql_text
         
         # 1. Obtener panaderia_id
         panaderia_id = current_user.panaderia_id
-        print(f"🔢 [CONSECUTIVO] Panadería ID: {panaderia_id}")
+        schema_name = f"tenant_{panaderia_id}"
+        print(f"🔢 [CONSECUTIVO] Panadería ID: {panaderia_id} (schema: {schema_name})")
         
-        # 2. Obtener la ruta de la BD del tenant
-        if hasattr(g, 'db_path') and g.db_path:
-            bd_tenant = g.db_path
-        else:
-            # Buscar en tenant_master.db
-            conn_master = sqlite3.connect('tenant_master.db')
-            cursor_master = conn_master.cursor()
-            cursor_master.execute("SELECT base_datos FROM tenants WHERE id = ?", (panaderia_id,))
-            tenant = cursor_master.fetchone()
-            conn_master.close()
-            if tenant:
-                bd_tenant = f"databases_tenants/{tenant[0]}"
-            else:
-                bd_tenant = f"databases_tenants/panaderia_sqlalchemy.db"
-        
-        print(f"📁 [CONSECUTIVO] BD: {bd_tenant}")
-        
-        # 3. Conectar DIRECTAMENTE a la BD del tenant
-        conn = sqlite3.connect(bd_tenant)
-        cursor = conn.cursor()
-        
-        # 4. Verificar tabla
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='consecutivos_pos'")
-        if not cursor.fetchone():
-            cursor.execute('''
-                CREATE TABLE consecutivos_pos (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    panaderia_id INTEGER NOT NULL,
-                    numero_actual INTEGER DEFAULT 0
+        # 2. Verificar si existe la tabla consecutivos_pos en el schema
+        check_table = db.session.execute(
+            sql_text("""
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_schema = :schema AND table_name = 'consecutivos_pos'
                 )
-            ''')
+            """),
+            {"schema": schema_name}
+        ).scalar()
         
-        # 5. Obtener y actualizar consecutivo
-        cursor.execute("SELECT numero_actual FROM consecutivos_pos WHERE panaderia_id = ?", (panaderia_id,))
-        resultado = cursor.fetchone()
+        # 3. Crear tabla si no existe
+        if not check_table:
+            print(f"📝 Creando tabla consecutivos_pos en {schema_name}...")
+            db.session.execute(sql_text(f"""
+                CREATE TABLE IF NOT EXISTS {schema_name}.consecutivos_pos (
+                    id SERIAL PRIMARY KEY,
+                    panaderia_id INTEGER NOT NULL,
+                    numero_actual INTEGER DEFAULT 0,
+                    updated_at TIMESTAMP DEFAULT NOW()
+                )
+            """))
+            db.session.commit()
         
-        if resultado:
-            nuevo_numero = resultado[0] + 1
+        # 4. Obtener el consecutivo actual
+        result = db.session.execute(
+            sql_text(f"""
+                SELECT id, numero_actual 
+                FROM {schema_name}.consecutivos_pos 
+                WHERE panaderia_id = :panaderia_id
+                LIMIT 1
+            """),
+            {"panaderia_id": panaderia_id}
+        ).fetchone()
+        
+        if result:
+            # Existe: incrementar
+            nuevo_numero = (result[1] or 0) + 1
+            db.session.execute(
+                sql_text(f"""
+                    UPDATE {schema_name}.consecutivos_pos 
+                    SET numero_actual = :numero, updated_at = NOW()
+                    WHERE id = :id
+                """),
+                {"numero": nuevo_numero, "id": result[0]}
+            )
         else:
+            # No existe: crear con numero 1
             nuevo_numero = 1
-            cursor.execute("""
-                INSERT INTO consecutivos_pos (panaderia_id, numero_actual)
-                VALUES (?, ?)
-            """, (panaderia_id, 0))
+            db.session.execute(
+                sql_text(f"""
+                    INSERT INTO {schema_name}.consecutivos_pos (panaderia_id, numero_actual)
+                    VALUES (:panaderia_id, :numero)
+                """),
+                {"panaderia_id": panaderia_id, "numero": nuevo_numero}
+            )
         
-        # Actualizar el consecutivo
-        cursor.execute("""
-            UPDATE consecutivos_pos 
-            SET numero_actual = ? 
-            WHERE panaderia_id = ?
-        """, (nuevo_numero, panaderia_id))
-        conn.commit()
-        conn.close()
-        
+        db.session.commit()
         print(f"✅ [CONSECUTIVO] Nuevo: {nuevo_numero}")
         return nuevo_numero
         
     except Exception as e:
+        db.session.rollback()
         print(f"❌ [CONSECUTIVO] Error: {e}")
+        import traceback
+        traceback.print_exc()
         return 1  # Fallback seguro
 
 
 def obtener_configuracion_sistema():
     """
-    Obtiene la configuración del sistema para la panadería actual
-    Si no existe, crea una configuración por defecto
+    Obtiene la configuración del sistema para la panadería actual.
+    Si no existe, crea una con datos reales de configuracion_panaderia.
     """
     from models import ConfiguracionSistema
     
     try:
-        # Obtener panadería actual
         panaderia_id = current_user.panaderia_id if hasattr(current_user, 'panaderia_id') else 1
         
         config = ConfiguracionSistema.query.filter_by(panaderia_id=panaderia_id).first()
         
         if not config:
-            # Crear configuración por defecto para esta panadería
+            # ✅ OBTENER DATOS REALES DESDE configuracion_panaderia
+            nombre_real = f'Panadería {panaderia_id}'
+            nit_real = ''
+            direccion_real = ''
+            telefono_real = ''
+            
+            try:
+                from sqlalchemy import text as sql_text
+                schema_name = f"tenant_{panaderia_id}"
+                result = db.session.execute(
+                    sql_text(f"""
+                        SELECT nombre_panaderia, nit, direccion, telefono_contacto
+                        FROM {schema_name}.configuracion_panaderia 
+                        WHERE panaderia_id = :panaderia_id LIMIT 1
+                    """),
+                    {"panaderia_id": panaderia_id}
+                ).fetchone()
+                
+                if result:
+                    nombre_real = result[0] or nombre_real
+                    nit_real = result[1] or ''
+                    direccion_real = result[2] or ''
+                    telefono_real = result[3] or ''
+                    print(f"✅ [CONFIG] Datos obtenidos: {nombre_real}")
+            except Exception as e:
+                print(f"⚠️ [CONFIG] No se pudo obtener configuracion_panaderia: {e}")
+            
             config = ConfiguracionSistema(
                 panaderia_id=panaderia_id,
                 tipo_facturacion='POS',
-                nombre_empresa=f'Panadería {panaderia_id}',
-                nit_empresa='9000000001',
-                direccion_empresa='',
-                telefono_empresa='',
+                nombre_empresa=nombre_real,
+                nit_empresa=nit_real,
+                direccion_empresa=direccion_real,
+                telefono_empresa=telefono_real,
                 ciudad_empresa='',
                 regimen_empresa='Simplificado'
             )
@@ -2855,8 +2783,8 @@ def obtener_configuracion_sistema():
         # Retornar objeto por defecto en caso de error
         return type('ConfigDefault', (), {
             'panaderia_id': 1,
-            'nit_empresa': '9000000001',
-            'nombre_empresa': 'Panadería Default',
+            'nit_empresa': '',
+            'nombre_empresa': 'Panadería',
             'direccion_empresa': '',
             'telefono_empresa': '',
             'ciudad_empresa': '',
@@ -2879,6 +2807,225 @@ def reiniciar_consecutivo_pos():
         print(f"❌ Error reiniciando consecutivo: {e}")
         return False
     
+# =============================================
+# 🆕 APIs PARA GESTIÓN DEL CONSECUTIVO POS
+# =============================================
+
+@app.route('/api/consecutivo-pos/estado', methods=['GET'])
+@login_required
+@modulo_requerido('configuracion')
+@tenant_required
+def api_consecutivo_pos_estado():
+    """API para obtener el estado actual del consecutivo POS"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'No autorizado'}), 401
+    
+    try:
+        from sqlalchemy import text as sql_text
+        
+        panaderia_id = current_user.panaderia_id
+        schema_name = f"tenant_{panaderia_id}"
+        
+        # Verificar si existe la tabla
+        check_table = db.session.execute(
+            sql_text("""
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_schema = :schema AND table_name = 'consecutivos_pos'
+                )
+            """),
+            {"schema": schema_name}
+        ).scalar()
+        
+        if not check_table:
+            # Crear tabla si no existe
+            db.session.execute(sql_text(f"""
+                CREATE TABLE IF NOT EXISTS {schema_name}.consecutivos_pos (
+                    id SERIAL PRIMARY KEY,
+                    panaderia_id INTEGER NOT NULL,
+                    numero_actual INTEGER DEFAULT 0,
+                    updated_at TIMESTAMP DEFAULT NOW()
+                )
+            """))
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'numero_actual': 0,
+                'updated_at': None
+            })
+        
+        # Obtener el consecutivo actual
+        result = db.session.execute(
+            sql_text(f"""
+                SELECT numero_actual, updated_at 
+                FROM {schema_name}.consecutivos_pos 
+                WHERE panaderia_id = :panaderia_id
+                LIMIT 1
+            """),
+            {"panaderia_id": panaderia_id}
+        ).fetchone()
+        
+        if result:
+            return jsonify({
+                'success': True,
+                'numero_actual': result[0] or 0,
+                'updated_at': result[1].isoformat() if result[1] else None
+            })
+        else:
+            return jsonify({
+                'success': True,
+                'numero_actual': 0,
+                'updated_at': None
+            })
+        
+    except Exception as e:
+        print(f"❌ Error obteniendo estado consecutivo: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/consecutivo-pos/reiniciar', methods=['GET', 'POST'])
+@login_required
+@modulo_requerido('configuracion')
+@tenant_required
+def api_consecutivo_pos_reiniciar():
+    """⚠️ SOLO PARA PRUEBAS: Reinicia el consecutivo POS a 0"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'No autorizado'}), 401
+    
+    try:
+        from sqlalchemy import text as sql_text
+        
+        panaderia_id = current_user.panaderia_id
+        schema_name = f"tenant_{panaderia_id}"
+        
+        # Verificar si existe la tabla
+        check_table = db.session.execute(
+            sql_text("""
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_schema = :schema AND table_name = 'consecutivos_pos'
+                )
+            """),
+            {"schema": schema_name}
+        ).scalar()
+        
+        if not check_table:
+            # Crear tabla si no existe
+            db.session.execute(sql_text(f"""
+                CREATE TABLE IF NOT EXISTS {schema_name}.consecutivos_pos (
+                    id SERIAL PRIMARY KEY,
+                    panaderia_id INTEGER NOT NULL,
+                    numero_actual INTEGER DEFAULT 0,
+                    updated_at TIMESTAMP DEFAULT NOW()
+                )
+            """))
+            db.session.commit()
+        
+        # Verificar si existe registro
+        result = db.session.execute(
+            sql_text(f"""
+                SELECT id FROM {schema_name}.consecutivos_pos 
+                WHERE panaderia_id = :panaderia_id
+                LIMIT 1
+            """),
+            {"panaderia_id": panaderia_id}
+        ).fetchone()
+        
+        if result:
+            # Actualizar a 0
+            db.session.execute(
+                sql_text(f"""
+                    UPDATE {schema_name}.consecutivos_pos 
+                    SET numero_actual = 0, updated_at = NOW()
+                    WHERE id = :id
+                """),
+                {"id": result[0]}
+            )
+        else:
+            # Crear con 0
+            db.session.execute(
+                sql_text(f"""
+                    INSERT INTO {schema_name}.consecutivos_pos (panaderia_id, numero_actual)
+                    VALUES (:panaderia_id, 0)
+                """),
+                {"panaderia_id": panaderia_id}
+            )
+        
+        db.session.commit()
+        print(f"✅ [CONSECUTIVO] Reiniciado a 0 para panadería {panaderia_id}")
+        
+        return jsonify({
+            'success': True,
+            'mensaje': 'Consecutivo reiniciado a 0'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Error reiniciando consecutivo: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+    
+# =============================================
+# 🆕 API PARA MÉTRICAS DEL DASHBOARD (TIEMPO REAL)
+# =============================================
+
+@app.route('/api/dashboard/metricas-hoy', methods=['GET'])
+@login_required
+@modulo_requerido('punto_venta')
+@tenant_required
+def api_dashboard_metricas_hoy():
+    """API para obtener las métricas del día actual (usada por el POS)"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'No autorizado'}), 401
+    
+    try:
+        from datetime import datetime
+        from sqlalchemy import func
+        
+        panaderia_id = current_user.panaderia_id
+        hoy = datetime.now().date()
+        
+        # ✅ Contar ventas del día
+        inicio_dia = datetime.combine(hoy, datetime.min.time())
+        fin_dia = datetime.combine(hoy, datetime.max.time())
+        
+        ventas_hoy = Venta.query.filter(
+            Venta.panaderia_id == panaderia_id,
+            Venta.fecha_hora >= inicio_dia,
+            Venta.fecha_hora <= fin_dia
+        ).all()
+        
+        # ✅ Calcular total del día
+        total_ventas_hoy = sum(
+            venta.total for venta in ventas_hoy 
+            if not venta.es_donacion
+        )
+        
+        # ✅ Contar transacciones
+        total_transacciones = len([v for v in ventas_hoy if not v.es_donacion])
+        
+        return jsonify({
+            'success': True,
+            'ventas_hoy': total_transacciones,  # ← Lo que espera el frontend
+            'total_ventas_hoy': total_ventas_hoy,
+            'total_transacciones': total_transacciones,
+            'fecha': hoy.isoformat()
+        })
+        
+    except Exception as e:
+        print(f"❌ Error obteniendo métricas del dashboard: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'ventas_hoy': 0
+        }), 500
+    
 
 
 # ✅ RUTA ACTUALIZADA: /registrar_venta con aprendizaje automático
@@ -2888,7 +3035,7 @@ def reiniciar_consecutivo_pos():
 @modulo_requerido('punto_venta')
 @tenant_required
 def registrar_venta():
-    """Registrar venta - VERSIÓN CORREGIDA MULTI-TENANT"""
+    """Registrar venta - VERSIÓN CORREGIDA MULTI-TENANT (PostgreSQL)"""
     print("🛒 DEBUG - INICIANDO REGISTRO DE VENTA")
     print(f"👤 User ID en sesión: {session.get('user_id')}")
     
@@ -2984,52 +3131,38 @@ def registrar_venta():
         print(f"✅ Venta creada con panaderia_id: {nueva_venta.panaderia_id}")
         print(f"📅 Fecha registrada: {fecha_hora}")
         
-        # ⭐⭐⭐ CORRECCIÓN MULTI-TENANT: OBTENER DATOS DE PANADERÍA DESDE LA BD DEL TENANT ⭐⭐⭐
-        import sqlite3
-        import os
-        
+        # ⭐⭐⭐ CORRECCIÓN: OBTENER DATOS DE PANADERÍA DESDE POSTGRESQL ⭐⭐⭐
         nombre_panaderia = f"Panadería {panaderia_id}"
         nit_panaderia = "NIT_NO_REGISTRADO"
         direccion_panaderia = "Dirección no registrada"
         telefono_panaderia = "Teléfono no registrado"
         
-        # ✅ OBTENER DATOS DESDE tenant_master.db
         try:
-            conn_master = sqlite3.connect('tenant_master.db')
-            cursor_master = conn_master.cursor()
-            cursor_master.execute("SELECT base_datos FROM tenants WHERE id = ?", (panaderia_id,))
-            tenant = cursor_master.fetchone()
-            conn_master.close()
+            # ✅ CONSULTAR DIRECTAMENTE EN POSTGRESQL (schema del tenant)
+            from sqlalchemy import text as sql_text
             
-            if tenant:
-                bd_tenant_path = os.path.join('databases_tenants', tenant[0])
-                print(f"🔍 Conectando a BD tenant: {bd_tenant_path}")
-                
-                if os.path.exists(bd_tenant_path):
-                    conn_tenant = sqlite3.connect(bd_tenant_path)
-                    cursor_tenant = conn_tenant.cursor()
-                    
-                    cursor_tenant.execute("""
-                        SELECT nombre_panaderia, nit, direccion, telefono_contacto 
-                        FROM configuracion_panaderia 
-                        WHERE panaderia_id = ?
-                    """, (panaderia_id,))
-                    
-                    config_tenant = cursor_tenant.fetchone()
-                    conn_tenant.close()
-                    
-                    if config_tenant:
-                        nombre_panaderia = config_tenant[0] or f"Panadería {panaderia_id}"
-                        nit_panaderia = config_tenant[1] or "NIT_NO_REGISTRADO"
-                        direccion_panaderia = config_tenant[2] or "Dirección no registrada"
-                        telefono_panaderia = config_tenant[3] or "Teléfono no registrado"
-                        print(f"🏪 Datos obtenidos desde BD tenant: {nombre_panaderia}")
-                    else:
-                        print(f"⚠️ No hay configuración para panadería_id {panaderia_id}")
-                else:
-                    print(f"⚠️ BD del tenant no existe: {bd_tenant_path}")
+            # Obtener schema del tenant
+            schema_name = f"tenant_{panaderia_id}"
+            
+            # Consultar configuración de la panadería en el schema del tenant
+            result = db.session.execute(
+                sql_text(f"""
+                    SELECT nombre_panaderia, nit, direccion, telefono_contacto 
+                    FROM {schema_name}.configuracion_panaderia 
+                    WHERE panaderia_id = :panaderia_id
+                    LIMIT 1
+                """),
+                {"panaderia_id": panaderia_id}
+            ).fetchone()
+            
+            if result:
+                nombre_panaderia = result[0] or f"Panadería {panaderia_id}"
+                nit_panaderia = result[1] or "NIT_NO_REGISTRADO"
+                direccion_panaderia = result[2] or "Dirección no registrada"
+                telefono_panaderia = result[3] or "Teléfono no registrado"
+                print(f"🏪 Datos obtenidos desde PostgreSQL: {nombre_panaderia}")
             else:
-                print(f"⚠️ No se encontró tenant con ID {panaderia_id}")
+                print(f"⚠️ No hay configuración para panadería_id {panaderia_id}")
                 
         except Exception as e:
             print(f"⚠️ Error obteniendo datos del tenant: {e}")
@@ -3094,103 +3227,41 @@ def registrar_venta():
         for detalle in detalles_venta:
             db.session.add(detalle)
         
-        
-        # 🆕 CREAR FACTURA O RECIBO SEGÚN CONFIGURACIÓN
-        # 1. PRIMERO: Definir numero_factura SIEMPRE
+        # 🆕 DEFINIR NUMERO_FACTURA
         if tipo_documento == 'ELECTRONICA':
             numero_factura = f"FE{datetime.now().strftime('%Y%m%d')}{nueva_venta.id:04d}"
             mensaje_exito = f'Factura electrónica #{numero_factura} generada'
         else:
-            # ✅ SIEMPRE usar POS como fallback
-            # Extraer el valor numérico del objeto consecutivo
             if hasattr(consecutivo_pos, 'numero_actual'):
                 num_consecutivo = consecutivo_pos.numero_actual
             else:
                 num_consecutivo = consecutivo_pos
-
-            # Asegurar que sea un entero
-            num_consecutivo = int(num_consecutivo)
-
+            num_consecutivo = int(num_consecutivo) if num_consecutivo else 0
             numero_factura = f"POS-{panaderia_id}-{num_consecutivo:06d}"
-            mensaje_exito = f'Recibo POS #{consecutivo_pos} generado correctamente'
+            mensaje_exito = f'Recibo POS #{numero_factura} generado correctamente'
         
-        # 2. MENSAJE ESPECIAL PARA DONACIONES
         if es_donacion:
             mensaje_exito = f'Donación registrada - {mensaje_exito}'
         
-        # CREAR FACTURA CON SQLITE DIRECTO (EVITA BD PRINCIPAL)
-        import sqlite3
-        from flask import g
-        
-        # ✅ PRIMERO: Guardar la venta en la BD
+        # ✅ GUARDAR VENTA Y DETALLES EN POSTGRESQL
         db.session.commit()
-        print(f"✅ Venta guardada en BD - ID: {nueva_venta.id}")
+        print(f"✅ Venta guardada en PostgreSQL - ID: {nueva_venta.id}")
         
-        # Obtener la ruta de la BD del tenant
-        if hasattr(g, 'db_path') and g.db_path:
-            bd_tenant = g.db_path
-        else:
-            # Buscar en tenant_master.db
-            conn_master = sqlite3.connect('tenant_master.db')
-            cursor_master = conn_master.cursor()
-            cursor_master.execute("SELECT base_datos FROM tenants WHERE id = ?", (panaderia_id,))
-            tenant = cursor_master.fetchone()
-            conn_master.close()
-            if tenant:
-                bd_tenant = f"databases_tenants/{tenant[0]}"
-            else:
-                bd_tenant = f"databases_tenants/panaderia_sqlalchemy.db"
-        
-        print(f"📁 [FACTURA] BD: {bd_tenant}")
-        
-        # Conectar DIRECTAMENTE a la BD del tenant
-        conn_tenant = sqlite3.connect(bd_tenant)
-        cursor_tenant = conn_tenant.cursor()
-        
-        # Insertar factura DIRECTAMENTE en la BD del tenant
-        cursor_tenant.execute("""
-            INSERT INTO facturas (
-                panaderia_id, venta_id, numero_factura, fecha_emision,
-                subtotal, iva, total, nombre_panaderia,
-                nit_panaderia, direccion_panaderia, telefono_panaderia
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            panaderia_id,
-            nueva_venta.id,
-            numero_factura,
-            datetime.now(),
-            total_venta,
-            0,
-            total_venta,
-            nombre_panaderia,
-            nit_panaderia,
-            direccion_panaderia,
-            telefono_panaderia
-        ))
-        
-        # Obtener el ID de la factura insertada
-        factura_id = cursor_tenant.lastrowid
-        conn_tenant.commit()
-        conn_tenant.close()
-        
-        print(f"✅ Factura creada: {numero_factura} (Panadería: {panaderia_id} - {nombre_panaderia})")
-        
-        # Crear objeto factura para la respuesta
-        factura = Factura()
-        factura.id = factura_id
-        factura.numero_factura = numero_factura
-        
+        # ✅ CREAR RESPUESTA (sin tabla facturas separada, ya está en Venta)
         respuesta = {
             'success': True,
             'venta_id': nueva_venta.id,
-            'factura_id': factura.id,
-            'numero_factura': factura.numero_factura,
+            'factura_id': nueva_venta.id,  # Mismo ID que la venta
+            'numero_factura': numero_factura,
             'consecutivo_pos': consecutivo_pos,
             'tipo_documento': tipo_documento,
             'total': total_venta,
             'mensaje': mensaje_exito,
             'panaderia_id': panaderia_id,
             'nombre_panaderia': nombre_panaderia,
+            'nit_panaderia': nit_panaderia,
+            'direccion_panaderia': direccion_panaderia,
+            'telefono_panaderia': telefono_panaderia,
             'es_donacion': es_donacion,
             'motivo_donacion': motivo_donacion
         }
@@ -3372,6 +3443,64 @@ def obtener_configuracion_sistema_api():
             'nombre_empresa': 'Mi Empresa',
             'nit_empresa': '000000000'
         })
+        
+
+
+# =============================================
+# 🆕 NUEVA RUTA: CARGAR DATOS DESDE configuracion_panaderia
+# =============================================
+@app.route('/api/cargar-datos-panaderia')
+@login_required
+@modulo_requerido('configuracion')
+@tenant_required
+def api_cargar_datos_panaderia():
+    """API para obtener datos reales desde configuracion_panaderia"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'No autorizado'}), 401
+    
+    try:
+        panaderia_id = current_user.panaderia_id
+        schema_name = f"tenant_{panaderia_id}"
+        
+        from sqlalchemy import text as sql_text
+        result = db.session.execute(
+            sql_text(f"""
+                SELECT nombre_panaderia, nit, direccion, telefono_contacto
+                FROM {schema_name}.configuracion_panaderia 
+                WHERE panaderia_id = :panaderia_id LIMIT 1
+            """),
+            {"panaderia_id": panaderia_id}
+        ).fetchone()
+        
+        if result:
+            return jsonify({
+                'success': True,
+                'nombre_panaderia': result[0] or '',
+                'nit': result[1] or '',
+                'direccion': result[2] or '',
+                'telefono_contacto': result[3] or ''
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'No se encontró configuración de panadería'
+            })
+            
+    except Exception as e:
+        print(f"❌ Error cargando datos de panadería: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ✅ FUNCIÓN AUXILIAR INDEPENDIENTE
+def obtener_texto_legal(tipo_documento):
+    """
+    Retorna el texto legal apropiado según el tipo de documento
+    """
+    if tipo_documento == 'ELECTRONICA':
+        return "Factura electrónica de venta - Régimen simplificado"
+    else:
+        return "Documento equivalente POS – No válido como factura electrónica de venta"
 
 # ✅ FUNCIÓN AUXILIAR INDEPENDIENTE
 def obtener_texto_legal(tipo_documento):
@@ -3530,160 +3659,34 @@ def imprimir_factura_electronica(venta_id):
 @modulo_requerido('punto_venta')
 def recibo_pos(venta_id):
     """
-    Genera el recibo POS - BUSCA EN AMBAS BDs
+    Genera el recibo POS desde PostgreSQL (multi-tenant)
     """
     try:
-        import sqlite3
-        from flask import g
         from datetime import datetime
         
         panaderia_id = current_user.panaderia_id
         print(f"🔍 [RECIBO] Panadería ID: {panaderia_id}")
         print(f"🔍 [RECIBO] Venta ID: {venta_id}")
         
-        # Obtener la ruta de la BD del tenant
-        if hasattr(g, 'db_path') and g.db_path:
-            bd_tenant = g.db_path
-        else:
-            conn_master = sqlite3.connect('tenant_master.db')
-            cursor_master = conn_master.cursor()
-            cursor_master.execute("SELECT base_datos FROM tenants WHERE id = ?", (panaderia_id,))
-            tenant = cursor_master.fetchone()
-            conn_master.close()
-            if tenant:
-                bd_tenant = f"databases_tenants/{tenant[0]}"
-            else:
-                bd_tenant = f"databases_tenants/panaderia_sqlalchemy.db"
+        # ✅ BUSCAR VENTA EN POSTGRESQL (multi-tenant automático)
+        venta = Venta.query.filter_by(
+            id=venta_id, 
+            panaderia_id=panaderia_id
+        ).first()
         
-        bd_principal = "databases_tenants/panaderia_principal.db"
+        if not venta:
+            print(f"❌ [RECIBO] Venta {venta_id} no encontrada")
+            flash('Venta no encontrada', 'error')
+            return redirect(url_for('punto_venta'))
         
-        venta_data = None
-        bd_usada = None
+        print(f"✅ [RECIBO] Venta encontrada - Total: ${venta.total}")
         
-        # PRIMERO: Buscar en la BD del tenant
-        print(f"📁 [RECIBO] Buscando en BD tenant: {bd_tenant}")
-        conn = sqlite3.connect(bd_tenant)
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT id, usuario_id, total, metodo_pago, cliente_id, 
-                   panaderia_id, tipo_documento, consecutivo_pos, 
-                   texto_legal, es_donacion, motivo_donacion, fecha_hora
-            FROM ventas 
-            WHERE id = ?
-        """, (venta_id,))
-        venta_data = cursor.fetchone()
-        conn.close()
+        # ✅ OBTENER DETALLES DE LA VENTA
+        detalles = DetalleVenta.query.filter_by(venta_id=venta_id).all()
         
-        if venta_data:
-            bd_usada = bd_tenant
-            print(f"✅ [RECIBO] Venta encontrada en BD TENANT")
-        else:
-            # SEGUNDO: Buscar en la BD principal
-            print(f"📁 [RECIBO] Buscando en BD principal: {bd_principal}")
-            conn = sqlite3.connect(bd_principal)
-            conn.row_factory = sqlite3.Row
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT id, usuario_id, total, metodo_pago, cliente_id, 
-                       panaderia_id, tipo_documento, consecutivo_pos, 
-                       texto_legal, es_donacion, motivo_donacion, fecha_hora
-                FROM ventas 
-                WHERE id = ?
-            """, (venta_id,))
-            venta_data = cursor.fetchone()
-            conn.close()
-            
-            if venta_data:
-                bd_usada = bd_principal
-                print(f"✅ [RECIBO] Venta encontrada en BD PRINCIPAL (panaderia_id: {venta_data['panaderia_id']})")
-            else:
-                print(f"❌ [RECIBO] Venta ID {venta_id} NO encontrada en ninguna BD")
-                flash('Venta no encontrada', 'error')
-                return redirect(url_for('punto_venta'))
+        print(f"📋 [RECIBO] Detalles encontrados: {len(detalles)}")
         
-        # Crear objeto venta
-        venta = Venta()
-        venta.id = venta_data['id']
-        venta.usuario_id = venta_data['usuario_id']
-        venta.total = venta_data['total']
-        venta.metodo_pago = venta_data['metodo_pago']
-        venta.cliente_id = venta_data['cliente_id']
-        venta.panaderia_id = venta_data['panaderia_id']
-        venta.tipo_documento = venta_data['tipo_documento']
-        venta.consecutivo_pos = venta_data['consecutivo_pos']
-        venta.texto_legal = venta_data['texto_legal']
-        venta.es_donacion = venta_data['es_donacion']
-        venta.motivo_donacion = venta_data['motivo_donacion']
-        
-        # ✅ CORREGIR: Convertir fecha_hora si es string
-        fecha_hora = venta_data['fecha_hora']
-        if isinstance(fecha_hora, str):
-            try:
-                venta.fecha_hora = datetime.strptime(fecha_hora, '%Y-%m-%d %H:%M:%S.%f')
-            except:
-                try:
-                    venta.fecha_hora = datetime.strptime(fecha_hora, '%Y-%m-%d %H:%M:%S')
-                except:
-                    venta.fecha_hora = datetime.now()
-            print(f"📅 [RECIBO] Fecha convertida: {venta.fecha_hora}")
-        else:
-            venta.fecha_hora = fecha_hora
-            print(f"📅 [RECIBO] Fecha original: {venta.fecha_hora}")
-        
-        # Obtener detalles de la venta (usando la BD donde se encontró)
-        conn = sqlite3.connect(bd_usada)
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT id, venta_id, producto_id, producto_externo_id, 
-                   cantidad, precio_unitario
-            FROM detalle_venta 
-            WHERE venta_id = ?
-        """, (venta_id,))
-        detalles_data = cursor.fetchall()
-        
-        detalles = []
-        for d in detalles_data:
-            detalle = DetalleVenta()
-            detalle.id = d['id']
-            detalle.venta_id = d['venta_id']
-            detalle.producto_id = d['producto_id']
-            detalle.producto_externo_id = d['producto_externo_id']
-            detalle.cantidad = d['cantidad']
-            detalle.precio_unitario = d['precio_unitario']
-            
-            # ✅ OBTENER EL NOMBRE REAL DEL PRODUCTO (EXTERNO O PROPIO)
-            nombre_producto = "Producto"
-            
-            if detalle.producto_id:
-                # 📦 ES UN PRODUCTO PROPIO DE PANADERÍA
-                cursor2 = conn.cursor()
-                cursor2.execute("SELECT nombre FROM productos WHERE id = ?", (detalle.producto_id,))
-                prod = cursor2.fetchone()
-                cursor2.close()
-                if prod:
-                    nombre_producto = prod[0] if isinstance(prod, tuple) else prod['nombre']
-                else:
-                    nombre_producto = f"Producto propio #{detalle.producto_id}"
-                    
-            elif detalle.producto_externo_id:
-                # 📦 ES UN PRODUCTO EXTERNO
-                cursor2 = conn.cursor()
-                cursor2.execute("SELECT nombre FROM productos_externos WHERE id = ?", (detalle.producto_externo_id,))
-                prod = cursor2.fetchone()
-                cursor2.close()
-                if prod:
-                    nombre_producto = prod[0] if isinstance(prod, tuple) else prod['nombre']
-                else:
-                    nombre_producto = f"Producto externo #{detalle.producto_externo_id}"
-            
-            detalle.nombre_producto = nombre_producto
-            print(f"📝 [RECIBO] Producto: {nombre_producto} | Cant: {detalle.cantidad} | Precio: {detalle.precio_unitario}")
-            detalles.append(detalle)
-        
-        conn.close()
-        
+        # ✅ OBTENER CONFIGURACIÓN
         config = obtener_configuracion_sistema()
         
         return render_template('recibo_pos.html', 
@@ -4038,12 +4041,12 @@ def registrar_compra_externa():
         from datetime import datetime
         
         producto_id = request.form['producto_id']
-        proveedor_id = request.form['proveedor_id']
+        proveedor_id = request.form.get('proveedor_id', '')  # Puede ser vacío
         cantidad = int(request.form['cantidad'])
         precio_compra = float(request.form['precio_compra'])
         notas = request.form.get('notas', '')
         
-        # ✅ CORREGIDO: Filtrar producto por tenant
+        # ✅ Obtener datos del usuario y producto
         panaderia_id = current_user.panaderia_id
         producto = ProductoExterno.query.filter_by(
             id=producto_id,
@@ -4053,18 +4056,41 @@ def registrar_compra_externa():
         if not producto:
             return jsonify({'success': False, 'message': 'Producto no encontrado'})
         
-        # Registrar la compra
+        # ✅ Validar proveedor (si se proporcionó)
+        proveedor_id_final = None
+        if proveedor_id and str(proveedor_id).strip():
+            try:
+                proveedor_id_int = int(proveedor_id)
+                # Verificar que el proveedor existe en este tenant
+                from sqlalchemy import text as sql_text
+                schema_name = f"tenant_{panaderia_id}"
+                result = db.session.execute(
+                    sql_text(f"""
+                        SELECT id FROM {schema_name}.proveedor 
+                        WHERE id = :id AND panaderia_id = :panaderia_id
+                    """),
+                    {"id": proveedor_id_int, "panaderia_id": panaderia_id}
+                ).fetchone()
+                if result:
+                    proveedor_id_final = proveedor_id_int
+                else:
+                    print(f"⚠️ Proveedor {proveedor_id_int} no encontrado, se guardará NULL")
+            except (ValueError, TypeError) as e:
+                print(f"⚠️ Error convirtiendo proveedor_id: {e}")
+        
+        # ✅ Registrar la compra con los nombres CORRECTOS de columnas
         compra = CompraExterna(
-            producto_id=producto_id,
-            proveedor_id=proveedor_id,
+            producto_externo_id=producto_id,
+            proveedor_id=proveedor_id_final,  # ← ID (o None si no se proporcionó)
             cantidad=cantidad,
-            precio_compra=precio_compra,
-            total_compra=cantidad * precio_compra,
-            notas=notas,
-            panaderia_id=panaderia_id  # ✅ AGREGADO: Tenant en compra
+            precio_unitario=precio_compra,
+            total=cantidad * precio_compra,
+            observaciones=notas,
+            usuario_id=session['user_id'],
+            panaderia_id=panaderia_id
         )
         
-        # Actualizar stock y precios del producto
+        # ✅ Actualizar stock y precios del producto
         producto.stock_actual += cantidad
         producto.precio_compra = precio_compra
         producto.fecha_ultima_compra = datetime.now()
@@ -4079,6 +4105,9 @@ def registrar_compra_externa():
         
     except Exception as e:
         db.session.rollback()
+        print(f"❌ Error al registrar compra externa: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'success': False, 'message': f'Error: {str(e)}'})
 
 
@@ -5365,6 +5394,7 @@ def produccion_diaria():
         if not config:
             # Crear configuración por defecto si no existe
             config = ConfiguracionProduccion(
+                panaderia_id=current_user.panaderia_id,  # ✅ AGREGAR ESTA LÍNEA
                 receta_id=receta.id,
                 stock_minimo=10,
                 stock_objetivo=50,
@@ -6049,7 +6079,7 @@ def stock_vitrina():
 @modulo_requerido('produccion')
 @tenant_required
 def reporte_produccion_diaria():
-    """Reporte imprimible de producción diaria"""
+    """Reporte imprimible de producción diaria con filtro de fechas"""
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
@@ -6059,18 +6089,37 @@ def reporte_produccion_diaria():
         flash('No se pudo determinar la panadería', 'error')
         return redirect(url_for('dashboard'))
     
-    hoy = datetime.now().date()
+    # ✅ NUEVO: Obtener fechas del query string
+    fecha_inicio_str = request.args.get('fecha_inicio')
+    fecha_fin_str = request.args.get('fecha_fin')
     
-    # ✅ Órdenes completadas hoy (CON FILTRO POR TENANT)
-    ordenes_hoy = OrdenProduccion.query.filter(
+    # Si no hay fechas, usar hoy por defecto
+    if fecha_inicio_str and fecha_fin_str:
+        try:
+            fecha_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d').date()
+            fecha_fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d').date()
+            
+            # Validar que inicio <= fin
+            if fecha_inicio > fecha_fin:
+                fecha_inicio, fecha_fin = fecha_fin, fecha_inicio
+        except ValueError:
+            fecha_inicio = datetime.now().date()
+            fecha_fin = datetime.now().date()
+    else:
+        fecha_inicio = datetime.now().date()
+        fecha_fin = datetime.now().date()
+    
+    # ✅ Órdenes completadas en el RANGO (CON FILTRO POR TENANT)
+    ordenes_rango = OrdenProduccion.query.filter(
         OrdenProduccion.estado == 'COMPLETADA',
-        db.func.date(OrdenProduccion.fecha_fin) == hoy,
-        OrdenProduccion.panaderia_id == panaderia_id  # ✅ FILTRO MULTI-TENANT
-    ).all()
+        db.func.date(OrdenProduccion.fecha_fin) >= fecha_inicio,
+        db.func.date(OrdenProduccion.fecha_fin) <= fecha_fin,
+        OrdenProduccion.panaderia_id == panaderia_id
+    ).order_by(OrdenProduccion.fecha_fin.desc()).all()
     
     # ✅ Stock actual (CON FILTRO POR TENANT)
     recetas_activas = Receta.query.filter_by(
-        panaderia_id=panaderia_id,  # ✅ FILTRO MULTI-TENANT
+        panaderia_id=panaderia_id,
         activo=True
     ).all()
     
@@ -6083,16 +6132,18 @@ def reporte_produccion_diaria():
             'categoria': receta.categoria
         })
     
-    # Métricas del día
-    total_producido = sum(orden.cantidad_producir for orden in ordenes_hoy)
-    total_recetas = len(set(orden.receta_id for orden in ordenes_hoy))
+    # Métricas del rango
+    total_producido = sum(orden.cantidad_producir for orden in ordenes_rango)
+    total_recetas = len(set(orden.receta_id for orden in ordenes_rango))
     
     return render_template("reporte_produccion.html",
-                         ordenes_hoy=ordenes_hoy,
+                         ordenes_hoy=ordenes_rango,
                          stock_actual=stock_actual,
                          total_producido=total_producido,
                          total_recetas=total_recetas,
-                         fecha=hoy)
+                         fecha=fecha_fin,
+                         fecha_inicio=fecha_inicio,
+                         fecha_fin=fecha_fin)
     
 # =============================================
 # ✅ NUEVAS RUTAS PARA PUNTO DE VENTA INTELIGENTE
@@ -6906,7 +6957,7 @@ def estado_cierre_diario():
     total_hoy = sum(venta.total for venta in ventas_hoy)
     
     # Verificar si ya se hizo cierre hoy
-    cierre_hoy = CierreDiario.query.filter_by(panaderia_id=current_user.panaderia_id, fecha=hoy).first()
+    cierre_hoy = CierreDiario.query.filter_by(panaderia_id=current_user.panaderia_id, fecha_cierre=hoy).first()
     
     return jsonify({
         'fecha': hoy.isoformat(),
@@ -6945,7 +6996,7 @@ def procesar_cierre_diario():
             
             cierre = CierreDiario.query.filter_by(
                 panaderia_id=current_user.panaderia_id,
-                fecha=datetime.now().date()
+                fecha_cierre=datetime.now().date()
             ).order_by(CierreDiario.id.desc()).first()
             
             mensaje = data.get('message', 'Cierre exitoso')
@@ -6954,7 +7005,7 @@ def procesar_cierre_diario():
                 'success': True,
                 'mensaje': mensaje,
                 'cierre': {
-                    'fecha': cierre.fecha.isoformat() if cierre else datetime.now().date().isoformat(),
+                    'fecha': cierre.fecha_cierre.isoformat() if cierre else datetime.now().date().isoformat(),
                     'total_ventas': data.get('data', {}).get('total_ventas', 0),
                     'total_transacciones': 0,  # Puedes calcularlo si es necesario
                     'tendencia': 0
@@ -6987,7 +7038,7 @@ def historial_cierres():
     resultado = []
     for cierre in cierres:
         resultado.append({
-            'fecha': cierre.fecha.isoformat(),
+            'fecha': cierre.fecha_cierre.isoformat(),
             'total_ventas': cierre.total_ventas,
             'total_transacciones': cierre.total_transacciones,
             'total_efectivo': cierre.total_efectivo,
@@ -7018,7 +7069,7 @@ def pagina_cierre_diario():
     # ✅ FILTRAR SOLO POR PANADERÍA DEL USUARIO ACTUAL
     cierre_hoy = CierreDiario.query.filter_by(
         panaderia_id=panaderia_id, 
-        fecha=hoy
+        fecha_cierre=hoy
     ).first()
     
     # ✅ PASAR PANADERIA_ID A LA FUNCIÓN DE VENTAS
@@ -7048,7 +7099,7 @@ def realizar_cierre():
         # ✅ VERIFICAR SI YA EXISTE CIERRE PARA HOY
         cierre_existente = CierreDiario.query.filter_by(
             panaderia_id=panaderia_id,
-            fecha=fecha_actual
+            fecha_cierre=fecha_actual
         ).first()
         
         if cierre_existente:
@@ -7075,11 +7126,16 @@ def realizar_cierre():
         # ✅ CREAR REGISTRO DE CIERRE DIARIO
         nuevo_cierre = CierreDiario(
             panaderia_id=panaderia_id,
-            fecha=fecha_actual,
+            fecha_cierre=fecha_actual,
             total_ventas=total_ventas,
             total_efectivo=total_efectivo,
+            total_tarjeta=total_tarjetas,
             total_transferencia=total_transferencias,
             total_transacciones=len(ventas_hoy),
+            total_donaciones=0,
+            estado='cerrado',
+            usuario_id=session['user_id'],
+            fecha_registro=datetime.utcnow()
         )
         db.session.add(nuevo_cierre)
         
@@ -7926,6 +7982,7 @@ def reporte_ventas_avanzado():
     ).all()
     
     # 🎁 SEPARAR VENTAS NORMALES VS DONACIONES
+    # 🔍 DEBUG TEMPORAL - Ver qué devuelve SQLAlchemy
     ventas_normales = [v for v in ventas_periodo if not v.es_donacion]
     donaciones = [v for v in ventas_periodo if v.es_donacion]
     
@@ -8033,10 +8090,12 @@ def reporte_ventas_avanzado():
     
     # 🎯 ALERTAS INTELIGENTES
     try:
-        alertas = generar_alertas_inteligentes()
+        alertas = generar_alertas_inteligentes(panaderia_id)
         print(f"🔔 Alertas: {len(alertas)}")
     except Exception as e:
         print(f"⚠️  Error en alertas: {e}")
+        import traceback
+        traceback.print_exc()
         alertas = []
     
     # 🎯 ANÁLISIS DE PRODUCTOS
@@ -8087,14 +8146,16 @@ def reporte_ventas_avanzado():
     # 📊 CALCULAR DÍAS DE ACTIVIDAD PARA IA
     # =============================================
     from datetime import datetime
-    primera_venta = Venta.query.filter_by(
-        panaderia_id=panaderia_id
-    ).order_by(Venta.fecha_hora.asc()).first()
 
-    if primera_venta:
-        dias_actividad = (datetime.now() - primera_venta.fecha_hora).days
-    else:
-        dias_actividad = 0
+    # ✅ Contar DÍAS CON DATOS (no días transcurridos)
+    dias_con_ventas = db.session.query(
+        db.func.date(Venta.fecha_hora).label('fecha')
+    ).filter(
+        Venta.panaderia_id == panaderia_id
+    ).distinct().count()
+
+    dias_actividad = dias_con_ventas
+    print(f"📅 Días con datos: {dias_actividad}")
         
         # =============================================
     # 📊 ANÁLISIS DE TENDENCIAS (NIVEL 2)

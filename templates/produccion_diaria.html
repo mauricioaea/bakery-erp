@@ -5,20 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Producción Diaria - Panadería</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: Arial, sans-serif;
-            background: #f5f5f5;
-            padding: 20px;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+        /* ========================================
+           ESTILOS BASE
+        ======================================== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+
+        /* ========================================
+           HEADER
+        ======================================== */
         .header {
             display: flex;
             justify-content: space-between;
@@ -26,929 +22,915 @@
             margin-bottom: 30px;
             padding-bottom: 20px;
             border-bottom: 2px solid #667eea;
+            flex-wrap: wrap;
+            gap: 15px;
         }
-        
-        /* SISTEMA DE PESTAÑAS */
-        .tabs {
-            display: flex;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #ddd;
-        }
-        .tab-button {
-            padding: 12px 24px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 1em;
-            border-bottom: 3px solid transparent;
-            transition: all 0.3s ease;
-        }
-        .tab-button.active {
-            border-bottom-color: #667eea;
-            color: #667eea;
-            font-weight: bold;
-        }
-        .tab-button:hover {
-            background: #f8f9fa;
-        }
-        .tab-content {
-            display: none;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        
-        /* BOTONES */
+        .header h1 { font-size: 1.8em; color: #1a1a2e; }
+        .header p { color: #666; margin-top: 5px; }
+        .header-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+        /* ========================================
+           BOTONES
+        ======================================== */
         .btn {
-            background: #667eea;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 5px;
+            padding: 10px 20px;
+            border-radius: 8px;
             text-decoration: none;
             border: none;
             cursor: pointer;
-            display: inline-block;
-            margin-right: 8px;
-            font-size: 0.9em;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95em;
+            font-weight: 500;
+            transition: all 0.3s ease;
         }
-        .btn:hover {
-            background: #5a6fd8;
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .btn-primary { background: #667eea; color: white; }
+        .btn-primary:hover { background: #5a6fd8; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-success:hover { background: #218838; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-danger:hover { background: #c82333; }
+        .btn-warning { background: #ffc107; color: #1a1a2e; }
+        .btn-warning:hover { background: #e0a800; }
+        .btn-info { background: #17a2b8; color: white; }
+        .btn-info:hover { background: #138496; }
+        .btn-outline { background: transparent; color: #667eea; border: 2px solid #667eea; }
+        .btn-outline:hover { background: #667eea; color: white; }
+        .btn-sm { padding: 6px 14px; font-size: 0.85em; }
+
+        /* ========================================
+           ALERTAS PRIORITARIAS
+        ======================================== */
+        .alertas-prioritarias {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 25px;
         }
-        .btn-success {
-            background: #28a745;
-        }
-        .btn-success:hover {
-            background: #218838;
-        }
-        .btn-warning {
-            background: #ffc107;
-            color: black;
-        }
-        .btn-warning:hover {
-            background: #e0a800;
-        }
-        .btn-danger {
-            background: #dc3545;
-        }
-        .btn-danger:hover {
-            background: #c82333;
-        }
-        .btn-info {
-            background: #17a2b8;
-        }
-        .btn-info:hover {
-            background: #138496;
-        }
-        .btn-sm {
-            padding: 6px 12px;
-            font-size: 0.8em;
-        }
-        
-        /* TARJETAS DE STOCK */
-        .stock-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        .stock-card {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            border-left: 4px solid #28a745;
-        }
-        .stock-card.critical {
-            border-left-color: #dc3545;
-            background: #fff5f5;
-        }
-        .stock-card.warning {
-            border-left-color: #ffc107;
-            background: #fffbf0;
-        }
-        .stock-card.low {
-            border-left-color: #fd7e14;
-            background: #fff4e6;
-        }
-        .stock-header {
+        .alerta-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
+            padding: 15px 20px;
+            border-radius: 10px;
+            border-left: 5px solid;
+            flex-wrap: wrap;
+            gap: 10px;
         }
-        .stock-title {
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #333;
+        .alerta-critica { background: #fef2f2; border-color: #dc3545; }
+        .alerta-advertencia { background: #fffbeb; border-color: #f59e0b; }
+        .alerta-info { background: #eff6ff; border-color: #3b82f6; }
+        .alerta-mensaje { font-size: 0.95em; }
+        .alerta-mensaje strong { color: #1a1a2e; }
+        .alerta-accion .btn { font-size: 0.85em; padding: 6px 16px; }
+
+        /* ========================================
+           ACCIONES RÁPIDAS (BOTONES GRANDES)
+        ======================================== */
+        .acciones-rapidas {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
         }
-        .stock-badge {
-            padding: 4px 8px;
+        .btn-accion-rapida {
+            padding: 20px 25px;
             border-radius: 12px;
-            font-size: 0.8em;
-            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s ease;
+            font-size: 1em;
+            font-weight: 600;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
         }
-        .badge-success { background: #28a745; color: white; }
-        .badge-warning { background: #ffc107; color: black; }
-        .badge-danger { background: #dc3545; color: white; }
-        .badge-low { background: #fd7e14; color: white; }
-        
-        .stock-info {
+        .btn-accion-rapida:hover { transform: translateY(-4px); box-shadow: 0 8px 25px rgba(0,0,0,0.12); }
+        .btn-accion-rapida small { font-weight: 400; font-size: 0.75em; opacity: 0.8; }
+        .btn-rapida-verde { background: #28a745; color: white; }
+        .btn-rapida-azul { background: #667eea; color: white; }
+        .btn-rapida-naranja { background: #fd7e14; color: white; }
+
+        /* ========================================
+           ÓRDENES ACTIVAS (SIMPLIFICADO)
+        ======================================== */
+        .seccion-ordenes {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+            margin-bottom: 30px;
+        }
+        .seccion-titulo {
+            font-size: 1.1em;
+            font-weight: 700;
             margin-bottom: 15px;
+            color: #1a1a2e;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 12px;
         }
-        .stock-metric {
+        .seccion-titulo span.badge-cantidad {
+            background: #667eea;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 0.7em;
+        }
+        .orden-simple {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 5px;
+            align-items: center;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .orden-simple:last-child { margin-bottom: 0; }
+        .orden-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .orden-nombre { font-weight: 600; color: #1a1a2e; }
+        .orden-cantidad { color: #666; font-size: 0.9em; }
+        .orden-estado {
+            padding: 3px 12px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+        .estado-pendiente { background: #fff3cd; color: #856404; }
+        .estado-produccion { background: #cce7ff; color: #004085; }
+        .orden-acciones { display: flex; gap: 6px; flex-wrap: wrap; }
+
+        /* ========================================
+           STOCK EN VITRINA (TARJETAS SIMPLIFICADAS)
+        ======================================== */
+        .stock-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .stock-card-simple {
+            background: white;
+            border-radius: 12px;
+            padding: 18px 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+            border-left: 5px solid #28a745;
+            transition: all 0.3s ease;
+        }
+        .stock-card-simple:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
+        .stock-card-simple.critico { border-left-color: #dc3545; background: #fefaf9; }
+        .stock-card-simple.bajo { border-left-color: #fd7e14; background: #fffaf5; }
+        .stock-card-simple.medio { border-left-color: #ffc107; background: #fffcf0; }
+        .stock-card-simple.optimo { border-left-color: #28a745; }
+
+        .stock-header-simple {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .stock-nombre {
+            font-weight: 600;
+            font-size: 1.05em;
+            color: #1a1a2e;
+        }
+        .stock-badge-simple {
+            padding: 3px 12px;
+            border-radius: 20px;
+            font-size: 0.7em;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .badge-critico { background: #dc3545; color: white; }
+        .badge-bajo { background: #fd7e14; color: white; }
+        .badge-medio { background: #ffc107; color: #1a1a2e; }
+        .badge-optimo { background: #28a745; color: white; }
+
+        .stock-detalle-simple {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .stock-cantidad {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #1a1a2e;
+        }
+        .stock-cantidad small { font-size: 0.5em; font-weight: 400; color: #888; }
+        .stock-minimo { color: #888; font-size: 0.85em; }
+        .stock-minimo strong { color: #555; }
+
+        .stock-barra {
+            width: 100%;
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 8px 0;
+        }
+        .stock-barra-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+        .barra-critico { background: #dc3545; }
+        .barra-bajo { background: #fd7e14; }
+        .barra-medio { background: #ffc107; }
+        .barra-optimo { background: #28a745; }
+
+        .stock-acciones-simple {
+            display: flex;
+            gap: 6px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .stock-acciones-simple .btn { font-size: 0.8em; padding: 5px 12px; }
+
+        /* ========================================
+           SECCIÓN VACÍA
+        ======================================== */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #888;
+        }
+        .empty-state .icon { font-size: 3em; display: block; margin-bottom: 10px; }
+
+        /* ========================================
+           MODAL
+        ======================================== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .modal-header h3 { font-size: 1.3em; color: #1a1a2e; }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #888;
+        }
+        .modal-close:hover { color: #1a1a2e; }
+        .modal-body { margin-bottom: 20px; }
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            padding-top: 15px;
+            border-top: 2px solid #f0f0f0;
+            flex-wrap: wrap;
+        }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 5px; color: #333; }
+        .form-group input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+        .form-group input:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.15);
+        }
+        .resumen-ingredientes {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .resumen-ingredientes .ing-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
             font-size: 0.9em;
         }
-        .stock-actions {
+        .resumen-ingredientes .ing-item:last-child { border-bottom: none; }
+        .ing-suficiente { color: #28a745; }
+        .ing-insuficiente { color: #dc3545; }
+        .resumen-stats {
+            display: flex;
+            gap: 20px;
+            padding: 10px 15px;
+            background: white;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        .resumen-stats span { font-weight: 600; }
+
+        /* ========================================
+           MODAL HISTORIAL
+        ======================================== */
+        .historial-filtros {
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
-        }
-        
-        /* SECCIÓN DE ÓRDENES ACTIVAS */
-        .orders-section {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
-        }
-        .section-title {
-            font-size: 1.3em;
-            font-weight: bold;
-            margin-bottom: 15px;
-            color: #333;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 10px;
-        }
-        .order-item {
-            display: flex;
-            justify-content: space-between;
             align-items: center;
             padding: 15px;
-            border: 1px solid #eee;
-            border-radius: 5px;
-            margin-bottom: 10px;
             background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 15px;
         }
-        .order-info {
-            flex: 1;
+        .historial-filtros label { font-weight: 600; color: #333; }
+        .historial-filtros input[type="date"] {
+            padding: 8px 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 0.9em;
         }
-        .order-actions {
-            display: flex;
-            gap: 8px;
+        .historial-resultados {
+            max-height: 400px;
+            overflow-y: auto;
         }
-        .order-status {
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 0.8em;
-            font-weight: bold;
-        }
-        .status-PENDIENTE { background: #fff3cd; color: #856404; }
-        .status-EN_PRODUCCION { background: #cce7ff; color: #004085; }
-        .status-COMPLETADA { background: #d4edda; color: #155724; }
-        .status-CANCELADA { background: #f8d7da; color: #721c24; }
-        
-        /* ALERTAS */
-        .alertas-section {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .alerta-item {
-            padding: 10px 15px;
-            margin-bottom: 10px;
-            border-radius: 5px;
-            border-left: 4px solid;
-        }
-        .alerta-critica { background: #f8d7da; border-left-color: #dc3545; color: #721c24; }
-        .alerta-advertencia { background: #fff3cd; border-left-color: #ffc107; color: #856404; }
-        .alerta-info { background: #d1ecf1; border-left-color: #17a2b8; color: #0c5460; }
-        
-        /* TABLA DE STOCK */
-        .stock-table {
-            background: white;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid #eee;
-        }
-        th {
-            background: #f8f9fa;
-            font-weight: bold;
-            color: #333;
-        }
-        .estado-badge {
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 0.8em;
-            font-weight: bold;
-        }
-        .critico { background: #dc3545; color: white; }
-        .bajo { background: #fd7e14; color: white; }
-        .medio { background: #ffc107; color: black; }
-        .optimo { background: #28a745; color: white; }
-        
-        /* MÉTRICAS */
-        .metrics {
+        .historial-metricas {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
         }
-        .metric-card {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
+        .historial-metrica {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
             text-align: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        .metric-value {
-            font-size: 2em;
-            font-weight: bold;
+        .historial-metrica .valor {
+            font-size: 1.4em;
+            font-weight: 700;
             color: #667eea;
         }
-        .metric-label {
-            color: #666;
-            margin-top: 5px;
+        .historial-metrica .label {
+            font-size: 0.75em;
+            color: #888;
+            margin-top: 3px;
         }
 
-        /* ===== RESPONSIVE DESIGN ===== */
+        /* ========================================
+           RESPONSIVE
+        ======================================== */
         @media (max-width: 768px) {
-            body {
-                padding: 10px;
-            }
-            
-            /* HEADER RESPONSIVE */
-            .header {
-                flex-direction: column;
-                gap: 15px;
-                text-align: center;
-            }
-            
-            .header h1 {
-                font-size: 1.5em;
-            }
-            
-            /* PESTAÑAS RESPONSIVE */
-            .tabs {
-                flex-wrap: wrap;
-                gap: 5px;
-            }
-            
-            .tab-button {
-                flex: 1;
-                min-width: 120px;
-                padding: 10px 15px;
-                font-size: 0.9em;
-            }
-            
-            /* GRID DE TARJETAS RESPONSIVE */
-            .stock-grid {
-                grid-template-columns: 1fr;
-                gap: 15px;
-            }
-            
-            .stock-card {
-                padding: 15px;
-            }
-            
-            .stock-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
-            }
-            
-            .stock-actions {
-                flex-direction: column;
-                gap: 8px;
-            }
-            
-            .stock-actions .btn {
-                width: 100%;
-                text-align: center;
-                margin-right: 0;
-                margin-bottom: 5px;
-            }
-            
-            /* TABLAS RESPONSIVE */
-            .stock-table {
-                overflow-x: auto;
-            }
-            
-            table {
-                min-width: 600px;
-            }
-            
-            th, td {
-                padding: 8px 10px;
-                font-size: 0.9em;
-            }
-            
-            /* MÉTRICAS RESPONSIVE */
-            .metrics {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 15px;
-            }
-            
-            .metric-card {
-                padding: 15px;
-            }
-            
-            .metric-value {
-                font-size: 1.5em;
-            }
-            
-            /* ÓRDENES RESPONSIVE */
-            .order-item {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
-            }
-            
-            .order-actions {
-                width: 100%;
-                justify-content: flex-start;
-                flex-wrap: wrap;
-            }
-            
-            .order-actions .btn {
-                flex: 1;
-                min-width: 120px;
-                text-align: center;
-            }
-            
-            /* ALERTAS RESPONSIVE */
-            .alertas-section,
-            .orders-section {
-                padding: 15px;
-            }
-            
-            .section-title {
-                font-size: 1.1em;
-            }
-            
-            /* BOTONES GENERALES RESPONSIVE */
-            .btn {
-                padding: 10px 15px;
-                font-size: 0.85em;
-                margin-right: 5px;
-                margin-bottom: 5px;
-            }
+            body { padding: 10px; }
+            .header { flex-direction: column; text-align: center; }
+            .header h1 { font-size: 1.4em; }
+            .header-actions { justify-content: center; }
+            .acciones-rapidas { grid-template-columns: 1fr; }
+            .stock-grid { grid-template-columns: 1fr; }
+            .alerta-item { flex-direction: column; text-align: center; }
+            .orden-simple { flex-direction: column; text-align: center; }
+            .orden-info { justify-content: center; }
+            .orden-acciones { justify-content: center; }
+            .modal-content { padding: 20px; margin: 10px; }
+            .modal-footer { flex-direction: column; }
+            .modal-footer .btn { width: 100%; justify-content: center; }
+            .historial-metricas { grid-template-columns: 1fr; }
         }
-
         @media (max-width: 480px) {
-            .metrics {
-                grid-template-columns: 1fr;
-            }
-            
-            .tab-button {
-                min-width: 100px;
-                padding: 8px 12px;
-                font-size: 0.8em;
-            }
-            
-            .stock-grid {
-                gap: 10px;
-            }
-            
-            .stock-card {
-                padding: 12px;
-            }
-            
-            .stock-title {
-                font-size: 1.1em;
-            }
-            
-            .btn {
-                width: 100%;
-                margin-right: 0;
-                margin-bottom: 8px;
-            }
-            
-            .order-actions {
-                flex-direction: column;
-            }
-            
-            .order-actions .btn {
-                width: 100%;
-            }
-        }
-
-        /* MODAL RESPONSIVE */
-        @media (max-width: 768px) {
-            #modalProduccion > div {
-                width: 95% !important;
-                max-width: 95% !important;
-                padding: 20px !important;
-                margin: 10px !important;
-                transform: none !important;
-                top: 50% !important;
-                left: 50% !important;
-                transform: translate(-50%, -50%) !important;
-            }
-            
-            #modalProduccion h3 {
-                font-size: 1.2em !important;
-            }
-            
-            #modalProduccion .btn {
-                width: 100%;
-                margin-bottom: 10px;
-            }
+            .stock-detalle-simple { flex-direction: column; align-items: flex-start; }
+            .stock-acciones-simple { width: 100%; }
+            .stock-acciones-simple .btn { flex: 1; text-align: center; }
         }
     </style>
 </head>
 <body>
     <div class="container">
+
+        <!-- ========================================
+        HEADER
+        ======================================== -->
         <div class="header">
             <div>
                 <h1>🏭 Producción Diaria</h1>
-                <p>Gestión de stock y órdenes de producción en tiempo real</p>
+                <p>Gestión rápida de stock y órdenes de producción</p>
             </div>
-            <div>
-                <a href="{{ url_for('dashboard') }}" class="btn">🏠 Dashboard</a>
-                <a href="{{ url_for('recetas') }}" class="btn">📋 Recetas</a>
+            <div class="header-actions">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-primary">🏠 Dashboard</a>
+                <a href="{{ url_for('recetas') }}" class="btn btn-outline">📋 Recetas</a>
+                <button onclick="abrirModalReporte()" class="btn btn-info">📄 Imprimir Reporte</button>
             </div>
         </div>
 
-        <!-- Mensajes Flash -->
+        <!-- ========================================
+        MENSAJES FLASH
+        ======================================== -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div style="padding: 12px 15px; margin-bottom: 20px; border-radius: 5px; 
+                    <div style="padding: 12px 18px; margin-bottom: 20px; border-radius: 8px; 
                                {% if category == 'success' %}background: #d4edda; color: #155724; border: 1px solid #c3e6cb;{% endif %}
                                {% if category == 'error' %}background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;{% endif %}
-                               {% if category == 'warning' %}background: #fff3cd; color: #856404; border: 1px solid #ffeaa7;{% endif %}">
+                               {% if category == 'warning' %}background: #fff3cd; color: #856404; border: 1px solid #ffeaa7;{% endif %}
+                               {% if category == 'info' %}background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb;{% endif %}">
                         {{ message }}
                     </div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
 
-        <!-- SISTEMA DE PESTAÑAS -->
-        <div class="tabs">
-            <button class="tab-button active" data-tab="dashboard">📊 Dashboard</button>
-            <button class="tab-button" data-tab="stock">📦 Stock Completo</button>
-            <button class="tab-button" data-tab="historial">📈 Historial</button>
+        <!-- ========================================
+        SECCIÓN 1: ALERTAS PRIORITARIAS
+        ======================================== -->
+        {% if alertas %}
+        <div class="alertas-prioritarias">
+            {% for alerta in alertas %}
+                {% if alerta.nivel == 'critico' %}
+                <div class="alerta-item alerta-critica">
+                    <span class="alerta-mensaje">🔴 <strong>¡STOCK CRÍTICO!</strong> {{ alerta.mensaje }}</span>
+                    <span class="alerta-accion">
+                        <button onclick="abrirModalOrdenar('{{ alerta.receta_id }}', '{{ alerta.receta_nombre }}')" 
+                                class="btn btn-danger btn-sm">▶ Ordenar Ahora</button>
+                    </span>
+                </div>
+                {% elif alerta.nivel == 'advertencia' %}
+                <div class="alerta-item alerta-advertencia">
+                    <span class="alerta-mensaje">🟡 <strong>Stock Bajo:</strong> {{ alerta.mensaje }}</span>
+                    <span class="alerta-accion">
+                        <button onclick="abrirModalOrdenar('{{ alerta.receta_id }}', '{{ alerta.receta_nombre }}')" 
+                                class="btn btn-warning btn-sm">▶ Ordenar</button>
+                    </span>
+                </div>
+                {% else %}
+                <div class="alerta-item alerta-info">
+                    <span class="alerta-mensaje">🔵 <strong>Información:</strong> {{ alerta.mensaje }}</span>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- ========================================
+        SECCIÓN 2: ACCIONES RÁPIDAS
+        ======================================== -->
+        <div class="acciones-rapidas">
+            <button class="btn-accion-rapida btn-rapida-verde" onclick="abrirModalOrdenarGlobal()">
+                🚀 Ordenar Producción
+                <small>Crear nueva orden</small>
+            </button>
+            <button class="btn-accion-rapida btn-rapida-azul" onclick="verStockCompleto()">
+                📦 Ver Stock Completo
+                <small>Inventario detallado</small>
+            </button>
+            <button class="btn-accion-rapida btn-rapida-naranja" onclick="abrirModalHistorial()">
+                📈 Historial
+                <small>Órdenes completadas</small>
+            </button>
         </div>
 
-        <!-- PESTAÑA 1: DASHBOARD -->
-        <div id="dashboard" class="tab-content active">
-            <!-- SECCIÓN 1: STOCK EN VITRINA -->
-            <div class="section-title">📦 Stock en Vitrina - Tiempo Real</div>
+        <!-- ========================================
+        SECCIÓN 3: ÓRDENES ACTIVAS
+        ======================================== -->
+        <div class="seccion-ordenes" id="ordenesActivas">
+            <div class="seccion-titulo">
+                🔄 Órdenes en Progreso
+                <span class="badge-cantidad">{{ ordenes_activas|length if ordenes_activas else 0 }}</span>
+            </div>
+            
+            {% if ordenes_activas %}
+                {% for orden in ordenes_activas %}
+                <div class="orden-simple" id="orden-{{ orden.id }}">
+                    <div class="orden-info">
+                        <span class="orden-nombre">🍞 {{ orden.receta.nombre if orden.receta else 'Sin receta' }}</span>
+                        <span class="orden-cantidad">{{ orden.cantidad_producir }} unidades</span>
+                        <span class="orden-estado estado-{{ orden.estado|lower|replace('_', '') }}">
+                            {% if orden.estado == 'PENDIENTE' %}⏳ Pendiente
+                            {% elif orden.estado == 'EN_PRODUCCION' %}⚙️ En producción
+                            {% else %}{{ orden.estado }}{% endif %}
+                        </span>
+                    </div>
+                    <div class="orden-acciones">
+                        {% if orden.estado == 'PENDIENTE' %}
+                            <button onclick="iniciarProduccion({{ orden.id }})" class="btn btn-success btn-sm">▶ Iniciar</button>
+                            <button onclick="cancelarOrden({{ orden.id }})" class="btn btn-danger btn-sm">✕ Cancelar</button>
+                        {% elif orden.estado == 'EN_PRODUCCION' %}
+                            <button onclick="confirmarProduccion({{ orden.id }})" class="btn btn-success btn-sm">✅ Confirmar</button>
+                            <button onclick="cancelarOrden({{ orden.id }})" class="btn btn-danger btn-sm">✕ Cancelar</button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <span class="icon">📭</span>
+                    <p>No hay órdenes en progreso</p>
+                    <small>Las órdenes aparecerán aquí cuando las crees</small>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- ========================================
+        SECCIÓN 4: STOCK EN VITRINA
+        ======================================== -->
+        <div class="seccion-ordenes" id="stockVitrina">
+            <div class="seccion-titulo">
+                📦 Stock en Vitrina
+                <span class="badge-cantidad">{{ recetas_con_stock|length }}</span>
+                <small style="font-weight: 400; color: #888; margin-left: auto; font-size: 0.85em;">
+                    Productos disponibles en mostrador
+                </small>
+            </div>
+
             <div class="stock-grid">
                 {% for receta in recetas_con_stock %}
-                <div class="stock-card {{ 'critical' if receta.stock_actual <= receta.stock_minimo else 'warning' if receta.stock_actual <= receta.stock_minimo * 2 else 'low' if receta.stock_actual <= receta.stock_minimo * 3 else '' }}" data-receta-id="{{ receta.id }}">
-                    <div class="stock-header">
-                        <div class="stock-title">🍞 {{ receta.nombre }}</div>
-                        <span class="stock-badge badge-{{ 'danger' if receta.stock_actual <= receta.stock_minimo else 'warning' if receta.stock_actual <= receta.stock_minimo * 2 else 'low' if receta.stock_actual <= receta.stock_minimo * 3 else 'success' }}">
-                            {{ 'CRÍTICO' if receta.stock_actual <= receta.stock_minimo else 'BAJO' if receta.stock_actual <= receta.stock_minimo * 2 else 'MEDIO' if receta.stock_actual <= receta.stock_minimo * 3 else 'ÓPTIMO' }}
+                {% set estado = 'critico' if receta.stock_actual <= receta.stock_minimo else 'bajo' if receta.stock_actual <= receta.stock_minimo * 2 else 'medio' if receta.stock_actual <= receta.stock_minimo * 3 else 'optimo' %}
+                {% set porcentaje = ((receta.stock_actual / receta.stock_maximo) * 100)|round(0) if receta.stock_maximo and receta.stock_maximo > 0 else 0 %}
+                {% set porcentaje = 100 if porcentaje > 100 else porcentaje %}
+                
+                <div class="stock-card-simple {{ estado }}" data-receta-id="{{ receta.id }}">
+                    <div class="stock-header-simple">
+                        <span class="stock-nombre">🍞 {{ receta.nombre }}</span>
+                        <span class="stock-badge-simple badge-{{ estado }}">
+                            {% if estado == 'critico' %}🔴 CRÍTICO
+                            {% elif estado == 'bajo' %}🟡 BAJO
+                            {% elif estado == 'medio' %}🟠 MEDIO
+                            {% else %}🟢 ÓPTIMO{% endif %}
                         </span>
                     </div>
                     
-                    <div class="stock-info">
-                        <div class="stock-metric">
-                            <span>Stock Actual:</span>
-                            <strong>{{ receta.stock_actual }} unidades</strong>
-                        </div>
-                        <div class="stock-metric">
-                            <span>Stock Mínimo:</span>
-                            <span>{{ receta.stock_minimo }} unidades</span>
-                        </div>
-                        <div class="stock-metric">
-                            <span>Ventas Hoy:</span>
-                            <span>{{ receta.ventas_hoy }} unidades</span>
-                        </div>
-                        {% if receta.proyeccion_horas %}
-                        <div class="stock-metric">
-                            <span>Proyección:</span>
-                            <span>Se agota en {{ receta.proyeccion_horas }}h</span>
-                        </div>
-                        {% endif %}
+                    <div class="stock-detalle-simple">
+                        <span class="stock-cantidad">
+                            {{ receta.stock_actual }} <small>unidades en vitrina</small>
+                        </span>
+                        <span class="stock-minimo">
+                            Mínimo: <strong>{{ receta.stock_minimo }}</strong>
+                        </span>
                     </div>
                     
-                    <div class="stock-actions">
-                        <button onclick="mostrarModalProduccion({{ receta.id }}, '{{ receta.nombre }}')" 
-                                class="btn btn-success">
-                            🚀 Ordenar Producción
-                        </button>
+                    <div class="stock-barra">
+                        <div class="stock-barra-fill barra-{{ estado }}" style="width: {{ porcentaje }}%;"></div>
+                    </div>
+                    
+                    <div class="stock-acciones-simple">
+                        <button onclick="abrirModalOrdenar('{{ receta.id }}', '{{ receta.nombre }}')" 
+                                class="btn btn-success btn-sm">📦 Ordenar</button>
                         <a href="{{ url_for('configurar_stock_producto', receta_id=receta.id) }}" 
-                           class="btn btn-warning" style="background: #ffc107; color: black;">
-                            ⚙️ Configurar
-                        </a>
-                        <a href="{{ url_for('detalle_receta', id=receta.id) }}" class="btn">
-                            📊 Ver Detalles
-                        </a>
+                           class="btn btn-warning btn-sm">⚙️ Configurar</a>
+                        <a href="{{ url_for('detalle_receta', id=receta.id) }}" 
+                           class="btn btn-outline btn-sm">📊 Ver</a>
                     </div>
                 </div>
                 {% endfor %}
             </div>
+        </div>
 
-            <!-- SECCIÓN 2: ÓRDENES ACTIVAS -->
-            <div class="orders-section">
-                <div class="section-title">🔄 Órdenes de Producción Activas</div>
-                {% if ordenes_activas %}
-                    {% for orden in ordenes_activas %}
-                    <div class="order-item">
-                        <div class="order-info">
-                            <strong>{{ orden.receta.nombre if orden.receta else 'Receta no disponible' }}</strong>
-                            <br>
-                            <small>Cantidad: {{ orden.cantidad_producir }} unidades</small>
-                            <br>
-                            <small>Creada: {{ orden.fecha_produccion.strftime('%H:%M') if orden.fecha_produccion else 'N/A' }}</small>
-                        </div>
-                        <div class="order-actions">
-                            <span class="order-status status-{{ orden.estado }}">
-                                {{ orden.estado.replace('_', ' ') }}
-                            </span>
-                            {% if orden.estado == 'PENDIENTE' %}
-                                <button onclick="iniciarProduccion({{ orden.id }})" class="btn btn-success btn-sm">
-                                    🏭 Iniciar
-                                </button>
-                                <button onclick="cancelarOrden({{ orden.id }})" class="btn btn-danger btn-sm">
-                                    ❌ Cancelar
-                                </button>
-                            {% elif orden.estado == 'EN_PRODUCCION' %}
-                                <button onclick="confirmarProduccion({{ orden.id }})" class="btn btn-success btn-sm">
-                                    ✅ Confirmar
-                                </button>
-                                <button onclick="cancelarOrden({{ orden.id }})" class="btn btn-danger btn-sm">
-                                    ❌ Cancelar
-                                </button>
-                            {% endif %}
-                        </div>
+        <!-- ========================================
+        SECCIÓN 5: ÓRDENES COMPLETADAS HOY
+        ======================================== -->
+        <div class="seccion-ordenes">
+            <div class="seccion-titulo">
+                ✅ Completadas Hoy
+                <span class="badge-cantidad">{{ todas_las_ordenes_completadas|length if todas_las_ordenes_completadas else 0 }}</span>
+            </div>
+            
+            {% if todas_las_ordenes_completadas %}
+                {% for orden in todas_las_ordenes_completadas[:5] %}
+                <div class="orden-simple" style="background: #f0fdf4; border-color: #bbf7d0;">
+                    <div class="orden-info">
+                        <span class="orden-nombre">✅ {{ orden.receta.nombre if orden.receta else 'Sin receta' }}</span>
+                        <span class="orden-cantidad">{{ orden.cantidad_producir }} unidades</span>
+                        <span style="color: #28a745; font-size: 0.8em;">
+                            📅 {{ orden.fecha_fin.strftime('%d/%m/%Y') if orden.fecha_fin else 'N/A' }}
+                            🕐 {{ orden.fecha_fin.strftime('%H:%M') if orden.fecha_fin else 'N/A' }}
+                        </span>
                     </div>
-                    {% endfor %}
-                {% else %}
-                    <p style="text-align: center; color: #6c757d; padding: 20px;">
-                        No hay órdenes de producción activas
-                    </p>
+                    <div>
+                        <span class="orden-estado" style="background: #d4edda; color: #155724;">✅ COMPLETADA</span>
+                    </div>
+                </div>
+                {% endfor %}
+                {% if todas_las_ordenes_completadas|length > 5 %}
+                <div style="text-align: center; margin-top: 10px; color: #888; font-size: 0.9em;">
+                    + {{ todas_las_ordenes_completadas|length - 5 }} órdenes más
+                </div>
                 {% endif %}
-            </div>
-
-            <!-- SECCIÓN 3: ALERTAS -->
-            <div class="alertas-section">
-                <div class="section-title">🚨 Alertas del Sistema</div>
-                {% for alerta in alertas %}
-                <div class="alerta-item {{ 'alerta-critica' if alerta.nivel == 'critico' else 'alerta-advertencia' if alerta.nivel == 'advertencia' else 'alerta-info' }}">
-                    {{ alerta.mensaje }}
+            {% else %}
+                <div class="empty-state">
+                    <span class="icon">📝</span>
+                    <p>No hay órdenes completadas hoy</p>
+                    <small>Las órdenes aparecerán aquí al finalizar la producción</small>
                 </div>
-                {% else %}
-                <p style="text-align: center; color: #6c757d; padding: 10px;">
-                    ✅ No hay alertas críticas en este momento
-                </p>
-                {% endfor %}
+            {% endif %}
+        </div>
+
+        <!-- ========================================
+        SECCIÓN 6: STOCK COMPLETO (OCULTO POR DEFECTO)
+        ======================================== -->
+        <div id="stockCompletoSeccion" style="display: none;">
+            <div class="seccion-ordenes">
+                <div class="seccion-titulo">
+                    📊 Stock Detallado
+                    <button onclick="ocultarStockCompleto()" class="btn btn-danger btn-sm" style="margin-left: auto;">✕ Cerrar</button>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+                        <thead>
+                            <tr style="background: #f8f9fa;">
+                                <th style="padding: 10px 12px; text-align: left; border-bottom: 2px solid #e9ecef;">Producto</th>
+                                <th style="padding: 10px 12px; text-align: center; border-bottom: 2px solid #e9ecef;">Stock en Vitrina</th>
+                                <th style="padding: 10px 12px; text-align: center; border-bottom: 2px solid #e9ecef;">Mínimo</th>
+                                <th style="padding: 10px 12px; text-align: center; border-bottom: 2px solid #e9ecef;">Ventas Hoy</th>
+                                <th style="padding: 10px 12px; text-align: center; border-bottom: 2px solid #e9ecef;">Estado</th>
+                                <th style="padding: 10px 12px; text-align: center; border-bottom: 2px solid #e9ecef;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for receta in recetas_con_stock %}
+                            {% set estado = 'critico' if receta.stock_actual <= receta.stock_minimo else 'bajo' if receta.stock_actual <= receta.stock_minimo * 2 else 'medio' if receta.stock_actual <= receta.stock_minimo * 3 else 'optimo' %}
+                            <tr style="border-bottom: 1px solid #f0f0f0;">
+                                <td style="padding: 10px 12px; font-weight: 600;">🍞 {{ receta.nombre }}</td>
+                                <td style="padding: 10px 12px; text-align: center;">{{ receta.stock_actual }}</td>
+                                <td style="padding: 10px 12px; text-align: center;">{{ receta.stock_minimo }}</td>
+                                <td style="padding: 10px 12px; text-align: center;">{{ receta.ventas_hoy }}</td>
+                                <td style="padding: 10px 12px; text-align: center;">
+                                    <span class="stock-badge-simple badge-{{ estado }}">
+                                        {{ 'CRÍTICO' if estado == 'critico' else 'BAJO' if estado == 'bajo' else 'MEDIO' if estado == 'medio' else 'ÓPTIMO' }}
+                                    </span>
+                                </td>
+                                <td style="padding: 10px 12px; text-align: center;">
+                                    <button onclick="abrirModalOrdenar('{{ receta.id }}', '{{ receta.nombre }}')" class="btn btn-success btn-sm">📦 Ordenar</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
-        <!-- PESTAÑA 2: STOCK COMPLETO -->
-        <div id="stock" class="tab-content">
-            <div class="header">
-                <div>
-                    <h2>📊 Stock Completo en Vitrina</h2>
-                    <p>Vista detallada de todos los productos</p>
-                </div>
-                <a href="{{ url_for('reporte_produccion_diaria') }}" class="btn btn-info" target="_blank">
-                    📄 Imprimir Reporte
-                </a>
-            </div>
-
-            <!-- Métricas rápidas -->
-            <div class="metrics">
-                {% set total_productos = recetas_con_stock|length %}
-                {% set stock_optimo = 0 %}
-                {% set stock_critico = 0 %}
-
-                {% for receta in recetas_con_stock %}
-                    {% if receta.stock_actual > receta.stock_minimo * 3 %}
-                        {% set stock_optimo = stock_optimo + 1 %}
-                    {% endif %}
-                    {% if receta.stock_actual <= receta.stock_minimo %}
-                        {% set stock_critico = stock_critico + 1 %}
-                    {% endif %}
-                {% endfor %}
-                
-                <div class="metric-card">
-                    <div class="metric-value">{{ total_productos }}</div>
-                    <div class="metric-label">Total Productos</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-value">{{ stock_optimo }}</div>
-                    <div class="metric-label">Stock Óptimo</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-value">{{ stock_critico }}</div>
-                    <div class="metric-label">Stock Crítico</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-value">{{ total_productos - stock_optimo - stock_critico }}</div>
-                    <div class="metric-label">Stock Medio/Bajo</div>
-                </div>
-            </div>
-
-            <!-- Tabla de stock -->
-            <div class="stock-table">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Producto</th>
-                            <th>Stock Actual</th>
-                            <th>Stock Mínimo</th>
-                            <th>Ventas Hoy</th>
-                            <th>Estado</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for receta in recetas_con_stock %}
-                        <tr>
-                            <td><strong>🍞 {{ receta.nombre }}</strong></td>
-                            <td>{{ receta.stock_actual }} unidades</td>
-                            <td>{{ receta.stock_minimo }} unidades</td>
-                            <td>{{ receta.ventas_hoy }} unidades</td>
-                            <td>
-                                <span class="estado-badge {{ 'critico' if receta.stock_actual <= receta.stock_minimo else 'bajo' if receta.stock_actual <= receta.stock_minimo * 2 else 'medio' if receta.stock_actual <= receta.stock_minimo * 3 else 'optimo' }}">
-                                    {{ 'CRÍTICO' if receta.stock_actual <= receta.stock_minimo else 'BAJO' if receta.stock_actual <= receta.stock_minimo * 2 else 'MEDIO' if receta.stock_actual <= receta.stock_minimo * 3 else 'ÓPTIMO' }}
-                                </span>
-                            </td>
-                            <td>
-                                <button onclick="mostrarModalProduccion({{ receta.id }}, '{{ receta.nombre }}')" 
-                                        class="btn btn-success btn-sm">
-                                    🚀 Ordenar
-                                </button>
-                                <a href="{{ url_for('configurar_stock_producto', receta_id=receta.id) }}" 
-                                   class="btn btn-warning btn-sm" style="background: #ffc107; color: black;">
-                                    ⚙️ Configurar
-                                </a>
-                                <a href="{{ url_for('detalle_receta', id=receta.id) }}" class="btn btn-sm">
-                                    📊 Detalles
-                                </a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- PESTAÑA 3: HISTORIAL -->
-        <div id="historial" class="tab-content">
-            <div class="header">
-                <div>
-                    <h2>📈 Historial de Producción</h2>
-                    <p>Órdenes completadas - Consulta por fecha</p>
-                </div>
-                <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-                    <div style="display: flex; gap: 5px; align-items: center;">
-                        <label style="font-weight: bold;">Desde:</label>
-                        <input type="date" id="fechaInicioHistorial" value="{{ hoy }}" 
-                               style="padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
-                    </div>
-                    <div style="display: flex; gap: 5px; align-items: center;">
-                        <label style="font-weight: bold;">Hasta:</label>
-                        <input type="date" id="fechaFinHistorial" value="{{ hoy }}" 
-                               style="padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
-                    </div>
-                    <button onclick="cargarHistorialFechas()" class="btn btn-info">
-                        🔍 Consultar
-                    </button>
-                    <button onclick="limpiarHistorialFechas()" class="btn btn-secondary" style="background: #6c757d; color: white;">
-                        ❌ Limpiar
-                    </button>
-                    <a href="{{ url_for('reporte_produccion_diaria') }}" class="btn btn-info" target="_blank">
-                        📄 Imprimir Reporte
-                    </a>
-                </div>
-            </div>
-
-            <!-- Contenedor de resultados -->
-            <div id="historialResultados">
-                <div class="orders-section">
-                    <div class="section-title">✅ Órdenes Completadas</div>
-                    <div id="historialLista">
-                        <p style="text-align: center; color: #6c757d; padding: 20px;">
-                            Selecciona un rango de fechas y haz clic en "Consultar"
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Métricas dinámicas -->
-                <div class="metrics" id="historialMetricas" style="display: none;">
-                    <div class="metric-card">
-                        <div class="metric-value" id="totalProducidoHistorial">0</div>
-                        <div class="metric-label">Total Producido</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-value" id="recetasProducidasHistorial">0</div>
-                        <div class="metric-label">Recetas Producidas</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-value" id="totalOrdenesHistorial">0</div>
-                        <div class="metric-label">Total Órdenes</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-                <a href="{{ url_for('reporte_produccion_diaria') }}" class="btn btn-info" target="_blank">
-                    📄 Imprimir Reporte Completo
-                </a>
-            </div>
-
-            <div class="orders-section">
-                <div class="section-title">✅ Órdenes Completadas Hoy</div>
-                
-                {% if todas_las_ordenes_completadas %}
-                    <div style="margin-bottom: 15px; text-align: center;">
-                        <strong>Total: {{ todas_las_ordenes_completadas|length }} órdenes</strong>
-                    </div>
-                    
-                    {% for orden in todas_las_ordenes_completadas %}
-                    <div class="order-item">
-                        <div class="order-info">
-                            <strong>{{ orden.receta.nombre if orden.receta else 'Receta no disponible' }}</strong>
-                            <br>
-                            <small>Cantidad: {{ orden.cantidad_producir }} unidades</small>
-                            <br>
-                            <small>Completada: {{ orden.fecha_fin.strftime('%H:%M') if orden.fecha_fin else 'N/A' }}</small>
-                            {% if orden.receta and orden.receta.producto %}
-                            <br>
-                            <small style="color: #28a745;">📦 Stock generado: +{{ orden.cantidad_producir }} unidades</small>
-                            {% endif %}
-                        </div>
-                        <div>
-                            <span class="order-status status-COMPLETADA">
-                                COMPLETADA
-                            </span>
-                        </div>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                    <p style="text-align: center; color: #6c757d; padding: 20px;">
-                        📝 No hay órdenes completadas hoy
-                    </p>
-                    <div style="text-align: center; font-size: 0.9em; color: #999;">
-                        <p>Las órdenes aparecerán aquí después de:</p>
-                        <p>1. Crear orden → 2. Iniciar producción → 3. Confirmar finalización</p>
-                    </div>
-                {% endif %}
-            </div>
-
-            <div class="metric-card" style="margin-top: 20px;">
-                <div class="metric-value">{{ todas_las_ordenes_completadas|length if todas_las_ordenes_completadas else 0 }}</div>
-                <div class="metric-label">Órdenes Completadas Hoy</div>
-            </div>
-        </div>
     </div>
 
-    <!-- MODAL PARA ORDENAR PRODUCCIÓN -->
-    <div id="modalProduccion" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
-        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 10px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto;">
-            <h3 id="modalTitulo" style="margin-bottom: 20px; color: #333;">Ordenar Producción</h3>
+    <!-- ========================================
+    MODAL: ORDENAR PRODUCCIÓN
+    ======================================== -->
+    <div class="modal-overlay" id="modalOrdenar">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitulo">🚀 Ordenar Producción</h3>
+                <button class="modal-close" onclick="cerrarModal()">&times;</button>
+            </div>
             <form id="formProduccion" method="POST">
                 <input type="hidden" id="recetaId" name="receta_id">
-                
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Cantidad a Producir:</label>
-                    <input type="number" id="cantidadProducir" name="cantidad" min="1" value="1" required 
-                           style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 1em;">
-                </div>
-                
-                <div style="margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px;">
-                    <strong style="color: #333;">Resumen:</strong>
-                    <div id="resumenIngredientes" style="margin-top: 10px; font-size: 0.9em;">
-                        <!-- Se llenará con JavaScript -->
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="cantidadProducir">📦 Cantidad a Producir:</label>
+                        <input type="number" id="cantidadProducir" name="cantidad" min="1" value="1" required>
                     </div>
-                    <div id="resumenStock" style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 5px; display: flex; gap: 20px; flex-wrap: wrap;">
-                        <div>
-                            <span style="color: #28a745;">✅ Suficientes:</span>
-                            <span id="contadorSuficientes" style="font-weight: bold;">0</span>
+                    
+                    <div style="margin-top: 15px;">
+                        <strong>📋 Resumen de Ingredientes:</strong>
+                        <div class="resumen-ingredientes" id="resumenIngredientes">
+                            <div style="text-align: center; color: #888; padding: 10px;">
+                                Selecciona una cantidad para ver los ingredientes
+                            </div>
                         </div>
-                        <div>
-                            <span style="color: #dc3545;">❌ Insuficientes:</span>
-                            <span id="contadorInsuficientes" style="font-weight: bold;">0</span>
+                        <div class="resumen-stats">
+                            <span style="color: #28a745;">✅ Suficientes: <span id="contadorSuficientes">0</span></span>
+                            <span style="color: #dc3545;">❌ Insuficientes: <span id="contadorInsuficientes">0</span></span>
                         </div>
                     </div>
                 </div>
-                
-                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee;">
-                    <button type="button" onclick="cerrarModal()" class="btn" style="background: #6c757d; color: white; padding: 10px 25px; border-radius: 5px; border: none; cursor: pointer; font-size: 1em;">
-                        ❌ Cancelar
-                    </button>
-                    <button type="submit" class="btn btn-success" style="background: #28a745; color: white; padding: 10px 25px; border-radius: 5px; border: none; cursor: pointer; font-size: 1em;">
-                        ✅ Confirmar Producción
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-                
-                <div style="margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px;">
-                    <strong>Resumen:</strong>
-                    <div id="resumenIngredientes" style="margin-top: 10px; font-size: 0.9em;">
-                        <!-- Se llenará con JavaScript -->
-                    </div>
-                    <div id="resumenStock" style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 5px; display: flex; gap: 20px; flex-wrap: wrap;">
-                        <div>
-                            <span style="color: #28a745;">✅ Suficientes:</span>
-                            <span id="contadorSuficientes" style="font-weight: bold;">0</span>
-                        </div>
-                        <div>
-                            <span style="color: #dc3545;">❌ Insuficientes:</span>
-                            <span id="contadorInsuficientes" style="font-weight: bold;">0</span>
-                        </div>
-                    </div>
-                        <!-- Se llenará con JavaScript -->
-                    </div>
-                </div>
-                
-                <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                    <button type="button" onclick="cerrarModal()" class="btn">❌ Cancelar</button>
+                <div class="modal-footer">
+                    <button type="button" onclick="cerrarModal()" class="btn btn-outline">❌ Cancelar</button>
                     <button type="submit" class="btn btn-success">✅ Confirmar Producción</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <script>
-        // SISTEMA DE PESTAÑAS
-        document.querySelectorAll('.tab-button').forEach(button => {
-            button.addEventListener('click', function() {
-                // Remover active de todos
-                document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    <!-- ========================================
+    MODAL: HISTORIAL
+    ======================================== -->
+    <div class="modal-overlay" id="modalHistorial">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3>📈 Historial de Producción</h3>
+                <button class="modal-close" onclick="cerrarModalHistorial()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Filtros de fecha -->
+                <div class="historial-filtros">
+                    <label>📅 Desde:</label>
+                    <input type="date" id="fechaInicioHistorial">
+                    <label>Hasta:</label>
+                    <input type="date" id="fechaFinHistorial">
+                    <button onclick="consultarHistorial()" class="btn btn-info btn-sm">🔍 Consultar</button>
+                    <button onclick="consultarHistorialHoy()" class="btn btn-outline btn-sm">📅 Hoy</button>
+                </div>
                 
-                // Activar pestaña seleccionada
-                this.classList.add('active');
-                const tabId = this.getAttribute('data-tab');
-                document.getElementById(tabId).classList.add('active');
-            });
-        });
+                <!-- Métricas -->
+                <div class="historial-metricas" id="historialMetricas" style="display: none;">
+                    <div class="historial-metrica">
+                        <div class="valor" id="histTotalProducido">0</div>
+                        <div class="label">Total Producido</div>
+                    </div>
+                    <div class="historial-metrica">
+                        <div class="valor" id="histRecetas">0</div>
+                        <div class="label">Recetas</div>
+                    </div>
+                    <div class="historial-metrica">
+                        <div class="valor" id="histOrdenes">0</div>
+                        <div class="label">Órdenes</div>
+                    </div>
+                </div>
+                
+                <!-- Resultados -->
+                <div class="historial-resultados" id="historialResultados">
+                    <div class="empty-state">
+                        <span class="icon">📅</span>
+                        <p>Selecciona un rango de fechas y consulta</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" onclick="cerrarModalHistorial()" class="btn btn-outline">Cerrar</button>
+            </div>
+        </div>
+    </div>
 
-        // MODAL DE PRODUCCIÓN
-        function mostrarModalProduccion(recetaId, recetaNombre) {
-            document.getElementById('modalTitulo').textContent = 'Ordenar Producción: ' + recetaNombre;
+        <!-- ========================================
+    MODAL: SELECCIONAR FECHAS PARA REPORTE
+    ======================================== -->
+    <div class="modal-overlay" id="modalReporte">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>📄 Imprimir Reporte</h3>
+                <button class="modal-close" onclick="cerrarModalReporte()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="color: #666; margin-bottom: 15px;">
+                    Selecciona el rango de fechas que deseas incluir en el reporte:
+                </p>
+                
+                <div class="form-group">
+                    <label for="reporteFechaInicio">📅 Desde:</label>
+                    <input type="date" id="reporteFechaInicio" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="reporteFechaFin">📅 Hasta:</label>
+                    <input type="date" id="reporteFechaFin" required>
+                </div>
+                
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 15px;">
+                    <button type="button" onclick="seleccionarReporteHoy()" class="btn btn-outline btn-sm">📅 Hoy</button>
+                    <button type="button" onclick="seleccionarReporteAyer()" class="btn btn-outline btn-sm">📅 Ayer</button>
+                    <button type="button" onclick="seleccionarReporteSemana()" class="btn btn-outline btn-sm">📅 Última semana</button>
+                    <button type="button" onclick="seleccionarReporteMes()" class="btn btn-outline btn-sm">📅 Último mes</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" onclick="cerrarModalReporte()" class="btn btn-outline">❌ Cancelar</button>
+                <button type="button" onclick="generarReporte()" class="btn btn-info">📄 Generar Reporte</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================
+    JAVASCRIPT
+    ======================================== -->
+    <script>
+        // ============================================
+        // MODAL ORDENAR PRODUCCIÓN
+        // ============================================
+        function abrirModalOrdenar(recetaId, recetaNombre) {
+            document.getElementById('modalTitulo').textContent = '🚀 Ordenar Producción: ' + recetaNombre;
             document.getElementById('recetaId').value = recetaId;
-            document.getElementById('modalProduccion').style.display = 'block';
-            
-            // Calcular ingredientes cuando cambia la cantidad
-            document.getElementById('cantidadProducir').addEventListener('input', function() {
-                calcularIngredientes(recetaId, this.value);
-            });
-            
-            // Calcular inicialmente
+            document.getElementById('modalOrdenar').classList.add('active');
+            document.getElementById('cantidadProducir').value = 1;
             calcularIngredientes(recetaId, 1);
         }
-        
-        function cerrarModal() {
-            document.getElementById('modalProduccion').style.display = 'none';
+
+        function abrirModalOrdenarGlobal() {
+            const cards = document.querySelectorAll('.stock-card-simple');
+            if (cards.length > 0) {
+                let recetaId = null;
+                let recetaNombre = null;
+                for (const card of cards) {
+                    if (card.classList.contains('critico')) {
+                        recetaId = card.dataset.recetaId;
+                        recetaNombre = card.querySelector('.stock-nombre').textContent.replace('🍞 ', '');
+                        break;
+                    }
+                }
+                if (!recetaId) {
+                    const firstCard = cards[0];
+                    recetaId = firstCard.dataset.recetaId;
+                    recetaNombre = firstCard.querySelector('.stock-nombre').textContent.replace('🍞 ', '');
+                }
+                if (recetaId) {
+                    abrirModalOrdenar(recetaId, recetaNombre);
+                }
+            } else {
+                alert('❌ No hay recetas disponibles para producir');
+            }
         }
-        
+
+        function cerrarModal() {
+            document.getElementById('modalOrdenar').classList.remove('active');
+        }
+
+        document.getElementById('modalOrdenar').addEventListener('click', function(e) {
+            if (e.target === this) cerrarModal();
+        });
+
+        // ============================================
+        // CALCULAR INGREDIENTES
+        // ============================================
+        document.getElementById('cantidadProducir').addEventListener('input', function() {
+            const recetaId = document.getElementById('recetaId').value;
+            if (recetaId) {
+                calcularIngredientes(recetaId, this.value);
+            }
+        });
+
         function calcularIngredientes(recetaId, cantidad) {
             if (!cantidad || cantidad < 1) return;
             
             fetch(`/api/calcular_ingredientes/${recetaId}?cantidad=${cantidad}`)
                 .then(response => response.json())
-                .then(ingredientes => {
+                .then(data => {
                     const resumen = document.getElementById('resumenIngredientes');
                     resumen.innerHTML = '';
                     
-                    ingredientes.forEach(ing => {
+                    let suficientes = 0;
+                    let insuficientes = 0;
+                    
+                    data.forEach(ing => {
                         const div = document.createElement('div');
-                        div.style.padding = '5px 0';
-                        div.style.borderBottom = '1px solid #eee';
+                        div.className = 'ing-item';
+                        const estado = ing.suficiente ? '✅' : '❌';
+                        const clase = ing.suficiente ? 'ing-suficiente' : 'ing-insuficiente';
                         div.innerHTML = `
-                            <strong>${ing.nombre}:</strong> ${ing.cantidad_calculada} ${ing.unidad}
-                            ${ing.suficiente ? '✅' : '❌'}
+                            <span>${ing.nombre}</span>
+                            <span class="${clase}">${ing.cantidad_calculada} ${ing.unidad} ${estado}</span>
                         `;
-                        if (!ing.suficiente) {
-                            div.style.color = '#dc3545';
-                        }
                         resumen.appendChild(div);
+                        if (ing.suficiente) suficientes++;
+                        else insuficientes++;
                     });
+                    
+                    document.getElementById('contadorSuficientes').textContent = suficientes;
+                    document.getElementById('contadorInsuficientes').textContent = insuficientes;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('resumenIngredientes').innerHTML = `
+                        <div style="text-align: center; color: #dc3545; padding: 10px;">
+                            ❌ Error al cargar ingredientes
+                        </div>
+                    `;
                 });
         }
-        
-        // Cerrar modal al hacer clic fuera
-        document.getElementById('modalProduccion').addEventListener('click', function(e) {
-            if (e.target.id === 'modalProduccion') {
-                cerrarModal();
-            }
-        });
-        
-        // Manejar envío del formulario
+
+        // ============================================
+        // ENVÍO DEL FORMULARIO
+        // ============================================
         document.getElementById('formProduccion').addEventListener('submit', function(e) {
             e.preventDefault();
             const formData = new FormData(this);
@@ -960,16 +942,22 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert('✅ Orden de producción creada exitosamente');
+                    alert('✅ ' + data.mensaje);
                     cerrarModal();
                     location.reload();
                 } else {
                     alert('❌ Error: ' + data.error);
                 }
+            })
+            .catch(error => {
+                alert('❌ Error de conexión');
+                console.error('Error:', error);
             });
         });
 
-        // FUNCIONES PARA GESTIONAR ÓRDENES
+        // ============================================
+        // GESTIÓN DE ÓRDENES
+        // ============================================
         function iniciarProduccion(ordenId) {
             if (!confirm('¿Estás seguro de iniciar la producción? Se verificarán los ingredientes disponibles.')) {
                 return;
@@ -992,9 +980,13 @@
                             alert('❌ ' + data.error);
                         }
                     }
+                })
+                .catch(error => {
+                    alert('❌ Error de conexión');
+                    console.error('Error:', error);
                 });
         }
-        
+
         function confirmarProduccion(ordenId) {
             if (!confirm('¿Confirmas que la producción ha sido completada? Se actualizará el stock y descontarán los ingredientes.')) {
                 return;
@@ -1009,9 +1001,13 @@
                     } else {
                         alert('❌ ' + data.error);
                     }
+                })
+                .catch(error => {
+                    alert('❌ Error de conexión');
+                    console.error('Error:', error);
                 });
         }
-        
+
         function cancelarOrden(ordenId) {
             if (!confirm('¿Estás seguro de cancelar esta orden de producción?')) {
                 return;
@@ -1026,146 +1022,265 @@
                     } else {
                         alert('❌ ' + data.error);
                     }
+                })
+                .catch(error => {
+                    alert('❌ Error de conexión');
+                    console.error('Error:', error);
                 });
         }
-    
-    // ============================================
-    // ACTUALIZACIÓN AUTOMÁTICA DE STOCK - VERSIÓN CORRECTA
-    // ============================================
-    function actualizarStockAutomatico() {
-        console.log('🔄 Actualizando stock...');
-        fetch('/api/stock_vitrina_actualizado')
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    data.stock.forEach(item => {
-                        const tarjeta = document.querySelector(`.stock-card[data-receta-id="${item.id}"]`);
-                        if (tarjeta) {
-                            const stockElement = tarjeta.querySelector('.stock-metric strong');
-                            if (stockElement) {
-                                stockElement.textContent = item.stock_actual + ' unidades';
-                            }
-                            const badge = tarjeta.querySelector('.stock-badge');
-                            if (badge) {
-                                const estado = item.estado;
-                                badge.className = `stock-badge badge-${estado === 'CRITICO' ? 'danger' : estado === 'BAJO' ? 'warning' : estado === 'MEDIO' ? 'low' : 'success'}`;
-                                badge.textContent = estado;
-                            }
-                            tarjeta.className = `stock-card ${estado === 'CRITICO' ? 'critical' : estado === 'BAJO' ? 'warning' : 'low'}`;
-                        }
-                    });
-                    console.log('✅ Stock actualizado');
-                }
-            })
-            .catch(error => console.error('Error:', error));
-    }
-    
-    // Actualizar cada 60 segundos
-    setInterval(actualizarStockAutomatico, 60000);
 
-</script>
-<script>
-    // ============================================
-    // HISTORIAL POR FECHAS
-    // ============================================
-    function cargarHistorialFechas() {
-        const fechaInicio = document.getElementById('fechaInicioHistorial').value;
-        const fechaFin = document.getElementById('fechaFinHistorial').value;
-        
-        if (!fechaInicio || !fechaFin) {
-            alert('❌ Selecciona ambas fechas');
-            return;
+        // ============================================
+        // ACCIONES RÁPIDAS
+        // ============================================
+        function verStockCompleto() {
+            const seccion = document.getElementById('stockCompletoSeccion');
+            if (seccion.style.display === 'none') {
+                seccion.style.display = 'block';
+                seccion.scrollIntoView({ behavior: 'smooth' });
+            } else {
+                ocultarStockCompleto();
+            }
         }
-        
-        if (fechaInicio > fechaFin) {
-            alert('❌ La fecha de inicio no puede ser mayor a la fecha fin');
-            return;
+
+        function ocultarStockCompleto() {
+            document.getElementById('stockCompletoSeccion').style.display = 'none';
         }
-        
-        fetch(`/api/historial_produccion?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    mostrarHistorial(data.ordenes, data.metricas);
-                } else {
-                    alert('❌ Error al cargar historial: ' + data.error);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('❌ Error de conexión');
-            });
-    }
-    
-    function mostrarHistorial(ordenes, metricas) {
-        const lista = document.getElementById('historialLista');
-        const metricasDiv = document.getElementById('historialMetricas');
-        
-        // Actualizar métricas
-        document.getElementById('totalProducidoHistorial').textContent = metricas.total_producido || 0;
-        document.getElementById('recetasProducidasHistorial').textContent = metricas.recetas_producidas || 0;
-        document.getElementById('totalOrdenesHistorial').textContent = metricas.total_ordenes || 0;
-        metricasDiv.style.display = 'grid';
-        
-        if (ordenes.length === 0) {
-            lista.innerHTML = `
-                <p style="text-align: center; color: #6c757d; padding: 20px;">
-                    📝 No hay órdenes completadas en este período
-                </p>
-            `;
-            return;
-        }
-        
-        let html = `<div style="margin-bottom: 15px; text-align: center;">
-                        <strong>Total: ${ordenes.length} órdenes</strong>
-                    </div>`;
-        
-        ordenes.forEach(orden => {
-            const fecha = orden.fecha_fin ? new Date(orden.fecha_fin).toLocaleDateString() : 'N/A';
-            const hora = orden.fecha_fin ? new Date(orden.fecha_fin).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : 'N/A';
+
+        // ============================================
+        // MODAL HISTORIAL
+        // ============================================
+        function abrirModalHistorial() {
+            document.getElementById('modalHistorial').classList.add('active');
             
-            html += `
-                <div class="order-item">
-                    <div class="order-info">
-                        <strong>${orden.receta_nombre}</strong>
-                        <br>
-                        <small>Cantidad: ${orden.cantidad} unidades</small>
-                        <br>
-                        <small>Completada: ${fecha} ${hora}</small>
-                        <br>
-                        <small style="color: #28a745;">📦 Stock generado: +${orden.cantidad} unidades</small>
-                    </div>
-                    <div>
-                        <span class="order-status status-COMPLETADA">
-                            COMPLETADA
-                        </span>
-                    </div>
-                </div>
-            `;
-        });
-        
-        lista.innerHTML = html;
-    }
-    
-    function limpiarHistorialFechas() {
-        document.getElementById('fechaInicioHistorial').value = '';
-        document.getElementById('fechaFinHistorial').value = '';
-        document.getElementById('historialLista').innerHTML = `
-            <p style="text-align: center; color: #6c757d; padding: 20px;">
-                Selecciona un rango de fechas y haz clic en "Consultar"
-            </p>
-        `;
-        document.getElementById('historialMetricas').style.display = 'none';
-    }
-    
-    // Cargar historial del día actual al abrir la pestaña
-    document.querySelector('[data-tab="historial"]').addEventListener('click', function() {
-        const hoy = new Date().toISOString().split('T')[0];
-        document.getElementById('fechaInicioHistorial').value = hoy;
-        document.getElementById('fechaFinHistorial').value = hoy;
-        cargarHistorialFechas();
-    });
+            // Establecer fechas por defecto (hoy)
+            const hoy = new Date().toISOString().split('T')[0];
+            document.getElementById('fechaInicioHistorial').value = hoy;
+            document.getElementById('fechaFinHistorial').value = hoy;
+            
+            // Consultar automáticamente
+            consultarHistorial();
+        }
 
-</script>
+        function cerrarModalHistorial() {
+            document.getElementById('modalHistorial').classList.remove('active');
+        }
+
+        document.getElementById('modalHistorial').addEventListener('click', function(e) {
+            if (e.target === this) cerrarModalHistorial();
+        });
+
+        function consultarHistorial() {
+            const fechaInicio = document.getElementById('fechaInicioHistorial').value;
+            const fechaFin = document.getElementById('fechaFinHistorial').value;
+            
+            if (!fechaInicio || !fechaFin) {
+                alert('❌ Selecciona ambas fechas');
+                return;
+            }
+            
+            if (fechaInicio > fechaFin) {
+                alert('❌ La fecha de inicio no puede ser mayor a la fecha fin');
+                return;
+            }
+            
+            fetch(`/api/historial_produccion?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        mostrarHistorialModal(data.ordenes, data.metricas);
+                    } else {
+                        alert('❌ Error: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('❌ Error de conexión');
+                });
+        }
+
+        function consultarHistorialHoy() {
+            const hoy = new Date().toISOString().split('T')[0];
+            document.getElementById('fechaInicioHistorial').value = hoy;
+            document.getElementById('fechaFinHistorial').value = hoy;
+            consultarHistorial();
+        }
+
+        function mostrarHistorialModal(ordenes, metricas) {
+            // Actualizar métricas
+            document.getElementById('histTotalProducido').textContent = metricas.total_producido || 0;
+            document.getElementById('histRecetas').textContent = metricas.recetas_producidas || 0;
+            document.getElementById('histOrdenes').textContent = metricas.total_ordenes || 0;
+            document.getElementById('historialMetricas').style.display = 'grid';
+            
+            const resultados = document.getElementById('historialResultados');
+            
+            if (ordenes.length === 0) {
+                resultados.innerHTML = `
+                    <div class="empty-state">
+                        <span class="icon">📝</span>
+                        <p>No hay órdenes completadas en este período</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            ordenes.forEach(orden => {
+                const fecha = orden.fecha_fin ? new Date(orden.fecha_fin).toLocaleDateString('es-ES') : 'N/A';
+                const hora = orden.fecha_fin ? new Date(orden.fecha_fin).toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'}) : 'N/A';
+                
+                html += `
+                    <div class="orden-simple" style="background: #f0fdf4; border-color: #bbf7d0; margin-bottom: 8px;">
+                        <div class="orden-info">
+                            <span class="orden-nombre">✅ ${orden.receta_nombre}</span>
+                            <span class="orden-cantidad">${orden.cantidad} unidades</span>
+                            <span style="color: #28a745; font-size: 0.8em;">
+                                📅 ${fecha} 🕐 ${hora}
+                            </span>
+                        </div>
+                        <div>
+                            <span class="orden-estado" style="background: #d4edda; color: #155724;">✅ COMPLETADA</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            resultados.innerHTML = html;
+        }
+
+        // ============================================
+        // ACTUALIZACIÓN AUTOMÁTICA DE STOCK
+        // ============================================
+        function actualizarStockAutomatico() {
+            console.log('🔄 Actualizando stock...');
+            fetch('/api/stock_vitrina_actualizado')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        data.stock.forEach(item => {
+                            const tarjeta = document.querySelector(`.stock-card-simple[data-receta-id="${item.id}"]`);
+                            if (tarjeta) {
+                                const cantidad = tarjeta.querySelector('.stock-cantidad');
+                                if (cantidad) {
+                                    cantidad.innerHTML = `${item.stock_actual} <small>unidades en vitrina</small>`;
+                                }
+                                
+                                const badge = tarjeta.querySelector('.stock-badge-simple');
+                                if (badge) {
+                                    const estado = item.estado;
+                                    const estadoMap = {
+                                        'CRITICO': { clase: 'badge-critico', texto: '🔴 CRÍTICO' },
+                                        'BAJO': { clase: 'badge-bajo', texto: '🟡 BAJO' },
+                                        'MEDIO': { clase: 'badge-medio', texto: '🟠 MEDIO' },
+                                        'OPTIMO': { clase: 'badge-optimo', texto: '🟢 ÓPTIMO' }
+                                    };
+                                    const info = estadoMap[estado] || estadoMap['OPTIMO'];
+                                    badge.className = `stock-badge-simple ${info.clase}`;
+                                    badge.textContent = info.texto;
+                                }
+                                
+                                const barra = tarjeta.querySelector('.stock-barra-fill');
+                                if (barra) {
+                                    const porcentaje = item.porcentaje || 0;
+                                    barra.style.width = Math.min(porcentaje, 100) + '%';
+                                    barra.className = `stock-barra-fill barra-${item.estado.toLowerCase()}`;
+                                }
+                                
+                                tarjeta.className = `stock-card-simple ${item.estado.toLowerCase()}`;
+                            }
+                        });
+                        console.log('✅ Stock actualizado');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Actualizar cada 60 segundos
+        setInterval(actualizarStockAutomatico, 60000);
+
+        // ============================================
+        // TECLA ESC PARA CERRAR MODALES
+        // ============================================
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                cerrarModal();
+                cerrarModalHistorial();
+                cerrarModalReporte();
+            }
+        });
+
+                // ============================================
+        // MODAL REPORTE CON FECHAS
+        // ============================================
+        function abrirModalReporte() {
+            const hoy = new Date().toISOString().split('T')[0];
+            document.getElementById('reporteFechaInicio').value = hoy;
+            document.getElementById('reporteFechaFin').value = hoy;
+            document.getElementById('modalReporte').classList.add('active');
+        }
+
+        function cerrarModalReporte() {
+            document.getElementById('modalReporte').classList.remove('active');
+        }
+
+        document.getElementById('modalReporte').addEventListener('click', function(e) {
+            if (e.target === this) cerrarModalReporte();
+        });
+
+        // Atajos de fecha
+        function seleccionarReporteHoy() {
+            const hoy = new Date().toISOString().split('T')[0];
+            document.getElementById('reporteFechaInicio').value = hoy;
+            document.getElementById('reporteFechaFin').value = hoy;
+        }
+
+        function seleccionarReporteAyer() {
+            const ayer = new Date();
+            ayer.setDate(ayer.getDate() - 1);
+            const fecha = ayer.toISOString().split('T')[0];
+            document.getElementById('reporteFechaInicio').value = fecha;
+            document.getElementById('reporteFechaFin').value = fecha;
+        }
+
+        function seleccionarReporteSemana() {
+            const hoy = new Date();
+            const inicio = new Date();
+            inicio.setDate(hoy.getDate() - 7);
+            
+            document.getElementById('reporteFechaInicio').value = inicio.toISOString().split('T')[0];
+            document.getElementById('reporteFechaFin').value = hoy.toISOString().split('T')[0];
+        }
+
+        function seleccionarReporteMes() {
+            const hoy = new Date();
+            const inicio = new Date();
+            inicio.setDate(hoy.getDate() - 30);
+            
+            document.getElementById('reporteFechaInicio').value = inicio.toISOString().split('T')[0];
+            document.getElementById('reporteFechaFin').value = hoy.toISOString().split('T')[0];
+        }
+
+        function generarReporte() {
+            const fechaInicio = document.getElementById('reporteFechaInicio').value;
+            const fechaFin = document.getElementById('reporteFechaFin').value;
+            
+            if (!fechaInicio || !fechaFin) {
+                alert('❌ Selecciona ambas fechas');
+                return;
+            }
+            
+            if (fechaInicio > fechaFin) {
+                alert('❌ La fecha de inicio no puede ser mayor a la fecha fin');
+                return;
+            }
+            
+            // Abrir reporte en nueva pestaña
+            const url = `/reporte_produccion_diaria?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+            window.open(url, '_blank');
+            
+            cerrarModalReporte();
+        }
+        
+    </script>
 </body>
 </html>

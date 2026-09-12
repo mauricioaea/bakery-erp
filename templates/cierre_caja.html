@@ -517,7 +517,7 @@
                             <div class="dato-valor text-warning">
                                 {{ total_donaciones if total_donaciones is defined else 0 }}
                             </div>
-                            <div class="dato-label">Donaciones</div>
+                            <div class="dato-label">Salidas No Comerciales</div>
                         </div>
                     </div>
                 </div>
@@ -676,7 +676,7 @@
                     </div>
                     <div class="col-6 col-md-3 mb-2">
                         <div class="metric-card text-center h-100">
-                            <h6 style="font-size: 0.85rem; margin-bottom: 5px;"><i class="fas fa-gift"></i> Donaciones</h6>
+                            <h6 style="font-size: 0.85rem; margin-bottom: 5px;"><i class="fas fa-gift"></i> Salidas No Comerciales</h6>
                             <div class="metric-value text-warning">
                                 {{ total_donaciones if total_donaciones is defined else 0 }}
                             </div>
@@ -687,13 +687,13 @@
                     </div>
                 </div>
 
-                <!-- Sección de Donaciones (si existen) -->
+                <!-- Sección de Salidas No Comerciales (si existen) -->
                 {% if total_donaciones and total_donaciones > 0 %}
                 <div class="row mb-3">
                     <div class="col-12">
                         <div class="metric-card" style="border-left-color: #ffc107; background: linear-gradient(135deg, #fff9e6, #fff3cd); padding: 12px;">
                             <h5 style="font-size: 1rem; margin-bottom: 10px;">
-                                <i class="fas fa-gift me-2"></i>Resumen de Donaciones
+                                <i class="fas fa-gift me-2"></i>Resumen de Salidas No Comerciales
                             </h5>
                             <div class="row text-center">
                                 <div class="col-4">

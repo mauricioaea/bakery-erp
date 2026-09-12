@@ -1137,7 +1137,7 @@ function imprimirFactura(ventaId = null, tipoDocumento = null) {
     } else {
         // Para POS, usar el sistema de recibo tradicional
         console.log('🧾 Abriendo recibo POS');
-        const url = `/imprimir_factura/${idVenta}`;
+        const url = `/recibo-pos/${idVenta}`;
         const printWindow = window.open(url, '_blank');
     }
 }

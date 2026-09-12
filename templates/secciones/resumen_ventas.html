@@ -25,12 +25,20 @@
                         <strong class="fs-6">${{ "{:,.0f}".format(promedio_venta) }}</strong>
                     </div>
                     
-                    <!-- TENDENCIA -->
+                                        <!-- TENDENCIA -->
                     <div class="col-2 border-end">
                         <small class="text-muted d-block">Tendencia</small>
-                        <strong class="fs-6 {% if tendencia >= 0 %}text-success{% else %}text-danger{% endif %}">
-                            {{ "{:+.1f}".format(tendencia) }}%
-                        </strong>
+                        {# 🆕 MEJORA: Solo mostrar tendencia con suficientes datos #}
+                        {% if dias_actividad and dias_actividad >= 7 %}
+                            <strong class="fs-6 {% if tendencia >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                {{ "{:+.1f}".format(tendencia) }}%
+                            </strong>
+                        {% else %}
+                            <strong class="fs-6 text-secondary">
+                                <i class="fas fa-hourglass-half"></i>
+                                <small class="d-block" style="font-size: 0.6rem;">En análisis</small>
+                            </strong>
+                        {% endif %}
                     </div>
                     
                     <!-- DONACIONES -->
@@ -63,12 +71,23 @@
                     <div class="col-6 border-end">
                         <small class="text-muted d-block">Eficiencia Comercial</small>
                         <div class="mt-2">
-                            {% if tendencia > 20 %}
-                            <span class="badge bg-success">Excelente</span>
-                            {% elif tendencia > 0 %}
-                            <span class="badge bg-primary">Buena</span>
+                            {# 🆕 MEJORA: Solo mostrar eficiencia si hay suficientes datos #}
+                            {% if dias_actividad and dias_actividad >= 7 %}
+                                {% if tendencia > 20 %}
+                                <span class="badge bg-success">Excelente</span>
+                                {% elif tendencia > 0 %}
+                                <span class="badge bg-primary">Buena</span>
+                                {% elif tendencia > -20 %}
+                                <span class="badge bg-warning text-dark">Estable</span>
+                                {% else %}
+                                <span class="badge bg-danger">Por Mejorar</span>
+                                {% endif %}
                             {% else %}
-                            <span class="badge bg-warning">Por Mejorar</span>
+                                <span class="badge bg-secondary">Acumulando datos</span>
+                                <br>
+                                <small class="text-muted" style="font-size: 0.7rem;">
+                                    Faltan {{ 7 - dias_actividad }} días
+                                </small>
                             {% endif %}
                         </div>
                     </div>
@@ -96,24 +115,45 @@
             <div class="card-header bg-white py-2">
                 <h6 class="mb-0"><i class="fas fa-lightbulb me-2"></i>RECOMENDACIÓN INMEDIATA</h6>
             </div>
-            <div class="card-body p-3">
-                {% if tendencia > 0 %}
-                <p class="mb-2 small text-success">
-                    <i class="fas fa-check-circle me-1"></i>
-                    <strong>Mantener estrategia:</strong> Crecimiento positivo del {{ "%.1f"|format(tendencia) }}%
-                </p>
+                        <div class="card-body p-3">
+                {# 🆕 MEJORA: Solo mostrar recomendación con suficientes datos #}
+                {% if dias_actividad and dias_actividad >= 7 %}
+                    {% if tendencia > 0 %}
+                    <p class="mb-2 small text-success">
+                        <i class="fas fa-check-circle me-1"></i>
+                        <strong>Mantener estrategia:</strong> Crecimiento positivo del {{ "%.1f"|format(tendencia) }}%
+                    </p>
+                    {% else %}
+                    <p class="mb-2 small text-warning">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        <strong>Revisar estrategia:</strong> Tendencia negativa del {{ "%.1f"|format(tendencia)|replace("+", "") }}%
+                    </p>
+                    {% endif %}
                 {% else %}
-                <p class="mb-2 small text-warning">
-                    <i class="fas fa-exclamation-triangle me-1"></i>
-                    <strong>Revisar estrategia:</strong> Tendencia negativa del {{ "%.1f"|format(tendencia)|replace("+", "") }}%
-                </p>
+                    <p class="mb-2 small text-info">
+                        <i class="fas fa-info-circle me-1"></i>
+                        <strong>Acumulando datos:</strong> 
+                        <br>
+                        <small class="text-muted" style="font-size: 0.75rem;">
+                            Faltan {{ 7 - dias_actividad }} días para generar recomendaciones basadas en tendencias
+                        </small>
+                    </p>
                 {% endif %}
                 
+                {# Recomendación sobre donaciones (siempre activa) #}
                 {% set porcentaje_donaciones = (total_donaciones / total_transacciones * 100) if total_transacciones > 0 else 0 %}
                 {% if porcentaje_donaciones > 30 %}
                 <p class="mb-0 small text-info">
                     <i class="fas fa-info-circle me-1"></i>
                     <strong>Optimizar donaciones:</strong> {{ "%.1f"|format(porcentaje_donaciones) }}% del total
+                </p>
+                {% endif %}
+                
+                {# 🆕 Mensaje adicional cuando hay pocos productos #}
+                {% if total_transacciones < 10 %}
+                <p class="mb-0 small text-muted">
+                    <i class="fas fa-chart-line me-1"></i>
+                    <strong>Tip:</strong> Registra más ventas para obtener mejores análisis
                 </p>
                 {% endif %}
             </div>
@@ -148,10 +188,18 @@
                     <div class="col-md-4">
                         <div class="text-center">
                             <small class="text-muted d-block mb-2">Eficiencia</small>
-                            <strong class="d-block {% if tendencia >= 0 %}text-success{% else %}text-danger{% endif %}">
-                                {{ "{:+.1f}".format(tendencia) }}%
-                            </strong>
-                            <small class="text-muted">vs período anterior</small>
+                            {# 🆕 MEJORA: Solo mostrar eficiencia con suficientes datos #}
+                            {% if dias_actividad and dias_actividad >= 7 %}
+                                <strong class="d-block {% if tendencia >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                    {{ "{:+.1f}".format(tendencia) }}%
+                                </strong>
+                                <small class="text-muted">vs período anterior</small>
+                            {% else %}
+                                <strong class="d-block text-secondary">
+                                    <i class="fas fa-hourglass-half"></i>
+                                </strong>
+                                <small class="text-muted">Datos insuficientes</small>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
