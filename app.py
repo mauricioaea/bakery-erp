@@ -390,6 +390,7 @@ def crear_tablas_en_orden(schema_name):
             id SERIAL PRIMARY KEY,
             receta_id INTEGER NOT NULL REFERENCES {schema_name}.recetas(id),
             materia_prima_id INTEGER NOT NULL REFERENCES {schema_name}.materias_primas(id),
+            cantidad FLOAT DEFAULT 0,
             porcentaje_aplicado FLOAT DEFAULT 0,
             cantidad_gramos FLOAT DEFAULT 0,
             costo_ingrediente FLOAT DEFAULT 0,
@@ -646,10 +647,21 @@ def crear_tablas_en_orden(schema_name):
             vida_util_pan_dias INTEGER DEFAULT 3,
             activar_alertas BOOLEAN DEFAULT TRUE,
             panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),
-            receta_id INTEGER
+            receta_id INTEGER,
+            stock_objetivo INTEGER DEFAULT 50,
+            stock_minimo INTEGER DEFAULT 10,
+            stock_maximo INTEGER DEFAULT 100,
+            porcentaje_critico FLOAT DEFAULT 20.0,
+            porcentaje_bajo FLOAT DEFAULT 50.0,
+            porcentaje_medio FLOAT DEFAULT 80.0,
+            tendencia_ventas FLOAT DEFAULT 1.0,
+            rotacion_diaria_esperada FLOAT DEFAULT 10.0,
+            activo BOOLEAN DEFAULT TRUE,
+            fecha_actualizacion TIMESTAMP DEFAULT NOW()
         )
     '''))
     
+   
     # =============================================
     # 34. configuracion_sistema (depende de panaderias)
     # =============================================
@@ -664,6 +676,9 @@ def crear_tablas_en_orden(schema_name):
             telefono_empresa VARCHAR(20) DEFAULT '',
             ciudad_empresa VARCHAR(100) DEFAULT '',
             regimen_empresa VARCHAR(100) DEFAULT 'Simplificado',
+            moneda VARCHAR(3) DEFAULT 'COP',
+            usa_centavos BOOLEAN DEFAULT FALSE,
+            simbolo_moneda VARCHAR(5) DEFAULT '$',
             nombre_sistema VARCHAR(100) DEFAULT 'PanaderíaPro',
             version VARCHAR(20) DEFAULT '1.0.0',
             modo_mantenimiento BOOLEAN DEFAULT FALSE,
@@ -684,6 +699,10 @@ def crear_tablas_en_orden(schema_name):
             total_tarjeta FLOAT DEFAULT 0,
             total_transferencia FLOAT DEFAULT 0,
             total_donaciones FLOAT DEFAULT 0,
+            total_transacciones INTEGER DEFAULT 0,
+            productos_top TEXT,
+            ventas_dia_anterior FLOAT DEFAULT 0,
+            tendencia FLOAT DEFAULT 0,
             deposito_bancario_id INTEGER REFERENCES {schema_name}.depositos_bancarios(id),
             observaciones TEXT,
             usuario_id INTEGER REFERENCES {schema_name}.usuarios(id),
@@ -2791,6 +2810,51 @@ def obtener_configuracion_sistema():
             'regimen_empresa': 'Simplificado',
             'tipo_facturacion': 'POS'
         })()
+        
+def obtener_configuracion_moneda():
+    """
+    Obtiene la configuración de moneda del tenant actual
+    Retorna: dict con moneda, usa_centavos, simbolo, decimales
+    """
+    try:
+        config = obtener_configuracion_sistema()
+        
+        # ✅ Mapeo de monedas
+        MONEDAS = {
+            'COP': {'simbolo': '$', 'decimales': 0, 'pais': 'Colombia'},
+            'MXN': {'simbolo': '$', 'decimales': 2, 'pais': 'México'},
+            'USD': {'simbolo': '$', 'decimales': 2, 'pais': 'Estados Unidos'},
+            'EUR': {'simbolo': '€', 'decimales': 2, 'pais': 'España'},
+            'ARS': {'simbolo': '$', 'decimales': 2, 'pais': 'Argentina'},
+            'CLP': {'simbolo': '$', 'decimales': 0, 'pais': 'Chile'},
+            'BRL': {'simbolo': 'R$', 'decimales': 2, 'pais': 'Brasil'},
+            'PEN': {'simbolo': 'S/', 'decimales': 2, 'pais': 'Perú'},
+            'ANG': {'simbolo': 'ƒ', 'decimales': 2, 'pais': 'Antillas Holandesas'},
+        }
+        
+        moneda_code = config.moneda if config.moneda else 'COP'
+        usa_centavos = config.usa_centavos if config.usa_centavos is not None else False
+        
+        # ✅ Si usa_centavos es False, forzar 0 decimales
+        decimales = MONEDAS.get(moneda_code, MONEDAS['COP'])['decimales'] if usa_centavos else 0
+        simbolo = config.simbolo_moneda if config.simbolo_moneda else MONEDAS.get(moneda_code, MONEDAS['COP'])['simbolo']
+        
+        return {
+            'moneda': moneda_code,
+            'usa_centavos': usa_centavos,
+            'simbolo': simbolo,
+            'decimales': decimales,
+            'pais': MONEDAS.get(moneda_code, MONEDAS['COP'])['pais']
+        }
+    except Exception as e:
+        print(f"⚠️ Error obteniendo config moneda: {e}")
+        return {
+            'moneda': 'COP',
+            'usa_centavos': False,
+            'simbolo': '$',
+            'decimales': 0,
+            'pais': 'Colombia'
+        }
 
 def reiniciar_consecutivo_pos():
     """
@@ -3536,7 +3600,19 @@ def configuracion_facturacion():
             config.ciudad_empresa = request.form.get('ciudad_empresa', '')
             config.regimen_empresa = request.form.get('regimen_empresa', 'Simplificado')
             
+            # 🆕 GUARDAR CONFIGURACIÓN DE MONEDA
+            config.moneda = request.form.get('moneda', 'COP')
+            config.usa_centavos = request.form.get('usa_centavos', 'false').lower() == 'true'
+            
+            # ✅ Actualizar símbolo según moneda
+            simbolos = {
+                'COP': '$', 'MXN': '$', 'USD': '$', 'EUR': '€',
+                'ARS': '$', 'CLP': '$', 'BRL': 'R$', 'PEN': 'S/', 'ANG': 'ƒ'
+            }
+            config.simbolo_moneda = simbolos.get(config.moneda, '$')
+            
             db.session.commit()
+            
             flash('✅ Configuración actualizada correctamente', 'success')
             
         except Exception as e:
@@ -4870,6 +4946,7 @@ def crear_receta():
     if request.method == 'POST':
         try:
             # ✅ CAPTURAR PRECIO REAL DEL FORMULARIO
+            # ✅ REDONDEAR a entero (pesos colombianos)
             precio_venta_real = float(request.form.get('precio_venta_real', 0)) or 0
             
             # Crear la receta base
@@ -5059,6 +5136,7 @@ def editar_receta(id):
     if request.method == 'POST':
         try:
             # ✅ ACTUALIZAR PRECIO REAL EN EDICIÓN
+            # ✅ REDONDEAR a entero
             nuevo_precio_real = float(request.form.get('precio_venta_real', 0)) or 0
             
             receta.nombre = request.form['nombre']
@@ -5140,6 +5218,8 @@ def editar_receta(id):
             # ✅ Precio teórico con margen deseado del usuario
             margen_objetivo = receta.margen_deseado / 100
             costo_unitario = costo_total_produccion / unidades_obtenidas if unidades_obtenidas > 0 else 0
+            
+            
             precio_venta_unitario = costo_unitario / (1 - margen_objetivo) if unidades_obtenidas > 0 and costo_unitario > 0 and margen_objetivo < 1 else 0
             
             margen_ganancia = precio_venta_unitario * margen_objetivo if unidades_obtenidas > 0 else 0
@@ -5610,11 +5690,13 @@ def api_historial_produccion():
         panaderia_id = current_user.panaderia_id
         
         # Obtener órdenes completadas en el rango
+        # ✅ CORREGIDO: Usar func.date() para comparar solo fechas
+        from sqlalchemy import func as sql_func
         ordenes = OrdenProduccion.query.filter(
             OrdenProduccion.estado == 'COMPLETADA',
             OrdenProduccion.panaderia_id == panaderia_id,
-            OrdenProduccion.fecha_fin >= fecha_inicio_dt,
-            OrdenProduccion.fecha_fin <= fecha_fin_dt
+            sql_func.date(OrdenProduccion.fecha_fin) >= fecha_inicio_dt,
+            sql_func.date(OrdenProduccion.fecha_fin) <= fecha_fin_dt
         ).order_by(OrdenProduccion.fecha_fin.desc()).all()
         
         resultado = []
@@ -6774,16 +6856,59 @@ def dashboard_externos():
                          margen_promedio=margen_promedio)
 
     
-# Filtro para formatear moneda en pesos colombianos
+# =============================================
+# 🆕 FILTRO DE MONEDA MULTI-PAÍS
+# =============================================
 @app.template_filter('currency')
-def format_currency(value):
-    """Formatear valor como moneda en pesos colombianos"""
+def format_currency(value, config_moneda=None):
+    """
+    Formatear valor como moneda según la configuración del tenant.
+    Soporta: COP, MXN, USD, EUR, ARS, CLP, BRL, PEN, ANG
+    """
     if value is None:
         return "$0"
+    
     try:
-        # Formato pesos colombianos: $1.234.567
-        return f"${value:,.0f}".replace(",", ".")
-    except (ValueError, TypeError):
+        # Si no se pasa config, obtenerla del contexto actual
+        if config_moneda is None:
+            try:
+                config = obtener_configuracion_sistema()
+                moneda_code = config.moneda if config.moneda else 'COP'
+                usa_centavos = config.usa_centavos if config.usa_centavos is not None else False
+                simbolo = config.simbolo_moneda if config.simbolo_moneda else '$'
+            except Exception:
+                moneda_code = 'COP'
+                usa_centavos = False
+                simbolo = '$'
+        else:
+            moneda_code = config_moneda.get('moneda', 'COP')
+            usa_centavos = config_moneda.get('usa_centavos', False)
+            simbolo = config_moneda.get('simbolo', '$')
+        
+        # ✅ Determinar decimales según configuración
+        if usa_centavos:
+            decimales = 2
+        else:
+            decimales = 0
+        
+        # ✅ Formatear número
+        formato = f"{value:,.{decimales}f}"
+        
+        # ✅ Ajustar separadores según el país
+        if moneda_code in ['COP', 'CLP', 'ARS', 'MXN', 'BRL', 'EUR', 'PEN']:
+            # Formato europeo/latinoamericano: 1.234,56
+            partes = formato.split('.')
+            if len(partes) > 1:
+                entero = partes[0].replace(',', '.')
+                decimal = partes[1]
+                formato = f"{entero},{decimal}"
+            else:
+                formato = formato.replace(',', '.')
+        # USD y ANG usan formato inglés: 1,234.56
+        
+        return f"{simbolo}{formato}"
+    except (ValueError, TypeError) as e:
+        print(f"⚠️ Error formateando moneda: {e}")
         return f"${value}"
 
 # Filtro para formatear números con 2 decimales
@@ -6794,6 +6919,18 @@ def round_filter(value, decimals=2):
         return round(value, decimals)
     except (ValueError, TypeError):
         return value
+    
+# 🆕 Filtro dinámico de decimales según moneda
+@app.template_filter('decimales')
+def decimales_filter(value):
+    """Retorna el número de decimales según la configuración del tenant"""
+    try:
+        config = obtener_configuracion_sistema()
+        if config.usa_centavos:
+            return 2
+        return 0
+    except Exception:
+        return 0
    
 # =============================================
 # RUTA DE DIAGNÓSTICO PARA PRODUCTOS - AGREGAR ESTO

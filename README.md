@@ -229,7 +229,7 @@ python app.py
 
 Credenciales por Defecto
 Usuario	Contraseña	Rol
-dev_master	admin123	Super Admin
+dev_master		Super Admin
 admin_1	generada automáticamente	Admin Cliente (Panadería Principal)
 
 

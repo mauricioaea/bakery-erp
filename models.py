@@ -2182,10 +2182,16 @@ class ConfiguracionSistema(db.Model):
     telefono_empresa = db.Column(db.String(20), default='')
     ciudad_empresa = db.Column(db.String(100), default='')
     regimen_empresa = db.Column(db.String(100), default='Simplificado')
+    
+    # 🆕 CONFIGURACIÓN DE MONEDA (MULTI-PAÍS)
+    moneda = db.Column(db.String(3), default='COP')  # COP, MXN, USD, EUR, ARS, CLP, BRL, PEN, ANG
+    usa_centavos = db.Column(db.Boolean, default=False)  # False = enteros, True = 2 decimales
+    simbolo_moneda = db.Column(db.String(5), default='$')  # $, €, R$, S/, ƒ
+    
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     def __repr__(self):
-        return f'<ConfiguracionSistema: {self.tipo_facturacion}>'
+        return f'<ConfiguracionSistema: {self.tipo_facturacion} - {self.moneda}>'
     
 # =============================================
 # 🆕 FUNCIONES DE VERIFICACIÓN DE LÍMITES

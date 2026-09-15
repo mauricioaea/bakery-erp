@@ -221,6 +221,41 @@
                                 </div>
                             </div>
 
+                            <!-- 🆕 CONFIGURACIÓN DE MONEDA -->
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="moneda" class="form-label">
+                                        💰 Moneda del Sistema
+                                    </label>
+                                    <select class="form-select" id="moneda" name="moneda" onchange="actualizarSimboloMoneda()">
+                                        <option value="COP" {{ 'selected' if config.moneda == 'COP' or not config.moneda }}>🇨🇴 Peso Colombiano (COP) - Sin centavos</option>
+                                        <option value="MXN" {{ 'selected' if config.moneda == 'MXN' }}>🇲🇽 Peso Mexicano (MXN) - Con centavos</option>
+                                        <option value="USD" {{ 'selected' if config.moneda == 'USD' }}>🇺🇸 Dólar (USD) - Con centavos</option>
+                                        <option value="EUR" {{ 'selected' if config.moneda == 'EUR' }}>🇪🇺 Euro (EUR) - Con centavos</option>
+                                        <option value="ARS" {{ 'selected' if config.moneda == 'ARS' }}>🇦🇷 Peso Argentino (ARS) - Con centavos</option>
+                                        <option value="CLP" {{ 'selected' if config.moneda == 'CLP' }}>🇨🇱 Peso Chileno (CLP) - Sin centavos</option>
+                                        <option value="BRL" {{ 'selected' if config.moneda == 'BRL' }}>🇧🇷 Real Brasileño (BRL) - Con centavos</option>
+                                        <option value="PEN" {{ 'selected' if config.moneda == 'PEN' }}>🇵🇪 Sol Peruano (PEN) - Con centavos</option>
+                                        <option value="ANG" {{ 'selected' if config.moneda == 'ANG' }}>🇦🇼 Florín Holandés (ANG) - Con centavos</option>
+                                    </select>
+                                    <small class="text-muted">
+                                        Selecciona la moneda de tu país. Esto afecta cómo se muestran los precios.
+                                    </small>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="usa_centavos" class="form-label">
+                                        💵 ¿Usar Centavos?
+                                    </label>
+                                    <select class="form-select" id="usa_centavos" name="usa_centavos">
+                                        <option value="false" {{ 'selected' if not config.usa_centavos }}>❌ No (solo enteros) - Ej: $1000</option>
+                                        <option value="true" {{ 'selected' if config.usa_centavos }}>✅ Sí (2 decimales) - Ej: $1000.50</option>
+                                    </select>
+                                    <small class="text-muted">
+                                        Si tu moneda no usa centavos, selecciona "No".
+                                    </small>
+                                </div>
+                            </div>
+
                             <!-- Botones de Acción -->
                             <div class="d-flex justify-content-between mt-4">
                                 <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
@@ -327,6 +362,33 @@
                 alert('❌ Error de conexión al cargar datos');
             }
         }
+
+
+                // 🆕 ACTUALIZAR SÍMBOLO DE MONEDA
+        function actualizarSimboloMoneda() {
+            const moneda = document.getElementById('moneda').value;
+            
+            const config = {
+                'COP': { simbolo: '$', usa_centavos: false },
+                'MXN': { simbolo: '$', usa_centavos: true },
+                'USD': { simbolo: '$', usa_centavos: true },
+                'EUR': { simbolo: '€', usa_centavos: true },
+                'ARS': { simbolo: '$', usa_centavos: true },
+                'CLP': { simbolo: '$', usa_centavos: false },
+                'BRL': { simbolo: 'R$', usa_centavos: true },
+                'PEN': { simbolo: 'S/', usa_centavos: true },
+                'ANG': { simbolo: 'ƒ', usa_centavos: true }
+            };
+            
+            const info = config[moneda] || config['COP'];
+            
+            // ✅ Auto-seleccionar usa_centavos según la moneda
+            const usaCentavosSelect = document.getElementById('usa_centavos');
+            if (usaCentavosSelect) {
+                usaCentavosSelect.value = info.usa_centavos ? 'true' : 'false';
+            }
+        }
+        
     </script>
 </body>
 </html>

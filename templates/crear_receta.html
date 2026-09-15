@@ -325,9 +325,9 @@
                 <h3>📊 <div class="form-group">
                     <label>Precio de Venta Real (OPCIONAL)</label>
                     <input type="number" name="precio_venta_real" step="0.01" min="0" 
-                           placeholder="Ej: 6000" 
-                           value="{{ receta.precio_venta_real if receta and receta.precio_venta_real else '' }}"
-                           oninput="actualizarComparacionPrecio(this.value)">
+                            placeholder="Ej: 6000" 
+                            value="{{ receta.precio_venta_real|int if receta and receta.precio_venta_real else '' }}"
+                            oninput="actualizarComparacionPrecio(this.value)">
                     <small style="color: #666; font-size: 12px;">
                         Si no ingresas un precio real, el sistema usará el precio calculado automáticamente.
                     </small>
