@@ -1752,23 +1752,6 @@ def antes_de_cada_peticion():
             # Si el tenant no existe, limpiar la sesión
             session.clear()
             print(f"⚠️ Sesión inválida (tenant {tenant_id} no existe). Sesión limpiada.")
-
-
-@app.before_request
-def antes_de_cada_peticion():
-    
-    # =============================================
-    # ✅ VERIFICAR SI LA SESIÓN ES VÁLIDA
-    # =============================================
-    if 'tenant_id' in session:
-        tenant_id = session['tenant_id']
-        # Verificar si el tenant existe
-        from models import Tenant
-        tenant_existe = Tenant.query.filter_by(id=tenant_id, activo=True).first()
-        if not tenant_existe:
-            # Si el tenant no existe, limpiar la sesión
-            session.clear()
-            print(f"⚠️ Sesión inválida (tenant {tenant_id} no existe). Sesión limpiada.")
             
     # =============================================
     # 🆕 SAAS - DETECCIÓN MEJORADA DE TENANT
@@ -1928,234 +1911,7 @@ def antes_de_cada_peticion():
         except Exception as e:
             print(f"⚠️ Error configurando schema para tenant {tenant_id}: {e}")
 
-    with app.app_context():
-        # ✅ Solo crear tablas si tenant_id está definido
-        if tenant_id:
-            schema_name = f"tenant_{tenant_id}"
-            from sqlalchemy import text
-            # Verificar si el schema existe
-            result = db.session.execute(
-                text(f"SELECT schema_name FROM information_schema.schemata WHERE schema_name = :schema"),
-                {'schema': schema_name}
-            ).fetchone()
-            
-            if result:
-                # Configurar el schema para la sesión
-                db.session.execute(text(f"SET search_path TO {schema_name}"))
-                db.create_all()
-                print(f"✅ Tablas creadas/verificadas en schema {schema_name}")
-            else:
-                print(f"⚠️ Schema {schema_name} no encontrado")
-        else:
-            print("⚠️ No se pudo determinar tenant_id para crear tablas")
     
-    # =============================================
-    # 🆕 INICIALIZAR CONFIGURACIÓN DEL TENANT (SI NO EXISTE)
-    # =============================================
-    from models import ConfiguracionPanaderia, Usuario, ConsecutivoPOS, ConfiguracionSistema, Categoria, Producto, Panaderia
-    
-    # ✅ Usar tenant_id ya definido
-    if not tenant_id:
-        tenant_id = getattr(g, 'tenant', {}).get('id', 1)
-    
-    # =============================================
-    # ✅ USAR verificar_y_crear_datos_tenant() EN LUGAR DEL CÓDIGO MANUAL
-    # =============================================
-    try:
-        from app import verificar_y_crear_datos_tenant
-        verificar_y_crear_datos_tenant(tenant_id)
-    except Exception as e:
-        print(f"⚠️ Error verificando/creando datos para tenant {tenant_id}: {e}")
-        
-        # =============================================
-        # 📦 FALLBACK: CREAR CATEGORÍAS Y PRODUCTOS DE PRUEBA (SOLO SI FALLA)
-        # =============================================
-        try:
-            from sqlalchemy import text
-            
-            # ✅ Buscar panadería directamente en el schema del tenant
-            tenant_schema = f"tenant_{tenant_id}"
-            
-            result = db.session.execute(
-                text(f"SELECT id, nombre, activa FROM {tenant_schema}.panaderias WHERE id = :tenant_id"),
-                {'tenant_id': tenant_id}
-            ).fetchone()
-            
-            if not result:
-                print(f"⚠️ No se encontró panadería para tenant {tenant_id}. Creando...")
-                
-                db.session.execute(
-                    text(f"""
-                        INSERT INTO {tenant_schema}.panaderias 
-                        (id, panaderia_id, nombre, moneda, impuesto, activa)
-                        VALUES (:id, :panaderia_id, :nombre, :moneda, :impuesto, :activa)
-                    """),
-                    {
-                        'id': tenant_id,
-                        'panaderia_id': tenant_id,
-                        'nombre': f"Panadería {tenant_id}",
-                        'moneda': "USD",
-                        'impuesto': 0.0,
-                        'activa': True
-                    }
-                )
-                db.session.commit()
-                
-                panaderia = type('Panaderia', (), {
-                    'id': tenant_id,
-                    'nombre': f"Panadería {tenant_id}"
-                })()
-                print(f"✅ Panadería creada para tenant {tenant_id} (ID: {tenant_id})")
-            else:
-                panaderia = type('Panaderia', (), {
-                    'id': result[0],
-                    'nombre': result[1]
-                })()
-                print(f"✅ Panadería ya existe para tenant {tenant_id} (ID: {result[0]})")
-            
-            # =============================================
-            # 🏪 VERIFICAR CONFIGURACIÓN DEL TENANT
-            # =============================================
-            config = ConfiguracionPanaderia.query.filter_by(panaderia_id=tenant_id).first()
-            if not config:
-                print(f"⚠️ No se encontró configuración para tenant {tenant_id}. Creando...")
-                nueva_config = ConfiguracionPanaderia(
-                    panaderia_id=tenant_id,
-                    nombre_panaderia=f"Panadería {tenant_id}",
-                    tipo_licencia='basico',
-                    max_usuarios=5,
-                    ventas_ilimitadas=False,
-                    estado_suscripcion='activa',
-                    sistema_activo=True,
-                    activo=True
-                )
-                db.session.add(nueva_config)
-                db.session.commit()
-                print(f"✅ Configuración creada para tenant {tenant_id}")
-            
-            # =============================================
-            # 👤 VERIFICAR Y CREAR USUARIO ADMIN (SOLO PARA TENANT PRINCIPAL)
-            # =============================================
-            if tenant_id == 1:
-                admin_tenant = Usuario.query.filter(
-                    Usuario.username.like(f'admin_{tenant_id}'),
-                    Usuario.panaderia_id == tenant_id
-                ).first()
-                
-                if not admin_tenant:
-                    print(f"⚠️ No se encontró usuario admin para tenant {tenant_id}. Creando...")
-                    hashed_password = generate_password_hash('admin123')
-                    admin_user = Usuario(
-                        username=f'admin_{tenant_id}',
-                        password_hash=hashed_password,
-                        nombre_completo=f'Administrador Tenant {tenant_id}',
-                        rol='admin_cliente',
-                        panaderia_id=tenant_id,
-                        tenant_id=tenant_id,
-                        activo=True
-                    )
-                    db.session.add(admin_user)
-                    db.session.commit()
-                    print(f"✅ Usuario admin_{tenant_id} creado para tenant {tenant_id}")
-                else:
-                    print(f"✅ Usuario admin_{tenant_id} ya existe para tenant {tenant_id}")
-            else:
-                print(f"ℹ️ Tenant {tenant_id}: los usuarios se crean en crear_cliente()")
-            
-            # =============================================
-            # 🆕 VERIFICAR Y CREAR MODELOS NUEVOS DEL SISTEMA POS
-            # =============================================
-            consecutivo = ConsecutivoPOS.query.filter_by(panaderia_id=tenant_id).first()
-            if not consecutivo:
-                consecutivo_inicial = ConsecutivoPOS(
-                    numero_actual=0,
-                    panaderia_id=tenant_id
-                )
-                db.session.add(consecutivo_inicial)
-                print(f"✅ Consecutivo POS inicial creado para tenant {tenant_id}")
-            
-            config_sistema = ConfiguracionSistema.query.filter_by(panaderia_id=tenant_id).first()
-            if not config_sistema:
-                # ✅ OBTENER DATOS REALES DESDE configuracion_panaderia
-                nombre_real = f'Panadería {tenant_id}'
-                nit_real = ''
-                direccion_real = ''
-                telefono_real = ''
-                
-                try:
-                    result_config = db.session.execute(
-                        text(f"""
-                            SELECT nombre_panaderia, nit, direccion, telefono_contacto
-                            FROM {tenant_schema}.configuracion_panaderia 
-                            WHERE panaderia_id = :panaderia_id LIMIT 1
-                        """),
-                        {"panaderia_id": tenant_id}
-                    ).fetchone()
-                    
-                    if result_config:
-                        nombre_real = result_config[0] or nombre_real
-                        nit_real = result_config[1] or ''
-                        direccion_real = result_config[2] or ''
-                        telefono_real = result_config[3] or ''
-                        print(f"   ✅ Datos obtenidos desde configuracion_panaderia: {nombre_real}")
-                except Exception as e:
-                    print(f"   ⚠️ No se pudo obtener configuracion_panaderia: {e}")
-                
-                config_inicial = ConfiguracionSistema(
-                    tipo_facturacion='POS',
-                    nombre_empresa=nombre_real,
-                    nit_empresa=nit_real,
-                    direccion_empresa=direccion_real,
-                    telefono_empresa=telefono_real,
-                    ciudad_empresa='',
-                    regimen_empresa='Simplificado',
-                    panaderia_id=tenant_id
-                )
-                db.session.add(config_inicial)
-                print(f"✅ Configuración del sistema inicial creada para tenant {tenant_id}")
-            
-                        # =============================================
-            # 📦 VERIFICAR CATEGORÍAS (SIN PRODUCTOS DE PRUEBA)
-            # =============================================
-            # ✅ NUEVO: Solo crear categorías básicas, SIN productos de prueba
-            # Los productos se crean cuando el usuario los registra
-            
-            categoria_existente = Categoria.query.filter_by(panaderia_id=tenant_id).first()
-            
-            if not categoria_existente:
-                # Crear solo las categorías básicas
-                panaderia_cat = Categoria(
-                    nombre="Panadería",
-                    panaderia_id=panaderia.id
-                )
-                pasteleria = Categoria(
-                    nombre="Pastelería",
-                    panaderia_id=panaderia.id
-                )
-                bebidas = Categoria(
-                    nombre="Bebidas",
-                    panaderia_id=panaderia.id
-                )
-                
-                db.session.add_all([panaderia_cat, pasteleria, bebidas])
-                db.session.flush()
-                db.session.commit()
-                
-                print(f"   ✅ Categorías creadas: Panadería, Pastelería, Bebidas")
-                print(f"   ℹ️ Sin productos de prueba (se crearán por el usuario)")
-            else:
-                print(f"   ✅ Categorías ya existen para tenant {tenant_id}")
-            
-            db.session.commit()
-            
-        except Exception as e:
-            db.session.rollback()
-            print(f"❌ Error creando categorías para tenant {tenant_id}: {e}")
-            import traceback
-            traceback.print_exc()
-    
-    print("✅ Base de datos lista!")
-    print(f"📁 Tenant activo: {tenant_id}")
 # =============================================
 # 🆕 RUTA DE SUSCRIPCIÓN VENCIDA
 # =============================================
@@ -12003,9 +11759,88 @@ def toggle_cliente(tenant_id):
 # ============================================
 # INICIAR APLICACIÓN
 # ============================================
+# ============================================
+# 🆕 INICIALIZACIÓN DE TODOS LOS TENANTS AL ARRANQUE
+# ============================================
+# Se ejecuta UNA SOLA VEZ al arrancar la app.
+# Inicializa tablas y datos base para cada tenant activo.
+# Esto evita que se ejecute en CADA request (optimización de rendimiento).
+def inicializar_al_arranque():
+    """
+    Inicializa todos los tenants activos al arrancar la app.
+    - Crea tablas si no existen
+    - Verifica y crea panadería, configuración, categorías, consecutivo POS
+    Se ejecuta 1 sola vez. Nuevos tenants se inicializan desde crear_tenant_saas().
+    """
+    from sqlalchemy import text
+    from models import Tenant
+    
+    print("=" * 60)
+    print("🚀 INICIALIZANDO TENANTS AL ARRANQUE")
+    print("=" * 60)
+    
+    with app.app_context():
+        try:
+            # Obtener todos los tenants activos
+            tenants_activos = Tenant.query.filter_by(activo=True).all()
+            
+            if not tenants_activos:
+                print("⚠️ No hay tenants activos para inicializar")
+                return
+            
+            print(f"📋 Encontrados {len(tenants_activos)} tenants activos")
+            
+            for tenant in tenants_activos:
+                tenant_id = tenant.id
+                schema_name = f"tenant_{tenant_id}"
+                
+                try:
+                    # 1. Verificar que el schema existe
+                    result = db.session.execute(
+                        text(f"SELECT schema_name FROM information_schema.schemata WHERE schema_name = :schema"),
+                        {'schema': schema_name}
+                    ).fetchone()
+                    
+                    if not result:
+                        print(f"   ⚠️ Tenant {tenant_id}: schema {schema_name} NO existe. Saltando.")
+                        continue
+                    
+                    # 2. Configurar search_path
+                    set_tenant_schema(tenant_id)
+                    
+                    # 3. Crear tablas si no existen
+                    db.create_all()
+                    
+                    # 4. Verificar y crear datos base
+                    verificar_y_crear_datos_tenant(tenant_id)
+                    
+                    print(f"   ✅ Tenant {tenant_id} ({tenant.nombre}) inicializado")
+                    
+                except Exception as e:
+                    print(f"   ❌ Error inicializando tenant {tenant_id}: {e}")
+                    db.session.rollback()
+                    continue
+            
+            print("=" * 60)
+            print("✅ INICIALIZACIÓN COMPLETA")
+            print("=" * 60)
+            
+        except Exception as e:
+            print(f"❌ Error crítico en inicializar_al_arranque: {e}")
+            import traceback
+            traceback.print_exc()
+
+
+# ============================================
+# INICIAR APLICACIÓN
+# ============================================
 if __name__ == '__main__':
     print("🚀 Iniciando Servidor...")
     print("📂 Sistema Multi-Tenant para Panaderías")
     print("🌐 http://localhost:5000")
     print("=" * 50)
+    
+    # ✅ NUEVO: Inicializar tenants UNA SOLA VEZ al arrancar
+    inicializar_al_arranque()
+    
     app.run(debug=True, host='0.0.0.0', port=5000)
