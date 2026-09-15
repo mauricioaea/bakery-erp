@@ -425,7 +425,14 @@
                         </thead>
                         <tbody>
                             {% for producto in productos %}
-                            <tr class="{% if producto.stock_actual <= producto.stock_minimo %}table-warning{% endif %}" data-nombre="{{ producto.nombre.lower() }}" data-marca="{{ (producto.marca or "").lower() }}" data-categoria="{{ producto.categoria }}" data-stock="{{ producto.stock_actual }}" data-stockMinimo="{{ producto.stock_minimo }}" data-fecha-vencimiento="{% if producto.fecha_vencimiento %}{{ producto.fecha_vencimiento.strftime("%Y-%m-%d") }}{% endif %}" data-dias-para-vencer="{% if producto.fecha_vencimiento %}{{ (producto.fecha_vencimiento - hoy).days }}{% else %}999{% endif %}">
+                            <tr class="{% if producto.stock_actual == 0 %}table-danger{% elif producto.stock_actual <= producto.stock_minimo %}table-warning{% endif %}"
+                                data-nombre="{{ producto.nombre.lower() }}"
+                                data-marca="{{ (producto.marca or '').lower() }}"
+                                data-categoria="{{ producto.categoria }}"
+                                data-stock="{{ producto.stock_actual }}"
+                                data-stock-minimo="{{ producto.stock_minimo }}"
+                                data-fecha-vencimiento="{% if producto.fecha_vencimiento %}{{ producto.fecha_vencimiento.strftime('%Y-%m-%d') }}{% endif %}"
+                                data-dias-para-vencer="{% if producto.fecha_vencimiento %}{{ (producto.fecha_vencimiento - hoy).days }}{% else %}999{% endif %}">
                                 <td data-label="Producto">
                                     <strong>{{ producto.nombre }}</strong>
                                     {% if producto.descripcion %}
@@ -437,10 +444,12 @@
                                 </td>
                                 <td data-label="Marca">{{ producto.marca or '-' }}</td>
                                 <td data-label="Stock">
-                                    <span class="badge {% if producto.stock_actual <= producto.stock_minimo %}bg-danger{% else %}bg-success{% endif %}">
+                                    <span class="badge {% if producto.stock_actual == 0 %}bg-dark{% elif producto.stock_actual <= producto.stock_minimo %}bg-danger{% else %}bg-success{% endif %}">
                                         {{ producto.stock_actual }}
                                     </span>
-                                    {% if producto.stock_actual <= producto.stock_minimo %}
+                                    {% if producto.stock_actual == 0 %}
+                                    <br><small class="text-dark fw-bold">Sin stock</small>
+                                    {% elif producto.stock_actual <= producto.stock_minimo %}
                                     <br><small class="text-danger">Stock bajo</small>
                                     {% endif %}
                                 </td>
@@ -763,6 +772,7 @@
             const marca = row.dataset.marca?.toLowerCase() || '';
             const cat = row.dataset.categoria || '';
             const stock = parseInt(row.dataset.stock) || 0;
+            // ✅ FIX: dataset.stockMinimo (camelCase) mapea a data-stock-minimo
             const stockMinimo = parseInt(row.dataset.stockMinimo) || 0;
             
             let visible = true;
@@ -774,13 +784,11 @@
             
             // Filtro por categoría
             if (categoria === 'proximos_vencer') {
-                // 🔧 AJUSTE: Verificar días para vencimiento
                 const dias = parseInt(row.dataset.diasParaVencer) || 999;
                 if (dias > 10 || dias < 0) {
                     visible = false;
                 }
             } else if (categoria === 'vencidos') {
-                // 🔧 AJUSTE: Verificar productos vencidos
                 const dias = parseInt(row.dataset.diasParaVencer) || 999;
                 if (dias >= 0) {
                     visible = false;
@@ -790,17 +798,18 @@
             }
             
             // Filtro por stock
-            if (filtroStock === 'bajo' && stock > stockMinimo) {
+            // ✅ FIX: Separar correctamente "sin stock" (stock=0) de "stock bajo" (0 < stock <= stock_minimo)
+            if (filtroStock === 'sin_stock' && stock !== 0) {
                 visible = false;
             }
-            if (filtroStock === 'sin_stock' && stock > 0) {
+            if (filtroStock === 'bajo' && (stock === 0 || stock > stockMinimo)) {
                 visible = false;
             }
             if (filtroStock === 'normal' && stock <= stockMinimo) {
                 visible = false;
             }
-            
-            // 🆕 FILTRO POR VENCIMIENTO (usando dataset)
+
+            // FILTRO POR VENCIMIENTO (usando dataset)
             const fechaVencimiento = row.dataset.fechaVencimiento;
             if (categoria === 'proximos_vencer') {
                 if (!fechaVencimiento) {

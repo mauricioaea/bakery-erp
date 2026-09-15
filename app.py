@@ -4068,27 +4068,49 @@ def crear_producto_externo():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
+    # ✅ FIX: Normalizar codigo_barras y validar duplicado ANTES del try
+    codigo_barras = request.form.get('codigo_barras', '').strip()
+    
     try:
         from datetime import datetime
+        from sqlalchemy.exc import IntegrityError
+        
+        # ✅ FIX BUG 2: Validar duplicado de código de barras en este tenant
+        if codigo_barras:
+            existente = ProductoExterno.query.filter_by(
+                codigo_barras=codigo_barras,
+                panaderia_id=current_user.panaderia_id
+            ).first()
+            if existente:
+                flash(
+                    f'⚠️ Ya existe un producto con el código de barras "{codigo_barras}": '
+                    f'"{existente.nombre}". Usa un código diferente.',
+                    'error'
+                )
+                return redirect(url_for('productos_externos'))
+        
+        # ✅ FIX BUG 1: Convertir proveedor_id vacío a None (evita error integer)
+        proveedor_id_str = request.form.get('proveedor_id', '').strip()
+        proveedor_id = int(proveedor_id_str) if proveedor_id_str else None
         
         # Obtener fecha de vencimiento si se proporcionó
-        fecha_vencimiento_str = request.form.get('fecha_vencimiento', '')
+        fecha_vencimiento_str = request.form.get('fecha_vencimiento', '').strip()
         fecha_vencimiento = None
         if fecha_vencimiento_str:
             fecha_vencimiento = datetime.strptime(fecha_vencimiento_str, '%Y-%m-%d').date()
         
         nuevo_producto = ProductoExterno(
-            nombre=request.form['nombre'],
-            descripcion=request.form.get('descripcion', ''),
+            nombre=request.form['nombre'].strip(),
+            descripcion=request.form.get('descripcion', '').strip(),
             categoria=request.form['categoria'],
-            marca=request.form.get('marca', ''),
-            codigo_barras=request.form.get('codigo_barras', ''),
-            proveedor_id=request.form.get('proveedor_id'),
+            marca=request.form.get('marca', '').strip(),
+            codigo_barras=codigo_barras or None,  # ✅ None permite múltiples productos sin código
+            proveedor_id=proveedor_id,             # ✅ None si está vacío
             precio_compra=float(request.form['precio_compra']),
             precio_venta=float(request.form['precio_venta']),
             stock_actual=int(request.form.get('stock_actual', 0)),
             stock_minimo=int(request.form.get('stock_minimo', 5)),
-            fecha_vencimiento=fecha_vencimiento,  # 🆕 NUEVO CAMPO
+            fecha_vencimiento=fecha_vencimiento,
             panaderia_id=current_user.panaderia_id
         )
         
@@ -4096,9 +4118,26 @@ def crear_producto_externo():
         db.session.commit()
         
         flash('✅ Producto externo creado exitosamente', 'success')
+    
+    except IntegrityError as e:
+        # ✅ FIX BUG 2 (respaldo): Manejo amigable de códigos duplicados
+        db.session.rollback()
+        error_msg = str(e.orig) if hasattr(e, 'orig') else str(e)
         
+        if 'codigo_barras' in error_msg.lower() or 'unique' in error_msg.lower():
+            flash(
+                f'⚠️ El código de barras "{codigo_barras}" ya está en uso '
+                f'en esta panadería. Usa un código diferente.',
+                'error'
+            )
+        else:
+            flash(f'❌ Error de integridad al crear producto: {error_msg}', 'error')
+    
     except Exception as e:
         db.session.rollback()
+        print(f"❌ Error creando producto externo: {e}")
+        import traceback
+        traceback.print_exc()
         flash(f'❌ Error al crear producto: {str(e)}', 'error')
     
     return redirect(url_for('productos_externos'))
