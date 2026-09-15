@@ -1337,6 +1337,64 @@ login_manager.login_view = 'login'
 db.init_app(app)
 migrate = Migrate(app, db)
 
+# =============================================
+# ✅ EVENT LISTENER: GARANTIZAR search_path EN CADA CONEXIÓN DEL POOL
+# =============================================
+# Se ejecuta CADA VEZ que SQLAlchemy toma una conexión del pool.
+# Garantiza que el search_path apunte al schema del tenant actual
+# ANTES de cualquier consulta. Soluciona el bug multi-tenant de raíz.
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
+
+@event.listens_for(Engine, "checkout")
+def configurar_search_path_en_checkout(dbapi_connection, connection_record, connection_proxy):
+    """
+    Se ejecuta en cada checkout de conexión del pool.
+    Configura el search_path según el tenant actual del request.
+    """
+    try:
+        from flask import g, session, has_request_context
+
+        # Solo actuar dentro del contexto de un request
+        if not has_request_context():
+            return
+
+        # Obtener tenant_id del contexto (mismo orden de prioridad que el before_request)
+        tenant_id = None
+
+        # 1. Intentar desde g.tenant (configurado por before_request)
+        if hasattr(g, 'tenant') and g.tenant:
+            tenant_id = g.tenant.get('id')
+
+        # 2. Si no hay, desde current_user (si está autenticado)
+        if not tenant_id:
+            try:
+                from flask_login import current_user
+                if hasattr(current_user, 'is_authenticated') and current_user.is_authenticated:
+                    tenant_id = getattr(current_user, 'panaderia_id', None)
+            except Exception:
+                pass
+
+        # 3. Fallback: desde session
+        if not tenant_id:
+            tenant_id = session.get('tenant_id')
+
+        # Si no hay tenant identificado, no tocar el search_path
+        if not tenant_id:
+            return
+
+        # Aplicar SET search_path directamente en la conexión DBAPI
+        schema_name = f"tenant_{tenant_id}"
+        cursor = dbapi_connection.cursor()
+        try:
+            cursor.execute(f'SET search_path TO {schema_name}, public')
+        finally:
+            cursor.close()
+
+    except Exception as e:
+        # Silenciar errores para no romper requests
+        print(f"⚠️ [EVENT] Error configurando search_path en checkout: {e}")
+
 @login_manager.user_loader
 def load_user(user_id):
     """
@@ -1528,36 +1586,58 @@ def licencia_premium_requerida():
 # =============================================
 
 @app.context_processor
-def inject_permisos():
-    """Inyectar funciones de permisos en todos los templates"""
-    from flask_login import current_user  # ✅ IMPORTAR current_user
-    from models import ConfiguracionPanaderia
+def inject_user_permissions():
+    """
+    Inyecta funciones y variables globales en todos los templates.
+    ✅ CORREGIDO: Manejo seguro de current_user cuando no hay sesión.
+    """
+    from flask_login import current_user
+    
+    # ✅ Helper interno para verificar autenticación de forma segura
+    def _esta_autenticado():
+        """Verifica autenticación sin explotar si current_user es None o LocalProxy sin resolver."""
+        try:
+            return (
+                current_user is not None
+                and hasattr(current_user, 'is_authenticated')
+                and current_user.is_authenticated
+            )
+        except Exception:
+            return False
     
     def usuario_puede(modulo, accion):
-        if not current_user.is_authenticated:
+        if not _esta_autenticado():
             return False
-        return current_user.tiene_permiso(modulo, accion)
+        try:
+            return current_user.tiene_permiso(modulo, accion)
+        except Exception:
+            return False
     
     def usuario_tiene_acceso(modulo):
-        if not current_user.is_authenticated:
+        if not _esta_autenticado():
             return False
-        return current_user.puede_acceder_modulo(modulo)
+        try:
+            return current_user.puede_acceder_modulo(modulo)
+        except Exception:
+            return False
     
     def modulos_permitidos():
-        if not current_user.is_authenticated:
+        if not _esta_autenticado():
             return []
-        return current_user.obtener_modulos_permitidos()
+        try:
+            return current_user.obtener_modulos_permitidos()
+        except Exception:
+            return []
     
-    # ✅ Obtener configuración del tenant actual usando la función helper
+    # ✅ Obtener configuración del tenant actual de forma segura
     config = None
-    # ✅ VERIFICACIÓN SEGURA: current_user existe y está autenticado
     try:
-        if hasattr(current_user, 'is_authenticated') and current_user.is_authenticated:
+        if _esta_autenticado():
             panaderia_id = getattr(current_user, 'panaderia_id', None)
             if panaderia_id:
                 config = obtener_configuracion_panaderia_segura(panaderia_id)
-    except Exception as e:
-        # ✅ Silenciar errores durante el inicio de la aplicación
+    except Exception:
+        # ✅ Silenciar errores durante el arranque o requests sin sesión
         pass
     
     return dict(
@@ -2748,8 +2828,19 @@ def obtener_configuracion_sistema():
     """
     from models import ConfiguracionSistema
     
+    
+    from sqlalchemy import text as sql_text
+    
     try:
         panaderia_id = current_user.panaderia_id if hasattr(current_user, 'panaderia_id') else 1
+        
+        # ✅ FIX MULTI-TENANT: Forzar search_path al schema del tenant actual
+        # Esto evita que se consulte por error public.configuracion_sistema (tabla vieja sin columnas nuevas)
+        schema_name = f"tenant_{panaderia_id}"
+        try:
+            db.session.execute(sql_text(f'SET search_path TO {schema_name}, public'))
+        except Exception as e:
+            print(f"⚠️ [CONFIG] No se pudo configurar search_path a {schema_name}: {e}")
         
         config = ConfiguracionSistema.query.filter_by(panaderia_id=panaderia_id).first()
         
