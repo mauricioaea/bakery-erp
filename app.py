@@ -1140,6 +1140,8 @@ def crear_tenant_saas(nombre_panaderia, subdominio, email_contacto=None, max_usu
         print(f"   👤 Usuarios: admin_{tenant_id}, super_{tenant_id}, cajero_{tenant_id}")
         print(f"   📅 Fecha expiración: {fecha_expiracion}")
         print(f"   🏷️  Tipo Licencia: {tipo_licencia}")
+                
+        
         
         return True, f"Tenant {nombre_panaderia} creado exitosamente. Contraseña temporal: {contrasena_temp}", tenant_id
         
@@ -10596,8 +10598,8 @@ def crear_cliente():
             flash(f'❌ Error: Configuración no encontrada para tenant {tenant_id}', 'error')
             return redirect(url_for('gestion_clientes'))
 
-        panaderia_id = config_existente.id
-        print(f"✅ Configuración existente encontrada: ID={panaderia_id} (tenant_id={tenant_id})")
+        panaderia_id = config_existente.panaderia_id  # ✅ FIX: usar panaderia_id del objeto, no el id (PK de la tabla)
+        print(f"✅ Configuración existente encontrada: panaderia_id={panaderia_id} (tenant_id={tenant_id})")
         
         # =============================================
         # PASO 3: CREAR USUARIOS AUTOMÁTICAMENTE
