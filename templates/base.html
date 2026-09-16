@@ -46,19 +46,7 @@
         </div>
     </nav>
 
-    <!-- 🔧 BANNER ACCESO REMOTO - NUEVO -->
-    {% if session.get('panaderia_remota') %}
-    <div class="alert alert-warning alert-dismissible fade show mb-0" role="alert">
-        <div class="container-fluid">
-            <strong>🔧 Modo Supervisión Activo</strong> - 
-            Accediendo a panadería remota
-            <a href="{{ url_for('salir_acceso_remoto') }}" class="btn btn-sm btn-outline-danger ml-3">
-                <i class="fas fa-sign-out-alt me-1"></i>Salir del acceso remoto
-            </a>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    </div>
-    {% endif %}
+    
 
     <div class="container-fluid">
         <div class="row">

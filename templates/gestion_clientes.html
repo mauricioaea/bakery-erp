@@ -292,11 +292,7 @@
                                                         title="Renovar Suscripción">
                                                     <i class="fas fa-sync-alt"></i>
                                                 </button>
-                                                <button class="btn btn-outline-warning"
-                                                        onclick="prepararAccesoPanaderia({{ config.id }}, '{{ config.nombre }}')"
-                                                        title="Acceder a esta panadería">
-                                                    <i class="fas fa-sign-in-alt"></i>
-                                                </button>
+                                                
                                                 <!-- 🆕 Toggle Switch Activar/Desactivar -->
                                                 <label class="toggle-switch" title="Activar/Desactivar cliente">
                                                     <input type="checkbox" 
@@ -601,43 +597,7 @@
         </div>
     </div>
 
-    <!-- Modal 4: Acceder a Panadería -->
-    <div class="modal fade" id="accederPanaderiaModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-warning text-dark">
-                    <h5 class="modal-title">
-                        <i class="fas fa-sign-in-alt me-2"></i>Acceder a Panadería
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
-                        Estás a punto de acceder a la panadería:
-                        <strong id="accederPanaderiaNombre"></strong>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Seleccionar Usuario:</label>
-                        <select class="form-select" id="accederUsuarioSelect">
-                            <option value="">Cargando usuarios...</option>
-                        </select>
-                    </div>
-                    <div class="alert alert-warning">
-                        <i class="fas fa-shield-alt me-2"></i>
-                        <strong>Modo Super Admin:</strong> Podrás ver y gestionar esta panadería como si fueras uno de sus usuarios.
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-warning" onclick="confirmarAccesoPanaderia()">
-                        <i class="fas fa-play me-2"></i>Acceder
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
+    
     <!-- Modal 5: Ver Usuarios -->
     <div class="modal fade" id="usuariosModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
@@ -972,79 +932,7 @@
             });
     }
 
-    // =============================================
-    // 🆕 FUNCIÓN: Preparar Acceso a Panadería
-    // =============================================
-    let panaderiaIdAcceso = null;
-
-    function prepararAccesoPanaderia(tenantId, nombre) {
-        console.log('🔍 prepararAccesoPanaderia llamado con:', tenantId, nombre);
-        
-        panaderiaIdAcceso = tenantId;
-        document.getElementById('accederPanaderiaNombre').textContent = nombre;
-        
-        fetch(`/obtener_usuarios_panaderia/${tenantId}`)
-            .then(response => response.json())
-            .then(data => {
-                console.log('📦 Usuarios:', data);
-                
-                const select = document.getElementById('accederUsuarioSelect');
-                select.innerHTML = '<option value="">Seleccionar usuario...</option>';
-                
-                if (data.usuarios && data.usuarios.length > 0) {
-                    data.usuarios.forEach(usuario => {
-                        const option = document.createElement('option');
-                        option.value = usuario.id;
-                        option.textContent = `${usuario.username} (${usuario.nombre_completo || usuario.username})`;
-                        select.appendChild(option);
-                    });
-                } else {
-                    const option = document.createElement('option');
-                    option.value = '';
-                    option.textContent = 'No hay usuarios disponibles';
-                    select.appendChild(option);
-                }
-                
-                const modal = new bootstrap.Modal(document.getElementById('accederPanaderiaModal'));
-                modal.show();
-            })
-            .catch(error => {
-                console.error('❌ Error:', error);
-                alert('Error al cargar usuarios de la panadería');
-            });
-    }
-
-    // =============================================
-    // 🆕 FUNCIÓN: Confirmar Acceso a Panadería
-    // =============================================
-    function confirmarAccesoPanaderia() {
-        const usuarioId = document.getElementById('accederUsuarioSelect').value;
-        
-        if (!usuarioId) {
-            alert('Por favor selecciona un usuario');
-            return;
-        }
-        
-        fetch(`/acceder_panaderia_super/${panaderiaIdAcceso}/${usuarioId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('✅ Acceso concedido. Redirigiendo...');
-                window.location.href = '/dashboard';
-            } else {
-                alert('❌ Error: ' + data.error);
-            }
-        })
-        .catch(error => {
-            console.error('❌ Error:', error);
-            alert('Error al acceder a la panadería');
-        });
-    }
+    
 
     // =============================================
     // 🆕 FUNCIÓN: Abrir Modal Cambiar Licencia

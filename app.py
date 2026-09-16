@@ -1910,9 +1910,7 @@ def diagnosticar_recetas(panaderia_id):
     return len(recetas_activas)
 
 def obtener_panaderia_actual():
-    """Obtener panadería actual considerando acceso remoto SOLO para super usuario"""
-    if es_super_usuario() and 'panaderia_remota' in session:
-        return session['panaderia_remota']
+    """Obtener panadería actual del usuario logueado"""
     return session.get('panaderia_id')
 
 # ✅ ✅ ✅ FIN DE diagnosticar_recetas ✅ ✅ ✅
@@ -2225,15 +2223,10 @@ def punto_venta():
     # ✅ OBTENER panaderia_id DE LA SESIÓN (CON ACCESO REMOTO)
     panaderia_actual = obtener_panaderia_actual()  # ← ÚNICO CAMBIO AQUÍ
     
-    # ✅ ✅ ✅ NUEVO: BLOQUE SUPER USUARIO (AGREGA ESTO) ✅ ✅ ✅
-    if es_super_usuario() and not session.get('panaderia_remota'):
-        flash("🔧 Como super usuario, usa 'Acceder a esta panadería' para usar el punto de venta", "info")
-        return render_template('punto_venta.html',
-                             productos_internos=[],
-                             productos_externos=[],
-                             categorias=[],
-                             clientes=[])
-    # ✅ ✅ ✅ FIN BLOQUE SUPER USUARIO ✅ ✅ ✅
+    # ✅ BLOQUE SUPER USUARIO: redirigir a gestión de clientes
+    if es_super_usuario():
+        flash("🔧 Como super usuario, esta función es para clientes. Ve a 'Gestión de Clientes'.", "info")
+        return redirect(url_for('gestion_clientes'))
     
     # ✅ OBTENER PRODUCTOS FILTRADOS POR PANADERÍA
     productos_internos = Producto.query.filter_by(panaderia_id=panaderia_actual, activo=True).all()
@@ -4395,10 +4388,10 @@ def recetas():
     panaderia_actual = current_user.panaderia_id
     print(f"🔍 DEBUG RECETAS: Panadería actual: {panaderia_actual}")
     
-    # ✅ BLOQUE SUPER USUARIO (MEJORADO)
-    if es_super_usuario() and not session.get('panaderia_remota'):
-        flash("🔧 Como super usuario, usa 'Acceder a esta panadería' para ver recetas específicas", "info")
-        return render_template('recetas.html', recetas=[], total_activas=0, total_inactivas=0, estado='activas')
+    # ✅ BLOQUE SUPER USUARIO: redirigir a gestión de clientes
+    if es_super_usuario():
+        flash("🔧 Como super usuario, esta función es para clientes. Ve a 'Gestión de Clientes'.", "info")
+        return redirect(url_for('gestion_clientes'))
     
     # 🆕 OBTENER PARÁMETRO DE FILTRO (NUEVO)
     estado = request.args.get('estado', 'activas')  # 'activas', 'inactivas', 'todas'
@@ -5245,15 +5238,10 @@ def produccion_diaria():
     
     print(f"🔍 DEBUG: Panadería actual: {panaderia_actual}")
     
-    # ✅ ✅ ✅ NUEVO: BLOQUE SUPER USUARIO (MEJORADO) ✅ ✅ ✅
-    if es_super_usuario() and not session.get('panaderia_remota'):
-        flash("🔧 Como super usuario, usa 'Acceder a esta panadería' para ver producción específica", "info")
-        return render_template('produccion_diaria.html',
-                             recetas_con_stock=[],
-                             ordenes_activas=[],
-                             todas_las_ordenes_completadas=[],
-                             alertas=[])
-    # ✅ ✅ ✅ FIN BLOQUE SUPER USUARIO ✅ ✅ ✅
+        # ✅ BLOQUE SUPER USUARIO: redirigir a gestión de clientes
+    if es_super_usuario():
+        flash("🔧 Como super usuario, esta función es para clientes. Ve a 'Gestión de Clientes'.", "info")
+        return redirect(url_for('gestion_clientes'))
     
     # ✅ SOLO DIAGNÓSTICO - NO crear recetas automáticas
     hay_recetas = diagnosticar_recetas(panaderia_actual)
@@ -11397,71 +11385,7 @@ def renovar_suscripcion_super():
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/acceder_panaderia_super/<int:panaderia_id>/<int:usuario_id>')
-@login_required
-@permisos_requeridos('sistema', 'acceder')
-def acceder_panaderia_super(panaderia_id, usuario_id):
-    """Acceder a una panadería como super admin - VERSIÓN FUNCIONAL"""
-    if current_user.rol != 'super_admin':
-        return jsonify({'success': False, 'error': 'No autorizado'})
-    
-    try:
-        from models import Usuario
-        usuario_target = Usuario.query.filter_by(id=usuario_id, panaderia_id=panaderia_id).first()
-        
-        if not usuario_target:
-            return jsonify({'success': False, 'error': 'Usuario no encontrado en esta panadería'})
-        
-        # ✅ ✅ ✅ CORRECCIÓN CRÍTICA: CAMBIAR LA SESIÓN ✅ ✅ ✅
-        session['panaderia_id'] = panaderia_id
-        print(f"✅ Super usuario accediendo a panadería: {panaderia_id} como usuario: {usuario_target.username}")
-        
-        return jsonify({
-            'success': True, 
-            'message': f'Acceso concedido a panadería {panaderia_id}'
-        })
-        
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}) 
-    
-@app.route('/acceder_panaderia/<int:panaderia_id>')
-@login_required
-@permisos_requeridos('sistema', 'acceder')
-def acceder_panaderia(panaderia_id):
-    """Acceso remoto para super usuario a cualquier panadería"""
-    print(f"🎯 DEBUG: Iniciando acceso remoto a panadería {panaderia_id}")
-    
-    if not es_super_usuario():
-        print("❌ DEBUG: No es super usuario - bloqueando acceso")
-        flash('No tienes permisos para acceso remoto', 'error')
-        return redirect(url_for('dashboard'))
-    
-    print(f"✅ DEBUG: Es super usuario - activando acceso remoto")
-    
-    # Guardar en variable SEPARADA, NO sobreescribir panaderia_id
-    session['panaderia_remota'] = panaderia_id
-    print(f"✅ DEBUG: panaderia_remota guardado: {session.get('panaderia_remota')}")
-    
-    panaderia = db.session.get(Panaderia, panaderia_id)
-    print(f"✅ DEBUG: Panadería encontrada: {panaderia.nombre if panaderia else 'NO ENCONTRADA'}")
-    
-    if panaderia:
-        flash(f'🔧 Acceso remoto activado: {panaderia.nombre}', 'success')
-    else:
-        flash('🔧 Acceso remoto activado', 'success')
-    
-    print(f"✅ DEBUG: Redirigiendo a dashboard")
-    return redirect(url_for('dashboard'))
 
-@app.route('/salir_acceso_remoto')
-@login_required
-def salir_acceso_remoto():
-    """Salir del modo acceso remoto"""
-    if 'panaderia_remota' in session:
-        panaderia_id = session['panaderia_remota']
-        session.pop('panaderia_remota')
-        flash('Has salido del modo acceso remoto', 'info')
-    return redirect(url_for('gestion_clientes'))
 
  
 app.config['TEMPLATES_AUTO_RELOAD'] = True
@@ -11579,8 +11503,8 @@ def toggle_cliente(tenant_id):
         if not resultado:
             return jsonify({'success': False, 'error': 'Cliente no encontrado'}), 404
         
-        estado_actual = resultado[0] if resultado[0] is not None else 1
-        nuevo_estado = 0 if estado_actual == 1 else 1
+        estado_actual = resultado[0] if resultado[0] is not None else True
+        nuevo_estado = not estado_actual   
         
         print(f"📊 Estado actual: {estado_actual} → Nuevo estado: {nuevo_estado}")
         
@@ -11595,18 +11519,18 @@ def toggle_cliente(tenant_id):
         # 3. ACTUALIZAR CONFIGURACIÓN
         db.session.execute(
             text("UPDATE public.configuracion_panaderia SET activo = :activo WHERE tenant_id = :id OR panaderia_id = :id"),
-            {'activo': nuevo_estado, 'id': tenant_id}
+            {'activo': nuevo_estado, 'id': tenant_id}   # (ahora nuevo_estado es bool)
         )
         db.session.commit()
         print(f"✅ Configuración actualizada en public.configuracion_panaderia")
         
-        estado_texto = "ACTIVADO" if nuevo_estado == 1 else "DESACTIVADO"
+        estado_texto = "ACTIVADO" if nuevo_estado else "DESACTIVADO"
         print(f"✅ Cliente ID {tenant_id} {estado_texto}")
         
         return jsonify({
             'success': True,
             'message': f'Cliente {estado_texto} exitosamente',
-            'nuevo_estado': nuevo_estado
+            'nuevo_estado': 1 if nuevo_estado else 0   # Para compatibilidad JSON
         })
         
     except Exception as e:
