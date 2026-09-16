@@ -13,7 +13,6 @@ import re
 class GestorTenants:
     def __init__(self, app=None):
         self.app = app
-        self.databases_dir = 'databases_tenants'  # legado, no se usa para conexión
         
         if app is not None:
             self.init_app(app)

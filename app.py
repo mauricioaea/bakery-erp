@@ -11625,10 +11625,92 @@ def toggle_cliente(tenant_id):
 # Se ejecuta UNA SOLA VEZ al arrancar la app.
 # Inicializa tablas y datos base para cada tenant activo.
 # Esto evita que se ejecute en CADA request (optimización de rendimiento).
+def _sincronizar_columnas_tenant(schema_name):
+    """
+    Sincroniza las columnas de todas las tablas del modelo con el schema del tenant.
+    Agrega con ALTER TABLE ... ADD COLUMN IF NOT EXISTS las columnas que falten.
+    
+    NO elimina columnas extras (por seguridad).
+    Retorna: (columnas_agregadas_total, errores_total)
+    """
+    from sqlalchemy import text
+    from sqlalchemy import inspect
+    
+    columnas_agregadas = 0
+    errores = 0
+    
+    try:
+        # Obtener el inspector de la BD para leer el esquema
+        inspector = inspect(db.engine)
+        
+        for table_name, table in db.metadata.tables.items():
+            # Saltar tablas de otros schemas (ej. public.tenants)
+            if table.schema is not None and table.schema != schema_name:
+                continue
+            
+            try:
+                # Obtener columnas actuales de la tabla en el schema del tenant
+                columnas_existentes = {
+                    col['name'] 
+                    for col in inspector.get_columns(table_name, schema=schema_name)
+                }
+            except Exception:
+                # La tabla no existe todavía; la crea db.create_all()
+                continue
+            
+            # Comparar con las columnas del modelo
+            for column in table.columns:
+                if column.name in columnas_existentes:
+                    continue
+                
+                # Esta columna falta: agregarla
+                try:
+                    # Determinar el tipo SQL para ALTER TABLE
+                    col_type = column.type.compile(dialect=db.engine.dialect)
+                    
+                    # Construir el ALTER TABLE
+                    alter_sql = f'ALTER TABLE {schema_name}.{table_name} ADD COLUMN IF NOT EXISTS "{column.name}" {col_type}'
+                    
+                    # Agregar DEFAULT si lo tiene
+                    if column.default is not None and hasattr(column.default, 'arg'):
+                        default_val = column.default.arg
+                        if callable(default_val):
+                            # Default dinámico (ej. datetime.utcnow) - lo evaluamos ahora
+                            try:
+                                default_val = default_val()
+                            except Exception:
+                                continue
+                        
+                        # Formatear el valor para SQL
+                        if isinstance(default_val, str):
+                            alter_sql += f" DEFAULT '{default_val}'"
+                        elif isinstance(default_val, bool):
+                            alter_sql += f" DEFAULT {'TRUE' if default_val else 'FALSE'}"
+                        elif default_val is not None:
+                            alter_sql += f" DEFAULT {default_val}"
+                    
+                    db.session.execute(text(alter_sql))
+                    columnas_agregadas += 1
+                    
+                except Exception as e:
+                    print(f"      ⚠️ No se pudo agregar {table_name}.{column.name}: {e}")
+                    errores += 1
+        
+        db.session.commit()
+        
+    except Exception as e:
+        print(f"      ❌ Error en _sincronizar_columnas_tenant: {e}")
+        db.session.rollback()
+        errores += 1
+    
+    return columnas_agregadas, errores
+
+
 def inicializar_al_arranque():
     """
     Inicializa todos los tenants activos al arrancar la app.
     - Crea tablas si no existen
+    - Sincroniza columnas faltantes (ALTER TABLE)
     - Verifica y crea panadería, configuración, categorías, consecutivo POS
     Se ejecuta 1 sola vez. Nuevos tenants se inicializan desde crear_tenant_saas().
     """
@@ -11649,6 +11731,9 @@ def inicializar_al_arranque():
                 return
             
             print(f"📋 Encontrados {len(tenants_activos)} tenants activos")
+            
+            total_columnas_agregadas = 0
+            total_errores = 0
             
             for tenant in tenants_activos:
                 tenant_id = tenant.id
@@ -11671,10 +11756,19 @@ def inicializar_al_arranque():
                     # 3. Crear tablas si no existen
                     db.create_all()
                     
-                    # 4. Verificar y crear datos base
+                    # 4. NUEVO: Sincronizar columnas faltantes
+                    columnas_agregadas, errores = _sincronizar_columnas_tenant(schema_name)
+                    total_columnas_agregadas += columnas_agregadas
+                    total_errores += errores
+                    
+                    # 5. Verificar y crear datos base
                     verificar_y_crear_datos_tenant(tenant_id)
                     
-                    print(f"   ✅ Tenant {tenant_id} ({tenant.nombre}) inicializado")
+                    # Imprimir resultado del tenant
+                    if columnas_agregadas > 0:
+                        print(f"   ✅ Tenant {tenant_id} ({tenant.nombre}) - {columnas_agregadas} columnas sincronizadas")
+                    else:
+                        print(f"   ✅ Tenant {tenant_id} ({tenant.nombre}) inicializado")
                     
                 except Exception as e:
                     print(f"   ❌ Error inicializando tenant {tenant_id}: {e}")
@@ -11682,7 +11776,10 @@ def inicializar_al_arranque():
                     continue
             
             print("=" * 60)
-            print("✅ INICIALIZACIÓN COMPLETA")
+            print(f"✅ INICIALIZACIÓN COMPLETA")
+            print(f"   📊 Columnas agregadas: {total_columnas_agregadas}")
+            if total_errores > 0:
+                print(f"   ⚠️ Errores: {total_errores}")
             print("=" * 60)
             
         except Exception as e:
