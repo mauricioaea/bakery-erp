@@ -10626,79 +10626,14 @@ def crear_cliente():
                 'nombre': f'Cajero Principal {nombre_panaderia}'
             })
         
-        usuarios_creados = []
+        # =============================================
+        # ✅ LEGADO SQLITE ELIMINADO (2026-09-16)
+        # =============================================
+        # Los usuarios se crean SOLO en PostgreSQL (schema del tenant).
+        # El bloque anterior escribía usuarios en SQLite pero nadie los leía.
+        # Eliminado durante la migración completa a PostgreSQL multi-tenant.
         
         # =============================================
-        # PASO 4: CREAR USUARIOS EN SQLITE (BD del tenant)
-        # =============================================
-        bd_tenant_path = os.path.join('databases_tenants', f'{subdominio}.db')
-        print(f"📁 Creando usuarios en SQLite: {bd_tenant_path}")
-        
-        os.makedirs('databases_tenants', exist_ok=True)
-        
-        if not os.path.exists(bd_tenant_path):
-            plantilla_path = os.path.join('databases_tenants', 'tenant_plantilla.db')
-            if os.path.exists(plantilla_path):
-                shutil.copy2(plantilla_path, bd_tenant_path)
-                print(f"📋 Plantilla copiada a: {bd_tenant_path}")
-            else:
-                print(f"⚠️ No se encontró plantilla en: {plantilla_path}")
-        
-        conn_tenant = sqlite3.connect(bd_tenant_path)
-        cursor_tenant = conn_tenant.cursor()
-        
-        cursor_tenant.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='usuarios'")
-        if not cursor_tenant.fetchone():
-            print("⚠️ Tabla 'usuarios' no encontrada, creándola...")
-            cursor_tenant.execute('''
-                CREATE TABLE IF NOT EXISTS usuarios (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    username TEXT UNIQUE NOT NULL,
-                    password_hash TEXT NOT NULL,
-                    nombre_completo TEXT,
-                    email TEXT,
-                    telefono TEXT,
-                    rol TEXT DEFAULT 'usuario',
-                    activo BOOLEAN DEFAULT 1,
-                    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    panaderia_id INTEGER DEFAULT 1,
-                    tenant_id INTEGER DEFAULT 1
-                )
-            ''')
-        
-        for user_data in usuarios_base:
-            print(f"   🔑 Creando usuario en SQLite: {user_data['username']} con contraseña: {contrasena_temp}")
-            cursor_tenant.execute("SELECT id, activo FROM usuarios WHERE username = ?", (user_data['username'],))
-            existing = cursor_tenant.fetchone()
-            
-            if existing:
-                if existing[1] == 0:
-                    cursor_tenant.execute("UPDATE usuarios SET activo = 1 WHERE username = ?", (user_data['username'],))
-                    print(f"   ✅ Usuario reactivado en SQLite: {user_data['username']}")
-                    usuarios_creados.append(user_data['username'])
-                else:
-                    print(f"   ⚠️ Usuario ya existe y está activo en SQLite: {user_data['username']}")
-                continue
-            
-            cursor_tenant.execute("""
-                INSERT INTO usuarios (username, password_hash, nombre_completo, rol, activo, panaderia_id, tenant_id)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (
-                user_data['username'],
-                generate_password_hash(contrasena_temp),
-                user_data['nombre'],
-                user_data['rol'],
-                1,
-                panaderia_id,
-                tenant_id
-            ))
-            usuarios_creados.append(user_data['username'])
-            print(f"   ✅ Usuario creado en SQLite: {user_data['username']}")
-        
-        conn_tenant.commit()
-        conn_tenant.close()
-        
-                # =============================================
         # ✅ PASO 5: CREAR USUARIOS EN POSTGRESQL (schema del tenant)
         # =============================================
         # NOTA: crear_tenant_saas() YA creó los usuarios en el schema del tenant.
@@ -10742,7 +10677,7 @@ def crear_cliente():
         # Este paso está comentado porque los usuarios deben crearse SOLO en el schema del tenant.
         # El código original causaba problemas de duplicación.
         
-        print(f"✅ {len(usuarios_creados)} usuarios creados/activados en SQLite")
+    
         
         # Mensaje de éxito
         # Reemplazar el flash con:
