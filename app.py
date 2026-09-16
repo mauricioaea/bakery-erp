@@ -1153,86 +1153,11 @@ def crear_tenant_saas(nombre_panaderia, subdominio, email_contacto=None, max_usu
         return False, f"Error creando tenant: {str(e)}", None
     
 # =============================================
-# CREAR USUARIOS PARA UN TENANT (SIEMPRE)
+# ✅ FUNCIÓN LEGADO SQLITE ELIMINADA (2026-09-16)
 # =============================================
-def crear_usuarios_tenant_siempre(tenant_id, tenant_db_path, nombre_panaderia, contrasena_temp=None):
-    """
-    Crea los usuarios admin, super y cajero para un tenant
-    Args:
-        tenant_id: ID del tenant
-        tenant_db_path: Ruta a la BD del tenant
-        nombre_panaderia: Nombre de la panadería
-        contrasena_temp: Contraseña temporal (si no se proporciona, se genera una)
-    Returns:
-        str: Contraseña temporal generada, o None si hay error
-    """
-    import sqlite3
-    
-    import secrets
-    import string
-    
-    try:
-        # ✅ Usar la contraseña proporcionada o generar una nueva
-        if not contrasena_temp:
-            caracteres = string.ascii_letters + string.digits + "!@#$%"
-            contrasena_temp = ''.join(secrets.choice(caracteres) for _ in range(10))
-            print(f"   🔑 Generada nueva contraseña: {contrasena_temp}")
-        else:
-            print(f"   🔑 Usando contraseña proporcionada: {contrasena_temp}")
-        
-        conn = sqlite3.connect(tenant_db_path)
-        cursor = conn.cursor()
-        
-        # Verificar si ya existen usuarios
-        cursor.execute("SELECT COUNT(*) FROM usuarios")
-        count = cursor.fetchone()[0]
-        
-        if count > 0:
-            print(f"   ℹ️ Ya existen {count} usuarios en el tenant")
-            conn.close()
-            return contrasena_temp
-        
-        # Crear usuarios
-        usuarios_base = [
-            {
-                'username': f'admin_{tenant_id}',
-                'rol': 'admin_cliente',
-                'nombre': f'Administrador {nombre_panaderia}'
-            },
-            {
-                'username': f'super_{tenant_id}',
-                'rol': 'supervisor', 
-                'nombre': f'Supervisor {nombre_panaderia}'
-            },
-            {
-                'username': f'cajero_{tenant_id}',
-                'rol': 'cajero',
-                'nombre': f'Cajero Principal {nombre_panaderia}'
-            }
-        ]
-        
-        for user_data in usuarios_base:
-            cursor.execute("""
-                INSERT INTO usuarios (username, password_hash, nombre_completo, rol, activo, panaderia_id)
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (
-                user_data['username'],
-                generate_password_hash(contrasena_temp),  # ✅ Usar la contraseña recibida
-                user_data['nombre'],
-                user_data['rol'],
-                1,  # Siempre activo
-                tenant_id
-            ))
-            print(f"   ✅ Usuario creado: {user_data['username']} ({user_data['rol']})")
-        
-        conn.commit()
-        conn.close()
-        
-        return contrasena_temp
-        
-    except Exception as e:
-        print(f"   ❌ Error creando usuarios: {e}")
-        return None
+# crear_usuarios_tenant_siempre() escribía usuarios en un archivo SQLite
+# que nadie leía. Los usuarios se crean SOLO en PostgreSQL (schemas por tenant).
+# Eliminada durante la migración completa a PostgreSQL multi-tenant.
 
 from tenant_decorators import tenant_required, with_tenant_context, tenant_query, get_current_tenant_id
 from tenant_context import TenantContext
