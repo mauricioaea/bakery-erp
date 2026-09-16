@@ -11542,14 +11542,6 @@ def eliminar_cliente(tenant_id):
         db.session.commit()
         print(f"✅ [ELIMINAR] Secuencia reparada")
         
-        # =============================================
-        # 6. ELIMINAR ARCHIVO SQLITE (si existe)
-        # =============================================
-        db_file = f"databases_tenants/{tenant_subdominio}.db"
-        if os.path.exists(db_file):
-            os.remove(db_file)
-            print(f"✅ [ELIMINAR] BD SQLite eliminada: {db_file}")
-        
         return jsonify({'success': True, 'message': f'Cliente "{tenant_nombre}" eliminado exitosamente'})
         
     except Exception as e:
