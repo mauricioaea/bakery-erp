@@ -11635,6 +11635,7 @@ def _sincronizar_columnas_tenant(schema_name):
     """
     from sqlalchemy import text
     from sqlalchemy import inspect
+    from datetime import datetime, date
     
     columnas_agregadas = 0
     errores = 0
@@ -11671,23 +11672,35 @@ def _sincronizar_columnas_tenant(schema_name):
                     # Construir el ALTER TABLE
                     alter_sql = f'ALTER TABLE {schema_name}.{table_name} ADD COLUMN IF NOT EXISTS "{column.name}" {col_type}'
                     
-                    # Agregar DEFAULT si lo tiene
+                    # Agregar DEFAULT si lo tiene (manejo correcto por tipo)
                     if column.default is not None and hasattr(column.default, 'arg'):
                         default_val = column.default.arg
-                        if callable(default_val):
-                            # Default dinámico (ej. datetime.utcnow) - lo evaluamos ahora
-                            try:
-                                default_val = default_val()
-                            except Exception:
-                                continue
                         
-                        # Formatear el valor para SQL
-                        if isinstance(default_val, str):
-                            alter_sql += f" DEFAULT '{default_val}'"
-                        elif isinstance(default_val, bool):
-                            alter_sql += f" DEFAULT {'TRUE' if default_val else 'FALSE'}"
-                        elif default_val is not None:
-                            alter_sql += f" DEFAULT {default_val}"
+                        # Caso 1: Default dinámico (callable) → usar funciones SQL
+                        if callable(default_val):
+                            func_name = getattr(default_val, '__name__', '').lower()
+                            
+                            if 'utcnow' in func_name or 'now' in func_name:
+                                alter_sql += " DEFAULT CURRENT_TIMESTAMP"
+                            elif 'today' in func_name:
+                                alter_sql += " DEFAULT CURRENT_DATE"
+                            # Otros callables desconocidos → sin DEFAULT (evita errores)
+                        
+                        # Caso 2: Default estático
+                        else:
+                            if isinstance(default_val, bool):
+                                alter_sql += f" DEFAULT {'TRUE' if default_val else 'FALSE'}"
+                            elif isinstance(default_val, (int, float)):
+                                alter_sql += f" DEFAULT {default_val}"
+                            elif isinstance(default_val, str):
+                                # Escapar comillas simples
+                                default_val_escaped = default_val.replace("'", "''")
+                                alter_sql += f" DEFAULT '{default_val_escaped}'"
+                            elif isinstance(default_val, (datetime, date)):
+                                alter_sql += f" DEFAULT '{default_val.isoformat()}'"
+                            elif default_val is not None:
+                                # Último intento: convertir a string y comillas
+                                alter_sql += f" DEFAULT '{str(default_val)}'"
                     
                     db.session.execute(text(alter_sql))
                     columnas_agregadas += 1
