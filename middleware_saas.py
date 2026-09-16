@@ -1,20 +1,19 @@
 #!/usr/bin/env python3
 """
 MIDDLEWARE SAAS - Detección de Tenant y Conexión Dinámica
+(100% PostgreSQL - SQLite eliminado 2026-09-16)
 """
 
-import sqlite3
 import os
-import shutil
 from pathlib import Path
 from flask import request, g, current_app
 import re
 
+
 class GestorTenants:
     def __init__(self, app=None):
         self.app = app
-        self.tenant_master_db = 'tenant_master.db'
-        self.databases_dir = 'databases_tenants'
+        self.databases_dir = 'databases_tenants'  # legado, no se usa para conexión
         
         if app is not None:
             self.init_app(app)
@@ -41,17 +40,15 @@ class GestorTenants:
                 'id': 1,
                 'nombre': 'Panadería Principal',
                 'subdominio': 'principal',
-                'base_datos': 'panaderia_principal.db'
+                'base_datos': 'tenant_1'
             }
             print(f"🔍 MIDDLEWARE DEBUG - Usando tenant por defecto: {tenant_info}")
         
-        # Configurar la conexión a la BD del tenant en el contexto global
+        # Configurar el tenant en el contexto global
         g.tenant = tenant_info
-        g.db_path = os.path.join(self.databases_dir, tenant_info['base_datos'])
         
         print(f"🔍 MIDDLEWARE DEBUG - Configurado:")
         print(f"   Tenant: {tenant_info['nombre']}")
-        print(f"   BD Path: {g.db_path}")
         print(f"   Tenant ID: {tenant_info['id']}")
     
     def obtener_tenant_desde_request(self):
@@ -93,80 +90,39 @@ class GestorTenants:
         return None
     
     def obtener_tenant_desde_bd(self, identificador):
-        """Obtener información del tenant desde la BD maestra"""
+        """
+        Obtener información del tenant desde PostgreSQL (public.tenants).
+        100% PostgreSQL - sin SQLite.
+        """
         try:
-            conn = sqlite3.connect(self.tenant_master_db)
-            cursor = conn.cursor()
+            from models import Tenant
             
-            # Buscar por subdominio o ID
-            cursor.execute('''
-                SELECT id, nombre, subdominio, base_datos, activo, plan
-                FROM tenants 
-                WHERE (subdominio = ? OR id = ?) AND activo = 1
-            ''', (identificador, identificador))
+            # 1. Buscar por subdominio
+            tenant = Tenant.query.filter_by(subdominio=str(identificador), activo=True).first()
             
-            tenant_data = cursor.fetchone()
-            conn.close()
+            # 2. Si no se encuentra y es numérico, buscar por ID
+            if not tenant and str(identificador).isdigit():
+                tenant = Tenant.query.filter_by(id=int(identificador), activo=True).first()
             
-            if tenant_data:
+            if tenant:
                 return {
-                    'id': tenant_data[0],
-                    'nombre': tenant_data[1],
-                    'subdominio': tenant_data[2],
-                    'base_datos': tenant_data[3],
-                    'activo': bool(tenant_data[4]),
-                    'plan': tenant_data[5]
+                    'id': tenant.id,
+                    'nombre': tenant.nombre,
+                    'subdominio': tenant.subdominio,
+                    'base_datos': tenant.base_datos,
+                    'activo': bool(tenant.activo),
+                    'plan': tenant.plan
                 }
             
-        except Exception as e:
-            print(f"❌ Error obteniendo tenant desde BD: {e}")
+            # 3. Si no existe, crear automáticamente (usa PostgreSQL)
+            print(f"⚠️ Tenant no encontrado: {identificador}. Creando automáticamente...")
+            return self.crear_tenant_automatico(identificador)
         
-        # ⬇⬇⬇ NUEVO: SI NO EXISTE, CREAR AUTOMÁTICAMENTE ⬇⬇⬇
-        print(f"⚠️  Tenant no encontrado: {identificador}. Creando automáticamente...")
-        return self.crear_tenant_automatico(identificador)
-    
-    def obtener_conexion_tenant(self):
-        """Obtener conexión a la BD del tenant actual"""
-        if not hasattr(g, 'db_path'):
-            self.detectar_y_configurar_tenant()
-        
-        try:
-            conn = sqlite3.connect(g.db_path)
-            conn.row_factory = sqlite3.Row  # Para acceso por nombre de columna
-            return conn
         except Exception as e:
-            print(f"❌ Error conectando a BD tenant: {e}")
+            print(f"❌ Error obteniendo tenant desde PostgreSQL: {e}")
+            import traceback
+            traceback.print_exc()
             return None
-
-    def obtener_uri_bd_tenant(self):
-        """Obtener URI de base de datos para SQLAlchemy"""
-        if not hasattr(g, 'db_path'):
-            self.detectar_y_configurar_tenant()
-        
-        # Para SQLite
-        if hasattr(g, 'db_path'):
-            return f"sqlite:///{g.db_path}"
-        else:
-            # Fallback a BD principal
-            return "sqlite:///panaderia.db"
-    
-    def obtener_siguiente_panaderia_id(self):
-        """Obtiene el siguiente ID disponible para nueva panadería"""
-        try:
-            conn = sqlite3.connect(self.tenant_master_db)
-            cursor = conn.cursor()
-            
-            cursor.execute("SELECT MAX(id) FROM tenants")
-            max_id = cursor.fetchone()[0]
-            
-            siguiente_id = (max_id or 1) + 1
-            
-            conn.close()
-            return siguiente_id
-            
-        except Exception as e:
-            print(f"⚠️  Error obteniendo siguiente ID: {e}")
-            return 1000  # ID alto para evitar conflictos
     
     def crear_tenant_automatico(self, identificador):
         """Crear un nuevo tenant automáticamente usando PostgreSQL"""
@@ -301,27 +257,12 @@ class GestorTenants:
             db.session.rollback()
             return None
 
+
 # Instancia global del gestor de tenants
 gestor_tenants = GestorTenants()
+
 
 def init_tenants_app(app):
     """Inicializar la aplicación con el sistema de tenants"""
     gestor_tenants.init_app(app)
     return gestor_tenants
-    
-    # =============================================
-    # 🆕 CREAR SCHEMAS PARA TENANTS EXISTENTES
-    # =============================================
-    try:
-        from sqlalchemy import text
-        with app.app_context():
-            # Obtener tenants de la base de datos
-            from models import Tenant
-            tenants = Tenant.query.all()
-            for tenant in tenants:
-                schema_name = f"tenant_{tenant.id}"
-                db.session.execute(text(f"CREATE SCHEMA IF NOT EXISTS {schema_name}"))
-                db.session.commit()
-                print(f"✅ Schema {schema_name} creado/verificado para tenant {tenant.id}")
-    except Exception as e:
-        print(f"⚠️ Error creando schemas: {e}")
