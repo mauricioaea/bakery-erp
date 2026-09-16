@@ -10698,20 +10698,23 @@ def crear_cliente():
         conn_tenant.commit()
         conn_tenant.close()
         
-        # =============================================
+                # =============================================
         # ✅ PASO 5: CREAR USUARIOS EN POSTGRESQL (schema del tenant)
         # =============================================
-        print(f"📝 Creando usuarios en PostgreSQL (schema tenant_{tenant_id})...")
+        # NOTA: crear_tenant_saas() YA creó los usuarios en el schema del tenant.
+        # Este bloque es defensivo: verifica e inserta solo si faltan (ON CONFLICT DO NOTHING).
+        print(f"📝 Verificando usuarios en PostgreSQL (schema tenant_{tenant_id})...")
         schema_name = f"tenant_{tenant_id}"
         
         for user_data in usuarios_base:
             try:
-                db.session.execute(
+                result = db.session.execute(
                     text(f"""
                         INSERT INTO {schema_name}.usuarios 
                         (username, password_hash, nombre_completo, rol, activo, panaderia_id, tenant_id)
                         VALUES 
                         (:username, :password_hash, :nombre_completo, :rol, :activo, :panaderia_id, :tenant_id)
+                        ON CONFLICT (username) DO NOTHING
                     """),
                     {
                         'username': user_data['username'],
@@ -10723,12 +10726,15 @@ def crear_cliente():
                         'tenant_id': tenant_id
                     }
                 )
-                print(f"   ✅ Usuario creado en PostgreSQL: {user_data['username']}")
+                if result.rowcount > 0:
+                    print(f"   ✅ Usuario creado en PostgreSQL: {user_data['username']}")
+                else:
+                    print(f"   ℹ️ Usuario ya existía en PostgreSQL: {user_data['username']}")
             except Exception as e:
                 print(f"   ⚠️ Error creando usuario {user_data['username']} en PostgreSQL: {e}")
         
         db.session.commit()
-        print(f"✅ Usuarios creados en PostgreSQL para tenant {tenant_id}")
+        print(f"✅ Usuarios verificados en PostgreSQL para tenant {tenant_id}")
         
         # =============================================
         # ⚠️ COMENTADO: PASO 6 - VERIFICAR EN BD PRINCIPAL
