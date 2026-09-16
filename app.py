@@ -11104,87 +11104,7 @@ def obtener_usuarios_panaderia(panaderia_id):
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
     
-@app.route('/obtener_datos_cliente/<int:cliente_id>')
-@login_required
-@permisos_requeridos('clientes', 'ver')
-def obtener_datos_cliente(cliente_id):
-    """Obtener datos de un cliente específico para edición"""
-    # ✅ VERIFICACIÓN SEGURA
-    try:
-        if not hasattr(current_user, 'is_authenticated') or not current_user.is_authenticated:
-            return jsonify({'error': 'No autenticado'}), 401
-            
-        if not hasattr(current_user, 'rol') or current_user.rol != 'super_admin':
-            return jsonify({'error': 'No autorizado'}), 403
-    except Exception as e:
-        return jsonify({'error': 'Error de autenticación'}), 401
-    
-    # ... resto del código de la función ...
-    try:
-        from models import ConfiguracionPanaderia
-        cliente = db.get_or_404(ConfiguracionPanaderia, cliente_id)
-        
-        # Determinar estado de suscripción
-        estado = "ACTIVA"
-        if cliente.fecha_expiracion:
-            hoy = date.today()
-            if cliente.fecha_expiracion < hoy:
-                estado = "VENCIDA"
-            elif (cliente.fecha_expiracion - hoy).days <= 7:
-                estado = "POR_VENCER"
-        
-        return jsonify({
-            'id': cliente.id,
-            'nombre_panaderia': cliente.nombre_panaderia,
-            'telefono_contacto': cliente.telefono_contacto,
-            'direccion': cliente.direccion,
-            'tipo_licencia': cliente.tipo_licencia,
-            'max_usuarios': cliente.max_usuarios,
-            'fecha_expiracion': cliente.fecha_expiracion.strftime('%Y-%m-%d') if cliente.fecha_expiracion else None,
-            'estado_suscripcion': estado,
-            'activo': cliente.activo
-        })
-    except Exception as e:
-        print(f"❌ Error en obtener_datos_cliente: {e}")
-        return jsonify({'error': str(e)}), 500
 
-@app.route('/editar_cliente', methods=['POST'])
-@login_required
-@permisos_requeridos('clientes', 'gestionar')
-def editar_cliente():
-    """Editar datos de un cliente existente"""
-    if current_user.rol != 'super_admin':
-        return jsonify({'success': False, 'error': 'No autorizado'})
-    
-    try:
-        from models import ConfiguracionPanaderia
-        cliente_id = request.form.get('cliente_id')
-        cliente = db.get_or_404(ConfiguracionPanaderia, cliente_id)
-        
-        # Actualizar datos
-        cliente.nombre_panaderia = request.form.get('nombre_panaderia')
-        cliente.telefono_contacto = request.form.get('telefono_contacto')
-        cliente.direccion = request.form.get('direccion')
-        cliente.tipo_licencia = request.form.get('tipo_licencia')
-        cliente.max_usuarios = int(request.form.get('max_usuarios'))
-        cliente.dias_gracia = int(request.form.get('dias_gracia', 7))
-        cliente.razon_social = request.form.get('razon_social')
-        cliente.nit = request.form.get('nit')
-        
-        # Manejar fecha de expiración
-        fecha_expiracion = request.form.get('fecha_expiracion')
-        if cliente.tipo_licencia != 'local' and fecha_expiracion:
-            cliente.fecha_expiracion = datetime.strptime(fecha_expiracion, '%Y-%m-%d').date()
-        elif cliente.tipo_licencia == 'local':
-            cliente.fecha_expiracion = None
-        
-        db.session.commit()
-        
-        return jsonify({'success': True, 'message': 'Cliente actualizado correctamente'})
-        
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)})
     
 # =============================================
 # 🆕 RUTAS PARA LOS 3 BOTONES DE GESTIÓN DE CLIENTES (VERSIÓN CORREGIDA)
@@ -11250,8 +11170,12 @@ def editar_cliente_super():
         cliente.telefono_contacto = request.form.get('telefono_contacto')
         cliente.direccion = request.form.get('direccion')
         cliente.tipo_licencia = request.form.get('tipo_licencia')
-        cliente.max_usuarios = int(request.form.get('max_usuarios'))
-        cliente.dias_gracia = int(request.form.get('dias_gracia', 7))
+        # ✅ Validar campos numéricos (evitar int('') y int(None))
+        max_usuarios_str = (request.form.get('max_usuarios') or '').strip()
+        cliente.max_usuarios = int(max_usuarios_str) if max_usuarios_str else 3
+        
+        dias_gracia_str = (request.form.get('dias_gracia') or '').strip()
+        cliente.dias_gracia = int(dias_gracia_str) if dias_gracia_str else 7
         cliente.razon_social = request.form.get('razon_social')
         cliente.nit = request.form.get('nit')
         

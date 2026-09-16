@@ -855,25 +855,38 @@
     // =============================================
     // 🆕 FUNCIÓN: Editar Cliente (Cargar Datos)
     // =============================================
-    function cargarDatosCliente(clienteId) {
+        function cargarDatosCliente(clienteId) {
         console.log('🔍 cargarDatosCliente llamado con ID:', clienteId);
         
-        fetch(`/obtener_datos_cliente/${clienteId}`)
+        fetch(`/obtener_datos_cliente_super/${clienteId}`)
             .then(response => response.json())
             .then(data => {
-                console.log('📦 Datos recibidos:', data);
+                console.log('📦 Respuesta recibida:', data);
                 
-                document.getElementById('editarClienteId').value = data.id;
-                document.getElementById('editarNombre').value = data.nombre_panaderia || '';
-                document.getElementById('editarTelefono').value = data.telefono_contacto || '';
-                document.getElementById('editarDireccion').value = data.direccion || '';
-                document.getElementById('editarTipoLicencia').value = data.tipo_licencia || 'local';
-                document.getElementById('editarMaxUsuarios').value = data.max_usuarios || 3;
-                document.getElementById('editarRazonSocial').value = data.razon_social || '';
-                document.getElementById('editarNit').value = data.nit || '';
+                if (!data.success) {
+                    alert('Error: ' + (data.error || 'No se pudieron cargar los datos'));
+                    return;
+                }
                 
-                if (data.fecha_expiracion) {
-                    document.getElementById('editarFechaExpiracion').value = data.fecha_expiracion;
+                const cliente = data.data;   // ✅ La ruta devuelve {success, data}
+                
+                document.getElementById('editarClienteId').value = cliente.id || '';
+                document.getElementById('editarNombre').value = cliente.nombre_panaderia || '';
+                document.getElementById('editarTelefono').value = cliente.telefono_contacto || '';
+                document.getElementById('editarDireccion').value = cliente.direccion || '';
+                document.getElementById('editarTipoLicencia').value = cliente.tipo_licencia || 'local';
+                document.getElementById('editarMaxUsuarios').value = cliente.max_usuarios || 3;
+                document.getElementById('editarRazonSocial').value = cliente.razon_social || '';
+                document.getElementById('editarNit').value = cliente.nit || '';
+                
+                // ✅ Días de gracia (también viene en la respuesta)
+                if (document.getElementById('editarDiasGracia')) {
+                    document.getElementById('editarDiasGracia').value = cliente.dias_gracia || 7;
+                }
+                
+                // ✅ Mostrar/ocultar fecha de expiración según tipo de licencia
+                if (cliente.fecha_expiracion && cliente.tipo_licencia !== 'local') {
+                    document.getElementById('editarFechaExpiracion').value = cliente.fecha_expiracion;
                     document.getElementById('editarFechaExpiracionGroup').style.display = 'flex';
                 } else {
                     document.getElementById('editarFechaExpiracionGroup').style.display = 'none';
