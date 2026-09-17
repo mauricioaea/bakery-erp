@@ -853,6 +853,7 @@ def obtener_configuracion_panaderia_segura(panaderia_id):
     """
     Obtiene la configuración de una panadería asegurando que se use el schema correcto.
     SOLO busca en el schema del tenant, NO crea configuraciones en public.
+    ✅ Respeta g.search_path_override si está seteado.
     """
     from sqlalchemy import text
     
@@ -863,12 +864,9 @@ def obtener_configuracion_panaderia_segura(panaderia_id):
     try:
         schema_name = f"tenant_{panaderia_id}"
         
-        # ✅ FORZAR el schema para la sesión de SQLAlchemy
+        # ✅ FORZAR el schema para la sesión de SQLAlchemy (respetando override)
         db.session.execute(text(f"SET search_path TO {schema_name}"))
         db.session.commit()
-        
-        # ✅ Verificar que el cambio de schema funcionó
-        current_schema = db.session.execute(text("SELECT current_schema()")).scalar()
         
         # ✅ Buscar configuración en el schema actual
         config = ConfiguracionPanaderia.query.filter_by(panaderia_id=panaderia_id).first()
@@ -894,9 +892,6 @@ def obtener_configuracion_panaderia_segura(panaderia_id):
                 fecha_expiracion=result[4]
             )
             # ⚠️ NO HACER db.session.add(config) - SOLO USAR EL OBJETO
-        else:
-            # ✅ Silenciar mensajes de error para evitar ruido en inicio
-            pass
         
         db.session.execute(text("SET search_path TO public"))
         db.session.commit()
@@ -1278,6 +1273,10 @@ def configurar_search_path_en_checkout(dbapi_connection, connection_record, conn
     """
     Se ejecuta en cada checkout de conexión del pool.
     Configura el search_path según el tenant actual del request.
+    
+    ✅ PRIORIDAD:
+    1. Si g.search_path_override está seteado → usarlo (permite cambiar schema explícitamente)
+    2. Si no → usar el tenant del usuario actual
     """
     try:
         from flask import g, session, has_request_context
@@ -1286,35 +1285,41 @@ def configurar_search_path_en_checkout(dbapi_connection, connection_record, conn
         if not has_request_context():
             return
 
-        # Obtener tenant_id del contexto (mismo orden de prioridad que el before_request)
-        tenant_id = None
+        # ✅ PRIORIDAD 1: Override explícito desde la ruta
+        search_path_final = None
+        if hasattr(g, 'search_path_override') and g.search_path_override:
+            search_path_final = g.search_path_override
+        else:
+            # ✅ PRIORIDAD 2: Determinar tenant_id del contexto
+            tenant_id = None
 
-        # 1. Intentar desde g.tenant (configurado por before_request)
-        if hasattr(g, 'tenant') and g.tenant:
-            tenant_id = g.tenant.get('id')
+            # 1. Intentar desde g.tenant (configurado por before_request)
+            if hasattr(g, 'tenant') and g.tenant:
+                tenant_id = g.tenant.get('id')
 
-        # 2. Si no hay, desde current_user (si está autenticado)
-        if not tenant_id:
-            try:
-                from flask_login import current_user
-                if hasattr(current_user, 'is_authenticated') and current_user.is_authenticated:
-                    tenant_id = getattr(current_user, 'panaderia_id', None)
-            except Exception:
-                pass
+            # 2. Si no hay, desde current_user (si está autenticado)
+            if not tenant_id:
+                try:
+                    from flask_login import current_user
+                    if hasattr(current_user, 'is_authenticated') and current_user.is_authenticated:
+                        tenant_id = getattr(current_user, 'panaderia_id', None)
+                except Exception:
+                    pass
 
-        # 3. Fallback: desde session
-        if not tenant_id:
-            tenant_id = session.get('tenant_id')
+            # 3. Fallback: desde session
+            if not tenant_id:
+                tenant_id = session.get('tenant_id')
 
-        # Si no hay tenant identificado, no tocar el search_path
-        if not tenant_id:
-            return
+            # Si no hay tenant identificado, no tocar el search_path
+            if not tenant_id:
+                return
+
+            search_path_final = f"tenant_{tenant_id}, public"
 
         # Aplicar SET search_path directamente en la conexión DBAPI
-        schema_name = f"tenant_{tenant_id}"
         cursor = dbapi_connection.cursor()
         try:
-            cursor.execute(f'SET search_path TO {schema_name}, public')
+            cursor.execute(f'SET search_path TO {search_path_final}')
         finally:
             cursor.close()
 
@@ -2043,8 +2048,12 @@ def login():
                         panaderia_id=user.panaderia_id
                     ).first()
                 
+                                # ✅ FIX: super_admin NUNCA es bloqueado por verificación de licencia
+                # Solo verificamos licencia para usuarios clientes (admin_cliente, supervisor, cajero)
+                es_super_admin = (user.rol == 'super_admin')
+                
                 # Verificar si la licencia es de tipo local (permanente) o tiene fecha de expiración
-                if config and config.tipo_licencia != 'local' and config.fecha_expiracion:
+                if not es_super_admin and config and config.tipo_licencia != 'local' and config.fecha_expiracion:
                     hoy = datetime.now().date()
                     
                     # ✅ CORREGIDO: Convertir a date si es datetime
@@ -7093,16 +7102,30 @@ def realizar_cierre():
         else:
             # ✅ Fallback: crear configuración manualmente (por si la función helper falla)
             from sqlalchemy import text
-            db.session.execute(text(f"SET search_path TO tenant_{panaderia_id}"))
-            nueva_config = ConfiguracionPanaderia(
-                panaderia_id=panaderia_id,
-                nombre_panaderia=f"Panadería {panaderia_id}",
-                sistema_activo=True,
-                activo=True,
-                ultimo_cierre=fecha_actual
-            )
-            db.session.add(nueva_config)
-            db.session.commit()
+            schema_name = f"tenant_{panaderia_id}"
+            g.search_path_override = f"{schema_name}, public"
+            db.session.execute(text(f"SET search_path TO {schema_name}, public"))
+            
+            # ✅ Verificar que NO existe antes de crear
+            existe = db.session.execute(
+                text(f"SELECT 1 FROM {schema_name}.configuracion_panaderia WHERE panaderia_id = :pid LIMIT 1"),
+                {'pid': panaderia_id}
+            ).fetchone()
+            
+            if not existe:
+                nueva_config = ConfiguracionPanaderia(
+                    panaderia_id=panaderia_id,
+                    nombre_panaderia=f"Panadería {panaderia_id}",
+                    sistema_activo=True,
+                    activo=True,
+                    ultimo_cierre=fecha_actual
+                )
+                db.session.add(nueva_config)
+                db.session.commit()
+            
+            # ✅ Limpiar override
+            if hasattr(g, 'search_path_override'):
+                del g.search_path_override
         
         # ✅ CREAR DEPÓSITO AUTOMÁTICO PARA EFECTIVO
         deposito_creado = False
@@ -10408,7 +10431,8 @@ def gestion_clientes():
             # ✅ Crear objeto combinado con días reales
             configuraciones.append({
                 'id': tenant.id,
-                'nombre': tenant.nombre,
+                'panaderia_id': tenant.id,
+                'nombre': result[2] if result and result[2] else tenant.nombre,   # ✅ Lee de configuracion_panaderia
                 'plan': tipo_licencia,
                 'tipo_licencia': tipo_licencia,
                 'activo': tenant.activo,
@@ -10422,6 +10446,7 @@ def gestion_clientes():
             # Fallback: usar datos por defecto
             configuraciones.append({
                 'id': tenant.id,
+                'panaderia_id': tenant.id,
                 'nombre': tenant.nombre,
                 'plan': 'local',
                 'tipo_licencia': 'local',
@@ -11120,7 +11145,19 @@ def obtener_datos_cliente_super(cliente_id):
     
     try:
         from models import ConfiguracionPanaderia
-        cliente = db.get_or_404(ConfiguracionPanaderia, cliente_id)
+        from sqlalchemy import text
+        
+        # ✅ Cambiar al schema del tenant del cliente
+        schema_name = f"tenant_{cliente_id}"
+        g.search_path_override = f"{schema_name}, public"
+        db.session.execute(text(f"SET search_path TO {schema_name}, public"))
+        
+        cliente = ConfiguracionPanaderia.query.filter_by(panaderia_id=cliente_id).first()
+        if not cliente:
+            # ✅ Limpiar override antes de retornar error
+            if hasattr(g, 'search_path_override'):
+                del g.search_path_override
+            return jsonify({'success': False, 'error': f'Cliente {cliente_id} no encontrado'})
         
         # Determinar estado de suscripción
         estado_suscripcion = 'activa'
@@ -11130,6 +11167,10 @@ def obtener_datos_cliente_super(cliente_id):
                 estado_suscripcion = 'expirada'
             elif (cliente.fecha_expiracion - datetime.now().date()).days <= 7:
                 estado_suscripcion = 'por_vencer'
+        
+        # ✅ Limpiar override ANTES de retornar
+        if hasattr(g, 'search_path_override'):
+            del g.search_path_override
         
         return jsonify({
             'success': True,
@@ -11148,6 +11189,9 @@ def obtener_datos_cliente_super(cliente_id):
             }
         })
     except Exception as e:
+        # ✅ Limpiar override en caso de error
+        if hasattr(g, 'search_path_override'):
+            del g.search_path_override
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/editar_cliente_super', methods=['POST'])
@@ -11161,9 +11205,23 @@ def editar_cliente_super():
     try:
         from models import ConfiguracionPanaderia
         from datetime import datetime
+        from sqlalchemy import text
         
         cliente_id = request.form.get('cliente_id')
-        cliente = db.get_or_404(ConfiguracionPanaderia, cliente_id)
+        if not cliente_id:
+            return jsonify({'success': False, 'error': 'ID de cliente no proporcionado'})
+        
+        # ✅ Cambiar al schema del tenant del cliente
+        schema_name = f"tenant_{cliente_id}"
+        g.search_path_override = f"{schema_name}, public"
+        db.session.execute(text(f"SET search_path TO {schema_name}, public"))
+        
+        cliente = ConfiguracionPanaderia.query.filter_by(panaderia_id=cliente_id).first()
+        if not cliente:
+            # ✅ Limpiar override antes de retornar error
+            if hasattr(g, 'search_path_override'):
+                del g.search_path_override
+            return jsonify({'success': False, 'error': f'Cliente {cliente_id} no encontrado'})
         
         # Actualizar datos
         cliente.nombre_panaderia = request.form.get('nombre_panaderia')
@@ -11188,10 +11246,17 @@ def editar_cliente_super():
         
         db.session.commit()
         
+        # ✅ Limpiar override ANTES de retornar
+        if hasattr(g, 'search_path_override'):
+            del g.search_path_override
+        
         return jsonify({'success': True, 'message': 'Cliente actualizado correctamente'})
         
     except Exception as e:
         db.session.rollback()
+        # ✅ Limpiar override en caso de error
+        if hasattr(g, 'search_path_override'):
+            del g.search_path_override
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/renovar_suscripcion_super', methods=['POST'])

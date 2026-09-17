@@ -256,7 +256,8 @@
                                             {% if config.fecha_expiracion %}
                                                 {{ config.fecha_expiracion.strftime('%d/%m/%Y') }}
                                                 <br>
-                                                <small class="text-{% if config.dias_para_expiracion > 30 %}success{% elif config.dias_para_expiracion > 0 %}warning{% else %}danger{% endif %}">
+                                                {% set _dias = config.dias_para_expiracion %}
+                                                <small class="text-{% if _dias is not none and _dias > 30 %}success{% elif _dias is not none and _dias > 0 %}warning{% else %}danger{% endif %}">
                                                     {% if config.dias_para_expiracion is not none %}
                                                         {{ config.dias_para_expiracion }} días
                                                     {% else %}
@@ -271,7 +272,7 @@
                                             <!-- BOTÓN PARA VER USUARIOS - SOLO SUPER_ADMIN -->
                                             {% if current_user.rol == 'super_admin' %}
                                             <button class="btn btn-info btn-sm" 
-                                                    onclick="verUsuariosCliente({{ config.id }}, '{{ config.nombre }}')"
+                                                    onclick="verUsuariosCliente({{ config.panaderia_id }}, '{{ config.nombre }}')"
                                                     title="Ver usuarios de {{ config.nombre }}">
                                                 <i class="fas fa-users me-1"></i>Ver
                                             </button>
@@ -283,12 +284,12 @@
                                             <div class="btn-group btn-group-sm">
                                                 {% if current_user.rol == 'super_admin' %}
                                                 <button class="btn btn-outline-primary" 
-                                                        onclick="cargarDatosCliente({{ config.id }})"
+                                                        onclick="cargarDatosCliente({{ config.panaderia_id }})"
                                                         title="Editar Cliente">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
                                                 <button class="btn btn-outline-success"
-                                                        onclick="cargarDatosRenovacion({{ config.id }})"
+                                                        onclick="cargarDatosRenovacion({{ config.panaderia_id }})"
                                                         title="Renovar Suscripción">
                                                     <i class="fas fa-sync-alt"></i>
                                                 </button>
@@ -298,17 +299,17 @@
                                                     <input type="checkbox" 
                                                         id="toggle-{{ config.id }}"
                                                         {% if config.activo == 1 %}checked{% endif %}
-                                                        onchange="toggleCliente({{ config.id }}, this.checked)">
+                                                        onchange="toggleCliente({{ config.panaderia_id }}, this.checked)">
                                                     <span class="toggle-slider"></span>
                                                 </label>
                                                 <!-- 🆕 Botón Cambiar Licencia -->
                                                 <button class="btn btn-outline-warning btn-sm" 
-                                                        onclick="abrirModalCambiarLicencia({{ config.id }}, '{{ config.nombre }}', '{{ config.tipo_licencia }}')"
+                                                        onclick="abrirModalCambiarLicencia({{ config.panaderia_id }}, '{{ config.nombre }}', '{{ config.tipo_licencia }}')"
                                                         title="Cambiar Licencia">
                                                     <i class="fas fa-exchange-alt"></i>
                                                 </button>
                                                 <button class="btn btn-outline-danger" 
-                                                        onclick="eliminarCliente({{ config.id }}, '{{ config.nombre }}')"
+                                                        onclick="eliminarCliente({{ config.panaderia_id }}, '{{ config.nombre }}')"
                                                         title="Eliminar Cliente">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
@@ -900,6 +901,49 @@
                 alert('Error al cargar datos del cliente');
             });
     }
+        // =============================================
+    // 🆕 FUNCIÓN: Guardar Edición de Cliente (AJAX)
+    // =============================================
+    document.addEventListener('DOMContentLoaded', function() {
+        const formEditar = document.getElementById('formEditarCliente');
+        if (formEditar) {
+            formEditar.addEventListener('submit', function(e) {
+                e.preventDefault();  // ✅ Evitar el submit tradicional
+                
+                console.log('💾 Enviando edición de cliente...');
+                
+                const formData = new FormData(formEditar);
+                
+                fetch('/editar_cliente_super', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('📦 Respuesta guardado:', data);
+                    
+                    if (data.success) {
+                        // Cerrar el modal
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('editarClienteModal'));
+                        if (modal) modal.hide();
+                        
+                        // Mostrar mensaje de éxito
+                        alert('✅ ' + (data.message || 'Cliente actualizado correctamente'));
+                        
+                        // Recargar la página para ver los cambios
+                        window.location.reload();
+                    } else {
+                        alert('❌ Error: ' + (data.error || 'No se pudo actualizar el cliente'));
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Error:', error);
+                    alert('❌ Error de conexión: ' + error.message);
+                });
+            });
+        }
+    });
+    
 
     // =============================================
     // 🆕 FUNCIÓN: Cargar Datos para Renovación

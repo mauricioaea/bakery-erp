@@ -237,7 +237,7 @@ class Categoria(db.Model):
 
 class ConfiguracionPanaderia(db.Model):
     __tablename__ = 'configuracion_panaderia'
-    __table_args__ = {'schema': 'public'}
+    
     
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)# ✅ PRIMARY KEY PRIMERO Y AUTOINCREMENT
     panaderia_id = db.Column(db.Integer, nullable=False, default=1)
@@ -321,7 +321,11 @@ class ConfiguracionPanaderia(db.Model):
         
         if self.fecha_expiracion:
             from datetime import datetime
-            dias_restantes = (self.fecha_expiracion - datetime.now().date()).days
+            fecha = self.fecha_expiracion
+            # ✅ Convertir datetime a date si es necesario
+            if isinstance(fecha, datetime):
+                fecha = fecha.date()
+            dias_restantes = (fecha - datetime.now().date()).days
             return dias_restantes + self.dias_gracia > 0
         
         return True
@@ -333,7 +337,12 @@ class ConfiguracionPanaderia(db.Model):
             return 999
         
         from datetime import datetime
-        dias = (self.fecha_expiracion - datetime.now().date()).days
+        fecha = self.fecha_expiracion
+        # ✅ Convertir datetime a date si es necesario
+        if isinstance(fecha, datetime):
+            fecha = fecha.date()
+        
+        dias = (fecha - datetime.now().date()).days
         return dias
     
     @property
@@ -375,7 +384,11 @@ class ConfiguracionPanaderia(db.Model):
             return
         
         from datetime import datetime
-        dias_restantes = (self.fecha_expiracion - datetime.now().date()).days
+        fecha = self.fecha_expiracion
+        # ✅ Convertir datetime a date si es necesario
+        if isinstance(fecha, datetime):
+            fecha = fecha.date()
+        dias_restantes = (fecha - datetime.now().date()).days
         
         if dias_restantes + self.dias_gracia < 0:
             self.estado_suscripcion = 'bloqueada'
