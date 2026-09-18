@@ -871,7 +871,7 @@
                 
                 const cliente = data.data;   // ✅ La ruta devuelve {success, data}
                 
-                document.getElementById('editarClienteId').value = cliente.id || '';
+                document.getElementById('editarClienteId').value = cliente.panaderia_id || cliente.id || '';
                 document.getElementById('editarNombre').value = cliente.nombre_panaderia || '';
                 document.getElementById('editarTelefono').value = cliente.telefono_contacto || '';
                 document.getElementById('editarDireccion').value = cliente.direccion || '';
@@ -946,7 +946,7 @@
     
 
     // =============================================
-    // 🆕 FUNCIÓN: Cargar Datos para Renovación
+    // 🆕 FUNCIÓN: Cargar Datos para Renovación (CORREGIDA)
     // =============================================
     function cargarDatosRenovacion(clienteId) {
         console.log('🔍 cargarDatosRenovacion llamado con ID:', clienteId);
@@ -961,25 +961,52 @@
                 }
                 return response.json();
             })
-            .then(data => {
-                console.log('📦 Datos recibidos:', data);
+            .then(respuesta => {
+                console.log('📦 Respuesta recibida:', respuesta);
                 
-                // ✅ Asignar el ID al campo oculto del formulario
+                // ✅ VALIDAR ÉXITO
+                if (!respuesta.success) {
+                    alert('Error: ' + (respuesta.error || 'No se pudieron cargar los datos'));
+                    return;
+                }
+                
+                // ✅ EXTRAER data.data (el objeto cliente real)
+                const cliente = respuesta.data;
+                
+                // ✅ Asignar el ID (panaderia_id) al campo oculto del formulario
                 const idField = document.getElementById('renovarClienteId');
                 if (idField) {
-                    idField.value = data.id || clienteId;
+                    idField.value = cliente.panaderia_id || clienteId;
                 }
                 
-                document.getElementById('renovarNombreActual').textContent = data.nombre_panaderia || 'N/A';
-                document.getElementById('renovarLicenciaActual').textContent = data.tipo_licencia || 'N/A';
-                document.getElementById('renovarVencimientoActual').textContent = data.fecha_expiracion || 'No aplica';
-                document.getElementById('renovarEstadoActual').textContent = data.estado_suscripcion || 'ACTIVA';
+                // ✅ Rellenar el bloque "Información Actual" con cliente.* (no data.*)
+                document.getElementById('renovarNombreActual').textContent = cliente.nombre_panaderia || 'N/A';
+                document.getElementById('renovarLicenciaActual').textContent = cliente.tipo_licencia || 'N/A';
+                document.getElementById('renovarVencimientoActual').textContent = cliente.fecha_expiracion || 'No aplica';
+                document.getElementById('renovarEstadoActual').textContent = (cliente.estado_suscripcion || 'activa').toUpperCase();
                 
-                // ✅ Si tiene fecha de expiración, mostrarla
-                if (data.fecha_expiracion) {
-                    document.getElementById('renovarNuevaFecha').value = data.fecha_expiracion;
+                // ✅ Pre-seleccionar el tipo de licencia actual en el <select>
+                const selectLicencia = document.getElementById('renovarTipoLicencia');
+                if (selectLicencia && cliente.tipo_licencia) {
+                    selectLicencia.value = cliente.tipo_licencia;
+                    // Disparar el onchange para mostrar/ocultar campos según el tipo
+                    if (typeof toggleRenovarOpciones === 'function') {
+                        toggleRenovarOpciones();
+                    }
                 }
                 
+                // ✅ Pre-rellenar el límite de usuarios actual
+                const inputMaxUsuarios = document.getElementById('renovarMaxUsuarios');
+                if (inputMaxUsuarios && cliente.max_usuarios) {
+                    inputMaxUsuarios.value = cliente.max_usuarios;
+                }
+                
+                // ✅ Si tiene fecha de expiración, mostrarla en "Nueva Fecha de Vencimiento"
+                if (cliente.fecha_expiracion) {
+                    document.getElementById('renovarNuevaFecha').value = cliente.fecha_expiracion;
+                }
+                
+                // ✅ Abrir el modal
                 const modal = new bootstrap.Modal(document.getElementById('renovarSuscripcionModal'));
                 modal.show();
             })

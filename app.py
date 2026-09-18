@@ -11139,124 +11139,155 @@ def obtener_usuarios_panaderia(panaderia_id):
 @login_required
 @permisos_requeridos('clientes', 'ver')
 def obtener_datos_cliente_super(cliente_id):
-    """Obtener datos de un cliente específico para edición (SUPER ADMIN)"""
+    """Obtener datos de un cliente específico para edición (SUPER ADMIN) - SQL DIRECTO CALIFICADO"""
+    print(f"🔍🔍🔍 DEBUG obtener_datos_cliente_super: cliente_id={cliente_id}")
     if current_user.rol != 'super_admin':
         return jsonify({'success': False, 'error': 'No autorizado'})
     
     try:
-        from models import ConfiguracionPanaderia
         from sqlalchemy import text
+        from datetime import datetime
         
-        # ✅ Cambiar al schema del tenant del cliente
         schema_name = f"tenant_{cliente_id}"
-        g.search_path_override = f"{schema_name}, public"
-        db.session.execute(text(f"SET search_path TO {schema_name}, public"))
         
-        cliente = ConfiguracionPanaderia.query.filter_by(panaderia_id=cliente_id).first()
-        if not cliente:
-            # ✅ Limpiar override antes de retornar error
-            if hasattr(g, 'search_path_override'):
-                del g.search_path_override
+        # ✅ SQL DIRECTO CON SCHEMA CALIFICADO (no depende del search_path)
+        result = db.session.execute(
+            text(f"""
+                SELECT id, panaderia_id, nombre_panaderia, telefono_contacto, 
+                       direccion, tipo_licencia, max_usuarios, fecha_expiracion, 
+                       dias_gracia, razon_social, nit
+                FROM {schema_name}.configuracion_panaderia
+                WHERE panaderia_id = :pid
+                LIMIT 1
+            """),
+            {'pid': cliente_id}
+        ).fetchone()
+        
+        if not result:
             return jsonify({'success': False, 'error': f'Cliente {cliente_id} no encontrado'})
         
         # Determinar estado de suscripción
         estado_suscripcion = 'activa'
-        if cliente.tipo_licencia != 'local' and cliente.fecha_expiracion:
-            from datetime import datetime
-            if cliente.fecha_expiracion < datetime.now().date():
+        fecha_expiracion = result[7]
+        tipo_licencia = result[5]
+        if tipo_licencia != 'local' and fecha_expiracion:
+            # ✅ Convertir datetime a date si es necesario
+            if isinstance(fecha_expiracion, datetime):
+                fecha_expiracion = fecha_expiracion.date()
+            if fecha_expiracion < datetime.now().date():
                 estado_suscripcion = 'expirada'
-            elif (cliente.fecha_expiracion - datetime.now().date()).days <= 7:
+            elif (fecha_expiracion - datetime.now().date()).days <= 7:
                 estado_suscripcion = 'por_vencer'
-        
-        # ✅ Limpiar override ANTES de retornar
-        if hasattr(g, 'search_path_override'):
-            del g.search_path_override
         
         return jsonify({
             'success': True,
             'data': {
-                'id': cliente.id,
-                'nombre_panaderia': cliente.nombre_panaderia,
-                'telefono_contacto': cliente.telefono_contacto,
-                'direccion': cliente.direccion,
-                'tipo_licencia': cliente.tipo_licencia,
-                'max_usuarios': cliente.max_usuarios,
-                'fecha_expiracion': cliente.fecha_expiracion.strftime('%Y-%m-%d') if cliente.fecha_expiracion else None,
-                'dias_gracia': cliente.dias_gracia,
-                'razon_social': cliente.razon_social,
-                'nit': cliente.nit,
+                'id': result[0],
+                'panaderia_id': result[1],
+                'nombre_panaderia': result[2],
+                'telefono_contacto': result[3],
+                'direccion': result[4],
+                'tipo_licencia': result[5],
+                'max_usuarios': result[6],
+                'fecha_expiracion': fecha_expiracion.strftime('%Y-%m-%d') if fecha_expiracion else None,
+                'dias_gracia': result[8],
+                'razon_social': result[9],
+                'nit': result[10],
                 'estado_suscripcion': estado_suscripcion
             }
         })
     except Exception as e:
-        # ✅ Limpiar override en caso de error
-        if hasattr(g, 'search_path_override'):
-            del g.search_path_override
+        print(f"❌ Error en obtener_datos_cliente_super: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/editar_cliente_super', methods=['POST'])
 @login_required
 @permisos_requeridos('clientes', 'gestionar')
 def editar_cliente_super():
-    """Editar datos de un cliente existente (SUPER ADMIN)"""
+    """Editar datos de un cliente existente (SUPER ADMIN) - SQL DIRECTO CALIFICADO"""
     if current_user.rol != 'super_admin':
         return jsonify({'success': False, 'error': 'No autorizado'})
     
     try:
-        from models import ConfiguracionPanaderia
         from datetime import datetime
         from sqlalchemy import text
         
         cliente_id = request.form.get('cliente_id')
+        print(f"🔍🔍🔍 DEBUG editar_cliente_super: cliente_id={cliente_id}")
         if not cliente_id:
             return jsonify({'success': False, 'error': 'ID de cliente no proporcionado'})
         
-        # ✅ Cambiar al schema del tenant del cliente
-        schema_name = f"tenant_{cliente_id}"
-        g.search_path_override = f"{schema_name}, public"
-        db.session.execute(text(f"SET search_path TO {schema_name}, public"))
-        
-        cliente = ConfiguracionPanaderia.query.filter_by(panaderia_id=cliente_id).first()
-        if not cliente:
-            # ✅ Limpiar override antes de retornar error
-            if hasattr(g, 'search_path_override'):
-                del g.search_path_override
-            return jsonify({'success': False, 'error': f'Cliente {cliente_id} no encontrado'})
-        
-        # Actualizar datos
-        cliente.nombre_panaderia = request.form.get('nombre_panaderia')
-        cliente.telefono_contacto = request.form.get('telefono_contacto')
-        cliente.direccion = request.form.get('direccion')
-        cliente.tipo_licencia = request.form.get('tipo_licencia')
         # ✅ Validar campos numéricos (evitar int('') y int(None))
         max_usuarios_str = (request.form.get('max_usuarios') or '').strip()
-        cliente.max_usuarios = int(max_usuarios_str) if max_usuarios_str else 3
+        max_usuarios = int(max_usuarios_str) if max_usuarios_str else 3
         
         dias_gracia_str = (request.form.get('dias_gracia') or '').strip()
-        cliente.dias_gracia = int(dias_gracia_str) if dias_gracia_str else 7
-        cliente.razon_social = request.form.get('razon_social')
-        cliente.nit = request.form.get('nit')
+        dias_gracia = int(dias_gracia_str) if dias_gracia_str else 7
         
-        # Manejar fecha de expiración
-        fecha_expiracion = request.form.get('fecha_expiracion')
-        if cliente.tipo_licencia != 'local' and fecha_expiracion:
-            cliente.fecha_expiracion = datetime.strptime(fecha_expiracion, '%Y-%m-%d').date()
-        elif cliente.tipo_licencia == 'local':
-            cliente.fecha_expiracion = None
+        # ✅ Manejar fecha de expiración
+        tipo_licencia = request.form.get('tipo_licencia', 'local')
+        fecha_expiracion_str = (request.form.get('fecha_expiracion') or '').strip()
+        fecha_expiracion = None
+        if tipo_licencia != 'local' and fecha_expiracion_str:
+            fecha_expiracion = datetime.strptime(fecha_expiracion_str, '%Y-%m-%d').date()
+        
+        # ✅ Truncar teléfono a 20 caracteres (por si acaso)
+        telefono = (request.form.get('telefono_contacto') or '')[:20]
+        
+        # ✅ SQL DIRECTO CON SCHEMA CALIFICADO (no depende del search_path)
+        schema_name = f"tenant_{cliente_id}"
+        
+        # Primero verificar que la fila existe
+        existe = db.session.execute(
+            text(f"SELECT 1 FROM {schema_name}.configuracion_panaderia WHERE panaderia_id = :pid LIMIT 1"),
+            {'pid': cliente_id}
+        ).fetchone()
+        
+        if not existe:
+            return jsonify({'success': False, 'error': f'Cliente {cliente_id} no encontrado'})
+        
+        # ✅ UPDATE con schema explícito (NO usa search_path)
+        db.session.execute(
+            text(f"""
+                UPDATE {schema_name}.configuracion_panaderia
+                SET nombre_panaderia = :nombre,
+                    telefono_contacto = :telefono,
+                    direccion = :direccion,
+                    tipo_licencia = :tipo,
+                    max_usuarios = :max_usuarios,
+                    dias_gracia = :dias_gracia,
+                    razon_social = :razon,
+                    nit = :nit,
+                    fecha_expiracion = :fecha_exp,
+                    fecha_actualizacion = :fecha_act
+                WHERE panaderia_id = :pid
+            """),
+            {
+                'nombre': request.form.get('nombre_panaderia'),
+                'telefono': telefono,
+                'direccion': request.form.get('direccion'),
+                'tipo': tipo_licencia,
+                'max_usuarios': max_usuarios,
+                'dias_gracia': dias_gracia,
+                'razon': request.form.get('razon_social'),
+                'nit': request.form.get('nit'),
+                'fecha_exp': fecha_expiracion,
+                'fecha_act': datetime.utcnow(),
+                'pid': cliente_id
+            }
+        )
         
         db.session.commit()
-        
-        # ✅ Limpiar override ANTES de retornar
-        if hasattr(g, 'search_path_override'):
-            del g.search_path_override
         
         return jsonify({'success': True, 'message': 'Cliente actualizado correctamente'})
         
     except Exception as e:
         db.session.rollback()
-        # ✅ Limpiar override en caso de error
-        if hasattr(g, 'search_path_override'):
-            del g.search_path_override
+        print(f"❌ Error en editar_cliente_super: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/renovar_suscripcion_super', methods=['POST'])
