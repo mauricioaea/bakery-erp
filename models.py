@@ -2211,18 +2211,57 @@ class ConfiguracionSistema(db.Model):
 # =============================================
 
 def obtener_configuracion_panaderia(panaderia_id=1):
-    """Obtiene la configuración de la panadería (por defecto ID 1)"""
-    config = ConfiguracionPanaderia.query.get(panaderia_id)
-    if not config:
-        # Crear configuración por defecto si no existe
+    """
+    Obtiene la configuración de la panadería por panaderia_id (no por id).
+    ✅ Usa SQL directo calificado para respetar multi-tenant.
+    ✅ NO crea configuración si no existe (solo lectura).
+    ✅ NO hace commit (evita disparar event listeners).
+    """
+    from sqlalchemy import text
+    
+    if panaderia_id is None:
+        return None
+    
+    try:
+        schema_name = f"tenant_{panaderia_id}"
+        
+        # ✅ SQL DIRECTO CALIFICADO - Lee de CUALQUIER tenant sin tocar search_path
+        result = db.session.execute(
+            text(f"""
+                SELECT id, panaderia_id, nombre_panaderia, tipo_licencia, 
+                       max_usuarios, fecha_expiracion, estado_suscripcion,
+                       dias_gracia, activo, sistema_activo, ventas_ilimitadas
+                FROM {schema_name}.configuracion_panaderia
+                WHERE panaderia_id = :pid
+                LIMIT 1
+            """),
+            {'pid': panaderia_id}
+        ).fetchone()
+        
+        if not result:
+            return None
+        
+        # ✅ Crear objeto DETACHED (no se persiste)
         config = ConfiguracionPanaderia(
-            id=panaderia_id,        
-            nombre_panaderia="Panadería Principal",
-            tipo_licencia="local"
+            id=result[0],
+            panaderia_id=result[1],
+            nombre_panaderia=result[2],
+            tipo_licencia=result[3],
+            max_usuarios=result[4],
+            fecha_expiracion=result[5],
+            estado_suscripcion=result[6],
+            dias_gracia=result[7],
+            activo=result[8],
+            sistema_activo=result[9],
+            ventas_ilimitadas=result[10]
         )
-        db.session.add(config)
-        db.session.commit()
-    return config
+        # ⚠️ NO hacer db.session.add() - es solo lectura
+        
+        return config
+        
+    except Exception as e:
+        print(f"⚠️ Error en obtener_configuracion_panaderia({panaderia_id}): {e}")
+        return None
 
 def verificar_limite_usuarios():
     """Verifica si se ha alcanzado el límite de usuarios"""

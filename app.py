@@ -864,41 +864,40 @@ def obtener_configuracion_panaderia_segura(panaderia_id):
     try:
         schema_name = f"tenant_{panaderia_id}"
         
-        # ✅ FORZAR el schema para la sesión de SQLAlchemy (respetando override)
-        db.session.execute(text(f"SET search_path TO {schema_name}"))
-        db.session.commit()
-        
-        # ✅ Buscar configuración en el schema actual
-        config = ConfiguracionPanaderia.query.filter_by(panaderia_id=panaderia_id).first()
-        
-        if config:
-            db.session.execute(text("SET search_path TO public"))
-            db.session.commit()
-            return config
-        
-        # ✅ FALLBACK: Buscar directamente con SQL (SOLO LECTURA)
+        # ✅ USAR SQL DIRECTO CALIFICADO (NO cambia search_path, NO hace commit)
         result = db.session.execute(
-            text(f"SELECT id, panaderia_id, tipo_licencia, max_usuarios, fecha_expiracion FROM {schema_name}.configuracion_panaderia WHERE panaderia_id = :pid"),
+            text(f"""
+                SELECT id, panaderia_id, tipo_licencia, max_usuarios, fecha_expiracion,
+                       nombre_panaderia, estado_suscripcion, dias_gracia, activo
+                FROM {schema_name}.configuracion_panaderia
+                WHERE panaderia_id = :pid
+                LIMIT 1
+            """),
             {'pid': panaderia_id}
         ).fetchone()
         
-        if result:
-            # ✅ Crear objeto config PERO NO GUARDARLO EN LA BD
-            config = ConfiguracionPanaderia(
-                id=result[0],
-                panaderia_id=result[1],
-                tipo_licencia=result[2],
-                max_usuarios=result[3],
-                fecha_expiracion=result[4]
-            )
-            # ⚠️ NO HACER db.session.add(config) - SOLO USAR EL OBJETO
+        if not result:
+            return None
         
-        db.session.execute(text("SET search_path TO public"))
-        db.session.commit()
+        # ✅ Crear objeto config DETACHED (no se persiste, solo se usa para leer)
+        config = ConfiguracionPanaderia(
+            id=result[0],
+            panaderia_id=result[1],
+            tipo_licencia=result[2],
+            max_usuarios=result[3],
+            fecha_expiracion=result[4],
+            nombre_panaderia=result[5],
+            estado_suscripcion=result[6],
+            dias_gracia=result[7],
+            activo=result[8]
+        )
+        # ✅ NO hacer db.session.add() - solo se usa para leer
+        
         return config
         
     except Exception as e:
         # ✅ Silenciar errores para evitar mensajes en inicio
+        print(f"⚠️ Error en obtener_configuracion_panaderia_segura: {e}")
         return None
 # =============================================
 # 🆕 FUNCIÓN SAAS - CREAR TENANT AUTOMÁTICAMENTE
@@ -1818,8 +1817,18 @@ def antes_de_cada_peticion():
                             return redirect(url_for('suscripcion_vencida'))
             except Exception as e:
                 print(f"⚠️ Error verificando suscripción: {e}")
+                # ✅ CRÍTICO: rollback para evitar PendingRollbackError
+                try:
+                    db.session.rollback()
+                except Exception:
+                    pass
     except Exception as e:
         print(f"⚠️ current_user no disponible para verificación de suscripción: {e}")
+        # ✅ Rollback defensivo
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
 
     # =============================================
     # ✅ OBTENER tenant_id DE MANERA SEGURA
@@ -7100,11 +7109,9 @@ def realizar_cierre():
             configuracion.ultimo_cierre = fecha_actual
             # configuracion.sistema_activo = False  # ELIMINADO - No se bloquea el sistema
         else:
-            # ✅ Fallback: crear configuración manualmente (por si la función helper falla)
+            # ✅ Fallback: crear configuración con SQL DIRECTO CALIFICADO
             from sqlalchemy import text
             schema_name = f"tenant_{panaderia_id}"
-            g.search_path_override = f"{schema_name}, public"
-            db.session.execute(text(f"SET search_path TO {schema_name}, public"))
             
             # ✅ Verificar que NO existe antes de crear
             existe = db.session.execute(
@@ -7113,20 +7120,21 @@ def realizar_cierre():
             ).fetchone()
             
             if not existe:
-                nueva_config = ConfiguracionPanaderia(
-                    panaderia_id=panaderia_id,
-                    nombre_panaderia=f"Panadería {panaderia_id}",
-                    sistema_activo=True,
-                    activo=True,
-                    ultimo_cierre=fecha_actual
+                # ✅ INSERT con SQL directo calificado (no depende del search_path)
+                db.session.execute(
+                    text(f"""
+                        INSERT INTO {schema_name}.configuracion_panaderia
+                            (panaderia_id, nombre_panaderia, sistema_activo, activo, ultimo_cierre)
+                        VALUES
+                            (:pid, :nombre, TRUE, TRUE, :ultimo_cierre)
+                    """),
+                    {
+                        'pid': panaderia_id,
+                        'nombre': f"Panadería {panaderia_id}",
+                        'ultimo_cierre': fecha_actual
+                    }
                 )
-                db.session.add(nueva_config)
                 db.session.commit()
-            
-            # ✅ Limpiar override
-            if hasattr(g, 'search_path_override'):
-                del g.search_path_override
-        
         # ✅ CREAR DEPÓSITO AUTOMÁTICO PARA EFECTIVO
         deposito_creado = False
         deposito_id = None
