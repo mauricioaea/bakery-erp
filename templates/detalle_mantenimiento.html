@@ -121,7 +121,7 @@
     <div class="container">
         <div class="header">
             <h1>🔍 Detalle de Mantenimiento</h1>
-            <a href="{{ url_for('listar_mantenimientos', activo_id=mantenimiento.activo_id) }}" class="btn btn-secondary">← Volver</a>
+            <a href="{{ url_for('listar_mantenimientos', activo_id=mantenimiento.activo_fijo_id) }}" class="btn btn-secondary">← Volver</a>
         </div>
 
         <!-- Activo relacionado -->
@@ -169,8 +169,8 @@
         </div>
 
         <div class="actions">
-            <a href="{{ url_for('listar_mantenimientos', activo_id=mantenimiento.activo_id) }}" class="btn btn-secondary">← Volver a lista</a>
-            <a href="{{ url_for('editar_activo', id=mantenimiento.activo_id) }}" class="btn btn-primary">✏️ Editar Activo</a>
+            <a href="{{ url_for('listar_mantenimientos', activo_id=mantenimiento.activo_fijo_id) }}" class="btn btn-secondary">← Volver a lista</a>
+            <a href="{{ url_for('editar_activo', id=mantenimiento.activo_fijo_id) }}" class="btn btn-primary">✏️ Editar Activo</a>
         </div>
     </div>
 </body>

@@ -9656,12 +9656,13 @@ def listar_mantenimientos(activo_id):
         activo = {'id': activo_result[0], 'nombre': activo_result[1]}
         
         # ✅ OBTENER MANTENIMIENTOS
+                # ✅ OBTENER MANTENIMIENTOS (por activo_fijo_id, no activo_id)
         mantenimientos_result = db.session.execute(
             text(f"""
                 SELECT 
                     id, fecha_mantenimiento, tipo, descripcion, costo, tecnico
                 FROM {schema_name}.historial_mantenimientos 
-                WHERE activo_id = :activo_id AND panaderia_id = :panaderia_id
+                WHERE activo_fijo_id = :activo_id AND panaderia_id = :panaderia_id
                 ORDER BY fecha_mantenimiento DESC
             """),
             {'activo_id': activo_id, 'panaderia_id': panaderia_id}
@@ -9685,6 +9686,8 @@ def listar_mantenimientos(activo_id):
         
     except Exception as e:
         print(f"❌ Error en listar_mantenimientos: {e}")
+        import traceback
+        traceback.print_exc()
         flash('Error al cargar los mantenimientos', 'error')
         return redirect(url_for('activos_fijos'))
 
@@ -9732,14 +9735,15 @@ def nuevo_mantenimiento(activo_id):
             notas = request.form.get('notas', '')
             
             # ✅ CREAR MANTENIMIENTO CON SQL DIRECTO
+                        # ✅ CREAR MANTENIMIENTO CON SQL DIRECTO (usando activo_fijo_id)
             db.session.execute(
                 text(f"""
                     INSERT INTO {schema_name}.historial_mantenimientos 
-                    (activo_id, fecha_mantenimiento, tipo, descripcion, costo, tecnico, notas, panaderia_id)
-                    VALUES (:activo_id, :fecha_mantenimiento, :tipo, :descripcion, :costo, :tecnico, :notas, :panaderia_id)
+                    (activo_fijo_id, fecha_mantenimiento, tipo, descripcion, costo, tecnico, notas, panaderia_id)
+                    VALUES (:activo_fijo_id, :fecha_mantenimiento, :tipo, :descripcion, :costo, :tecnico, :notas, :panaderia_id)
                 """),
                 {
-                    'activo_id': activo_id,
+                    'activo_fijo_id': activo_id,  # ← ✅ CAMBIO: activo_fijo_id
                     'fecha_mantenimiento': fecha_mantenimiento,
                     'tipo': tipo,
                     'descripcion': descripcion,
@@ -9842,11 +9846,11 @@ def detalle_mantenimiento(id):
         result = db.session.execute(
             text(f"""
                 SELECT 
-                    hm.id, hm.activo_id, hm.fecha_mantenimiento, hm.tipo, 
+                    hm.id, hm.activo_fijo_id, hm.fecha_mantenimiento, hm.tipo, 
                     hm.descripcion, hm.costo, hm.tecnico, hm.notas,
                     af.nombre as activo_nombre, af.estado as activo_estado
                 FROM {schema_name}.historial_mantenimientos hm
-                LEFT JOIN {schema_name}.activos_fijos af ON hm.activo_id = af.id
+                LEFT JOIN {schema_name}.activos_fijos af ON hm.activo_fijo_id = af.id
                 WHERE hm.id = :id AND hm.panaderia_id = :panaderia_id
             """),
             {'id': id, 'panaderia_id': panaderia_id}
@@ -9862,7 +9866,7 @@ def detalle_mantenimiento(id):
         # ✅ Crear objeto con estructura que espera el template
         mantenimiento = {
             'id': result[0],
-            'activo_id': result[1],
+            'activo_fijo_id': result[1],
             'fecha_mantenimiento': result[2],
             'tipo': result[3],
             'descripcion': result[4] or 'Sin descripción',
