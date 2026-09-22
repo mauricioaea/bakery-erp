@@ -2144,6 +2144,7 @@ class ActivoFijo(db.Model):
 
 # Categorías predefinidas para activos fijos
 CATEGORIAS_ACTIVOS = {
+    # Categorías generales
     "MAQUINARIA_EQUIPOS": "Maquinaria y Equipos",
     "EQUIPOS_TECNOLOGICOS": "Equipos Tecnológicos", 
     "MOBILIARIO": "Mobiliario y Mesas",
@@ -2153,7 +2154,16 @@ CATEGORIAS_ACTIVOS = {
     "SOFTWARE": "Software y Licencias",
     "LICENCIAS_PERMISOS": "Licencias y Permisos",
     "SEÑALETICA": "Señalética y Publicidad",
-    "SEGURIDAD": "Equipos de Seguridad"
+    "SEGURIDAD": "Equipos de Seguridad",
+    # ✅ NUEVAS: Específicas de panadería
+    "HORNOS": "Hornos Industriales",
+    "AMASADORAS": "Amasadoras y Mezcladoras",
+    "REFRIGERACION": "Equipos de Refrigeración",
+    "BALANZAS": "Básculas y Balanzas",
+    "MOLINOS": "Molinos y Trituradoras",
+    "CORTADORAS": "Cortadoras y Rebanadoras",
+    "EMPAQUE": "Equipos de Empaque",
+    "EXHIBIDORES": "Exhibidores y Vitrinas",
 }
 
 # ============================================
@@ -2162,6 +2172,7 @@ CATEGORIAS_ACTIVOS = {
 # Basado en NIIF para PYMES (Sección 17) y práctica contable colombiana.
 # El usuario puede modificarlo según política contable de su empresa.
 VIDA_UTIL_SUGERIDA = {
+    # Categorías generales
     "MAQUINARIA_EQUIPOS":    10,   # Maquinaria industrial
     "EQUIPOS_TECNOLOGICOS":   5,   # Computadores, POS, tablets
     "MOBILIARIO":            10,   # Mesas, sillas, estanterías
@@ -2172,6 +2183,15 @@ VIDA_UTIL_SUGERIDA = {
     "LICENCIAS_PERMISOS":     5,   # Permisos, licencias de funcionamiento
     "SEÑALETICA":             5,   # Avisos, publicidad exterior
     "SEGURIDAD":             10,   # Extintores, cámaras, alarmas
+    # ✅ NUEVAS: Específicas de panadería
+    "HORNOS":                15,   # Hornos industriales (vida larga)
+    "AMASADORAS":            10,   # Amasadoras profesionales
+    "REFRIGERACION":         10,   # Neveras, cuartos fríos
+    "BALANZAS":               5,   # Básculas electrónicas
+    "MOLINOS":               10,   # Molinos industriales
+    "CORTADORAS":             5,   # Cortadoras de pan
+    "EMPAQUE":                7,   # Selladoras, empacadoras
+    "EXHIBIDORES":           10,   # Vitrinas, exhibidores
 }
 
 
