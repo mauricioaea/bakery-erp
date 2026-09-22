@@ -2119,12 +2119,25 @@ class ActivoFijo(db.Model):
         return 0
     
     def depreciacion_acumulada(self):
+        """
+        Calcula la depreciación acumulada usando meses calendario exactos.
+        ✅ Usa relativedelta para contar meses completos transcurridos.
+        ✅ Tope en valor_compra - valor_residual (100% depreciado).
+        """
         if not self.fecha_compra:
             return 0
-            
-        meses_transcurridos = (datetime.now().date() - self.fecha_compra).days // 30
-        return min(meses_transcurridos * self.calcular_depreciacion_mensual(), 
-                  self.valor_compra - self.valor_residual)
+        
+        try:
+            from dateutil.relativedelta import relativedelta
+            delta = relativedelta(datetime.now().date(), self.fecha_compra)
+            meses_transcurridos = delta.years * 12 + delta.months
+        except ImportError:
+            # Fallback si dateutil no está instalado
+            meses_transcurridos = (datetime.now().date() - self.fecha_compra).days // 30
+        
+        depreciacion = meses_transcurridos * self.calcular_depreciacion_mensual()
+        tope = self.valor_compra - self.valor_residual
+        return min(depreciacion, tope)
     
     def valor_actual(self):
         return self.valor_compra - self.depreciacion_acumulada()
