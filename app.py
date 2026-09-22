@@ -10846,6 +10846,18 @@ def cambiar_licencia(tenant_id):
         
         print(f"✅ Configuración actualizada correctamente (ID: {updated[0]})")
         
+        # ✅ Sincronizar public.tenants.plan (espejo para el panel maestro dev_master)
+        plan_publico = 'premium' if nuevo_tipo in ['nube_premium', 'premium'] else 'basico'
+        db.session.execute(
+            text("""
+                UPDATE public.tenants
+                SET plan = :plan
+                WHERE id = :tenant_id
+            """),
+            {'plan': plan_publico, 'tenant_id': tenant_id}
+        )
+        print(f"✅ public.tenants.plan sincronizado: {plan_publico}")
+        
         mensaje_extra = ""
         contrasena_temp = None
         
