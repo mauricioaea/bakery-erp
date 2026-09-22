@@ -9631,6 +9631,87 @@ def editar_activo(id):
                            categorias=CATEGORIAS_ACTIVOS,
                            vida_util_sugerida=VIDA_UTIL_SUGERIDA)
 
+@app.route('/eliminar_activo/<int:id>', methods=['POST'])
+@licencia_premium_requerida()
+@login_required
+@tenant_required
+@modulo_requerido('activos')
+def eliminar_activo(id):
+    """Soft-delete: marca el activo como INACTIVO (mantiene trazabilidad)"""
+    from sqlalchemy import text
+    
+    try:
+        panaderia_id = current_user.panaderia_id
+        schema_name = f"tenant_{panaderia_id}"
+        
+        # Verificar que el activo existe
+        existe = db.session.execute(
+            text(f"SELECT id, nombre FROM {schema_name}.activos_fijos WHERE id = :id AND panaderia_id = :pid"),
+            {'id': id, 'pid': panaderia_id}
+        ).fetchone()
+        
+        if not existe:
+            return jsonify({'success': False, 'error': 'Activo no encontrado'}), 404
+        
+        # Soft-delete: marcar como INACTIVO
+        db.session.execute(
+            text(f"UPDATE {schema_name}.activos_fijos SET estado = 'INACTIVO' WHERE id = :id AND panaderia_id = :pid"),
+            {'id': id, 'pid': panaderia_id}
+        )
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Activo "{existe[1]}" marcado como INACTIVO. Puedes reactivarlo cuando quieras.'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Error en eliminar_activo: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/reactivar_activo/<int:id>', methods=['POST'])
+@licencia_premium_requerida()
+@login_required
+@tenant_required
+@modulo_requerido('activos')
+def reactivar_activo(id):
+    """Reactivar un activo previamente marcado como INACTIVO"""
+    from sqlalchemy import text
+    
+    try:
+        panaderia_id = current_user.panaderia_id
+        schema_name = f"tenant_{panaderia_id}"
+        
+        existe = db.session.execute(
+            text(f"SELECT id, nombre FROM {schema_name}.activos_fijos WHERE id = :id AND panaderia_id = :pid"),
+            {'id': id, 'pid': panaderia_id}
+        ).fetchone()
+        
+        if not existe:
+            return jsonify({'success': False, 'error': 'Activo no encontrado'}), 404
+        
+        db.session.execute(
+            text(f"UPDATE {schema_name}.activos_fijos SET estado = 'ACTIVO' WHERE id = :id AND panaderia_id = :pid"),
+            {'id': id, 'pid': panaderia_id}
+        )
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Activo "{existe[1]}" reactivado exitosamente.'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Error en reactivar_activo: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @app.route('/activo/<int:activo_id>/mantenimientos')
 @licencia_premium_requerida()

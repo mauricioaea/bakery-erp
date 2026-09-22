@@ -196,6 +196,33 @@
             opacity: 0.5;
         }
 
+        /* ✅ NUEVO: Botones de acciones (Eliminar / Reactivar) */
+        .btn-eliminar, .btn-reactivar {
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: bold;
+            font-family: inherit;
+        }
+        .btn-eliminar {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+        .btn-eliminar:hover {
+            background: #fecaca;
+        }
+        .btn-reactivar {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #86efac;
+        }
+        .btn-reactivar:hover {
+            background: #bbf7d0;
+        }
+
         /* ===== MEDIA QUERIES PARA MÓVILES ===== */
         
         /* MÓVILES (0px - 767px) */
@@ -431,23 +458,19 @@
         
         /* MEJORAS DE ACCESIBILIDAD PARA MÓVILES */
         @media (max-width: 767px) {
-            /* Mejorar legibilidad del texto */
             body {
                 -webkit-text-size-adjust: 100%;
             }
             
-            /* Mejorar experiencia táctil */
             .btn, .back-btn {
                 min-height: 44px;
                 touch-action: manipulation;
             }
             
-            /* Prevenir zoom en inputs */
             input, select, textarea {
                 font-size: 16px;
             }
             
-            /* Scroll suave */
             html {
                 scroll-behavior: smooth;
             }
@@ -549,6 +572,7 @@
                             <th>Fecha Compra</th>
                             <th>Estado</th>
                             <th>Ubicación</th>
+                            <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -576,6 +600,17 @@
                                 {% endif %}
                             </td>
                             <td>{{ activo.ubicacion or 'No especificado' }}</td>
+                            <td>
+                                {% if activo.estado == 'INACTIVO' %}
+                                <button class="btn-reactivar" onclick="reactivarActivo({{ activo.id }}, '{{ activo.nombre }}')">
+                                    ♻️ Reactivar
+                                </button>
+                                {% else %}
+                                <button class="btn-eliminar" onclick="eliminarActivo({{ activo.id }}, '{{ activo.nombre }}')">
+                                    🗑️ Eliminar
+                                </button>
+                                {% endif %}
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -636,6 +671,42 @@
                 });
             }
         });
+
+        // ✅ NUEVO: Eliminar activo (soft-delete)
+        function eliminarActivo(id, nombre) {
+            if (!confirm(`¿Marcar como INACTIVO el activo "${nombre}"?\n\nEl activo seguirá en el sistema para trazabilidad y podrás reactivarlo.`)) {
+                return;
+            }
+            fetch(`/eliminar_activo/${id}`, { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✅ ' + data.message);
+                        location.reload();
+                    } else {
+                        alert('❌ ' + data.error);
+                    }
+                })
+                .catch(err => alert('❌ Error de conexión: ' + err.message));
+        }
+
+        // ✅ NUEVO: Reactivar activo
+        function reactivarActivo(id, nombre) {
+            if (!confirm(`¿Reactivar el activo "${nombre}"?`)) {
+                return;
+            }
+            fetch(`/reactivar_activo/${id}`, { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✅ ' + data.message);
+                        location.reload();
+                    } else {
+                        alert('❌ ' + data.error);
+                    }
+                })
+                .catch(err => alert('❌ Error de conexión: ' + err.message));
+        }
     </script>
 </body>
 </html>
