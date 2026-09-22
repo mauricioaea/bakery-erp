@@ -136,6 +136,20 @@
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
+        /* ✅ NUEVO: Botón de restaurar sugerido */
+        .btn-restaurar {
+            background: #e7f3ff;
+            color: #0066cc;
+            border: 1px solid #b3d9ff;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 0.85em;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .btn-restaurar:hover {
+            background: #cce6ff;
+        }
         @media (max-width: 768px) {
             .form-row {
                 grid-template-columns: 1fr;
@@ -179,10 +193,10 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="categoria" class="required">Categoría</label>
-                        <select id="categoria" name="categoria" class="form-control" required>
+                        <select id="categoria" name="categoria" class="form-control" required onchange="actualizarVidaUtil()">
                             <option value="">Selecciona una categoría</option>
                             {% for key, value in categorias.items() %}
-                            <option value="{{ key }}">{{ value }}</option>
+                                <option value="{{ key }}" data-vida-util="{{ vida_util_sugerida.get(key, 5) }}">{{ value }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -243,8 +257,14 @@
                     <div class="form-group">
                         <label for="vida_util" class="required">Vida Útil (años)</label>
                         <input type="number" id="vida_util" name="vida_util" class="form-control" 
-                               min="1" max="50" value="5" required>
-                        <div class="help-text">Años esperados de uso del activo</div>
+                            min="1" max="50" value="5" required>
+                        <div class="help-text" id="vidaUtilHelp">
+                            💡 Selecciona una categoría para ver el valor sugerido (NIIF PYMES)
+                        </div>
+                        <button type="button" id="btnRestaurarVida" class="btn-restaurar" 
+                                onclick="restaurarVidaUtil()" style="display:none; margin-top:5px;">
+                            🔄 Restaurar sugerido
+                        </button>
                     </div>
                     
                     <div class="form-group">
@@ -282,13 +302,96 @@
     </div>
 
     <script>
+        // ✅ Valores sugeridos por categoría (NIIF PYMES) pasados desde el backend
+        const VIDA_UTIL_SUGERIDA = {{ vida_util_sugerida|tojson }};
+
+        // Estado: ¿el usuario cambió manualmente el valor de vida útil?
+        let vidaUtilFueCambiada = false;
+
+        // Al cargar la página, marcar el input para detectar cambios manuales
         document.addEventListener('DOMContentLoaded', function() {
             // Establecer fecha actual como predeterminada
             const today = new Date().toISOString().split('T')[0];
-            document.getElementById('fecha_compra').value = today;
-            
+            const inputFecha = document.getElementById('fecha_compra');
+            if (inputFecha) inputFecha.value = today;
+
+            // Detectar si el usuario cambió manualmente la vida útil
+            const inputVida = document.getElementById('vida_util');
+            if (inputVida) {
+                inputVida.addEventListener('input', function() {
+                    vidaUtilFueCambiada = true;
+                });
+            }
+
             console.log('📝 Formulario de registro de activo cargado');
+            console.log('📊 Vidas útiles sugeridas:', VIDA_UTIL_SUGERIDA);
         });
+
+        // ✅ Al cambiar la categoría, sugerir la vida útil correspondiente
+        function actualizarVidaUtil() {
+            const select = document.getElementById('categoria');
+            const inputVida = document.getElementById('vida_util');
+            const help = document.getElementById('vidaUtilHelp');
+            const btnRestaurar = document.getElementById('btnRestaurarVida');
+
+            if (!select || !inputVida) return;
+
+            const option = select.options[select.selectedIndex];
+            const sugerida = option.getAttribute('data-vida-util');
+            const categoriaTexto = option.text;
+
+            if (sugerida && sugerida !== '5') {
+                // Solo sobrescribir si el usuario NO cambió manualmente
+                if (!vidaUtilFueCambiada) {
+                    inputVida.value = sugerida;
+                }
+                if (help) {
+                    help.innerHTML = `💡 Sugerido para "<strong>${categoriaTexto}</strong>": <strong>${sugerida} años</strong> (NIIF PYMES)`;
+                }
+                if (btnRestaurar) {
+                    btnRestaurar.style.display = 'inline-block';
+                }
+            } else if (sugerida) {
+                // Categoría con valor por defecto 5
+                if (!vidaUtilFueCambiada) {
+                    inputVida.value = sugerida;
+                }
+                if (help) {
+                    help.innerHTML = `💡 Sugerido para "<strong>${categoriaTexto}</strong>": <strong>${sugerida} años</strong> (NIIF PYMES)`;
+                }
+                if (btnRestaurar) {
+                    btnRestaurar.style.display = 'inline-block';
+                }
+            } else {
+                if (help) {
+                    help.innerHTML = '💡 Selecciona una categoría para ver el valor sugerido (NIIF PYMES)';
+                }
+                if (btnRestaurar) {
+                    btnRestaurar.style.display = 'none';
+                }
+            }
+        }
+
+        // ✅ Restaurar el valor sugerido si el usuario lo cambió
+        function restaurarVidaUtil() {
+            const select = document.getElementById('categoria');
+            const inputVida = document.getElementById('vida_util');
+            const help = document.getElementById('vidaUtilHelp');
+
+            if (!select || !inputVida) return;
+
+            const option = select.options[select.selectedIndex];
+            const sugerida = option.getAttribute('data-vida-util');
+            const categoriaTexto = option.text;
+
+            if (sugerida) {
+                inputVida.value = sugerida;
+                vidaUtilFueCambiada = false;
+                if (help) {
+                    help.innerHTML = `💡 Sugerido para "<strong>${categoriaTexto}</strong>": <strong>${sugerida} años</strong> (NIIF PYMES)`;
+                }
+            }
+        }
     </script>
 </body>
 </html>

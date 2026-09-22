@@ -2156,6 +2156,26 @@ CATEGORIAS_ACTIVOS = {
     "SEGURIDAD": "Equipos de Seguridad"
 }
 
+# ============================================
+# VIDA ÚTIL SUGERIDA POR CATEGORÍA (NIIF PYMES)
+# ============================================
+# Basado en NIIF para PYMES (Sección 17) y práctica contable colombiana.
+# El usuario puede modificarlo según política contable de su empresa.
+VIDA_UTIL_SUGERIDA = {
+    "MAQUINARIA_EQUIPOS":    10,   # Maquinaria industrial
+    "EQUIPOS_TECNOLOGICOS":   5,   # Computadores, POS, tablets
+    "MOBILIARIO":            10,   # Mesas, sillas, estanterías
+    "HERRAMIENTAS":           5,   # Herramientas manuales
+    "VEHICULOS":              5,   # Motos, camionetas de reparto
+    "INSTALACIONES":         20,   # Adecuaciones locativas
+    "SOFTWARE":               3,   # Licencias de software
+    "LICENCIAS_PERMISOS":     5,   # Permisos, licencias de funcionamiento
+    "SEÑALETICA":             5,   # Avisos, publicidad exterior
+    "SEGURIDAD":             10,   # Extintores, cámaras, alarmas
+}
+
+
+
 # ====================================== 🆕 NUEVOS MODELOS PARA SISTEMA POS/FACTURACIÓN =====================================
 
 

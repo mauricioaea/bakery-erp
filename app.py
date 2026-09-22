@@ -1230,7 +1230,7 @@ from models import calcular_rotacion_automatica, actualizar_rotaciones_automatic
 from models import calcular_tendencia_ventas, analizar_productos_periodo, calcular_rotacion_automatica_por_nombre
 from models import calcular_proyeccion_ventas, generar_recomendacion_stock, generar_alertas_inteligentes
 from models import LogSistema, RegistroFinanciero
-from models import obtener_productos_sin_ventas_recientes, ActivoFijo, HistorialMantenimiento, CATEGORIAS_ACTIVOS
+from models import obtener_productos_sin_ventas_recientes, ActivoFijo, HistorialMantenimiento, CATEGORIAS_ACTIVOS, VIDA_UTIL_SUGERIDA
 from facturacion.generador_xml import generar_xml_ubl_21
 
 
@@ -9583,7 +9583,9 @@ def registrar_activo():
             db.session.rollback()
             flash(f'❌ Error al registrar activo: {str(e)}', 'error')
     
-    return render_template('registrar_activo.html', categorias=CATEGORIAS_ACTIVOS)
+    return render_template('registrar_activo.html', 
+                           categorias=CATEGORIAS_ACTIVOS,
+                           vida_util_sugerida=VIDA_UTIL_SUGERIDA)
 
 
 
@@ -9624,7 +9626,10 @@ def editar_activo(id):
             db.session.rollback()
             flash(f'❌ Error al actualizar activo: {str(e)}', 'error')
     
-    return render_template('editar_activo.html', activo=activo, categorias=CATEGORIAS_ACTIVOS)
+    return render_template('editar_activo.html', 
+                           activo=activo, 
+                           categorias=CATEGORIAS_ACTIVOS,
+                           vida_util_sugerida=VIDA_UTIL_SUGERIDA)
 
 
 @app.route('/activo/<int:activo_id>/mantenimientos')
