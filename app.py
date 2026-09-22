@@ -948,6 +948,21 @@ def crear_tenant_saas(nombre_panaderia, subdominio, email_contacto=None, max_usu
         # ✅ CREAR TABLAS EN ORDEN
         crear_tablas_en_orden(schema_name)
 
+        # ✅ NUEVO: SINCRONIZAR COLUMNAS FALTANTES
+        # Asegura que el nuevo tenant tenga TODAS las columnas que los modelos ORM definen,
+        # incluso si el CREATE TABLE está desactualizado.
+        try:
+            columnas_agregadas, errores = _sincronizar_columnas_tenant(schema_name)
+            if columnas_agregadas > 0:
+                print(f"   ✅ {columnas_agregadas} columnas sincronizadas en {schema_name}")
+            if errores > 0:
+                print(f"   ⚠️ {errores} errores al sincronizar {schema_name}")
+        except Exception as e:
+            print(f"   ⚠️ Error sincronizando columnas de {schema_name}: {e}")
+            import traceback
+            traceback.print_exc()
+            # NO relanzar: la creación del tenant debe continuar
+
         db.session.execute(text(f"SET search_path TO public"))
         db.session.commit()
 
