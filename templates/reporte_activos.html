@@ -3,188 +3,560 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reporte de Activos - Panadería</title>
-    <style>
+    <title>Reporte de Activos Fijos - {{ nombre_empresa or 'Panadería' }}</title>
+        <style>
+        /* ============================================
+           VARIABLES CORPORATIVAS
+           ============================================ */
+        :root {
+            --naranja-pan: #e67e22;
+            --naranja-claro: #f39c12;
+            --cafe: #8b4513;
+            --crema: #fffaf0;
+            --crema-oscuro: #fdf6ec;
+            --gris-texto: #2c3e50;
+            --gris-suave: #7f8c8d;
+            --borde: #e8dcc8;
+            --verde: #27ae60;
+            --rojo: #e74c3c;
+            --amarillo: #f1c40f;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
         body {
-            font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #fef5e7 0%, #fdebd0 100%);
             min-height: 100vh;
             padding: 20px;
+            color: var(--gris-texto);
         }
         .container {
             max-width: 1200px;
             margin: 0 auto;
             background: white;
             border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 30px rgba(139, 69, 19, 0.15);
             overflow: hidden;
         }
+
+        /* ============================================
+           ENCABEZADO PROFESIONAL
+           ============================================ */
         .header {
-            background: #17a2b8;
-            padding: 25px;
-            text-align: center;
+            background: linear-gradient(135deg, var(--naranja-pan) 0%, var(--cafe) 100%);
+            padding: 30px 25px;
             color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
         }
-        .header h1 {
-            margin-bottom: 10px;
-            font-size: 2.2em;
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
         }
-        .subtitle {
-            font-size: 1.1em;
-            opacity: 0.9;
+        .header-logo {
+            font-size: 3.5em;
+            line-height: 1;
+            background: rgba(255, 255, 255, 0.15);
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
         }
-        .content {
-            padding: 25px;
-        }
-        .report-section {
-            margin-bottom: 30px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 10px;
-        }
-        .report-section h3 {
-            color: #333;
-            margin-bottom: 15px;
-            border-bottom: 2px solid #17a2b8;
-            padding-bottom: 10px;
-        }
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        .metric-card {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            border-left: 4px solid #17a2b8;
-        }
-        .metric-value {
+        .header-info h1 {
             font-size: 1.8em;
-            font-weight: bold;
-            color: #333;
             margin-bottom: 5px;
+            font-weight: 700;
         }
-        .metric-label {
-            color: #666;
+        .header-info .empresa-nombre {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+        .header-info .empresa-detalle {
+            font-size: 0.85em;
+            opacity: 0.9;
+            line-height: 1.4;
+        }
+        .header-right {
+            text-align: right;
             font-size: 0.9em;
+            line-height: 1.6;
         }
-        .chart-container {
-            text-align: center;
-            margin: 20px 0;
-            padding: 20px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        .header-right .fecha {
+            font-weight: 600;
         }
-        .chart-container img {
-            max-width: 100%;
-            border-radius: 8px;
-        }
-        .btn {
-            padding: 10px 20px;
-            border-radius: 25px;
-            text-decoration: none;
-            font-weight: bold;
-            transition: all 0.3s ease;
-            border: none;
-            cursor: pointer;
+        .reporte-titulo {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 8px 16px;
+            border-radius: 20px;
             display: inline-block;
+            margin-top: 8px;
+            font-size: 0.9em;
+            font-weight: 600;
         }
-        .btn-primary {
-            background: #007bff;
-            color: white;
-        }
-        .btn-warning {
-            background: #ffc107;
-            color: black;
-        }
-        .btn-secondary {
-            background: #6c757d;
-            color: white;
-        }
-        .btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
+
+        /* ============================================
+           BARRA DE ACCIONES
+           ============================================ */
         .actions-bar {
             display: flex;
             gap: 10px;
             justify-content: center;
             margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 10px 22px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.9em;
+        }
+        .btn-primary {
+            background: var(--naranja-pan);
+            color: white;
+        }
+        .btn-primary:hover {
+            background: var(--cafe);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(230, 126, 34, 0.4);
+        }
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #7f8c8d;
+            transform: translateY(-2px);
+        }
+        .btn-warning {
+            background: var(--amarillo);
+            color: #333;
+        }
+        .btn-warning:hover {
+            background: #d4ac0d;
+            transform: translateY(-2px);
         }
         .back-btn {
-            background: #6c757d;
+            background: #95a5a6;
             color: white;
             padding: 10px 20px;
             border-radius: 25px;
             text-decoration: none;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
             margin-bottom: 20px;
+            font-weight: 600;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
         }
+        .back-btn:hover {
+            background: #7f8c8d;
+            transform: translateX(-3px);
+        }
+
+        /* ============================================
+           CONTENIDO
+           ============================================ */
+        .content {
+            padding: 25px;
+            background: var(--crema);
+        }
+        .report-section {
+            margin-bottom: 30px;
+            padding: 25px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(139, 69, 19, 0.08);
+            border-left: 4px solid var(--naranja-pan);
+        }
+        .report-section h3 {
+            color: var(--cafe);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--crema-oscuro);
+            font-size: 1.3em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* ============================================
+           MÉTRICAS
+           ============================================ */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+        .metric-card {
+            background: linear-gradient(135deg, #ffffff 0%, var(--crema) 100%);
+            padding: 22px 15px;
+            border-radius: 12px;
+            text-align: center;
+            border-top: 4px solid var(--naranja-pan);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+            transition: transform 0.2s ease;
+        }
+        .metric-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 18px rgba(230, 126, 34, 0.2);
+        }
+        .metric-icon {
+            font-size: 1.8em;
+            margin-bottom: 8px;
+        }
+        .metric-value {
+            font-size: 1.6em;
+            font-weight: 700;
+            color: var(--cafe);
+            margin-bottom: 6px;
+        }
+        .metric-label {
+            color: var(--gris-suave);
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        /* ============================================
+           GRÁFICOS
+           ============================================ */
+        .chart-container {
+            text-align: center;
+            margin: 10px 0;
+            padding: 20px;
+            background: var(--crema-oscuro);
+            border-radius: 10px;
+        }
+        .chart-container img {
+            max-width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .chart-caption {
+            margin-top: 12px;
+            color: var(--gris-suave);
+            font-size: 0.9em;
+            font-style: italic;
+        }
+
+        /* ============================================
+           TABLAS
+           ============================================ */
         .table-container {
             overflow-x: auto;
             border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
             margin-top: 15px;
         }
         table {
             width: 100%;
             border-collapse: collapse;
             background: white;
+            min-width: 600px;
         }
-        th {
-            background: #343a40;
+        thead th {
+            background: linear-gradient(135deg, var(--cafe) 0%, #6b3410 100%);
             color: white;
-            padding: 12px;
+            padding: 14px 12px;
             text-align: left;
-            font-weight: bold;
+            font-weight: 600;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
         }
-        td {
-            padding: 10px 12px;
-            border-bottom: 1px solid #e9ecef;
+        tbody td {
+            padding: 12px;
+            border-bottom: 1px solid var(--borde);
+            font-size: 0.9em;
         }
-        tr:hover {
-            background: #f8f9fa;
+        tbody tr:nth-child(even) {
+            background: var(--crema);
+        }
+        tbody tr:hover {
+            background: #fdebd0;
+        }
+        tbody tr:last-child td {
+            border-bottom: none;
         }
         .text-right {
             text-align: right;
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
         }
+        .text-center {
+            text-align: center;
+        }
+
+        /* ============================================
+           BADGES DE ESTADO
+           ============================================ */
+        .badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 700;
+            display: inline-block;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .badge-activo {
+            background: #d5f4e6;
+            color: var(--verde);
+        }
+        .badge-mantenimiento {
+            background: #fef5e7;
+            color: var(--naranja-pan);
+        }
+        .badge-inactivo {
+            background: #fadbd8;
+            color: var(--rojo);
+        }
+
+        /* ============================================
+           EMPTY STATE
+           ============================================ */
         .empty-state {
             text-align: center;
-            padding: 40px;
-            color: #666;
+            padding: 60px 40px;
+            color: var(--gris-suave);
         }
-        .empty-state i {
-            font-size: 3em;
-            margin-bottom: 15px;
+        .empty-state .empty-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
             opacity: 0.5;
         }
+        .empty-state h3 {
+            color: var(--cafe);
+            margin-bottom: 10px;
+            border: none;
+            padding: 0;
+        }
+
+        /* ============================================
+           PIE DE PÁGINA
+           ============================================ */
         .print-only {
             display: none;
         }
+        .footer-info {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid var(--borde);
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 0.85em;
+            color: var(--gris-suave);
+        }
+        .footer-info strong {
+            color: var(--cafe);
+        }
+
+        /* ============================================
+           RESPONSIVE
+           ============================================ */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            .header {
+                padding: 20px 15px;
+                flex-direction: column;
+                text-align: center;
+            }
+            .header-left {
+                flex-direction: column;
+                text-align: center;
+            }
+            .header-info h1 {
+                font-size: 1.4em;
+            }
+            .header-right {
+                text-align: center;
+            }
+            .content {
+                padding: 15px;
+            }
+            .report-section {
+                padding: 15px;
+            }
+            .metric-value {
+                font-size: 1.3em;
+            }
+            .actions-bar {
+                flex-direction: column;
+            }
+            .btn, .back-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        /* ============================================
+           IMPRESIÓN - VERSIÓN SIMPLIFICADA
+           (Sin @page para evitar bug de numeración)
+           ============================================ */
         @media print {
             body {
                 background: white;
                 padding: 0;
+                margin: 0;
+                font-size: 10px;
             }
             .container {
                 box-shadow: none;
                 border-radius: 0;
+                max-width: 100%;
+                margin: 0;
             }
-            .btn, .back-btn {
-                display: none;
+            .btn, .back-btn, .actions-bar {
+                display: none !important;
             }
             .print-only {
                 display: block;
+            }
+            .content {
+                padding: 8px !important;
+            }
+            .report-section {
+                margin-bottom: 8px !important;
+                padding: 10px !important;
+                box-shadow: none;
+                border: 1px solid var(--borde);
+                page-break-inside: avoid;
+            }
+            .report-section h3 {
+                font-size: 0.95em !important;
+                margin-bottom: 8px !important;
+                padding-bottom: 5px !important;
+            }
+
+            /* Encabezado compacto */
+            .header {
+                background: var(--cafe) !important;
+                padding: 10px 15px !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                page-break-after: avoid;
+            }
+            .header-logo {
+                font-size: 1.8em !important;
+                width: 40px !important;
+                height: 40px !important;
+            }
+            .header-info h1 {
+                font-size: 1.1em !important;
+                margin-bottom: 2px !important;
+            }
+            .header-info .empresa-nombre {
+                font-size: 1em !important;
+            }
+            .header-info .empresa-detalle {
+                font-size: 0.7em !important;
+            }
+            .header-right {
+                font-size: 0.75em !important;
+            }
+            .reporte-titulo {
+                font-size: 0.8em !important;
+                padding: 3px 10px !important;
+            }
+
+            /* Métricas: 5 columnas en 1 fila */
+            .metrics-grid {
+                grid-template-columns: repeat(5, 1fr) !important;
+                gap: 6px !important;
+                margin-bottom: 0 !important;
+            }
+            .metric-card {
+                padding: 8px 4px !important;
+                border-radius: 6px !important;
+                border-top-width: 3px !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .metric-icon {
+                font-size: 1em !important;
+                margin-bottom: 2px !important;
+            }
+            .metric-value {
+                font-size: 0.85em !important;
+                margin-bottom: 2px !important;
+            }
+            .metric-label {
+                font-size: 0.6em !important;
+                letter-spacing: 0 !important;
+            }
+
+            /* Gráficos compactos */
+            .chart-container {
+                padding: 5px !important;
+                margin: 0 !important;
+            }
+            .chart-container img {
+                max-width: 65% !important;
+                max-height: 75mm !important;
+            }
+            .chart-caption {
+                font-size: 0.7em !important;
+                margin-top: 3px !important;
+            }
+
+            /* Tablas compactas */
+            .table-container {
+                margin-top: 5px !important;
+                box-shadow: none;
+            }
+            thead th {
+                background: var(--cafe) !important;
+                padding: 5px 6px !important;
+                font-size: 0.7em !important;
+                letter-spacing: 0 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            tbody td {
+                padding: 4px 6px !important;
+                font-size: 0.72em !important;
+            }
+            tbody tr:nth-child(even) {
+                background: var(--crema) !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .badge {
+                font-size: 0.65em !important;
+                padding: 2px 6px !important;
+            }
+
+            /* Pie de página */
+            .footer-info {
+                margin-top: 8px !important;
+                padding-top: 6px !important;
+                font-size: 0.7em !important;
+                page-break-before: avoid;
             }
         }
     </style>
@@ -195,57 +567,89 @@
     </div>
 
     <div class="container">
+        <!-- ✅ ENCABEZADO PROFESIONAL -->
         <div class="header">
-            <h1>📊 Reporte de Activos Fijos</h1>
-            <p class="subtitle">{{ nombre_empresa or "Panadería" }} - Generado el {{ now.strftime('%d/%m/%Y %H:%M') }}</p>
+            <div class="header-left">
+                <div class="header-logo">🥖</div>
+                <div class="header-info">
+                    <div class="empresa-nombre">{{ nombre_empresa or "Panadería" }}</div>
+                    <div class="empresa-detalle">
+                        {% if nit_empresa and nit_empresa != 'N/A' %}
+                            NIT: {{ nit_empresa }}<br>
+                        {% endif %}
+                        Sistema de Gestión PanaderíaPro
+                    </div>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="fecha">📅 {{ now.strftime('%d/%m/%Y') }}</div>
+                <div>🕐 {{ now.strftime('%H:%M') }}</div>
+                <div class="reporte-titulo">📊 Reporte de Activos Fijos</div>
+            </div>
         </div>
 
         <div class="content">
-            <!-- Barra de Acciones -->
+            <!-- BARRA DE ACCIONES -->
             <div class="actions-bar">
-                <button onclick="window.print()" class="btn btn-primary">🖨️ Imprimir Reporte</button>
+                <button onclick="window.print()" class="btn btn-primary">🖨️ Imprimir / Guardar PDF</button>
                 <a href="{{ url_for('activos_fijos') }}" class="btn btn-secondary">🏠 Dashboard</a>
                 <a href="{{ url_for('lista_activos') }}" class="btn btn-warning">📋 Ver Lista Completa</a>
             </div>
 
-            <!-- Métricas Principales -->
+            <!-- ✅ MÉTRICAS PRINCIPALES -->
             <div class="report-section">
-                <h3>📈 Métricas Principales</h3>
+                <h3>📈 Resumen Ejecutivo</h3>
                 <div class="metrics-grid">
                     <div class="metric-card">
+                        <div class="metric-icon">📦</div>
                         <div class="metric-value">{{ activos|length }}</div>
                         <div class="metric-label">Total Activos</div>
                     </div>
                     <div class="metric-card">
-                        <div class="metric-value">${{ "{:,.0f}".format(total_valor) }}</div>
-                        <div class="metric-label">Valor Total Actual</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-value">${{ "{:,.0f}".format(total_depreciacion) }}</div>
-                        <div class="metric-label">Depreciación Acumulada</div>
-                    </div>
-                    <div class="metric-card">
+                        <div class="metric-icon">💰</div>
                         <div class="metric-value">${{ "{:,.0f}".format(activos|sum(attribute='valor_compra')) }}</div>
                         <div class="metric-label">Inversión Total</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-icon">📉</div>
+                        <div class="metric-value">${{ "{:,.0f}".format(total_depreciacion) }}</div>
+                        <div class="metric-label">Depreciación Acum.</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-icon">💎</div>
+                        <div class="metric-value">${{ "{:,.0f}".format(total_valor) }}</div>
+                        <div class="metric-label">Valor Neto Actual</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-icon">📊</div>
+                        <div class="metric-value">
+                            {% set inversion_total = activos|sum(attribute='valor_compra') %}
+                            {% if inversion_total > 0 %}
+                                {{ "%.1f"|format((total_depreciacion / inversion_total * 100)) }}%
+                            {% else %}
+                                0%
+                            {% endif %}
+                        </div>
+                        <div class="metric-label">% Depreciado</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Gráficos -->
+            <!-- GRÁFICOS -->
             {% if graph_path %}
             <div class="report-section">
                 <h3>📊 Análisis Visual</h3>
                 <div class="chart-container">
                     <img src="{{ url_for('static', filename='temp/activos_report.png') }}" 
                          alt="Gráficos de análisis de activos">
-                    <p style="margin-top: 10px; color: #666; font-size: 0.9em;">
-                        Distribución por categoría, valor y estado de los activos
+                    <p class="chart-caption">
+                        Distribución de activos por categoría, valor, estado y depreciación acumulada
                     </p>
                 </div>
             </div>
             {% endif %}
 
-            <!-- Resumen por Categoría -->
+            <!-- ✅ RESUMEN POR CATEGORÍA -->
             <div class="report-section">
                 <h3>📦 Resumen por Categoría</h3>
                 <div class="table-container">
@@ -253,10 +657,10 @@
                         <thead>
                             <tr>
                                 <th>Categoría</th>
-                                <th>Cantidad</th>
-                                <th>Valor Compra</th>
-                                <th>Valor Actual</th>
-                                <th>% del Total</th>
+                                <th class="text-center">Cantidad</th>
+                                <th class="text-right">Valor Compra</th>
+                                <th class="text-right">Valor Actual</th>
+                                <th class="text-right">% del Total</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -275,8 +679,8 @@
                             
                             {% for categoria, datos in categorias_summary.items() %}
                             <tr>
-                                <td>{{ categoria }}</td>
-                                <td>{{ datos.count }}</td>
+                                <td><strong>{{ categoria }}</strong></td>
+                                <td class="text-center">{{ datos.count }}</td>
                                 <td class="text-right">${{ "{:,.0f}".format(datos.valor_compra) }}</td>
                                 <td class="text-right">${{ "{:,.0f}".format(datos.valor_actual) }}</td>
                                 <td class="text-right">
@@ -293,49 +697,7 @@
                 </div>
             </div>
 
-            <!-- Activos con Mayor Depreciación - CORREGIDO -->
-            <div class="report-section">
-                <h3>📉 Activos con Mayor Depreciación</h3>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Activo</th>
-                                <th>Valor Compra</th>
-                                <th>Depreciación</th>
-                                <th>Valor Actual</th>
-                                <th>% Depreciado</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for activo in activos %}
-                                {% set depreciacion = activo.depreciacion_acumulada() %}
-                                {% set valor_actual = activo.valor_actual() %}
-                            {% endfor %}
-                            
-                            {% for activo in activos | sort(attribute='valor_compra') | reverse %}
-                                {% if loop.index0 < 10 %}
-                                <tr>
-                                    <td>{{ activo.nombre }}</td>
-                                    <td class="text-right">${{ "{:,.0f}".format(activo.valor_compra) }}</td>
-                                    <td class="text-right">${{ "{:,.0f}".format(activo.depreciacion_acumulada()) }}</td>
-                                    <td class="text-right">${{ "{:,.0f}".format(activo.valor_actual()) }}</td>
-                                    <td class="text-right">
-                                        {% if activo.valor_compra > 0 %}
-                                            {{ "%.1f"|format((activo.depreciacion_acumulada() / activo.valor_compra * 100)) }}%
-                                        {% else %}
-                                            0%
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% endif %}
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Alternativa más simple para Activos con Mayor Depreciación -->
+            <!-- ✅ ACTUALIZADO: ACTIVOS POR VALOR (Top 10) con estado -->
             <div class="report-section">
                 <h3>📋 Activos por Valor de Compra (Top 10)</h3>
                 <div class="table-container">
@@ -343,19 +705,33 @@
                         <thead>
                             <tr>
                                 <th>Activo</th>
-                                <th>Valor Compra</th>
-                                <th>Depreciación</th>
-                                <th>Valor Actual</th>
-                                <th>% Depreciado</th>
+                                <th>Categoría</th>
+                                <th class="text-center">Estado</th>
+                                <th class="text-right">Valor Compra</th>
+                                <th class="text-right">Valor Actual</th>
+                                <th class="text-right">% Depreciado</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for activo in activos | sort(attribute='valor_compra', reverse=true) %}
                                 {% if loop.index <= 10 %}
                                 <tr>
-                                    <td>{{ activo.nombre }}</td>
+                                    <td><strong>{{ activo.nombre }}</strong></td>
+                                    <td>
+                                        <small style="color: var(--gris-suave);">
+                                            {{ categorias.get(activo.categoria, activo.categoria) }}
+                                        </small>
+                                    </td>
+                                    <td class="text-center">
+                                        {% if activo.estado == 'ACTIVO' %}
+                                            <span class="badge badge-activo">✅ Activo</span>
+                                        {% elif activo.estado == 'MANTENIMIENTO' %}
+                                            <span class="badge badge-mantenimiento">🔧 Mant.</span>
+                                        {% else %}
+                                            <span class="badge badge-inactivo">❌ Inactivo</span>
+                                        {% endif %}
+                                    </td>
                                     <td class="text-right">${{ "{:,.0f}".format(activo.valor_compra) }}</td>
-                                    <td class="text-right">${{ "{:,.0f}".format(activo.depreciacion_acumulada()) }}</td>
                                     <td class="text-right">${{ "{:,.0f}".format(activo.valor_actual()) }}</td>
                                     <td class="text-right">
                                         {% if activo.valor_compra > 0 %}
@@ -372,21 +748,31 @@
                 </div>
             </div>
 
+            <!-- EMPTY STATE -->
             {% if not activos %}
-            <div class="empty-state">
-                <div>📭</div>
-                <h3>No hay datos para generar el reporte</h3>
-                <p>Registra algunos activos para ver análisis y estadísticas</p>
-                <a href="{{ url_for('registrar_activo') }}" class="btn btn-success" style="margin-top: 15px;">
-                    ➕ Registrar Primer Activo
-                </a>
+            <div class="report-section">
+                <div class="empty-state">
+                    <div class="empty-icon">📭</div>
+                    <h3>No hay activos registrados</h3>
+                    <p>Registra algunos activos para ver análisis y estadísticas en este reporte.</p>
+                    <a href="{{ url_for('registrar_activo') }}" class="btn btn-primary" style="margin-top: 20px;">
+                        ➕ Registrar Primer Activo
+                    </a>
+                </div>
             </div>
             {% endif %}
 
-            <!-- Información para Impresión -->
-            <div class="print-only" style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #ccc;">
-                <p><strong>Reporte generado el:</strong> {{ now.strftime('%d/%m/%Y %H:%M') }}</p>
-                <p><strong>Sistema:</strong> {{ nombre_empresa or "Panadería" }} - Módulo de Activos Fijos</p>
+            <!-- ✅ PIE DE PÁGINA PROFESIONAL -->
+            <div class="footer-info print-only">
+                <div>
+                    <strong>Reporte generado:</strong> {{ now.strftime('%d/%m/%Y a las %H:%M') }}
+                </div>
+                <div>
+                    <strong>Sistema:</strong> PanaderíaPro - Módulo de Activos Fijos
+                </div>
+                <div>
+                    <!-- Página: numeración automática del navegador -->
+                </div>
             </div>
         </div>
     </div>
