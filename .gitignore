@@ -94,4 +94,5 @@ backups_postgresql/
 *.sql 
 *.backup 
 *.dump 
-_ARCHIVE_*/*.bak_*
+_ARCHIVE_*/
+*.bak_*
