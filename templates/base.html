@@ -166,7 +166,19 @@
                         {% endfor %}
                     {% endif %}
                 {% endwith %}
-
+                {# ✅ Banner de vencimiento de licencia (solo si vence en ≤ 30 días) #}
+                {% if dias_restantes is not none and dias_restantes <= 30 and dias_restantes >= 0 %}
+                <div class="alert alert-warning alert-dismissible fade show mt-3" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    {% if dias_restantes > 0 %}
+                        <strong>Tu licencia vence en {{ dias_restantes }} días.</strong>
+                    {% else %}
+                        <strong>Tu licencia vence HOY.</strong>
+                    {% endif %}
+                    <a href="{{ url_for('mi_perfil') }}" class="alert-link ms-2">Ver detalles</a>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                </div>
+                {% endif %}
                 {% block content %}
                 {% endblock %}
             </main>

@@ -1,125 +1,193 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Perfil - Sistema Panadería</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-</head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/dashboard">
-                <i class="fas fa-bread-slice me-2"></i>
-                <strong>Panadería POS</strong>
-            </a>
-            <div class="navbar-text text-white">
-                <i class="fas fa-user me-1"></i>
-                {{ current_user.nombre_completo }}
-            </div>
-        </div>
-    </nav>
+{% extends "base.html" %}
 
-    <div class="container-fluid mt-4">
-        <div class="row justify-content-center">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header bg-info text-white">
-                        <h4 class="mb-0">
-                            <i class="fas fa-user-circle me-2"></i>
-                            Mi Perfil
-                        </h4>
+{% block title %}Mi Perfil - Panadería POS{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+
+            <!-- ══════════════════════════════════════════════ -->
+            <!-- 🔑 TARJETA DE LICENCIA                        -->
+            <!-- ══════════════════════════════════════════════ -->
+            {% if config %}
+            {% set dias_restantes = (config.fecha_expiracion - hoy).days if config.fecha_expiracion else None %}
+            {% set color_licencia = 'success' if config.tipo_licencia in ['nube_premium','premium','local'] else 'warning' %}
+            {% set color_dias = 'success' if (dias_restantes is none or dias_restantes > 30) else ('warning' if dias_restantes > 7 else 'danger') %}
+
+            <div class="card mb-4">
+                <div class="card-header bg-{{ color_licencia }} text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-key me-2"></i>Mi Licencia
+                    </h5>
+                    <span class="badge bg-light text-dark">
+                        {{ config.tipo_licencia|upper|replace('_',' ') }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-2">
+                            <small class="text-muted d-block">Tipo de Licencia</small>
+                            <strong>{{ config.tipo_licencia|title|replace('_',' ') }}</strong>
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <small class="text-muted d-block">Usuarios</small>
+                            <strong>{{ config.max_usuarios }}</strong>
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <small class="text-muted d-block">Fecha de Vencimiento</small>
+                            <strong>{{ config.fecha_expiracion.strftime('%d/%m/%Y') if config.fecha_expiracion else 'Permanente' }}</strong>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        {% with messages = get_flashed_messages(with_categories=true) %}
-                            {% if messages %}
-                                {% for category, message in messages %}
-                                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show">
-                                        {{ message }}
-                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                                    </div>
-                                {% endfor %}
-                            {% endif %}
-                        {% endwith %}
 
-                        <form method="POST">
-                            <!-- Información del Usuario -->
-                            <div class="mb-3">
+                    {% if dias_restantes is not none %}
+                    <div class="alert alert-{{ color_dias }} mt-3 mb-0">
+                        <i class="fas fa-clock me-2"></i>
+                        {% if dias_restantes > 0 %}
+                            Tu licencia vence en <strong>{{ dias_restantes }} días</strong>.
+                        {% elif dias_restantes == 0 %}
+                            Tu licencia vence <strong>hoy</strong>.
+                        {% else %}
+                            Tu licencia venció hace <strong>{{ -dias_restantes }} días</strong>.
+                        {% endif %}
+                        {% if config.tipo_licencia in ['nube_basica','basico'] %}
+                            <a href="#" class="alert-link ms-2" data-bs-toggle="modal" data-bs-target="#modalUpgrade">
+                                <i class="fas fa-arrow-up me-1"></i>Solicitar Upgrade a Premium
+                            </a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- ══════════════════════════════════════════════ -->
+            <!-- 👤 TARJETA DE PERFIL                          -->
+            <!-- ══════════════════════════════════════════════ -->
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-user-circle me-2"></i>Mi Perfil
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <form method="POST">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label">Nombre de Usuario</label>
                                 <input type="text" class="form-control" value="{{ current_user.username }}" readonly>
                             </div>
-
-                            <div class="mb-3">
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label">Rol</label>
-                                <input type="text" class="form-control" value="{{ current_user.rol|title }}" readonly>
+                                <input type="text" class="form-control" value="{{ current_user.rol|title|replace('_',' ') }}" readonly>
                             </div>
+                        </div>
 
-                            <div class="mb-3">
-                                <label class="form-label">Nombre Completo *</label>
-                                <input type="text" class="form-control" name="nombre_completo" required 
-                                       value="{{ current_user.nombre_completo }}">
-                            </div>
+                        <div class="mb-3">
+                            <label class="form-label">Nombre Completo *</label>
+                            <input type="text" class="form-control" name="nombre_completo" required
+                                    value="{{ current_user.nombre_completo or '' }}">
+                        </div>
 
-                            <div class="mb-3">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label">Email</label>
-                                <input type="email" class="form-control" name="email" 
+                                <input type="email" class="form-control" name="email"
                                        value="{{ current_user.email or '' }}" placeholder="usuario@ejemplo.com">
                             </div>
-
-                            <div class="mb-3">
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label">Teléfono</label>
-                                <input type="tel" class="form-control" name="telefono" 
+                                <input type="tel" class="form-control" name="telefono"
                                        value="{{ current_user.telefono or '' }}" placeholder="+57 300 123 4567">
                             </div>
+                        </div>
 
-                            <!-- Cambio de Contraseña -->
-                            <div class="border-top pt-3 mt-3">
-                                <h5 class="text-muted mb-3">
-                                    <i class="fas fa-key me-2"></i>Cambiar Contraseña
-                                </h5>
-                                
-                                <div class="mb-3">
-                                    <label class="form-label">Nueva Contraseña</label>
-                                    <input type="password" class="form-control" name="nueva_password" 
-                                           placeholder="Dejar vacío para mantener la actual">
-                                    <div class="form-text">Mínimo 6 caracteres</div>
+                        <div class="border-top pt-3 mt-3">
+                            <h5 class="text-muted mb-3">
+                                <i class="fas fa-key me-2"></i>Cambiar Contraseña
+                            </h5>
+
+                            <div class="mb-3">
+                                <label class="form-label">Contraseña Actual</label>
+                                <input type="password" class="form-control" name="password_actual"
+                                       placeholder="Ingresa tu contraseña actual (solo si vas a cambiarla)">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Nueva Contraseña</label>
+                                <input type="password" class="form-control" name="nueva_password"
+                                       placeholder="Dejar vacío para mantener la actual">
+                                <div class="form-text">Mínimo 6 caracteres</div>
+                            </div>
+                        </div>
+
+                        <div class="border-top pt-3 mt-3">
+                            <h5 class="text-muted mb-3">
+                                <i class="fas fa-tachometer-alt me-2"></i>Módulos Disponibles
+                            </h5>
+
+                            <div class="row">
+                                {% for modulo in modulos_permitidos() %}
+                                <div class="col-md-6 mb-2">
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check me-1"></i>
+                                        {{ MODULOS_SISTEMA[modulo] }}
+                                    </span>
                                 </div>
+                                {% endfor %}
                             </div>
+                        </div>
 
-                            <!-- Módulos Permitidos -->
-                            <div class="border-top pt-3 mt-3">
-                                <h5 class="text-muted mb-3">
-                                    <i class="fas fa-tachometer-alt me-2"></i>Módulos Disponibles
-                                </h5>
-                                
-                                <div class="row">
-                                    {% for modulo in modulos_permitidos() %}
-                                    <div class="col-md-6 mb-2">
-                                        <span class="badge bg-success">
-                                            <i class="fas fa-check me-1"></i>
-                                            {{ MODULOS_SISTEMA[modulo] }}
-                                        </span>
-                                    </div>
-                                    {% endfor %}
-                                </div>
-                            </div>
-
-                            <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
-                                <a href="/dashboard" class="btn btn-secondary me-md-2">
-                                    <i class="fas fa-arrow-left me-1"></i>Volver al Dashboard
-                                </a>
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-save me-1"></i>Guardar Cambios
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary me-md-2">
+                                <i class="fas fa-arrow-left me-1"></i>Volver al Dashboard
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>Guardar Cambios
+                            </button>
+                        </div>
+                    </form>
                 </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Upgrade -->
+<div class="modal fade" id="modalUpgrade" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title"><i class="fas fa-arrow-up me-2"></i>Solicitar Upgrade a Premium</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Al pasar a <strong>Premium</strong> desbloqueas:</p>
+                <ul>
+                    <li>✅ Gestión de Usuarios (hasta 3)</li>
+                    <li>✅ Reportes Avanzados</li>
+                    <li>✅ Activos Fijos</li>
+                    <li>✅ Finanzas</li>
+                    <li>✅ Cierres Diarios</li>
+                </ul>
+                <p class="mb-0">Contacta a tu proveedor para coordinar el cambio.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
             </div>
         </div>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+</div>
+{% endblock %}

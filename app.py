@@ -970,7 +970,8 @@ def crear_tenant_saas(nombre_panaderia, subdominio, email_contacto=None, max_usu
         
         # 5. USAR CONTRASEÑA RECIBIDA
         if not contrasena_temp:
-            caracteres = string.ascii_letters + string.digits + "!@#$%"
+            # ✅ Sin caracteres ambiguos: I, l, 1, O, 0
+            caracteres = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%"
             contrasena_temp = ''.join(secrets.choice(caracteres) for _ in range(10))
         else:
             print(f"   🔑 Usando contraseña proporcionada: {contrasena_temp}")
@@ -1371,7 +1372,7 @@ def load_user(user_id):
             
             if table_check:
                 result = db.session.execute(
-                    text(f"SELECT id, username, password_hash, panaderia_id, rol FROM {schema_name}.usuarios WHERE id = :id"),
+                    text(f"SELECT id, username, password_hash, panaderia_id, rol, nombre_completo, email, telefono, activo, fecha_creacion FROM {schema_name}.usuarios WHERE id = :id"),
                     {'id': user_id}
                 )
                 user_data = result.fetchone()
@@ -1383,6 +1384,11 @@ def load_user(user_id):
                     user.password_hash = user_data[2]
                     user.panaderia_id = user_data[3]
                     user.rol = user_data[4]
+                    user.nombre_completo = user_data[5]
+                    user.email = user_data[6]
+                    user.telefono = user_data[7]
+                    user.activo = user_data[8] if user_data[8] is not None else True
+                    user.fecha_creacion = user_data[9]
                     user.tenant_id = tenant_id
                     
                     print(f"✅ [LOAD_USER] Usuario cargado desde {schema_name}: {user.username} (tenant_id: {tenant_id})")
@@ -1392,7 +1398,7 @@ def load_user(user_id):
         # 3. FALLBACK: BUSCAR EN PUBLIC (solo para dev_master)
         # =============================================
         result = db.session.execute(
-            text("SELECT id, username, password_hash, panaderia_id, rol FROM public.usuarios WHERE id = :id"),
+            text("SELECT id, username, password_hash, panaderia_id, rol, nombre_completo, email, telefono FROM public.usuarios WHERE id = :id"),
             {'id': user_id}
         )
         user_data = result.fetchone()
@@ -1404,6 +1410,9 @@ def load_user(user_id):
             user.password_hash = user_data[2]
             user.panaderia_id = user_data[3]
             user.rol = user_data[4]
+            user.nombre_completo = user_data[5]
+            user.email = user_data[6]
+            user.telefono = user_data[7]
             user.tenant_id = 1
             print(f"✅ [LOAD_USER] Usuario cargado desde public: {user.username} (tenant_id: 1)")
             return user
@@ -1577,11 +1586,24 @@ def inject_user_permissions():
     
     # ✅ Obtener configuración del tenant actual de forma segura
     config = None
+    dias_restantes = None
     try:
         if _esta_autenticado():
             panaderia_id = getattr(current_user, 'panaderia_id', None)
             if panaderia_id:
                 config = obtener_configuracion_panaderia_segura(panaderia_id)
+                
+                # ✅ Calcular días restantes de la licencia
+                if config and getattr(config, 'fecha_expiracion', None):
+                    try:
+                        from datetime import date
+                        fecha_exp = config.fecha_expiracion
+                        # Normalizar a date si viene como datetime
+                        if hasattr(fecha_exp, 'date'):
+                            fecha_exp = fecha_exp.date()
+                        dias_restantes = (fecha_exp - date.today()).days
+                    except Exception:
+                        dias_restantes = None
     except Exception:
         # ✅ Silenciar errores durante el arranque o requests sin sesión
         pass
@@ -1591,7 +1613,8 @@ def inject_user_permissions():
         usuario_tiene_acceso=usuario_tiene_acceso,
         modulos_permitidos=modulos_permitidos,
         MODULOS_SISTEMA=MODULOS_SISTEMA,
-        config=config
+        config=config,
+        dias_restantes=dias_restantes
     )
 
 # =============================================
@@ -1986,7 +2009,7 @@ def login():
                 if table_check:
                     # Buscar usuario en este schema
                     result = db.session.execute(
-                        text(f"SELECT id, username, password_hash, panaderia_id, rol FROM {schema}.usuarios WHERE username = :username"),
+                        text(f"SELECT id, username, password_hash, panaderia_id, rol, nombre_completo, email, telefono FROM {schema}.usuarios WHERE username = :username"),
                         {'username': username}
                     )
                     user_data = result.fetchone()
@@ -2002,7 +2025,7 @@ def login():
             try:
                 # Ejecutar consulta directa en PostgreSQL
                 result = db.session.execute(
-                    text("SELECT id, username, password_hash, panaderia_id, rol FROM public.usuarios WHERE username = :username"),
+                    text("SELECT id, username, password_hash, panaderia_id, rol, nombre_completo, email, telefono FROM public.usuarios WHERE username = :username"),
                     {'username': username}
                 )
                 user_data = result.fetchone()
@@ -2022,6 +2045,9 @@ def login():
             user.password_hash = user_data[2]
             user.panaderia_id = user_data[3]
             user.rol = user_data[4]
+            user.nombre_completo = user_data[5]
+            user.email = user_data[6]
+            user.telefono = user_data[7]
             
             # ✅ EXTRAER tenant_id DEL SCHEMA DONDE SE ENCONTRÓ EL USUARIO
             tenant_id = 1  # Valor por defecto
@@ -10397,7 +10423,6 @@ def toggle_usuario(usuario_id):
 # 🆕 RUTA PARA PERFIL DE USUARIO
 @app.route('/mi_perfil', methods=['GET', 'POST'])
 @login_required
-@modulo_requerido('usuarios')
 def mi_perfil():
     """Perfil del usuario actual"""
     if request.method == 'POST':
@@ -10405,22 +10430,35 @@ def mi_perfil():
             current_user.nombre_completo = request.form['nombre_completo']
             current_user.email = request.form.get('email', '')
             current_user.telefono = request.form.get('telefono', '')
-            
+
             # Cambio de contraseña
             nueva_password = request.form.get('nueva_password', '')
             if nueva_password:
+                password_actual = request.form.get('password_actual', '')
+                if not password_actual:
+                    flash('❌ Debes ingresar tu contraseña actual para cambiarla', 'error')
+                    return redirect(url_for('mi_perfil'))
+                if not check_password_hash(current_user.password_hash, password_actual):
+                    flash('❌ La contraseña actual es incorrecta', 'error')
+                    return redirect(url_for('mi_perfil'))
+                if len(nueva_password) < 6:
+                    flash('❌ La nueva contraseña debe tener al menos 6 caracteres', 'error')
+                    return redirect(url_for('mi_perfil'))
                 current_user.set_password(nueva_password)
                 flash('✅ Contraseña actualizada correctamente', 'success')
-            
+
             db.session.commit()
             flash('✅ Perfil actualizado correctamente', 'success')
             return redirect(url_for('mi_perfil'))
-            
+
         except Exception as e:
             db.session.rollback()
             flash(f'❌ Error al actualizar perfil: {str(e)}', 'error')
-    
-    return render_template('mi_perfil.html')
+
+    # ✅ Obtener configuración de licencia para mostrar en el perfil
+    from datetime import date
+    config = obtener_configuracion_panaderia_segura(current_user.panaderia_id)
+    return render_template('mi_perfil.html', config=config, hoy=date.today())
 
 # 🆕 RUTAS PARA GESTIÓN DE PERMISOS - AGREGAR DESPUÉS DE LAS RUTAS DE USUARIOS EXISTENTES
 
@@ -10616,7 +10654,8 @@ def crear_cliente():
         
         # GENERAR CONTRASEÑA TEMPORAL
         def generar_contrasena_temporal():
-            caracteres = string.ascii_letters + string.digits + "!@#$%"
+            # ✅ Sin caracteres ambiguos: I, l, 1, O, 0
+            caracteres = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%"
             return ''.join(secrets.choice(caracteres) for _ in range(10))
         
         contrasena_temp = generar_contrasena_temporal()
@@ -10876,7 +10915,8 @@ def cambiar_licencia(tenant_id):
             
             # ✅ Solo generar contraseña temporal si ALGUNO NO existe
             if not super_existe or not cajero_existe:
-                caracteres = string.ascii_letters + string.digits + "!@#$%"
+                # ✅ Sin caracteres ambiguos: I, l, 1, O, 0
+                caracteres = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%"
                 contrasena_temp = ''.join(secrets.choice(caracteres) for _ in range(10))
                 hashed_password = generate_password_hash(contrasena_temp)
                 print(f"   🔑 Contraseña temporal generada: {contrasena_temp}")
@@ -11115,41 +11155,34 @@ def resetear_password(usuario_id):
 
 def generar_contrasena_segura():
     """
-    🎯 GENERADOR DE CONTRASEÑAS - SOLO CARACTERES QUE SIEMPRE FUNCIONAN
-    Basado en pruebas exhaustivas, estos caracteres funcionan SIEMPRE:
-    - Guión (-) - FUNCIONA SIEMPRE en cualquier posición
+    🎯 GENERADOR DE CONTRASEÑAS - SIN CARACTERES AMBIGUOS
+    Excluye: I, l, 1, O, 0 (visualmente confundibles)
+    Incluye solo símbolos comunes: ! @ # $ %
     """
     import secrets
-    import string
-    
-    # 🔥 CARACTERES 100% SEGUROS (probados en TODOS los casos)
-    # EXCLUIMOS: . ! * ~ _ (todos han fallado en algún caso)
-    # INCLUIMOS SOLO: - (guión) - ha funcionado SIEMPRE en TODAS las posiciones
-    letras = string.ascii_letters
-    digitos = string.digits
-    simbolos_seguros = "-"  # Solo el guión ha demostrado funcionar SIEMPRE
-    
-    caracteres_seguros = letras + digitos + simbolos_seguros
-    
+
+    # ✅ Sin caracteres ambiguos: I, l, 1, O, 0
+    caracteres_seguros = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%"
+
     longitud = 12
     intentos_maximos = 10
-    
+
     for intento in range(intentos_maximos):
         password = ''.join(secrets.choice(caracteres_seguros) for _ in range(longitud))
-        
+
         # VERIFICAR CRITERIOS DE COMPLEJIDAD
         tiene_minuscula = any(c.islower() for c in password)
         tiene_mayuscula = any(c.isupper() for c in password)
         tiene_numero = any(c.isdigit() for c in password)
-        tiene_simbolo = any(c in "-" for c in password)
-        
-        if todas([tiene_minuscula, tiene_mayuscula, tiene_numero, tiene_simbolo]):
+        tiene_simbolo = any(c in "!@#$%" for c in password)
+
+        if all([tiene_minuscula, tiene_mayuscula, tiene_numero, tiene_simbolo]):
             print(f"✅ [GENERADOR] Contraseña segura generada en intento {intento + 1}: {password}")
             return password
-    
+
     # 🎯 FALLBACK
     password_fallback = ''.join(secrets.choice(caracteres_seguros) for _ in range(longitud))
-    print(f"⚠️ [GENERADOR] Usando fallback después de {intentos_maximos} intentos")
+    print(f"⚠️ [GENERADOR] Usando fallback: {password_fallback}")
     return password_fallback
 
 def todas(condiciones):
