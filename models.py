@@ -96,6 +96,35 @@ class Usuario(UserMixin, db.Model):
         permisos_rol = ROLES_PERMISOS.get(self.rol, {})
         return list(permisos_rol.keys())
     
+    def modulos_con_acceso_completo(self):
+        """
+        Devuelve solo los módulos donde el usuario tiene acceso 'completo'.
+        Excluye módulos donde solo tiene permisos parciales (ej: ver_cierre).
+        
+        Regla:
+        - admin_cliente → todos los módulos EXCEPTO los exclusivos de super_admin
+        - otros roles → módulos con ≥2 acciones O en LISTA_BLANCA
+        """
+        # Módulos exclusivos de super_admin (NO accesibles por admin_cliente)
+        MODULOS_EXCLUSIVOS_SUPER_ADMIN = {'clientes'}  # gestion_clientes
+        
+        # Admin ve todos los módulos EXCEPTO los exclusivos de super_admin
+        if self.rol == 'admin_cliente':
+            return [m for m in MODULOS_SISTEMA.keys() 
+                    if m not in MODULOS_EXCLUSIVOS_SUPER_ADMIN]
+        
+        # Módulos siempre visibles si el rol los tiene (aunque sea 1 acción)
+        LISTA_BLANCA = {'dashboard'}
+        
+        modulos_completos = []
+        permisos_rol = ROLES_PERMISOS.get(self.rol, {})
+        
+        for modulo, acciones in permisos_rol.items():
+            if len(acciones) >= 2 or modulo in LISTA_BLANCA:
+                modulos_completos.append(modulo)
+        
+        return modulos_completos
+    
     def __repr__(self):
         return f'<Usuario {self.username} - {self.rol}>'
 

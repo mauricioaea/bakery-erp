@@ -1231,7 +1231,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # =============================================
 
 # 🆕 SOLO IMPORTAR db PRIMERO
-from models import db
+from models import db, MODULOS_SISTEMA, ROLES_PERMISOS
 
 # 🆕 AHORA IMPORTAR TODOS LOS MODELOS GLOBALMENTE (ORDEN CORREGIDO)
 # 🔴 CRÍTICO: ConfiguracionPanaderia y Tenant DEBEN estar PRIMERO
@@ -1428,22 +1428,6 @@ def load_user(user_id):
 # 🆕 DEFINICIÓN DE MÓDULOS DEL SISTEMA
 # =============================================
 
-MODULOS_SISTEMA = {
-    'dashboard': 'Panel Principal',
-    'punto_venta': 'Punto de Venta',
-    'productos': 'Gestión de Productos',
-    'categorias': 'Categorías',
-    'produccion': 'Producción y Recetas',
-    'inventario': 'Inventario y Materias Primas',
-    'clientes': 'Gestión de Clientes',
-    'proveedores': 'Proveedores',
-    'finanzas': 'Control Financiero',
-    'reportes': 'Reportes y Análisis',
-    'configuracion': 'Configuración',
-    'activos': 'Activos Fijos',
-    'usuarios': 'Gestión de Usuarios',
-    'sistema': 'Sistema y Diagnóstico'
-}
 
 # =============================================
 # 🆕 DECORADORES PARA CONTROL DE ACCESO
@@ -1584,6 +1568,14 @@ def inject_user_permissions():
         except Exception:
             return []
     
+    def modulos_con_acceso_completo():
+        if not _esta_autenticado():
+            return []
+        try:
+            return current_user.modulos_con_acceso_completo()
+        except Exception:
+            return []
+    
     # ✅ Obtener configuración del tenant actual de forma segura
     config = None
     dias_restantes = None
@@ -1612,6 +1604,7 @@ def inject_user_permissions():
         usuario_puede=usuario_puede,
         usuario_tiene_acceso=usuario_tiene_acceso,
         modulos_permitidos=modulos_permitidos,
+        modulos_con_acceso_completo=modulos_con_acceso_completo,
         MODULOS_SISTEMA=MODULOS_SISTEMA,
         config=config,
         dias_restantes=dias_restantes
