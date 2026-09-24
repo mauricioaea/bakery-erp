@@ -2037,6 +2037,7 @@ class SaldoBanco(db.Model):
     """Seguimiento del saldo bancario actual"""
     __tablename__ = 'saldos_banco'
     id = db.Column(db.Integer, primary_key=True)
+    banco = db.Column(db.String(100), nullable=False, default='Principal')  # ✅ AGREGADO
     panaderia_id = db.Column(db.Integer, nullable=False, default=1)
     fecha_actualizacion = db.Column(db.DateTime, default=datetime.now)
     saldo_actual = db.Column(db.Float, default=0)
@@ -2055,6 +2056,7 @@ class DepositoBancario(db.Model):
     panaderia_id = db.Column(db.Integer, db.ForeignKey('panaderias.id'), nullable=False)
     
     # Información básica del depósito
+    banco = db.Column(db.String(100), nullable=True)  # ✅ AGREGADO (nullable)
     fecha_deposito = db.Column(db.Date, nullable=False)
     monto = db.Column(db.Float, nullable=False)
     descripcion = db.Column(db.String(200))
@@ -2104,10 +2106,13 @@ class PagoIndividual(db.Model):
     fecha_pago = db.Column(db.Date, nullable=False)
     
     # Información del pago
+    concepto = db.Column(db.String(100), nullable=False)   
     categoria = db.Column(db.String(50), nullable=False)
     proveedor_id = db.Column(db.Integer, db.ForeignKey('proveedor.id'), nullable=True)
     monto = db.Column(db.Float, nullable=False)
+    metodo_pago = db.Column(db.String(50))                  
     referencia = db.Column(db.String(100))
+    observaciones = db.Column(db.Text)                      
     descripcion = db.Column(db.String(300))
     numero_factura = db.Column(db.String(100))
     

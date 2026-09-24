@@ -590,7 +590,7 @@ def crear_tablas_en_orden(schema_name):
     db.session.execute(text(f'''
         CREATE TABLE IF NOT EXISTS {schema_name}.depositos_bancarios (
             id SERIAL PRIMARY KEY,
-            banco VARCHAR(100) NOT NULL,
+            banco VARCHAR(100),
             monto FLOAT NOT NULL,
             fecha_deposito DATE NOT NULL,
             referencia VARCHAR(100),
@@ -8269,6 +8269,7 @@ def actualizar_saldo_automatico(panaderia_id, efectivo=0, transferencias=0, pago
     - pagos: dinero que SALE de la cuenta
     - efectivo: depende de la acción seleccionada
     """
+    saldo_actual = 0  # ✅ Defensivo: valor por defecto
     try:
         # CORREGIDO: Filtro por panaderia_id
         saldo_actual_obj = SaldoBanco.query.filter_by(panaderia_id=panaderia_id).order_by(SaldoBanco.fecha_actualizacion.desc()).first()
@@ -8301,6 +8302,7 @@ def actualizar_saldo_automatico(panaderia_id, efectivo=0, transferencias=0, pago
         
         # Crear nuevo registro de saldo - CORREGIDO: panaderia_id del parámetro
         nuevo_registro_saldo = SaldoBanco(panaderia_id=panaderia_id, 
+            banco='Principal',
             saldo_actual=nuevo_saldo,
             comentario=comentario
         )
@@ -8444,7 +8446,7 @@ def registrar_pago_individual():
         # Validar que el monto sea positivo
         if monto <= 0:
             flash('❌ El monto debe ser mayor a 0', 'error')
-            return redirect(url_for('control_diario'))
+            return redirect(url_for('gestion_financiera'))
         
         fecha_pago = datetime.strptime(request.form['fecha_pago'], '%Y-%m-%d').date()
         referencia = request.form.get('referencia', '')
@@ -8462,7 +8464,14 @@ def registrar_pago_individual():
                     proveedor_id = None
         
         # Crear nuevo pago CON FILTRO TENANT
-        nuevo_pago = PagoIndividual(panaderia_id=current_user.panaderia_id,  # ← CORREGIDO: current_user.panaderia_id
+        # ✅ Derivar 'concepto' de categoria + descripcion
+        concepto = categoria
+        if descripcion:
+            concepto = f"{categoria} - {descripcion[:50]}"
+        
+        nuevo_pago = PagoIndividual(
+            panaderia_id=current_user.panaderia_id,
+            concepto=concepto,
             categoria=categoria,
             proveedor_id=proveedor_id,
             monto=monto,
@@ -8492,7 +8501,7 @@ def registrar_pago_individual():
     except Exception as e:
         flash(f'❌ Error al registrar pago: {str(e)}', 'error')
     
-    return redirect(url_for('control_diario'))
+    return redirect(url_for('gestion_financiera'))
 
 @app.route('/registrar_cierre_caja', methods=['POST'])
 @login_required
@@ -8588,8 +8597,10 @@ def gestion_financiera():
     from sqlalchemy import func
     from datetime import datetime, date
     
-    # Obtener pagos recientes (transacciones)
-    transacciones = PagoIndividual.query.order_by(
+    # Obtener pagos recientes (transacciones) - filtrado por tenant
+    transacciones = PagoIndividual.query.filter_by(
+        panaderia_id=current_user.panaderia_id
+    ).order_by(
         PagoIndividual.fecha_pago.desc()
     ).limit(50).all()
     
@@ -8600,25 +8611,28 @@ def gestion_financiera():
     
     saldo_actual = saldo_banco.saldo_actual if saldo_banco else 0
     
-    # Calcular totales para estadísticas (usando PagoIndividual)
+    # Calcular totales para estadísticas (usando PagoIndividual) - filtrado por tenant
     total_ingresos = PagoIndividual.query.filter(
+        PagoIndividual.panaderia_id == current_user.panaderia_id,
         PagoIndividual.monto >= 0
     ).with_entities(func.sum(PagoIndividual.monto)).scalar() or 0
     
     total_egresos = PagoIndividual.query.filter(
+        PagoIndividual.panaderia_id == current_user.panaderia_id,
         PagoIndividual.monto < 0
     ).with_entities(func.sum(PagoIndividual.monto)).scalar() or 0  # total_egresos es negativo
     
     # Calcular totales del mes
     hoy = datetime.now().date()
     inicio_mes = hoy.replace(day=1)
-    
     ingresos_mes = PagoIndividual.query.filter(
+        PagoIndividual.panaderia_id == current_user.panaderia_id,
         PagoIndividual.monto >= 0,
         PagoIndividual.fecha_pago >= inicio_mes
     ).with_entities(func.sum(PagoIndividual.monto)).scalar() or 0
     
     egresos_mes = PagoIndividual.query.filter(
+        PagoIndividual.panaderia_id == current_user.panaderia_id,
         PagoIndividual.monto < 0,
         PagoIndividual.fecha_pago >= inicio_mes
     ).with_entities(func.sum(PagoIndividual.monto)).scalar() or 0
@@ -8626,7 +8640,7 @@ def gestion_financiera():
     flujo_neto_mes = ingresos_mes + egresos_mes  # egresos_mes es negativo
     
     # Configuración (valores por defecto)
-        # Obtener registros de últimos 7 días
+    # Obtener registros de últimos 7 días
     registros_recientes = RegistroDiario.query.filter_by(
         panaderia_id=current_user.panaderia_id
     ).order_by(RegistroDiario.fecha.desc()).limit(7).all()
@@ -9267,6 +9281,7 @@ def crear_deposito_bancario():
                 'monto': request.form.get('monto'),
                 'descripcion': request.form.get('descripcion', ''),
                 'referencia': request.form.get('referencia', ''),
+                'banco': request.form.get('banco', ''),
                 'cuenta_bancaria': request.form.get('cuenta_bancaria', ''),
                 'metodo_deposito': request.form.get('metodo_deposito'),
                 'estado': request.form.get('estado', 'REGISTRADO')
@@ -9310,6 +9325,7 @@ def crear_deposito_bancario():
 
         nuevo_deposito = DepositoBancario(
             panaderia_id=current_user.panaderia_id,
+            banco=data.get('banco', None),  # ✅ NUEVO (opcional)
             fecha_deposito=fecha_deposito,
             monto=float(data['monto']),
             descripcion=data.get('descripcion', ''),

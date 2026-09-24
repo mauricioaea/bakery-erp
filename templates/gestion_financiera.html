@@ -409,6 +409,16 @@
                     
                 </div>
             </div>
+            <div class="form-group">
+                <label>💵 ¿Qué harás con el efectivo?</label>
+                <select name="accion_efectivo" class="form-control" required>
+                    <option value="depositar">💰 Depositar el efectivo en el banco (se suma al saldo)</option>
+                    <option value="guardar_caja">💼 Guardar efectivo en caja para cambio (no se suma al saldo)</option>
+                </select>
+                <small>Aplica solo al efectivo. Las transferencias siempre se suman al saldo.</small>
+            </div>
+            
+            
             <div id="validacion-total" style="padding: 15px; background: #f8d7da; border-radius: 8px; margin-bottom: 15px; display: none; border-left: 4px solid #dc3545;">
                 <strong>⚠️ Atención:</strong>
                 <span id="mensaje-validacion"></span>
@@ -472,20 +482,17 @@
             <button type="submit" class="btn btn-success">💾 Guardar Pago</button>
         </form>
 
-        <div class="form-group" style="margin-top: 20px;">
-            <label>💵 ¿Qué harás con el efectivo?</label>
-            <select name="accion_efectivo" class="form-control" required>
-                <option value="depositar">💰 Depositar el efectivo en el banco</option>
-                <option value="guardar_caja">💼 Guardar efectivo en caja para cambio</option>
-            </select>
-            <small>Selecciona si el efectivo se depositará en el banco o se quedará en caja</small>
-        </div>
+        
 
         <!-- Pagos Registrados Hoy -->
         <div style="margin-top: 30px; border-top: 2px solid #f0f0f0; padding-top: 20px;">
             <h4>📋 Pagos Registrados Hoy</h4>
-            {% if pagos_hoy %}
-                {% for pago in pagos_hoy %}
+                {% if pagos_hoy %}
+                {% set limite_pagos = 10 %}
+                {% set ver_todos = request.args.get('ver_todos') == '1' %}
+                {% set pagos_mostrar = pagos_hoy if ver_todos else pagos_hoy[:limite_pagos] %}
+                
+                {% for pago in pagos_mostrar %}
                 <div class="historial-item" style="margin-bottom: 10px;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
@@ -509,6 +516,20 @@
                     {% endif %}
                 </div>
                 {% endfor %}
+                
+                {% if not ver_todos and pagos_hoy|length > limite_pagos %}
+                <div style="text-align: center; margin-top: 15px;">
+                    <a href="{{ url_for('gestion_financiera') }}?ver_todos=1" class="btn btn-outline-primary btn-sm">
+                        Ver todos los pagos ({{ pagos_hoy|length }} hoy) →
+                    </a>
+                </div>
+                {% elif ver_todos and pagos_hoy|length > limite_pagos %}
+                <div style="text-align: center; margin-top: 15px;">
+                    <a href="{{ url_for('gestion_financiera') }}" class="btn btn-outline-secondary btn-sm">
+                        ← Mostrar solo últimos {{ limite_pagos }}
+                    </a>
+                </div>
+                {% endif %}
             {% else %}
                 <p>No hay pagos registrados hoy.</p>
             {% endif %}
@@ -636,12 +657,31 @@
                         <input type="text" id="descripcionDeposito" class="form-control" placeholder="Ej: Depósito de cierre diario">
                     </div>
                     <div class="form-group">
+                        <label for="bancoDeposito">Banco:</label>
+                        <select id="bancoDeposito" class="form-control">
+                            <option value="">Seleccionar banco...</option>
+                            <option value="Bancolombia">Bancolombia</option>
+                            <option value="Davivienda">Davivienda</option>
+                            <option value="BBVA Colombia">BBVA Colombia</option>
+                            <option value="Banco de Bogotá">Banco de Bogotá</option>
+                            <option value="Banco de Occidente">Banco de Occidente</option>
+                            <option value="Banco Popular">Banco Popular</option>
+                            <option value="Scotiabank Colpatria">Scotiabank Colpatria</option>
+                            <option value="Itaú">Itaú</option>
+                            <option value="Nequi">Nequi</option>
+                            <option value="Daviplata">Daviplata</option>
+                            <option value="Banco Agrario">Banco Agrario</option>
+                            <option value="Banco Caja Social">Banco Caja Social</option>
+                            <option value="Otro">Otro</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <label for="referenciaDeposito">Referencia:</label>
                         <input type="text" id="referenciaDeposito" class="form-control" placeholder="Ej: TRANSF-001">
                     </div>
                     <div class="form-group">
-                        <label for="cuentaDeposito">Cuenta bancaria:</label>
-                        <input type="text" id="cuentaDeposito" class="form-control" placeholder="Ej: Cuenta Principal">
+                        <label for="cuentaDeposito">Número de cuenta:</label>
+                        <input type="text" id="cuentaDeposito" class="form-control" placeholder="Ej: 1234-5678-90">
                     </div>
                     <div class="form-group">
                         <label for="metodoDeposito">Método de depósito: *</label>
@@ -756,6 +796,8 @@
             .catch(error => console.error('Error:', error));
     }
 
+    let mostrarTodosDepositos = false;   // ✅ Estado global
+
     function renderizarDepositos(depositos) {
         const tbody = document.querySelector('#tablaDepositos tbody');
         if (!tbody) return;
@@ -772,8 +814,11 @@
             return;
         }
 
+        const limite = 5;
+        const depositosMostrar = mostrarTodosDepositos ? depositos : depositos.slice(0, limite);
+
         tbody.innerHTML = '';
-        depositos.forEach(deposito => {
+        depositosMostrar.forEach(deposito => {
             const fila = document.createElement('tr');
             const monto = parseFloat(deposito.monto);
             const montoFormateado = `$${monto.toLocaleString('es-CO')}`;
@@ -804,6 +849,35 @@
             `;
             tbody.appendChild(fila);
         });
+
+        // ✅ Botón "Ver todos" / "Mostrar menos"
+        if (depositos.length > limite) {
+            const filaVerMas = document.createElement('tr');
+            if (mostrarTodosDepositos) {
+                filaVerMas.innerHTML = `
+                    <td colspan="8" style="text-align: center; padding: 15px;">
+                        <a href="#" onclick="toggleVerTodosDepositos(event)" class="btn btn-outline-secondary btn-sm">
+                            ← Mostrar solo últimos ${limite}
+                        </a>
+                    </td>
+                `;
+            } else {
+                filaVerMas.innerHTML = `
+                    <td colspan="8" style="text-align: center; padding: 15px;">
+                        <a href="#" onclick="toggleVerTodosDepositos(event)" class="btn btn-outline-primary btn-sm">
+                            Ver todos los depósitos (${depositos.length}) →
+                        </a>
+                    </td>
+                `;
+            }
+            tbody.appendChild(filaVerMas);
+        }
+    }
+
+    function toggleVerTodosDepositos(event) {
+        event.preventDefault();
+        mostrarTodosDepositos = !mostrarTodosDepositos;
+        cargarDepositos(false);
     }
 
     function actualizarEstadisticas(depositos) {
@@ -889,6 +963,7 @@
             monto: parseFloat(document.getElementById('montoDeposito').value),
             descripcion: document.getElementById('descripcionDeposito').value,
             referencia: document.getElementById('referenciaDeposito').value,
+            banco: document.getElementById('bancoDeposito').value,
             cuenta_bancaria: document.getElementById('cuentaDeposito').value,
             metodo_deposito: document.getElementById('metodoDeposito').value,
             estado: document.getElementById('estadoDeposito').value
