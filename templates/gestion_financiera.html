@@ -658,22 +658,13 @@
                     </div>
                     <div class="form-group">
                         <label for="bancoDeposito">Banco:</label>
-                        <select id="bancoDeposito" class="form-control">
-                            <option value="">Seleccionar banco...</option>
-                            <option value="Bancolombia">Bancolombia</option>
-                            <option value="Davivienda">Davivienda</option>
-                            <option value="BBVA Colombia">BBVA Colombia</option>
-                            <option value="Banco de Bogotá">Banco de Bogotá</option>
-                            <option value="Banco de Occidente">Banco de Occidente</option>
-                            <option value="Banco Popular">Banco Popular</option>
-                            <option value="Scotiabank Colpatria">Scotiabank Colpatria</option>
-                            <option value="Itaú">Itaú</option>
-                            <option value="Nequi">Nequi</option>
-                            <option value="Daviplata">Daviplata</option>
-                            <option value="Banco Agrario">Banco Agrario</option>
-                            <option value="Banco Caja Social">Banco Caja Social</option>
-                            <option value="Otro">Otro</option>
-                        </select>
+                        <input list="bancos-sugeridos" id="bancoDeposito" name="banco" class="form-control" placeholder="Escribe o selecciona un banco">
+                        <datalist id="bancos-sugeridos">
+                            {% for banco in bancos_sugeridos %}
+                            <option value="{{ banco }}">
+                            {% endfor %}
+                        </datalist>
+                        <small class="text-muted">Escribe el nombre del banco o selecciona uno sugerido</small>
                     </div>
                     <div class="form-group">
                         <label for="referenciaDeposito">Referencia:</label>

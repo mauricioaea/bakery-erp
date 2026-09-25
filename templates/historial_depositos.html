@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+
+{% block title %}Historial de Depósitos - Panadería POS{% endblock %}
+
+{% block content %}
+<style>
+    .historial-page { padding: 20px 0; }
+
+    .historial-page .filtros-card {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .historial-page .stat-card {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        text-align: center;
+        height: 100%;
+    }
+    .historial-page .stat-card .valor {
+        font-size: 1.8em;
+        font-weight: bold;
+        color: #27ae60;
+        margin: 5px 0;
+    }
+    .historial-page .stat-card .label {
+        color: #666;
+        font-size: 0.85em;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .historial-page .tabla-container {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        overflow-x: auto;
+    }
+
+    .historial-page table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9em;
+    }
+    .historial-page table thead th {
+        background: #2c3e50;
+        color: white;
+        padding: 12px 10px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.85em;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    .historial-page table tbody td {
+        padding: 12px 10px;
+        border-bottom: 1px solid #eee;
+        vertical-align: middle;
+    }
+    .historial-page table tbody tr:hover {
+        background: #f8f9fa;
+    }
+    .historial-page .monto-cell {
+        text-align: right;
+        font-weight: 600;
+        color: #27ae60;
+    }
+
+    .historial-page .badge-estado {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 0.75em;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    .historial-page .badge-estado.registrado { background: #3498db; color: white; }
+    .historial-page .badge-estado.conciliado { background: #27ae60; color: white; }
+    .historial-page .badge-estado.anulado { background: #e74c3c; color: white; }
+
+    .historial-page .banco-cell {
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    .historial-page .desglose-card {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    .historial-page .desglose-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 0;
+        border-bottom: 1px solid #e0e0e0;
+        font-size: 0.9em;
+    }
+    .historial-page .desglose-item:last-child {
+        border-bottom: none;
+    }
+    .historial-page .desglose-item strong {
+        color: #27ae60;
+    }
+
+    .historial-page .paginacion {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        margin-top: 20px;
+    }
+    .historial-page .paginacion .info {
+        color: #666;
+        font-size: 0.9em;
+    }
+
+    .historial-page .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: #7f8c8d;
+    }
+    .historial-page .empty-state i {
+        font-size: 3em;
+        display: block;
+        margin-bottom: 15px;
+        color: #bdc3c7;
+    }
+</style>
+
+<div class="historial-page">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h1 class="h3 mb-1">🏦 Historial de Depósitos</h1>
+            <p class="text-muted mb-0">Consulta detallada de depósitos bancarios por período, banco y estado</p>
+        </div>
+        <div>
+            <a href="{{ url_for('reportes') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-arrow-left me-1"></i> Volver a Reportes
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filtros-card">
+        <form method="GET" action="{{ url_for('historial_depositos') }}">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label for="fecha_inicio" class="form-label"><strong>Fecha Inicio:</strong></label>
+                    <input type="date" id="fecha_inicio" name="fecha_inicio" class="form-control" value="{{ fecha_inicio }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="fecha_fin" class="form-label"><strong>Fecha Fin:</strong></label>
+                    <input type="date" id="fecha_fin" name="fecha_fin" class="form-control" value="{{ fecha_fin }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="banco" class="form-label"><strong>Banco:</strong></label>
+                    <select id="banco" name="banco" class="form-select">
+                        <option value="">Todos los bancos</option>
+                        {% for banco in bancos_disponibles %}
+                        <option value="{{ banco }}" {% if banco_filtro == banco %}selected{% endif %}>{{ banco }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="estado" class="form-label"><strong>Estado:</strong></label>
+                    <select id="estado" name="estado" class="form-select">
+                        <option value="">Todos los estados</option>
+                        {% for est_value, est_label in estados_disponibles %}
+                        <option value="{{ est_value }}" {% if estado_filtro == est_value %}selected{% endif %}>{{ est_label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-12 text-end">
+                    <a href="{{ url_for('historial_depositos') }}" class="btn btn-outline-secondary btn-sm">Limpiar</a>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fas fa-search me-1"></i> Consultar
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Estadísticas rápidas -->
+    <div class="row g-3 mb-3">
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="label">Total del Período</div>
+                <div class="valor">${{ "{:,.0f}".format(total_monto) }}</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="label">Cantidad de Depósitos</div>
+                <div class="valor">{{ total_cantidad }}</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="label">Promedio por Depósito</div>
+                <div class="valor">${{ "{:,.0f}".format(promedio) }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Desglose por banco -->
+    {% if desglose %}
+    <div class="desglose-card">
+        <h3 class="h6 mb-3">🏦 Desglose por Banco</h3>
+        <div class="row">
+            {% for d in desglose %}
+            <div class="col-md-6">
+                <div class="desglose-item">
+                    <span>{{ d.banco or 'Sin banco' }} <small class="text-muted">({{ d.cantidad }} depósitos)</small></span>
+                    <strong>${{ "{:,.0f}".format(d.total or 0) }}</strong>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Tabla -->
+    <div class="tabla-container">
+        {% if depositos %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Banco</th>
+                    <th>Descripción</th>
+                    <th>Cuenta</th>
+                    <th>Referencia</th>
+                    <th>Estado</th>
+                    <th class="text-end">Monto</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for dep in depositos %}
+                <tr>
+                    <td>{{ dep.fecha_deposito.strftime('%d/%m/%Y') if dep.fecha_deposito else '—' }}</td>
+                    <td class="banco-cell">{{ dep.banco or '—' }}</td>
+                    <td>
+                        {{ dep.descripcion or '—' }}
+                        {% if dep.metodo_deposito %}
+                        <br><small class="text-muted">Método: {{ dep.metodo_deposito }}</small>
+                        {% endif %}
+                    </td>
+                    <td>{{ dep.cuenta_bancaria or '—' }}</td>
+                    <td>{% if dep.referencia %}<small>{{ dep.referencia }}</small>{% else %}—{% endif %}</td>
+                    <td>
+                        {% set estado_lower = (dep.estado or 'registrado')|lower %}
+                        <span class="badge-estado {{ estado_lower }}">{{ dep.estado or 'REGISTRADO' }}</span>
+                    </td>
+                    <td class="monto-cell">${{ "{:,.0f}".format(dep.monto or 0) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Paginación -->
+        {% if total_paginas > 1 %}
+        <div class="paginacion">
+            {% if pagina > 1 %}
+            <a href="{{ url_for('historial_depositos', pagina=pagina-1, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin, banco=banco_filtro, estado=estado_filtro) }}" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-chevron-left"></i> Anterior
+            </a>
+            {% endif %}
+
+            <span class="info">Página {{ pagina }} de {{ total_paginas }} ({{ total_depositos }} depósitos totales)</span>
+
+            {% if pagina < total_paginas %}
+            <a href="{{ url_for('historial_depositos', pagina=pagina+1, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin, banco=banco_filtro, estado=estado_filtro) }}" class="btn btn-outline-primary btn-sm">
+                Siguiente <i class="fas fa-chevron-right"></i>
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-search"></i>
+            <h4>No se encontraron depósitos</h4>
+            <p>No hay depósitos registrados en el período seleccionado.</p>
+            <p class="text-muted">Prueba con un rango de fechas diferente o limpia los filtros.</p>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

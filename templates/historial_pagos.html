@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+
+{% block title %}Historial de Pagos - Panadería POS{% endblock %}
+
+{% block content %}
+<style>
+    .historial-page { padding: 20px 0; }
+
+    .historial-page .filtros-card {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .historial-page .stat-card {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        text-align: center;
+        height: 100%;
+    }
+    .historial-page .stat-card .valor {
+        font-size: 1.8em;
+        font-weight: bold;
+        color: #e74c3c;
+        margin: 5px 0;
+    }
+    .historial-page .stat-card .label {
+        color: #666;
+        font-size: 0.85em;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .historial-page .tabla-container {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        overflow-x: auto;
+    }
+
+    .historial-page table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9em;
+    }
+    .historial-page table thead th {
+        background: #2c3e50;
+        color: white;
+        padding: 12px 10px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.85em;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    .historial-page table tbody td {
+        padding: 12px 10px;
+        border-bottom: 1px solid #eee;
+        vertical-align: middle;
+    }
+    .historial-page table tbody tr:hover {
+        background: #f8f9fa;
+    }
+    .historial-page .monto-cell {
+        text-align: right;
+        font-weight: 600;
+        color: #e74c3c;
+    }
+    .historial-page .badge-cat {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.75em;
+        font-weight: 600;
+        background: #ecf0f1;
+        color: #2c3e50;
+    }
+
+    .historial-page .desglose-card {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    .historial-page .desglose-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 0;
+        border-bottom: 1px solid #e0e0e0;
+        font-size: 0.9em;
+    }
+    .historial-page .desglose-item:last-child {
+        border-bottom: none;
+    }
+    .historial-page .desglose-item strong {
+        color: #e74c3c;
+    }
+
+    .historial-page .paginacion {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        margin-top: 20px;
+    }
+    .historial-page .paginacion .info {
+        color: #666;
+        font-size: 0.9em;
+    }
+
+    .historial-page .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: #7f8c8d;
+    }
+    .historial-page .empty-state i {
+        font-size: 3em;
+        display: block;
+        margin-bottom: 15px;
+        color: #bdc3c7;
+    }
+</style>
+
+<div class="historial-page">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h1 class="h3 mb-1">💸 Historial de Pagos</h1>
+            <p class="text-muted mb-0">Consulta detallada de pagos por período, categoría y proveedor</p>
+        </div>
+        <div>
+            <a href="{{ url_for('reportes') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-arrow-left me-1"></i> Volver a Reportes
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filtros-card">
+        <form method="GET" action="{{ url_for('historial_pagos') }}">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label for="fecha_inicio" class="form-label"><strong>Fecha Inicio:</strong></label>
+                    <input type="date" id="fecha_inicio" name="fecha_inicio" class="form-control" value="{{ fecha_inicio }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="fecha_fin" class="form-label"><strong>Fecha Fin:</strong></label>
+                    <input type="date" id="fecha_fin" name="fecha_fin" class="form-control" value="{{ fecha_fin }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="categoria" class="form-label"><strong>Categoría:</strong></label>
+                    <select id="categoria" name="categoria" class="form-select">
+                        <option value="">Todas las categorías</option>
+                        {% for cat_value, cat_label in categorias_disponibles %}
+                        <option value="{{ cat_value }}" {% if categoria_filtro == cat_value %}selected{% endif %}>{{ cat_label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="proveedor_id" class="form-label"><strong>Proveedor:</strong></label>
+                    <select id="proveedor_id" name="proveedor_id" class="form-select">
+                        <option value="">Todos los proveedores</option>
+                        {% for prov in proveedores %}
+                        <option value="{{ prov.id }}" {% if proveedor_id == prov.id %}selected{% endif %}>{{ prov.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-12 text-end">
+                    <a href="{{ url_for('historial_pagos') }}" class="btn btn-outline-secondary btn-sm">Limpiar</a>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fas fa-search me-1"></i> Consultar
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Estadísticas rápidas -->
+    <div class="row g-3 mb-3">
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="label">Total del Período</div>
+                <div class="valor">-${{ "{:,.0f}".format(total_monto) }}</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="label">Cantidad de Pagos</div>
+                <div class="valor">{{ total_cantidad }}</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="label">Promedio por Pago</div>
+                <div class="valor">-${{ "{:,.0f}".format(promedio) }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Desglose por categoría -->
+    {% if desglose %}
+    <div class="desglose-card">
+        <h3 class="h6 mb-3">📊 Desglose por Categoría</h3>
+        <div class="row">
+            {% for d in desglose %}
+            <div class="col-md-6">
+                <div class="desglose-item">
+                    <span>{{ d.categoria or 'Sin categoría' }} <small class="text-muted">({{ d.cantidad }} pagos)</small></span>
+                    <strong>-${{ "{:,.0f}".format(d.total or 0) }}</strong>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Tabla -->
+    <div class="tabla-container">
+        {% if pagos %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Concepto</th>
+                    <th>Categoría</th>
+                    <th>Proveedor</th>
+                    <th>Referencia</th>
+                    <th class="text-end">Monto</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pago in pagos %}
+                <tr>
+                    <td>{{ pago.fecha_pago.strftime('%d/%m/%Y') if pago.fecha_pago else '—' }}</td>
+                    <td>
+                        <strong>{{ pago.concepto or '—' }}</strong>
+                        {% if pago.descripcion %}
+                        <br><small class="text-muted">{{ pago.descripcion }}</small>
+                        {% endif %}
+                    </td>
+                    <td><span class="badge-cat">{{ pago.categoria or '—' }}</span></td>
+                    <td>{{ pago.proveedor.nombre if pago.proveedor else '—' }}</td>
+                    <td>
+                        {% if pago.referencia %}<small>{{ pago.referencia }}</small>{% endif %}
+                        {% if pago.numero_factura %}<br><small class="text-muted">Factura: {{ pago.numero_factura }}</small>{% endif %}
+                    </td>
+                    <td class="monto-cell">-${{ "{:,.0f}".format(pago.monto or 0) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Paginación -->
+        {% if total_paginas > 1 %}
+        <div class="paginacion">
+            {% if pagina > 1 %}
+            <a href="{{ url_for('historial_pagos', pagina=pagina-1, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin, categoria=categoria_filtro, proveedor_id=proveedor_id or '') }}" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-chevron-left"></i> Anterior
+            </a>
+            {% endif %}
+
+            <span class="info">Página {{ pagina }} de {{ total_paginas }} ({{ total_pagos }} pagos totales)</span>
+
+            {% if pagina < total_paginas %}
+            <a href="{{ url_for('historial_pagos', pagina=pagina+1, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin, categoria=categoria_filtro, proveedor_id=proveedor_id or '') }}" class="btn btn-outline-primary btn-sm">
+                Siguiente <i class="fas fa-chevron-right"></i>
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-search"></i>
+            <h4>No se encontraron pagos</h4>
+            <p>No hay pagos registrados en el período seleccionado.</p>
+            <p class="text-muted">Prueba con un rango de fechas diferente o limpia los filtros.</p>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

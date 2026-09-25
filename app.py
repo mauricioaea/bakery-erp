@@ -8652,10 +8652,29 @@ def gestion_financiera():
         fecha_pago=hoy
     ).all()
     
-    # Obtener proveedores
+        # Obtener proveedores
     proveedores = Proveedor.query.filter_by(
         panaderia_id=current_user.panaderia_id
     ).all()
+    
+    # ✅ Bancos sugeridos (bancos ya usados en este tenant + fallback inicial)
+    bancos_usados = db.session.query(DepositoBancario.banco).filter(
+        DepositoBancario.panaderia_id == current_user.panaderia_id,
+        DepositoBancario.banco.isnot(None),
+        DepositoBancario.banco != ''
+    ).distinct().order_by(DepositoBancario.banco).all()
+    
+    bancos_sugeridos = [b[0] for b in bancos_usados if b[0]]
+    
+    # Si el tenant no tiene bancos usados, usar un set base inicial
+    # (el usuario puede agregar cualquier otro banco escribiéndolo)
+    if not bancos_sugeridos:
+        bancos_sugeridos = [
+            'Bancolombia', 'Davivienda', 'BBVA Colombia',
+            'Banco de Bogotá', 'Banco de Occidente', 'Banco Popular',
+            'Scotiabank Colpatria', 'Itaú', 'Nequi', 'Daviplata',
+            'Banco Agrario', 'Banco Caja Social',
+        ]
     
     config = {
         'saldo_actual': saldo_actual,
@@ -8672,7 +8691,8 @@ def gestion_financiera():
                          transacciones=transacciones,
                          total_ingresos_mes=ingresos_mes,
                          total_egresos_mes=abs(egresos_mes),
-                         flujo_neto_mes=flujo_neto_mes)
+                         flujo_neto_mes=flujo_neto_mes,
+                         bancos_sugeridos=bancos_sugeridos)
 @app.route('/reportes')
 @permisos_requeridos('reportes', 'ver')
 @permisos_requeridos('reportes', 'ver')
@@ -8692,16 +8712,234 @@ def reportes():
 @login_required
 @tenant_required
 def historial_pagos():
-    flash('Modulo de Historial de Pagos en desarrollo', 'info')
-    return redirect(url_for('reportes'))
+    """Historial completo de pagos con filtros y paginación"""
+    from datetime import datetime, date, timedelta
+    from sqlalchemy import func
+    
+    panaderia_id = obtener_panaderia_actual()
+    if not panaderia_id:
+        flash('No se pudo determinar la panadería', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Parámetros de filtro
+    fecha_inicio_str = request.args.get('fecha_inicio')
+    fecha_fin_str = request.args.get('fecha_fin')
+    categoria_filtro = request.args.get('categoria', '')
+    proveedor_id_str = request.args.get('proveedor_id', '')
+    pagina = request.args.get('pagina', 1, type=int)
+    if pagina < 1:
+        pagina = 1
+    
+    # Fechas (default: últimos 30 días)
+    hoy = date.today()
+    if fecha_inicio_str and fecha_fin_str:
+        try:
+            fecha_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d').date()
+            fecha_fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d').date()
+        except ValueError:
+            fecha_inicio = hoy - timedelta(days=30)
+            fecha_fin = hoy
+    else:
+        fecha_fin = hoy
+        fecha_inicio = hoy - timedelta(days=30)
+    
+    if fecha_inicio > fecha_fin:
+        fecha_inicio, fecha_fin = fecha_fin, fecha_inicio
+    
+    # Query base con filtros
+    query = PagoIndividual.query.filter(
+        PagoIndividual.panaderia_id == panaderia_id,
+        PagoIndividual.fecha_pago >= fecha_inicio,
+        PagoIndividual.fecha_pago <= fecha_fin
+    )
+    
+    if categoria_filtro:
+        query = query.filter(PagoIndividual.categoria == categoria_filtro)
+    
+    proveedor_id = None
+    if proveedor_id_str:
+        try:
+            proveedor_id = int(proveedor_id_str)
+            query = query.filter(PagoIndividual.proveedor_id == proveedor_id)
+        except ValueError:
+            proveedor_id = None
+    
+    # Total antes de paginar
+    total_pagos = query.count()
+    
+    # Paginación
+    por_pagina = 25
+    total_paginas = (total_pagos + por_pagina - 1) // por_pagina if total_pagos > 0 else 1
+    if pagina > total_paginas:
+        pagina = total_paginas
+    
+    offset = (pagina - 1) * por_pagina
+    pagos = query.order_by(PagoIndividual.fecha_pago.desc(), PagoIndividual.id.desc()).offset(offset).limit(por_pagina).all()
+    
+    # Totales del período (sin paginación)
+    totales = query.with_entities(
+        func.sum(PagoIndividual.monto).label('total'),
+        func.count(PagoIndividual.id).label('cantidad')
+    ).first()
+    
+    total_monto = float(totales.total or 0) if totales else 0
+    total_cantidad = int(totales.cantidad or 0) if totales else 0
+    promedio = total_monto / total_cantidad if total_cantidad > 0 else 0
+    
+    # Desglose por categoría
+    desglose = query.with_entities(
+        PagoIndividual.categoria,
+        func.sum(PagoIndividual.monto).label('total'),
+        func.count(PagoIndividual.id).label('cantidad')
+    ).group_by(PagoIndividual.categoria).order_by(func.sum(PagoIndividual.monto).desc()).all()
+    
+    # Proveedores para el filtro
+    proveedores = Proveedor.query.filter_by(panaderia_id=panaderia_id).order_by(Proveedor.nombre).all()
+    
+    # Categorías disponibles (mismas del form de pagos)
+    categorias_disponibles = [
+        ('MATERIAS_PRIMAS', 'Proveedores - Materias Primas'),
+        ('SERVICIOS_PUBLICOS', 'Servicios Públicos'),
+        ('NOMINA', 'Nómina y Salarios'),
+        ('ALQUILER', 'Alquiler del Local'),
+        ('SERVICIOS_EXTERNOS', 'Servicios Externos'),
+        ('MANTENIMIENTO', 'Mantenimiento y Reparaciones'),
+        ('IMPUESTOS', 'Impuestos y Tributos'),
+        ('GASTOS_ADMINISTRATIVOS', 'Gastos Administrativos'),
+        ('INVERSIONES', 'Inversiones y Mejoras'),
+        ('OTROS', 'Otros Gastos'),
+    ]
+    
+    return render_template('historial_pagos.html',
+                         pagos=pagos,
+                         total_pagos=total_pagos,
+                         total_paginas=total_paginas,
+                         pagina=pagina,
+                         por_pagina=por_pagina,
+                         fecha_inicio=fecha_inicio,
+                         fecha_fin=fecha_fin,
+                         categoria_filtro=categoria_filtro,
+                         proveedor_id=proveedor_id,
+                         proveedores=proveedores,
+                         categorias_disponibles=categorias_disponibles,
+                         total_monto=total_monto,
+                         total_cantidad=total_cantidad,
+                         promedio=promedio,
+                         desglose=desglose,
+                         hoy=hoy)
 
 @app.route('/historial_depositos')
 @permisos_requeridos('reportes', 'ver')
 @login_required
 @tenant_required
 def historial_depositos():
-    flash('Modulo de Historial de Depositos en desarrollo', 'info')
-    return redirect(url_for('reportes'))
+    """Historial completo de depósitos bancarios con filtros y paginación"""
+    from datetime import datetime, date, timedelta
+    from sqlalchemy import func
+    
+    panaderia_id = obtener_panaderia_actual()
+    if not panaderia_id:
+        flash('No se pudo determinar la panadería', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Parámetros de filtro
+    fecha_inicio_str = request.args.get('fecha_inicio')
+    fecha_fin_str = request.args.get('fecha_fin')
+    banco_filtro = request.args.get('banco', '')
+    estado_filtro = request.args.get('estado', '')
+    pagina = request.args.get('pagina', 1, type=int)
+    if pagina < 1:
+        pagina = 1
+    
+    # Fechas (default: últimos 30 días)
+    hoy = date.today()
+    if fecha_inicio_str and fecha_fin_str:
+        try:
+            fecha_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d').date()
+            fecha_fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d').date()
+        except ValueError:
+            fecha_inicio = hoy - timedelta(days=30)
+            fecha_fin = hoy
+    else:
+        fecha_fin = hoy
+        fecha_inicio = hoy - timedelta(days=30)
+    
+    if fecha_inicio > fecha_fin:
+        fecha_inicio, fecha_fin = fecha_fin, fecha_inicio
+    
+    # Query base con filtros
+    query = DepositoBancario.query.filter(
+        DepositoBancario.panaderia_id == panaderia_id,
+        DepositoBancario.fecha_deposito >= fecha_inicio,
+        DepositoBancario.fecha_deposito <= fecha_fin
+    )
+    
+    if banco_filtro:
+        query = query.filter(DepositoBancario.banco == banco_filtro)
+    
+    if estado_filtro:
+        query = query.filter(DepositoBancario.estado == estado_filtro)
+    
+    # Total antes de paginar
+    total_depositos = query.count()
+    
+    # Paginación
+    por_pagina = 25
+    total_paginas = (total_depositos + por_pagina - 1) // por_pagina if total_depositos > 0 else 1
+    if pagina > total_paginas:
+        pagina = total_paginas
+    
+    offset = (pagina - 1) * por_pagina
+    depositos = query.order_by(DepositoBancario.fecha_deposito.desc(), DepositoBancario.id.desc()).offset(offset).limit(por_pagina).all()
+    
+    # Totales del período
+    totales = query.with_entities(
+        func.sum(DepositoBancario.monto).label('total'),
+        func.count(DepositoBancario.id).label('cantidad')
+    ).first()
+    
+    total_monto = float(totales.total or 0) if totales else 0
+    total_cantidad = int(totales.cantidad or 0) if totales else 0
+    promedio = total_monto / total_cantidad if total_cantidad > 0 else 0
+    
+    # Desglose por banco
+    desglose = query.with_entities(
+        DepositoBancario.banco,
+        func.sum(DepositoBancario.monto).label('total'),
+        func.count(DepositoBancario.id).label('cantidad')
+    ).group_by(DepositoBancario.banco).order_by(func.sum(DepositoBancario.monto).desc()).all()
+    
+    # Bancos disponibles (para filtro) — extraídos de los datos reales
+    bancos_disponibles = db.session.query(DepositoBancario.banco).filter(
+        DepositoBancario.panaderia_id == panaderia_id,
+        DepositoBancario.banco.isnot(None)
+    ).distinct().order_by(DepositoBancario.banco).all()
+    bancos_disponibles = [b[0] for b in bancos_disponibles if b[0]]
+    
+    # Estados disponibles
+    estados_disponibles = [
+        ('REGISTRADO', 'Registrado'),
+        ('CONCILIADO', 'Conciliado'),
+        ('ANULADO', 'Anulado'),
+    ]
+    
+    return render_template('historial_depositos.html',
+                         depositos=depositos,
+                         total_depositos=total_depositos,
+                         total_paginas=total_paginas,
+                         pagina=pagina,
+                         por_pagina=por_pagina,
+                         fecha_inicio=fecha_inicio,
+                         fecha_fin=fecha_fin,
+                         banco_filtro=banco_filtro,
+                         estado_filtro=estado_filtro,
+                         bancos_disponibles=bancos_disponibles,
+                         estados_disponibles=estados_disponibles,
+                         total_monto=total_monto,
+                         total_cantidad=total_cantidad,
+                         promedio=promedio,
+                         desglose=desglose,
+                         hoy=hoy)
 
 
 
