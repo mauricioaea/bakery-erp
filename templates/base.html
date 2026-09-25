@@ -96,12 +96,12 @@
                         </li>
                         {% endif %}
                         
-                        <!-- Reportes Avanzados - PREMIUM -->
+                        <!-- Reportes - PREMIUM -->
                         {% if usuario_tiene_acceso('reportes') and usuario_puede('reportes', 'ver') %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('reporte_analisis_predictivo') }}">
+                            <a class="nav-link" href="{{ url_for('reportes') }}">
                                 <i class="fas fa-chart-line me-2"></i>
-                                Reportes Avanzados
+                                Reportes
                                 {% if config and config.tipo_licencia == 'nube_basica' %}
                                     <span class="badge bg-warning text-dark ms-2" style="font-size: 0.6rem;">⭐ PREMIUM</span>
                                 {% endif %}
