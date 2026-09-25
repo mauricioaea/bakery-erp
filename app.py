@@ -8687,6 +8687,24 @@ def reportes():
     
     return render_template('reportes.html')
 
+@app.route('/historial_pagos')
+@permisos_requeridos('reportes', 'ver')
+@login_required
+@tenant_required
+def historial_pagos():
+    flash('Modulo de Historial de Pagos en desarrollo', 'info')
+    return redirect(url_for('reportes'))
+
+@app.route('/historial_depositos')
+@permisos_requeridos('reportes', 'ver')
+@login_required
+@tenant_required
+def historial_depositos():
+    flash('Modulo de Historial de Depositos en desarrollo', 'info')
+    return redirect(url_for('reportes'))
+
+
+
 @app.route('/generar_reporte_estado_resultados')
 @permisos_requeridos('reportes', 'exportar')
 @login_required

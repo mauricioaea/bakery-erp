@@ -11,19 +11,20 @@
     
     .reportes-page { padding: 20px 0; }
 
-    /* Report Grid */
     .reportes-page .reporte-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
         gap: 20px;
         margin-top: 20px;
     }
     .reportes-page .reporte-card {
         background: #f8f9fa;
-        padding: 25px;
+        padding: 22px;
         border-radius: 12px;
         border-left: 5px solid #3498db;
         transition: transform 0.3s ease, box-shadow 0.3s ease;
+        display: flex;
+        flex-direction: column;
     }
     .reportes-page .reporte-card:hover {
         transform: translateY(-5px);
@@ -31,6 +32,7 @@
     }
     .reportes-page .reporte-card.contable { border-left-color: #e74c3c; }
     .reportes-page .reporte-card.gerencial { border-left-color: #27ae60; }
+    .reportes-page .reporte-card.movimiento { border-left-color: #f39c12; }
     .reportes-page .reporte-card.unificado {
         border-left-color: #9b59b6;
         background: linear-gradient(135deg, #f8f9fa 0%, #e8f4fd 100%);
@@ -39,15 +41,20 @@
     .reportes-page .reporte-card h3 {
         color: #2c3e50;
         margin-bottom: 10px;
-        font-size: 1.3em;
+        font-size: 1.15em;
     }
     .reportes-page .reporte-card p {
         color: #666;
-        margin-bottom: 20px;
-        line-height: 1.5;
+        margin-bottom: 15px;
+        line-height: 1.4;
+        font-size: 0.9em;
+        flex-grow: 1;
+    }
+    .reportes-page .reporte-card .acciones {
+        margin-top: auto;
     }
 
-    /* Botón purple (no está en Bootstrap) */
+    /* Botón purple */
     .reportes-page .btn-purple {
         background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
         color: white;
@@ -73,21 +80,39 @@
         100% { transform: rotate(360deg); }
     }
 
-    /* Badges específicos de reportes */
+    /* Badges de reportes */
     .reportes-page .badge-reporte {
         display: inline-block;
-        padding: 4px 8px;
+        padding: 3px 7px;
         border-radius: 4px;
-        font-size: 0.8em;
+        font-size: 0.7em;
         font-weight: bold;
         margin-right: 5px;
+        margin-top: 4px;
     }
     .reportes-page .badge-reporte.bg-purple { background: #9b59b6; color: white; }
     .reportes-page .badge-reporte.bg-info { background: #3498db; color: white; }
     .reportes-page .badge-reporte.bg-success { background: #27ae60; color: white; }
     .reportes-page .badge-reporte.bg-warning { background: #f39c12; color: white; }
+    .reportes-page .badge-reporte.bg-nuevo { background: #e74c3c; color: white; }
+    .reportes-page .badge-reporte.bg-premium { background: #ffc107; color: #333; }
+    .reportes-page .badge-reporte.bg-pendiente { background: #95a5a6; color: white; }
 
-    /* Responsive */
+    /* Section headers */
+    .reportes-page .seccion-titulo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #f0f0f0;
+        margin-bottom: 15px;
+    }
+    .reportes-page .seccion-titulo h2 {
+        margin: 0;
+        color: #2c3e50;
+        font-size: 1.3em;
+    }
+
     @media (max-width: 768px) {
         .reportes-page .reporte-grid { grid-template-columns: 1fr; }
     }
@@ -101,13 +126,13 @@
     <div class="card mb-4">
         <div class="card-body text-center">
             <h1 class="h3 mb-2">📊 Sistema de Reportes Profesionales</h1>
-            <p class="text-muted mb-4">Reportes contables y gerenciales para toma de decisiones</p>
+            <p class="text-muted mb-4">Reportes contables, gerenciales y de movimientos para toma de decisiones</p>
 
             <div class="d-flex justify-content-center flex-wrap gap-2">
-                <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-sm">
                     🏠 Volver al Dashboard
                 </a>
-                <a href="{{ url_for('gestion_financiera') }}" class="btn btn-warning">
+                <a href="{{ url_for('gestion_financiera') }}" class="btn btn-warning btn-sm">
                     💰 Gestión Financiera
                 </a>
             </div>
@@ -119,25 +144,21 @@
     <!-- ══════════════════════════════════════════ -->
     <div class="card mb-4">
         <div class="card-body">
-            <h2 class="h4 mb-4">📅 Seleccionar Período del Reporte</h2>
+            <h2 class="h5 mb-3">📅 Seleccionar Período del Reporte</h2>
 
             <form id="formFechas">
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label for="fecha_inicio" class="form-label">
-                            <strong>Fecha de Inicio:</strong>
-                        </label>
+                        <label for="fecha_inicio" class="form-label"><strong>Fecha de Inicio:</strong></label>
                         <input type="date" id="fecha_inicio" class="form-control" required>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label for="fecha_fin" class="form-label">
-                            <strong>Fecha de Fin:</strong>
-                        </label>
+                        <label for="fecha_fin" class="form-label"><strong>Fecha de Fin:</strong></label>
                         <input type="date" id="fecha_fin" class="form-control" required>
                     </div>
                 </div>
 
-                <div class="text-center mt-3">
+                <div class="text-center">
                     <button type="button" class="btn btn-primary btn-sm" onclick="establecerPeriodo('semana')">
                         Última Semana
                     </button>
@@ -153,34 +174,75 @@
     </div>
 
     <!-- ══════════════════════════════════════════ -->
-    <!-- REPORTE UNIFICADO DE TESORERÍA             -->
+    <!-- SECCIÓN 1: MOVIMIENTOS                     -->
     <!-- ══════════════════════════════════════════ -->
     <div class="card mb-4">
         <div class="card-body">
-            <h2 class="h4 mb-3">📋 Reporte Unificado de Tesorería</h2>
-            <p class="mb-4">
-                <strong>Consolidación Integral de Estados Financieros</strong><br>
-                Documento unificado que integra el Libro Mayor con el Estado de Flujos de Efectivo
-                para análisis financiero completo.
-            </p>
+            <div class="seccion-titulo">
+                <h2>📋 Movimientos</h2>
+            </div>
+            <p class="text-muted mb-3">Historial detallado de movimientos financieros y operativos</p>
 
             <div class="reporte-grid">
-                <div class="reporte-card unificado">
-                    <h3>📋 Reporte Consolidado de Tesorería</h3>
+                <!-- Historial de Pagos -->
+                <div class="reporte-card movimiento">
+                    <h3>💸 Historial de Pagos</h3>
                     <p>
-                        <strong>Integración de Estados Financieros</strong><br>
-                        Combina el detalle transaccional del Libro Mayor con el análisis de flujos del
-                        Estado de Efectivo, proporcionando una visión integral de la posición de
-                        liquidez y gestión de tesorería.
+                        <strong>Pagos a proveedores y gastos</strong><br>
+                        Consulta detallada de pagos por período, categoría y proveedor. Con exportación a PDF y Excel.
                     </p>
+                    <div class="acciones">
+                        <a href="{{ url_for('historial_pagos') }}" class="btn btn-warning btn-sm">
+                            📋 Ver Historial
+                        </a>
+                        <div>
+                            <span class="badge-reporte bg-nuevo">NUEVO</span>
+                        </div>
+                    </div>
+                </div>
 
-                    <button class="btn btn-purple w-100" onclick="generarReporteConsolidado()" style="padding: 15px; font-size: 1.1em;">
-                        📊 Generar Reporte Consolidado
-                    </button>
+                <!-- Historial de Depósitos -->
+                <div class="reporte-card movimiento">
+                    <h3>🏦 Historial de Depósitos</h3>
+                    <p>
+                        <strong>Depósitos bancarios</strong><br>
+                        Consulta de depósitos por período, banco y estado de conciliación. Con exportación a PDF.
+                    </p>
+                    <div class="acciones">
+                        <a href="{{ url_for('historial_depositos') }}" class="btn btn-warning btn-sm">
+                            📋 Ver Historial
+                        </a>
+                        <div>
+                            <span class="badge-reporte bg-nuevo">NUEVO</span>
+                        </div>
+                    </div>
+                </div>
 
-                    <div class="mt-3">
-                        <span class="badge-reporte bg-purple">Nivel: Reporte Completo</span>
-                        <span class="badge-reporte bg-info">Usa el período seleccionado</span>
+                <!-- Historial de Ventas -->
+                <div class="reporte-card movimiento">
+                    <h3>🛒 Historial de Ventas</h3>
+                    <p>
+                        <strong>Ventas por período</strong><br>
+                        Análisis detallado de ventas con desglose por producto y método de pago.
+                    </p>
+                    <div class="acciones">
+                        <a href="{{ url_for('reporte_ventas') }}" class="btn btn-warning btn-sm">
+                            📊 Ver Reporte
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Cierre de Caja -->
+                <div class="reporte-card movimiento">
+                    <h3>💼 Cierre de Caja</h3>
+                    <p>
+                        <strong>Reporte diario de caja</strong><br>
+                        Detalle del cierre diario con desglose de efectivo y transferencias.
+                    </p>
+                    <div class="acciones">
+                        <a href="{{ url_for('reporte_cierre_caja') }}" class="btn btn-warning btn-sm">
+                            📄 Ver Reporte
+                        </a>
                     </div>
                 </div>
             </div>
@@ -188,25 +250,46 @@
     </div>
 
     <!-- ══════════════════════════════════════════ -->
-    <!-- REPORTES CONTABLES PROFESIONALES           -->
+    <!-- SECCIÓN 2: CONTABLE                        -->
     <!-- ══════════════════════════════════════════ -->
     <div class="card mb-4">
         <div class="card-body">
-            <h2 class="h4 mb-3">🧮 Reportes Contables Profesionales</h2>
-            <p class="mb-4">Documentos formales para presentación ante contador y autoridades fiscales</p>
+            <div class="seccion-titulo">
+                <h2>🧮 Contable</h2>
+            </div>
+            <p class="text-muted mb-3">Documentos formales para presentación ante contador y autoridades fiscales</p>
 
             <div class="reporte-grid">
+                <!-- Reporte Unificado de Tesorería -->
+                <div class="reporte-card unificado">
+                    <h3>📋 Reporte Unificado de Tesorería</h3>
+                    <p>
+                        <strong>Integración de Estados Financieros</strong><br>
+                        Combina el Libro Mayor con el Estado de Flujos de Efectivo para análisis completo de liquidez.
+                    </p>
+                    <div class="acciones">
+                        <button class="btn btn-purple btn-sm w-100" onclick="generarReporteConsolidado()">
+                            📊 Generar Reporte Consolidado
+                        </button>
+                        <div>
+                            <span class="badge-reporte bg-purple">Completo</span>
+                            <span class="badge-reporte bg-info">Usa el período</span>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Estado de Resultados -->
                 <div class="reporte-card contable">
                     <h3>📈 Estado de Resultados</h3>
                     <p>
                         <strong>Pérdidas y Ganancias</strong><br>
-                        Muestra ingresos, gastos y resultado neto del período. Esencial para
-                        declaraciones de impuestos y análisis de rentabilidad.
+                        Muestra ingresos, gastos y resultado neto del período. Esencial para declaraciones de impuestos.
                     </p>
-                    <button class="btn btn-primary" onclick="generarReporte('estado_resultados')">
-                        <i class="fas fa-file-pdf me-2"></i> Descargar PDF
-                    </button>
+                    <div class="acciones">
+                        <button class="btn btn-primary btn-sm" onclick="generarReporte('estado_resultados')">
+                            <i class="fas fa-file-pdf me-1"></i> Descargar PDF
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Conciliación Bancaria -->
@@ -216,90 +299,216 @@
                         <strong>Conciliación de Saldos</strong><br>
                         Compara saldos del sistema con extractos bancarios. Esencial para auditorías.
                     </p>
-                    <button class="btn btn-primary" onclick="abrirModalConciliacion()">
-                        📥 Generar Conciliación
-                    </button>
+                    <div class="acciones">
+                        <button class="btn btn-primary btn-sm" onclick="abrirModalConciliacion()">
+                            📥 Generar Conciliación
+                        </button>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Nota informativa -->
-            <div class="alert alert-info mt-4" role="alert">
-                <strong>💡 Nota:</strong> Los reportes de <strong>Flujo de Caja</strong> y
-                <strong>Libro Diario Contable</strong> han sido consolidados en el nuevo
-                <strong>Reporte Unificado de Tesorería</strong> para ofrecer un análisis más
-                completo e integrado.
+                <!-- Análisis de Gastos -->
+                <div class="reporte-card contable">
+                    <h3>📊 Análisis de Gastos</h3>
+                    <p>
+                        <strong>Distribución de Costos</strong><br>
+                        Gráficos y análisis de gastos por categoría. Identifica áreas de optimización.
+                    </p>
+                    <div class="acciones">
+                        <button class="btn btn-primary btn-sm" onclick="generarReporte('analisis_gastos')">
+                            📥 Descargar PDF
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- ══════════════════════════════════════════ -->
-    <!-- REPORTES GERENCIALES Y ANALÍTICOS          -->
+    <!-- SECCIÓN 3: ANÁLISIS Y OPERACIONES          -->
     <!-- ══════════════════════════════════════════ -->
     <div class="card mb-4">
         <div class="card-body">
-            <h2 class="h4 mb-3">📊 Reportes Gerenciales y Analíticos</h2>
-            <p class="mb-4">Análisis avanzados para toma de decisiones estratégicas y optimización del negocio</p>
+            <div class="seccion-titulo">
+                <h2>📈 Análisis y Operaciones</h2>
+            </div>
+            <p class="text-muted mb-3">Reportes operativos y de análisis para optimización del negocio</p>
 
             <div class="reporte-grid">
+                <!-- Productos Populares -->
                 <div class="reporte-card gerencial">
-                    <h3>📊 Análisis de Gastos por Categoría</h3>
+                    <h3>🏆 Productos Populares</h3>
                     <p>
-                        <strong>Distribución de Costos</strong><br>
-                        Gráficos y análisis de gastos por categoría. Identifica áreas de optimización.
+                        <strong>Top productos por ventas</strong><br>
+                        Ranking de productos más vendidos con análisis de rotación automática.
                     </p>
-                    <button class="btn btn-success" onclick="generarReporte('analisis_gastos')">
-                        📥 Descargar PDF
-                    </button>
+                    <div class="acciones">
+                        <a href="{{ url_for('reporte_productos_populares') }}" class="btn btn-success btn-sm">
+                            📊 Ver Reporte
+                        </a>
+                        <div>
+                            <span class="badge-reporte bg-nuevo">NUEVO</span>
+                        </div>
+                    </div>
                 </div>
 
+                <!-- Producción Diaria -->
+                <div class="reporte-card gerencial">
+                    <h3>🏭 Producción Diaria</h3>
+                    <p>
+                        <strong>Reporte imprimible</strong><br>
+                        Detalle de producción diaria con filtro de fechas.
+                    </p>
+                    <div class="acciones">
+                        <a href="{{ url_for('reporte_produccion_diaria') }}" class="btn btn-success btn-sm">
+                            📄 Ver Reporte
+                        </a>
+                        <div>
+                            <span class="badge-reporte bg-nuevo">NUEVO</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Inventario Externo -->
+                <div class="reporte-card gerencial">
+                    <h3>📦 Inventario Externo</h3>
+                    <p>
+                        <strong>Productos externos</strong><br>
+                        Reporte completo del inventario de productos externos con valorización.
+                    </p>
+                    <div class="acciones">
+                        <a href="{{ url_for('reporte_inventario_externo') }}" class="btn btn-success btn-sm">
+                            📊 Ver Reporte
+                        </a>
+                        <div>
+                            <span class="badge-reporte bg-nuevo">NUEVO</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ventas Externas -->
+                <div class="reporte-card gerencial">
+                    <h3>🥤 Ventas y Rentabilidad</h3>
+                    <p>
+                        <strong>Productos externos</strong><br>
+                        Análisis de ventas y rentabilidad de productos externos.
+                    </p>
+                    <div class="acciones">
+                        <a href="{{ url_for('reporte_ventas_externas') }}" class="btn btn-success btn-sm">
+                            📊 Ver Reporte
+                        </a>
+                        <div>
+                            <span class="badge-reporte bg-nuevo">NUEVO</span>
+                            <span class="badge-reporte bg-premium">PREMIUM</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Activos Fijos -->
+                <div class="reporte-card gerencial">
+                    <h3>🏢 Activos Fijos</h3>
+                    <p>
+                        <strong>Inventario de activos</strong><br>
+                        Reporte de activos fijos con depreciación y mantenimientos.
+                    </p>
+                    <div class="acciones">
+                        <a href="{{ url_for('reporte_activos') }}" class="btn btn-success btn-sm">
+                            📊 Ver Reporte
+                        </a>
+                        <div>
+                            <span class="badge-reporte bg-nuevo">NUEVO</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════ -->
+    <!-- SECCIÓN 4: GERENCIAL CON IA                -->
+    <!-- ══════════════════════════════════════════ -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="seccion-titulo">
+                <h2>🤖 Gerencial con IA</h2>
+            </div>
+            <p class="text-muted mb-3">Análisis inteligentes con Machine Learning y recomendaciones automáticas</p>
+
+            <div class="reporte-grid">
+                <!-- Reporte Avanzado Ventas + IA -->
+                <div class="reporte-card gerencial">
+                    <h3>🚀 Reporte Avanzado Ventas + IA</h3>
+                    <p>
+                        <strong>Unificado Inteligente</strong><br>
+                        Combina análisis de ventas, tendencias, ML y recomendaciones IA en un solo reporte.
+                    </p>
+                    <div class="acciones">
+                        <a href="{{ url_for('reporte_ventas_avanzado') }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-chart-line"></i> Ver Reporte Web
+                        </a>
+                        <div>
+                            <span class="badge-reporte bg-nuevo">NUEVO</span>
+                            <span class="badge-reporte bg-info">ML</span>
+                            <span class="badge-reporte bg-premium">PREMIUM</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Análisis Predictivo -->
+                <div class="reporte-card gerencial">
+                    <h3>🔮 Análisis Predictivo</h3>
+                    <p>
+                        <strong>Predicciones y tendencias</strong><br>
+                        Análisis predictivo con proyecciones de ventas y recomendaciones.
+                    </p>
+                    <div class="acciones">
+                        <a href="{{ url_for('reporte_analisis_predictivo') }}" class="btn btn-success btn-sm">
+                            📊 Ver Reporte
+                        </a>
+                        <div>
+                            <span class="badge-reporte bg-nuevo">NUEVO</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tendencia de Ventas -->
                 <div class="reporte-card gerencial">
                     <h3>📈 Tendencia de Ventas</h3>
                     <p>
-                        <strong>Análisis de Comportamiento</strong><br>
+                        <strong>Análisis de comportamiento</strong><br>
                         Evolución de ventas en el tiempo. Detecta patrones y estacionalidad.
                     </p>
-                    <button class="btn btn-success" onclick="generarReporte('tendencia_ventas')">
-                        📥 Descargar PDF
-                    </button>
+                    <div class="acciones">
+                        <button class="btn btn-success btn-sm" onclick="generarReporte('tendencia_ventas')">
+                            📥 Descargar PDF
+                        </button>
+                    </div>
                 </div>
 
+                <!-- Recomendaciones IA -->
                 <div class="reporte-card gerencial">
                     <h3>🤖 Recomendaciones con IA</h3>
                     <p>
-                        <strong>Análisis Predictivo</strong><br>
+                        <strong>Análisis predictivo</strong><br>
                         Recomendaciones inteligentes basadas en datos históricos y tendencias.
                     </p>
-                    <button class="btn btn-success" onclick="generarReporte('ia_predictivo')">
-                        📥 Descargar PDF
-                    </button>
+                    <div class="acciones">
+                        <button class="btn btn-success btn-sm" onclick="generarReporte('ia_predictivo')">
+                            📥 Descargar PDF
+                        </button>
+                    </div>
                 </div>
 
+                <!-- Análisis de Inventarios -->
                 <div class="reporte-card gerencial">
                     <h3>📦 Análisis de Inventarios</h3>
                     <p>
-                        <strong>Gestión de Stock</strong><br>
+                        <strong>Gestión de stock</strong><br>
                         Rotación, puntos de reorden y optimización de inventarios.
                     </p>
-                    <button class="btn btn-success" onclick="generarReporte('analisis_inventarios')">
-                        📥 Descargar PDF
-                    </button>
-                </div>
-
-                <!-- Reporte Avanzado Ventas + IA -->
-                <div class="reporte-card gerencial">
-                    <h3><i class="fas fa-robot"></i> Reporte Avanzado Ventas + IA</h3>
-                    <p>
-                        <strong>Reporte Unificado Inteligente</strong><br>
-                        Combina análisis de ventas, tendencias, ML y recomendaciones IA en un solo
-                        reporte interactivo.
-                    </p>
-                    <a href="{{ url_for('reporte_ventas_avanzado') }}" class="btn btn-primary">
-                        <i class="fas fa-chart-line"></i> Ver Reporte Web
-                    </a>
-                    <div class="mt-3">
-                        <span class="badge-reporte bg-success">NUEVO</span>
-                        <span class="badge-reporte bg-info">ML</span>
-                        <span class="badge-reporte bg-warning">UNIFICADO</span>
+                    <div class="acciones">
+                        <button class="btn btn-success btn-sm" onclick="generarReporte('analisis_inventarios')">
+                            📥 Descargar PDF
+                        </button>
                     </div>
                 </div>
             </div>
@@ -392,29 +601,17 @@
     function mostrarMensaje(tipo, mensaje) {
         const alertDiv = document.createElement('div');
         alertDiv.className = `alert alert-${tipo === 'error' ? 'danger' : 'success'} alert-dismissible fade show mt-3`;
-        alertDiv.innerHTML = `
-            ${mensaje}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
+        alertDiv.innerHTML = `${mensaje}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
 
         const main = document.querySelector('main');
         if (main) {
             main.insertBefore(alertDiv, main.firstChild);
-            setTimeout(() => {
-                if (alertDiv.parentNode) {
-                    alertDiv.remove();
-                }
-            }, 5000);
+            setTimeout(() => { if (alertDiv.parentNode) alertDiv.remove(); }, 5000);
         }
     }
 
-    function mostrarError(mensaje) {
-        mostrarMensaje('error', mensaje);
-    }
-
-    function mostrarExito(mensaje) {
-        mostrarMensaje('success', mensaje);
-    }
+    function mostrarError(mensaje) { mostrarMensaje('error', mensaje); }
+    function mostrarExito(mensaje) { mostrarMensaje('success', mensaje); }
 
     // ========== CONCILIACIÓN BANCARIA ==========
     function abrirModalConciliacion() {
@@ -422,8 +619,7 @@
         const fechaCorte = document.getElementById('fecha_corte');
         if (modal && fechaCorte) {
             fechaCorte.value = new Date().toISOString().split('T')[0];
-            const bsModal = new bootstrap.Modal(modal);
-            bsModal.show();
+            new bootstrap.Modal(modal).show();
         }
     }
 
@@ -435,19 +631,15 @@
             mostrarError('Por favor completa todos los campos');
             return;
         }
-
         if (parseFloat(saldoExtracto) <= 0) {
             mostrarError('El saldo del extracto debe ser mayor a 0');
             return;
         }
 
         const url = `/generar_reporte_conciliacion?fecha_corte=${fechaCorte}&saldo_extracto=${saldoExtracto}`;
-
-        // Cerrar modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('modalConciliacion'));
         if (modal) modal.hide();
 
-        // Abrir el PDF
         window.open(url, '_blank');
         mostrarExito('Reporte de conciliación generado exitosamente');
     }
@@ -461,7 +653,6 @@
             mostrarError('Por favor selecciona ambas fechas');
             return;
         }
-
         if (fechaInicio > fechaFin) {
             mostrarError('La fecha de inicio no puede ser mayor a la fecha fin');
             return;
@@ -493,10 +684,7 @@
         }
 
         window.open(url, '_blank');
-
-        setTimeout(() => {
-            mostrarCarga(false);
-        }, 2000);
+        setTimeout(() => { mostrarCarga(false); }, 2000);
     }
 
     // ========== REPORTE UNIFICADO DE TESORERÍA ==========
@@ -509,29 +697,19 @@
             return;
         }
 
-        if (fechaInicio > fechaFin) {
-            mostrarError('La fecha de inicio no puede ser mayor a la fecha fin');
-            return;
-        }
-
-        const nivelDetalle = 'completo';
-        const url = `/generar_reporte_tesoreria_unificado?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}&nivel_detalle=${nivelDetalle}`;
+        const url = `/generar_reporte_tesoreria_unificado?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}&nivel_detalle=completo`;
 
         if (confirm(`📊 ¿Generar Reporte Consolidado de Tesorería?\n\n📅 Período: ${fechaInicio} a ${fechaFin}`)) {
             mostrarCarga(true);
             window.open(url, '_blank');
-            setTimeout(() => {
-                mostrarCarga(false);
-            }, 3000);
+            setTimeout(() => { mostrarCarga(false); }, 3000);
         }
     }
 
-    // ========== INDICADOR DE CARGA ==========
+    // ========== LOADER ==========
     function mostrarCarga(mostrar) {
         const overlay = document.getElementById('loadingOverlay');
-        if (overlay) {
-            overlay.style.display = mostrar ? 'flex' : 'none';
-        }
+        if (overlay) overlay.style.display = mostrar ? 'flex' : 'none';
     }
 
     // ========== INICIALIZACIÓN ==========
