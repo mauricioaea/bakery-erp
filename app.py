@@ -590,16 +590,22 @@ def crear_tablas_en_orden(schema_name):
     db.session.execute(text(f'''
         CREATE TABLE IF NOT EXISTS {schema_name}.depositos_bancarios (
             id SERIAL PRIMARY KEY,
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),
             banco VARCHAR(100),
-            monto FLOAT NOT NULL,
             fecha_deposito DATE NOT NULL,
-            referencia VARCHAR(100),
+            monto FLOAT NOT NULL,
+            descripcion VARCHAR(200),
+            referencia VARCHAR(50),
+            cuenta_bancaria VARCHAR(100),
+            metodo_deposito VARCHAR(50),
+            estado VARCHAR(20) DEFAULT 'REGISTRADO',
+            fecha_conciliacion DATE,
             tipo VARCHAR(50),
-            estado VARCHAR(20) DEFAULT 'pendiente',
             observaciones TEXT,
             usuario_id INTEGER REFERENCES {schema_name}.usuarios(id),
             fecha_registro TIMESTAMP DEFAULT NOW(),
-            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
+            fecha_creacion TIMESTAMP DEFAULT NOW(),
+            fecha_actualizacion TIMESTAMP DEFAULT NOW()
         )
     '''))
     
@@ -609,10 +615,11 @@ def crear_tablas_en_orden(schema_name):
     db.session.execute(text(f'''
         CREATE TABLE IF NOT EXISTS {schema_name}.saldos_banco (
             id SERIAL PRIMARY KEY,
-            banco VARCHAR(100) NOT NULL,
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),
+            banco VARCHAR(100) DEFAULT 'Principal',
             saldo_actual FLOAT DEFAULT 0,
-            fecha_actualizacion TIMESTAMP DEFAULT NOW(),
-            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
+            comentario VARCHAR(200),
+            fecha_actualizacion TIMESTAMP DEFAULT NOW()
         )
     '''))
     
@@ -622,14 +629,19 @@ def crear_tablas_en_orden(schema_name):
     db.session.execute(text(f'''
         CREATE TABLE IF NOT EXISTS {schema_name}.pagos_individuales (
             id SERIAL PRIMARY KEY,
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),
             concepto VARCHAR(100) NOT NULL,
+            categoria VARCHAR(50),
+            proveedor_id INTEGER REFERENCES {schema_name}.proveedor(id),
             monto FLOAT NOT NULL,
             fecha_pago TIMESTAMP DEFAULT NOW(),
+            fecha_registro TIMESTAMP DEFAULT NOW(),
             metodo_pago VARCHAR(50),
             referencia VARCHAR(100),
             observaciones TEXT,
-            usuario_id INTEGER REFERENCES {schema_name}.usuarios(id),
-            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
+            descripcion VARCHAR(300),
+            numero_factura VARCHAR(100),
+            usuario_id INTEGER REFERENCES {schema_name}.usuarios(id)
         )
     '''))
     
