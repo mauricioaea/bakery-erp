@@ -118,7 +118,7 @@ def crear_tablas_en_orden(schema_name):
     # 6. sucursal (depende de panaderias)
     # =============================================
     db.session.execute(text(f'''
-        CREATE TABLE IF NOT EXISTS {schema_name}.sucursal (
+        CREATE TABLE IF NOT EXISTS {schema_name}.sucursales (
             id SERIAL PRIMARY KEY,
             nombre VARCHAR(100) NOT NULL,
             direccion TEXT,
@@ -272,7 +272,7 @@ def crear_tablas_en_orden(schema_name):
     # 15. detalles_compra (depende de compras y productos)
     # =============================================
     db.session.execute(text(f'''
-        CREATE TABLE IF NOT EXISTS {schema_name}.detalles_compra (
+        CREATE TABLE IF NOT EXISTS {schema_name}.detalle_compras (
             id SERIAL PRIMARY KEY,
             panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),
             compra_id INTEGER NOT NULL REFERENCES {schema_name}.compras(id),
@@ -405,7 +405,7 @@ def crear_tablas_en_orden(schema_name):
     # 21. historial_precios_receta (depende de recetas y panaderias)
     # =============================================
     db.session.execute(text(f'''
-        CREATE TABLE IF NOT EXISTS {schema_name}.historial_precios_receta (
+        CREATE TABLE IF NOT EXISTS {schema_name}.historial_precios_recetas (
             id SERIAL PRIMARY KEY,
             receta_id INTEGER NOT NULL REFERENCES {schema_name}.recetas(id),
             precio_anterior FLOAT DEFAULT 0,
@@ -471,10 +471,30 @@ def crear_tablas_en_orden(schema_name):
     '''))
     
     # =============================================
+    # 24. facturas (depende de ventas)
+    # =============================================
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.facturas (
+            id SERIAL PRIMARY KEY,
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),
+            venta_id INTEGER NOT NULL REFERENCES {schema_name}.ventas(id),
+            numero_factura VARCHAR(50) UNIQUE NOT NULL,
+            fecha_emision TIMESTAMP DEFAULT NOW(),
+            subtotal FLOAT NOT NULL,
+            iva FLOAT DEFAULT 0.0,
+            total FLOAT NOT NULL,
+            nombre_panaderia VARCHAR(200),
+            nit_panaderia VARCHAR(50),
+            direccion_panaderia TEXT,
+            telefono_panaderia VARCHAR(20)
+        )
+    '''))
+   
+    # =============================================
     # 24. detalles_venta (depende de ventas y productos)
     # =============================================
     db.session.execute(text(f'''
-        CREATE TABLE IF NOT EXISTS {schema_name}.detalles_venta (
+        CREATE TABLE IF NOT EXISTS {schema_name}.detalle_venta (
             id SERIAL PRIMARY KEY,
             venta_id INTEGER NOT NULL REFERENCES {schema_name}.ventas(id),
             producto_id INTEGER NOT NULL REFERENCES {schema_name}.productos(id),
@@ -489,7 +509,7 @@ def crear_tablas_en_orden(schema_name):
     # 25. jornada_ventas (depende de usuarios y panaderias)
     # =============================================
     db.session.execute(text(f'''
-        CREATE TABLE IF NOT EXISTS {schema_name}.jornada_ventas (
+        CREATE TABLE IF NOT EXISTS {schema_name}.jornadas_ventas (
             id SERIAL PRIMARY KEY,
             usuario_id INTEGER NOT NULL REFERENCES {schema_name}.usuarios(id),
             fecha_apertura TIMESTAMP DEFAULT NOW(),
@@ -744,7 +764,7 @@ def crear_tablas_en_orden(schema_name):
     # 37. registro_financiero (depende de usuarios y panaderias)
     # =============================================
     db.session.execute(text(f'''
-        CREATE TABLE IF NOT EXISTS {schema_name}.registro_financiero (
+        CREATE TABLE IF NOT EXISTS {schema_name}.registros_financieros (
             id SERIAL PRIMARY KEY,
             fecha DATE NOT NULL,
             tipo VARCHAR(50) NOT NULL,
@@ -761,7 +781,7 @@ def crear_tablas_en_orden(schema_name):
     # 38. permisos_usuarios (depende de usuarios y panaderias)
     # =============================================
     db.session.execute(text(f'''
-        CREATE TABLE IF NOT EXISTS {schema_name}.permisos_usuarios (
+        CREATE TABLE IF NOT EXISTS {schema_name}.permisos_usuario (
             id SERIAL PRIMARY KEY,
             usuario_id INTEGER NOT NULL REFERENCES {schema_name}.usuarios(id),
             modulo VARCHAR(50) NOT NULL,
@@ -840,8 +860,8 @@ def crear_tablas_en_orden(schema_name):
     '''))
     
     db.session.execute(text(f'''
-        CREATE INDEX IF NOT EXISTS idx_detalles_venta_venta 
-        ON {schema_name}.detalles_venta(venta_id)
+        CREATE INDEX IF NOT EXISTS idx_detalle_venta_venta
+        ON {schema_name}.detalle_venta(venta_id)
     '''))
     
     db.session.execute(text(f'''
@@ -938,7 +958,7 @@ def crear_tenant_saas(nombre_panaderia, subdominio, email_contacto=None, max_usu
             nombre=nombre_panaderia,
             subdominio=subdominio,
             base_datos=f"tenant_{subdominio}",
-            plan='basico' if max_usuarios <= 1 else 'premium',
+            plan='premium' if tipo_licencia in ['nube_premium', 'premium'] else 'basico',
             activo=True,
             fecha_expiracion=fecha_expiracion
         )
@@ -949,7 +969,9 @@ def crear_tenant_saas(nombre_panaderia, subdominio, email_contacto=None, max_usu
         # 3. CREAR EL SCHEMA EN POSTGRESQL
         schema_name = f"tenant_{tenant_id}"
         db.session.execute(text(f"CREATE SCHEMA IF NOT EXISTS {schema_name}"))
-        db.session.commit()
+        # ⚠️ NO commit aquí. El commit final (después de crear tablas) persiste
+        # tenant + schema + tablas atómicamente. Evita tenants fantasma si algo falla.
+        
         
         # 4. CREAR LAS TABLAS DENTRO DEL SCHEMA
         print(f"   📝 Creando tablas en schema {schema_name}...")
@@ -1448,17 +1470,22 @@ def load_user(user_id):
 from functools import wraps
 
 def permisos_requeridos(modulo, accion):
-    """Decorador para verificar permisos en rutas"""
+    """Decorador para verificar permisos en rutas.
+    ✅ super_admin tiene acceso a TODO (consistente con modulo_requerido)."""
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
             if not current_user.is_authenticated:
                 return redirect(url_for('login'))
             
+            # ✅ SUPER_ADMIN tiene acceso a TODO
+            if current_user.rol == 'super_admin':
+                return f(*args, **kwargs)
+            
             if not current_user.tiene_permiso(modulo, accion):
                 flash('❌ No tienes permisos para realizar esta acción', 'error')
                 return redirect(url_for('dashboard'))
-            
+                
             return f(*args, **kwargs)
         return decorated_function
     return decorator

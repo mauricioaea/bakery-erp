@@ -1377,11 +1377,11 @@ class Factura(db.Model):
     subtotal = db.Column(db.Float, nullable=False)
     iva = db.Column(db.Float, default=0.0)  # ✅ CERO para pan
     total = db.Column(db.Float, nullable=False)
-    # Información de la panadería (configurable)
-    nombre_panaderia = db.Column(db.String(200), default='Semillas Panadería')
-    nit_panaderia = db.Column(db.String(50), default='1085297960')
-    direccion_panaderia = db.Column(db.Text, default='Carrera 18 #9-45, Pasto')
-    telefono_panaderia = db.Column(db.String(20), default='+57 3189098818')
+    # Info de la panadería (se llena al emitir desde ConfiguracionSistema)
+    nombre_panaderia = db.Column(db.String(200))
+    nit_panaderia = db.Column(db.String(50))
+    direccion_panaderia = db.Column(db.Text)
+    telefono_panaderia = db.Column(db.String(20))
     
     venta = db.relationship('Venta', backref='factura')
     
