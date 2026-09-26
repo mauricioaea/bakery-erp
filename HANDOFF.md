@@ -224,6 +224,25 @@ text
 
 ---
 
+### Fase C.2 — Auditoría de columnas (parcial)
+
+**Hallazgo:** la auditoría de columnas (`audit_columns.py`) reveló que **NO faltan columnas** del ORM en los tenants nuevos. Al contrario: **sobran 79 columnas** que el `CREATE TABLE` de `crear_tablas_en_orden` define pero que el ORM no declara.
+
+**Causa:** durante el desarrollo se agregaron columnas a `crear_tablas_en_orden` (BD) sin agregarlas a `models.py` (ORM). El ORM quedó desactualizado.
+
+**Impacto:** los tenants nuevos funcionan (no falta nada del ORM). Pero tienen 79 columnas huérfanas que nadie lee/escribe.
+
+**Riesgo:** si una columna huérfana tiene el mismo nombre que un método del ORM (ej. `activos_fijos.valor_actual` vs `ActivoFijo.valor_actual()`), se produce confusión. Python prioriza el método, pero la columna queda "fantasma".
+
+**Fix aplicado:** limpiado el `CREATE TABLE activos_fijos`:
+- ❌ Eliminadas 6 columnas huérfanas: `valor_actual`, `vida_util_meses`, `depreciacion_mensual`, `factura_compra`, `serial`, `activo`.
+- ✅ Agregadas 6 columnas del ORM que faltaban: `metodo_pago`, `vida_util`, `valor_residual`, `metodo_depreciacion`, `responsable`, `fecha_baja`.
+- ✅ Alineados tipos, largos, defaults, orden.
+
+**Verificado:** el nuevo `CREATE TABLE` coincide 1:1 con `tenant_1.activos_fijos` (18 columnas).
+
+**Pendiente Fase C.3:** auditar y corregir las **22 tablas restantes** (73 columnas extras).
+
 ## 9️⃣ Deuda técnica pendiente (Fase C.2 / C.3)
 
 ### 🚨 CRÍTICO — Auditoría de columnas
@@ -284,6 +303,49 @@ text
 
 - 🔧 `public.usuarios` con usuarios de tenant_1 (3 filas). Revisar si es la arquitectura correcta.
 
+
+### 🚨 CRÍTICO — 22 tablas con columnas extras (Fase C.3)
+
+**Hallazgo Fase C.2:** el script `audit_columns.py` identificó 79 columnas extras en 23 tablas. Se limpió solo `activos_fijos`. Las 22 restantes siguen con:
+
+| Tabla | Columnas extras |
+|-------|-----------------|
+| `configuracion_produccion` | 7 |
+| `registros_financieros` | 7 |
+| `ventas` | 7 |
+| `registros_diarios` | 6 |
+| `historial_inventario` | 5 |
+| `jornadas_ventas` | 5 |
+| `compras` | 4 |
+| `configuracion_sistema` | 4 |
+| `depositos_bancarios` | 4 |
+| `gastos` | 4 |
+| `ordenes_produccion` | 3 |
+| `control_vida_util` | 2 |
+| `detalle_compras` | 2 |
+| `historial_mantenimientos` | 2 |
+| `historial_rotacion_producto` | 2 |
+| `logs_sistema` | 2 |
+| `stock_productos` | 2 |
+| `categorias` | 1 |
+| `detalle_venta` | 1 |
+| `pagos_individuales` | 1 |
+| `productos_externos` | 1 |
+| `sucursales` | 1 |
+
+**Total:** 73 columnas.
+
+**Plan Fase C.3:**
+1. Por cada tabla: buscar las columnas extras en código (`app.py`, `models.py`, `reportes.py`, templates).
+2. Clasificar:
+   - **A)** Columna usada → agregar al ORM.
+   - **B)** Columna no usada → eliminar del `CREATE TABLE`.
+   - **C)** Columna con conflicto método/property → renombrar.
+3. Aplicar fixes + verificar con `audit_columns.py`.
+4. Recrear tenant de prueba.
+5. Commit.
+
+**Tiempo estimado:** 4-6 horas.
 ---
 
 ## 🔟 Roadmap completo
@@ -301,7 +363,7 @@ text
 ├── ✅ Fix plan desde tipo_licencia
 ├── ✅ Fix permisos_requeridos (super_admin)
 └── ✅ tenant_25 creado con 40 tablas correctas
-⏳ Fase C.2: Auditoría de columnas (68 pendientes)
+
 ⏳ Fase C.3: Warnings + limpieza de public + encoding
 ⏳ Fase C.4: Migración de templates autónomos
 ⏳ Fase Demo: Tenant Demo para marketing
@@ -326,6 +388,12 @@ text
 text
 
 ---
+✅ Fase C.2: Auditoría de columnas (parcial)
+        ├── ✅ Script audit_columns.py creado
+        ├── ✅ auditoría ejecutada (reveló 79 columnas extras)
+        ├── ✅ activos_fijos limpiado (6 columnas eliminadas + 6 agregadas del ORM)
+        └── ⏳ 22 tablas restantes (73 columnas) → Fase C.3
+⏳ Fase C.3: Auditoría de columnas completa (22 tablas)
 
 ## 1️⃣1️⃣ Metodología de trabajo
 
@@ -649,3 +717,21 @@ Bloque	Tarea	Estado
 1	HANDOFF - Commit + push	⏳
 2	Demo - Diseñar + seed	⏳
 3	Auditoría - Columnas	⏳
+
+## 1️⃣4️⃣ Próxima sesión
+### 🎯 Plan recomendado
+
+**BLOQUE 1 — Tenant Demo (marketing)** (1-2h)
+- Crear tenant Demo con datos simples (sin activos fijos complejos).
+- Script seed_demo.py.
+- Verificar en UI.
+- Commit + push.
+
+**BLOQUE 2 — Fase C.3 (auditoría completa)** (4-6h)
+- Analizar las 22 tablas restantes.
+- Clasificar columnas: usadas / huérfanas / conflictos.
+- Aplicar fixes.
+- Commit + push.
+
+**BLOQUE 3 — Fase D2 (PDF de historiales)** (1.5-2h)
+- ...

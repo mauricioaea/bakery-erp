@@ -568,23 +568,23 @@ def crear_tablas_en_orden(schema_name):
     db.session.execute(text(f'''
         CREATE TABLE IF NOT EXISTS {schema_name}.activos_fijos (
             id SERIAL PRIMARY KEY,
-            nombre VARCHAR(100) NOT NULL,
-            descripcion TEXT,
-            categoria VARCHAR(50),
-            valor_compra FLOAT DEFAULT 0,
-            valor_actual FLOAT DEFAULT 0,
-            fecha_compra DATE,
-            vida_util_meses INTEGER DEFAULT 0,
-            depreciacion_mensual FLOAT DEFAULT 0,
-            ubicacion VARCHAR(100),
-            estado VARCHAR(20) DEFAULT 'activo',
-            proveedor VARCHAR(100),
-            factura_compra VARCHAR(50),
-            serial VARCHAR(50),
-            activo BOOLEAN DEFAULT TRUE,
-            fecha_registro TIMESTAMP DEFAULT NOW(),
             panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),
-            numero_serie VARCHAR(100)
+            nombre VARCHAR(200) NOT NULL,
+            categoria VARCHAR(100) NOT NULL,
+            descripcion TEXT,
+            numero_serie VARCHAR(100),
+            fecha_compra DATE NOT NULL,
+            proveedor VARCHAR(200),
+            valor_compra FLOAT NOT NULL,
+            metodo_pago VARCHAR(100),
+            vida_util INTEGER,
+            valor_residual FLOAT DEFAULT 0,
+            metodo_depreciacion VARCHAR(50) DEFAULT 'LINEAL',
+            ubicacion VARCHAR(200),
+            estado VARCHAR(50) DEFAULT 'ACTIVO',
+            responsable VARCHAR(200),
+            fecha_registro TIMESTAMP DEFAULT NOW(),
+            fecha_baja DATE
         )
     '''))
     
