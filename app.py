@@ -4373,7 +4373,8 @@ def editar_materia_prima(id):
                     cantidad_empaques=cantidad_empaques,
                     precio_total=precio_total,
                     precio_unitario_empaque=precio_unitario_empaque,
-                    usuario_id=session['user_id']
+                    usuario_id=session['user_id'],
+                    panaderia_id=panaderia_id
                 )
                 db.session.add(nueva_compra)
                 
@@ -4416,7 +4417,7 @@ def editar_materia_prima(id):
             return redirect(url_for('editar_materia_prima', id=id))
     
     # OBTENER HISTORIAL DE COMPRAS PARA MOSTRAR
-    historial_compras = HistorialCompra.query.filter_by(materia_prima_id=id, panaderia_id=current_user.panaderia_id).order_by(HistorialCompra.fecha.desc()).all()
+    historial_compras = HistorialCompra.query.filter_by(materia_prima_id=id, panaderia_id=current_user.panaderia_id).order_by(HistorialCompra.fecha_compra.desc()).all()
     
     return render_template('editar_materia_prima.html', 
                          materia=materia, 
@@ -4465,7 +4466,7 @@ def historial_compras(materia_prima_id):
         return redirect(url_for('login'))
     
     materia = MateriaPrima.query.filter_by(panaderia_id=current_user.panaderia_id, id=materia_prima_id).first_or_404()
-    historial = HistorialCompra.query.filter_by(materia_prima_id=materia_prima_id, panaderia_id=current_user.panaderia_id).order_by(HistorialCompra.fecha.desc()).all()
+    historial = HistorialCompra.query.filter_by(materia_prima_id=materia_prima_id, panaderia_id=current_user.panaderia_id).order_by(HistorialCompra.fecha_compra.desc()).all()
     
     return render_template('historial_compras.html', materia=materia, historial=historial)
 # =============================================
