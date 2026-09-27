@@ -3123,7 +3123,8 @@ def registrar_venta():
                     producto_externo_id=producto_externo_id,
                     cantidad=cantidad,
                     precio_unitario=precio_unitario,
-                    subtotal=cantidad * precio_unitario
+                    subtotal=cantidad * precio_unitario,
+                    panaderia_id=panaderia_id
                 )
                 detalles_venta.append(detalle)
                 
@@ -3145,7 +3146,8 @@ def registrar_venta():
                     producto_externo_id=None,
                     cantidad=cantidad,
                     precio_unitario=precio_unitario,
-                    subtotal=cantidad * precio_unitario
+                    subtotal=cantidad * precio_unitario,
+                    panaderia_id=panaderia_id
                 )
                 detalles_venta.append(detalle)
         
