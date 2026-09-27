@@ -512,14 +512,15 @@ def crear_tablas_en_orden(schema_name):
     db.session.execute(text(f'''
         CREATE TABLE IF NOT EXISTS {schema_name}.jornadas_ventas (
             id SERIAL PRIMARY KEY,
-            usuario_id INTEGER NOT NULL REFERENCES {schema_name}.usuarios(id),
-            fecha_apertura TIMESTAMP DEFAULT NOW(),
-            fecha_cierre TIMESTAMP,
-            saldo_inicial FLOAT DEFAULT 0,
-            saldo_final FLOAT DEFAULT 0,
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),
+            fecha DATE NOT NULL UNIQUE,
+            estado VARCHAR(20) DEFAULT 'ACTIVA',
             total_ventas FLOAT DEFAULT 0,
-            estado VARCHAR(20) DEFAULT 'abierta',
-            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
+            total_efectivo FLOAT DEFAULT 0,
+            total_transferencia FLOAT DEFAULT 0,
+            total_tarjeta FLOAT DEFAULT 0,
+            created_at TIMESTAMP DEFAULT NOW(),
+            cerrada_at TIMESTAMP
         )
     '''))
     

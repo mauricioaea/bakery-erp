@@ -1844,13 +1844,32 @@ def obtener_productos_sin_ventas_recientes(panaderia_id=None, dias=7):
 # FUNCIONES PARA CIERRE DIARIO - AGREGAR DESPUÉS DE LAS FUNCIONES ML
 # =============================================
 
-def obtener_jornada_activa():
-    """Obtiene o crea la jornada activa del día actual"""
+def obtener_jornada_activa(panaderia_id=None):
+    """Obtiene o crea la jornada activa del día actual (multi-tenant)"""
+    from flask_login import current_user
+    
+    # Detectar panaderia_id automáticamente
+    if panaderia_id is None:
+        try:
+            panaderia_id = current_user.panaderia_id
+        except Exception:
+            panaderia_id = None
+    
+    if not panaderia_id:
+        raise Exception("No se pudo determinar panaderia_id para la jornada")
+    
     hoy = datetime.now().date()
-    jornada = JornadaVentas.query.filter_by(fecha=hoy).first()
+    jornada = JornadaVentas.query.filter_by(
+        fecha=hoy,
+        panaderia_id=panaderia_id
+    ).first()
     
     if not jornada:
-        jornada = JornadaVentas(fecha=hoy, estado='ACTIVA')
+        jornada = JornadaVentas(
+            fecha=hoy,
+            estado='ACTIVA',
+            panaderia_id=panaderia_id
+        )
         db.session.add(jornada)
         db.session.commit()
     
