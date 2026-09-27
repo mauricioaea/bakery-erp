@@ -4348,22 +4348,44 @@ def editar_materia_prima(id):
                     flash('Cantidad y precio deben ser mayores a 0', 'error')
                     return redirect(url_for('editar_materia_prima', id=id))
                 
+                # ✅ CORRECCIÓN: leer gramos_por_empaque del FORMULARIO (no del ORM)
+                # porque el ORM puede tener un valor distinto si el usuario lo cambió en el mismo submit
+                gramos_por_empaque_form = float(request.form.get('gramos_por_empaque', materia.gramos_por_empaque) or materia.gramos_por_empaque)
+                
                 # CALCULAR NUEVO STOCK Y COSTO PROMEDIO
-                nuevo_stock_gramos = cantidad_empaques * materia.gramos_por_empaque
+                nuevo_stock_gramos = cantidad_empaques * gramos_por_empaque_form
                 precio_unitario_empaque = precio_total / cantidad_empaques
                 
                 # CALCULAR NUEVO COSTO PROMEDIO PONDERADO
                 stock_actual_valor = materia.stock_actual * materia.costo_promedio
-                nuevo_stock_valor = nuevo_stock_gramos * (precio_total / nuevo_stock_gramos)
+                nuevo_stock_valor = precio_total
                 total_stock = materia.stock_actual + nuevo_stock_gramos
                 
                 if total_stock > 0:
                     nuevo_costo_promedio = (stock_actual_valor + nuevo_stock_valor) / total_stock
                 else:
-                    nuevo_costo_promedio = precio_total / nuevo_stock_gramos
+                    nuevo_costo_promedio = precio_total / nuevo_stock_gramos if nuevo_stock_gramos > 0 else 0
                 
-                # ACTUALIZAR MATERIA PRIMA
-                materia.stock_actual += nuevo_stock_gramos
+                # ✅ CORRECCIÓN: usar SQL directo con UPDATE para forzar la persistencia
+                from sqlalchemy import text
+                nuevo_stock_total = materia.stock_actual + nuevo_stock_gramos
+                
+                db.session.execute(text(f"""
+                    UPDATE tenant_{panaderia_id}.materias_primas
+                    SET stock_actual = :stock_actual,
+                        costo_promedio = :costo_promedio,
+                        fecha_ultima_actualizacion = :fecha
+                    WHERE id = :id AND panaderia_id = :panaderia_id
+                """), {
+                    'stock_actual': nuevo_stock_total,
+                    'costo_promedio': nuevo_costo_promedio,
+                    'fecha': datetime.now(),
+                    'id': id,
+                    'panaderia_id': panaderia_id,
+                })
+                
+                # Actualizar también el objeto en memoria (para el render del template)
+                materia.stock_actual = nuevo_stock_total
                 materia.costo_promedio = nuevo_costo_promedio
                 materia.fecha_ultima_actualizacion = datetime.now()
                 
@@ -4378,9 +4400,9 @@ def editar_materia_prima(id):
                 )
                 db.session.add(nueva_compra)
                 
-                flash(f'✅ Se agregaron {nuevo_stock_gramos} {materia.unidad_medida} al stock', 'success')
+                flash(f'✅ Se agregaron {nuevo_stock_gramos} {materia.unidad_medida} al stock. Nuevo costo promedio: ${nuevo_costo_promedio:.2f}/g', 'success')
             
-            # ACTUALIZAR DATOS BÁSICOS
+            # ACTUALIZAR DATOS BÁSICOS (solo los que NO se actualizaron arriba)
             materia.nombre = request.form['nombre']
             materia.proveedor_id = request.form.get('proveedor_id', type=int)
             materia.unidad_medida = request.form['unidad_medida']
@@ -4399,10 +4421,12 @@ def editar_materia_prima(id):
             # VALIDACIONES
             if not materia.proveedor_id:
                 flash('Debe seleccionar un proveedor', 'error')
+                db.session.rollback()
                 return redirect(url_for('editar_materia_prima', id=id))
                 
             if materia.stock_minimo < 0:
                 flash('El stock mínimo no puede ser negativo', 'error')
+                db.session.rollback()
                 return redirect(url_for('editar_materia_prima', id=id))
             
             db.session.commit()
@@ -4410,9 +4434,14 @@ def editar_materia_prima(id):
             return redirect(url_for('materias_primas'))
             
         except ValueError as e:
+            db.session.rollback()
             flash('Error: Los campos numéricos deben contener valores válidos', 'error')
             return redirect(url_for('editar_materia_prima', id=id))
         except Exception as e:
+            db.session.rollback()
+            print(f"❌ Error en editar_materia_prima: {e}")
+            import traceback
+            traceback.print_exc()
             flash(f'Error inesperado al actualizar la materia prima: {str(e)}', 'error')
             return redirect(url_for('editar_materia_prima', id=id))
     
