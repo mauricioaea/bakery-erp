@@ -1023,6 +1023,7 @@ class DetalleVenta(db.Model):
     producto_externo_id = db.Column(db.Integer, db.ForeignKey('productos_externos.id'), nullable=True)  # ✅ NUEVO
     cantidad = db.Column(db.Integer, nullable=False)
     precio_unitario = db.Column(db.Float, nullable=False)
+    subtotal = db.Column(db.Float, nullable=False, default=0) 
     
     # Relaciones
     #producto = db.relationship('Producto', backref='detalles_venta')

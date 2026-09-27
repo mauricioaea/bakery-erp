@@ -497,7 +497,8 @@ def crear_tablas_en_orden(schema_name):
         CREATE TABLE IF NOT EXISTS {schema_name}.detalle_venta (
             id SERIAL PRIMARY KEY,
             venta_id INTEGER NOT NULL REFERENCES {schema_name}.ventas(id),
-            producto_id INTEGER NOT NULL REFERENCES {schema_name}.productos(id),
+            producto_id INTEGER REFERENCES {schema_name}.productos(id),
+            producto_externo_id INTEGER REFERENCES {schema_name}.productos_externos(id),
             cantidad INTEGER NOT NULL,
             precio_unitario FLOAT NOT NULL,
             subtotal FLOAT NOT NULL,
@@ -3121,7 +3122,8 @@ def registrar_venta():
                     producto_id=None,
                     producto_externo_id=producto_externo_id,
                     cantidad=cantidad,
-                    precio_unitario=precio_unitario
+                    precio_unitario=precio_unitario,
+                    subtotal=cantidad * precio_unitario
                 )
                 detalles_venta.append(detalle)
                 
@@ -3142,7 +3144,8 @@ def registrar_venta():
                     producto_id=producto_id,
                     producto_externo_id=None,
                     cantidad=cantidad,
-                    precio_unitario=precio_unitario
+                    precio_unitario=precio_unitario,
+                    subtotal=cantidad * precio_unitario
                 )
                 detalles_venta.append(detalle)
         
