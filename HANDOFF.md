@@ -1,7 +1,7 @@
 # 🗂️ CONTEXTO MAESTRO — PanaderíaPro (Bakery ERP)
 
 **Última actualización:** 26 de Septiembre, 2026  
-**Último commit:** 61799c4 (Fase C.1 completada)
+**Último commit:** 5bfad7f (Demo Fases 1-5 + Fase C.2 parcial)
 
 ---
 
@@ -11,7 +11,7 @@
 - **Repo:** https://github.com/mauricioaea/bakery-erp
 - **Estado:** v1.0.0 — 10.95/11 módulos completados (~99.5%)
 - **Arquitectura:** Multi-tenant con PostgreSQL (schemas por tenant)
-- **Próximo hito:** Tenant Demo (marketing) + Auditoría de columnas + Dockerización
+- **Próximo hito:** Tenant Demo (Fases 6-12) + Auditoría completa + Dockerización
 
 ---
 
@@ -30,10 +30,11 @@
 - `app.py` (~510 KB) — aplicación principal
 - `models.py` (~124 KB) — modelos SQLAlchemy
 - `reportes.py` (~147 KB) — generación PDF
+- `seed_demo.py` (~15 KB) — NUEVO: seed modular del Demo
+- `seeds/` — NUEVO: 5 fases del seed
 - `middleware_saas.py`, `tenant_decorators.py`, `tenant_context.py` — multi-tenant
-- `templates/` — templates Jinja2
-- `static/` — CSS, JS, IMG
-- `HANDOFF.md` — este archivo (contexto maestro)
+- `templates/`, `static/`
+- `HANDOFF.md` — este archivo
 
 ---
 
@@ -43,29 +44,33 @@
 |----|--------|-----------|------|----------|
 | 1 | Panadería Principal | principal | basico | local |
 | 25 | Panadería Test Fase C | panadería_test_fase_ | premium | nube_premium |
+| 26 | Test Audit Fase C.2 | test_audit_fase_c2 | premium | nube_premium |
+| 27 | **Panadería Demo** | panadería_demo | premium | nube_premium |
 
-**Nota histórica:** tenants 21 y 22 fueron eliminados durante Fase C.1 (eran de prueba). tenant_23 también fue eliminado (audit test previo). La secuencia de IDs está en 25; el próximo tenant será 26.
+**Nota histórica:** tenants 21 y 22 fueron eliminados durante Fase C.1 (eran de prueba).
 
-**Tenant pendiente de crear:** `Demo Marketing` (ver sección 15).
+**Tenant principal del Demo:** `tenant_27` ("Panadería Demo"), poblado con `seed_demo.py` (Fases 1-5 completadas).
 
 ---
 
 ## 4️⃣ Usuarios del sistema
 
 ### Roles
-- **super_admin** (dev_master) → gestiona TODOS los tenants, licencias, config global
+- **super_admin** (dev_master) → gestiona TODOS los tenants
 - **admin_cliente** → acceso TOTAL a su tenant
-- **supervisor** → producción, recetas, materias primas, proveedores, reportes
-- **cajero** → solo punto de venta y cierre de caja
+- **supervisor** → producción, recetas, MP, proveedores, reportes
+- **cajero** → solo POS y cierre de caja
 
 ### Usuarios actuales
 - `dev_master` (super_admin, tenant_1)
 - `admin_25`, `super_25`, `cajero_25` (tenant_25)
+- `admin_26`, `super_26`, `cajero_26` (tenant_26)
+- `admin_27`, `super_27`, `cajero_27` (tenant_27 — Demo)
 
 ### Licencias
-- `local` → permanente, acceso completo (dev_master)
+- `local` → permanente, acceso completo
 - `nube_basica` → 1 usuario, sin módulos premium
-- `nube_premium` → 3 usuarios, acceso completo a todos los módulos
+- `nube_premium` → 3 usuarios, acceso completo
 
 ---
 
@@ -90,6 +95,9 @@
 ---
 
 ## 6️⃣ Últimos commits pusheados
+5bfad7f feat(demo): seed_demo.py modular + Fases 1-5 del tenant Demo
+5cb2fa6 fix(faseC2): limpiar activos_fijos + documentar 22 tablas pendientes
+7fad49b docs(HANDOFF): actualizar a Fase C.1 completada - 8 bugs corregidos + tenant_25 + pendientes C.2
 61799c4 fix(faseC1): auditoria de esquemas - alinear crear_tablas_en_orden con modelos ORM
 20442a9 docs(HANDOFF): actualizar contexto pre-Fase C con logros recientes
 4846513 fix(multi-tenant): completar CREATE TABLE de depositos_bancarios, pagos_individuales y saldos_banco
@@ -97,11 +105,6 @@ ee3bcc9 feat(reportes): historiales de pagos/depositos + bancos dinamicos multi-
 19e843a feat(reportes): reorganizar dashboard y exponer reportes escondidos + HANDOFF.md
 71f5b1d feat(reportes): migrar reportes.html a base.html y corregir sidebar
 8be33ad fix(financiera): completar modulo con filtros multi-tenant, fixes de esquemas y mejora UX
-5352e61 feat(permisos): /mi_perfil filtra modulos por rol correctamente
-14721d2 fix(gitignore): restaurar patron ARCHIVE*/ y agregar .bak_ correctamente
-045866e feat(perfil): modulo Mi Perfil completo + fixes multi-tenant
-c9bb8b0 fix(licencias): sincronizar public.tenants.plan al cambiar licencia de tenant
-ee2da79 feat(activos): rediseñar reporte con paleta corporativa y formato compacto
 
 text
 
@@ -110,206 +113,71 @@ text
 ## 7️⃣ Módulo 11 — Reportes (estado detallado)
 
 ### Fases completadas
-- ✅ **Fase A+B:** migración `reportes.html` a `base.html` + sidebar corregido
-- ✅ **Fase E:** dashboard reorganizado en 4 secciones + 7 reportes expuestos + rutas placeholder
-- ✅ **Fase D1:** historiales de pagos y depósitos con filtros + paginación + multi-país
+- ✅ **Fase A+B:** migración + sidebar
+- ✅ **Fase E:** dashboard reorganizado + 7 reportes expuestos
+- ✅ **Fase D1:** historiales de pagos y depósitos + multi-país
 - 🔧 **Fase D2:** exportación PDF (pendiente)
 
-### Estructura del dashboard `/reportes`
-📊 Sistema de Reportes Profesionales
-
-📋 MOVIMIENTOS
-├── Historial de Pagos (con filtros, paginación)
-├── Historial de Depósitos (con filtros, paginación)
-├── Historial de Ventas (/reporte/ventas)
-└── Cierre de Caja (/reporte/cierre_caja)
-
-🧮 CONTABLE
-├── Estado de Resultados (PDF)
-├── Conciliación Bancaria (modal + PDF)
-├── Reporte Unificado de Tesorería (PDF)
-└── Análisis de Gastos (PDF)
-
-📈 ANÁLISIS Y OPERACIONES
-├── Productos Populares
-├── Producción Diaria
-├── Inventario Externo
-├── Ventas Externas (PREMIUM)
-└── Activos Fijos
-
-🤖 GERENCIAL CON IA
-├── Reporte Avanzado Ventas + IA (PREMIUM)
-├── Análisis Predictivo
-├── Tendencia de Ventas (PDF)
-├── Recomendaciones IA (PDF)
-└── Análisis de Inventarios (PDF)
-
-text
-
 ### Fase D2 (pendiente)
-**Objetivo:** exportación PDF de los historiales.
-
-**Plan:**
 1. Agregar 2 funciones a `reportes.py`:
    - `generar_reporte_historial_pagos(...)`
    - `generar_reporte_historial_depositos(...)`
-2. Agregar 2 rutas en `app.py`:
-   - `GET /exportar_historial_pagos`
-   - `GET /exportar_historial_depositos`
-3. Agregar botones "Exportar PDF" en:
-   - `templates/historial_pagos.html`
-   - `templates/historial_depositos.html`
-4. Verificar + commit
+2. Agregar 2 rutas en `app.py`: `/exportar_historial_pagos`, `/exportar_historial_depositos`
+3. Agregar botones "Exportar PDF" en templates.
 
 **Tiempo estimado:** 1.5-2 horas.
 
 ---
 
-## 8️⃣ Logros recientes (Fase C.1 — 26 Sep 2026)
+## 8️⃣ Logros recientes (sesión del 26 Sep 2026)
 
-### 🎯 Bugs corregidos en `crear_tablas_en_orden`
+### 🎯 Fase C.1 — Auditoría de esquemas básica (commit 61799c4)
 
-- ✅ **7 CREATE TABLE renombrados** para alinear con el modelo ORM:
-  - `sucursal` → `sucursales`
-  - `detalles_compra` → `detalle_compras`
-  - `historial_precios_receta` → `historial_precios_recetas`
-  - `detalles_venta` → `detalle_venta`
-  - `jornada_ventas` → `jornadas_ventas`
-  - `registro_financiero` → `registros_financieros`
-  - `permisos_usuarios` → `permisos_usuario`
+- ✅ 7 `CREATE TABLE` renombrados en `crear_tablas_en_orden` (sucursales, detalle_compras, detalle_venta, jornadas_ventas, permisos_usuario, registros_financieros, historial_precios_recetas).
+- ✅ `CREATE TABLE facturas` agregado.
+- ✅ `CREATE INDEX idx_detalles_venta_venta` corregido.
+- ✅ Transacción atómica en `crear_tenant_saas` (evita tenants fantasma).
+- ✅ `plan` en `public.tenants` calculado desde `tipo_licencia`.
+- ✅ `permisos_requeridos` exceptúa `super_admin` (arregla "cambiar licencia").
+- ✅ `Factura`: quitados defaults hardcodeados.
+- ✅ Limpieza `tenant_1` (44 → 40 tablas).
+- ✅ `tenant_25` creado con 40 tablas correctas.
 
-- ✅ **CREATE TABLE `facturas` agregado** (faltaba en `crear_tablas_en_orden`, aunque el modelo ORM lo definía).
+### 🎯 Fase C.2 — Auditoría de columnas (parcial, commit 5cb2fa6)
 
-- ✅ **CREATE INDEX corregido:** `idx_detalles_venta_venta` → `idx_detalle_venta_venta` (apuntaba a tabla mal nombrada).
+- ✅ Script `audit_columns.py` creado (comparación ORM vs BD).
+- ✅ **Hallazgo:** NO faltan columnas del ORM. Al contrario: **sobran 79 columnas huérfanas** en 23 tablas.
+- ✅ **Fix aplicado:** `CREATE TABLE activos_fijos` limpiado (6 columnas huérfanas eliminadas + 6 columnas del ORM agregadas).
+- ✅ Verificación 1:1 con `tenant_1.activos_fijos` (18 columnas).
 
-### 🎯 Bugs corregidos en `crear_tenant_saas`
+### 🎯 Tenant Demo (Fases 1-5, commit 5bfad7f)
 
-- ✅ **Transacción atómica:** quitado `commit()` prematuro después de `CREATE SCHEMA`. Ahora si algo falla, todo se revierte (evita tenants fantasma).
+- ✅ **`seed_demo.py` modular y reutilizable** creado.
+- ✅ **5 archivos de fase** en `seeds/`:
+  - Fase 1: Configuración base (9 filas)
+  - Fase 2: Proveedores (6 filas)
+  - Fase 3: Materias primas (17 filas)
+  - Fase 4: Recetas (12 recetas + 68 ingredientes = 80 filas)
+  - Fase 5: Productos (12 filas)
+- ✅ **Total: 124 filas** insertadas en `tenant_27`.
+- ✅ **Costos exactos a Excel real:** Pan de Yema = $7.906 vs Excel $7.905.
 
-- ✅ **Cálculo de `plan`** en `public.tenants` ahora usa `tipo_licencia` (no `max_usuarios`):
-  - `premium` si `nube_premium` o `premium`
-  - `basico` en otro caso
+### 🎯 Reglas de negocio confirmadas
 
-### 🎯 Bugs corregidos en decoradores
-
-- ✅ **`permisos_requeridos`** ahora exceptúa a `super_admin` (consistente con `modulo_requerido`). Esto arregló el botón "cambiar licencia" que no funcionaba.
-
-### 🎯 Bugs corregidos en `models.py`
-
-- ✅ **`Factura`**: quitados defaults hardcodeados (`'Semillas Panadería'`, `'1085297960'`, `'Carrera 18 #9-45, Pasto'`, `'+57 3189098818'`). Ahora se llenan al emitir.
-
-### 🎯 Limpieza de BD
-
-- ✅ **`tenant_1`:** eliminadas 4 tablas basura:
-  - `configuracion_panaderia_backup2`
-  - `configuracion_panaderia_backup_20260916`
-  - `configuracion_panaderia_backup_contaminacion`
-  - `producto_externo` (singular, huérfana)
-  - **tenant_1 quedó en 40 tablas.**
-
-- ✅ **`tenant_21` y `tenant_22`** eliminados (eran de prueba).
-
-### 🎯 Verificación exitosa
-
-- ✅ **`tenant_25` ("Panadería Test Fase C") creado** con:
-  - 40 tablas correctas (1:1 con tenant_1)
-  - Licencia `nube_premium`, `plan=premium`
-  - 3 usuarios (`admin_25`, `super_25`, `cajero_25`)
-  - Sin tenants fantasma
-
-### 🎯 Commit
-
-- ✅ Commit `61799c4` pusheado a GitHub.
-- ✅ Backup BD: `backup_pre_faseC_20260926.dump` (547 KB).
+- **Unidades de costo:** `costo_promedio` en **$/gramo**, `stock_actual` en **gramos**.
+- **Fórmula del sistema:** `costo_ingrediente = cantidad_gramos × costo_promedio` (sin división).
+- **Empanadas en Colombia NO llevan IVA** (junto con pan, arepas, buñuelos, almojábanas). El campo `es_pan=True` los marca correctamente. **No es bug que "emPANada" contenga "pan".**
 
 ---
 
-### Fase C.2 — Auditoría de columnas (parcial)
-
-**Hallazgo:** la auditoría de columnas (`audit_columns.py`) reveló que **NO faltan columnas** del ORM en los tenants nuevos. Al contrario: **sobran 79 columnas** que el `CREATE TABLE` de `crear_tablas_en_orden` define pero que el ORM no declara.
-
-**Causa:** durante el desarrollo se agregaron columnas a `crear_tablas_en_orden` (BD) sin agregarlas a `models.py` (ORM). El ORM quedó desactualizado.
-
-**Impacto:** los tenants nuevos funcionan (no falta nada del ORM). Pero tienen 79 columnas huérfanas que nadie lee/escribe.
-
-**Riesgo:** si una columna huérfana tiene el mismo nombre que un método del ORM (ej. `activos_fijos.valor_actual` vs `ActivoFijo.valor_actual()`), se produce confusión. Python prioriza el método, pero la columna queda "fantasma".
-
-**Fix aplicado:** limpiado el `CREATE TABLE activos_fijos`:
-- ❌ Eliminadas 6 columnas huérfanas: `valor_actual`, `vida_util_meses`, `depreciacion_mensual`, `factura_compra`, `serial`, `activo`.
-- ✅ Agregadas 6 columnas del ORM que faltaban: `metodo_pago`, `vida_util`, `valor_residual`, `metodo_depreciacion`, `responsable`, `fecha_baja`.
-- ✅ Alineados tipos, largos, defaults, orden.
-
-**Verificado:** el nuevo `CREATE TABLE` coincide 1:1 con `tenant_1.activos_fijos` (18 columnas).
-
-**Pendiente Fase C.3:** auditar y corregir las **22 tablas restantes** (73 columnas extras).
-
-## 9️⃣ Deuda técnica pendiente (Fase C.2 / C.3)
-
-### 🚨 CRÍTICO — Auditoría de columnas
-
-**Hallazgo Fase C.1:** al crear `tenant_25`, el log mostró:
-✅ 68 columnas sincronizadas en tenant_25
-
-text
-
-**Eso significa que los 40 `CREATE TABLE` de `crear_tablas_en_orden` siguen incompletos.** La función `_sincronizar_columnas_tenant` los parchea automáticamente, pero es deuda técnica.
-
-**Acción pendiente:** auditar los 40 `CREATE TABLE` contra el modelo ORM completo y agregar las 68 columnas faltantes. Así los tenants nacerán completos sin parches.
-
-### 🚨 CRÍTICO — `public` tiene el schema duplicado
-
-**Hallazgo Fase C.1:** `public` tiene ~45 tablas, de las cuales 40 son copia del schema del tenant (`usuarios`, `ventas`, `productos`, etc.). Residuo de la migración SQLite → PostgreSQL.
-
-**Acción pendiente:** decidir si se eliminan o se documentan como fallback. Riesgo: si un tenant no tiene `search_path` configurado, SQLAlchemy usa `public` por defecto → **puede leer/escribir en `public` sin darse cuenta**.
-
-### 🚨 CRÍTICO — Encoding roto en nombres
-
-**Hallazgo Fase C.1:** los nombres de tenants se ven como `PanaderÝa Principal`, `panaderÝa_test_fase_`. Es un problema de encoding (`client_encoding` de psql vs `UTF8` del servidor). Cosmético pero confuso.
-
-**Acción pendiente:** revisar `client_encoding` en el cliente psql y/o el servidor PostgreSQL.
-
-### 🚨 Subdominio mal formado
-
-**Hallazgo Fase C.1:** al crear tenant_25, el subdominio quedó como `panadería_test_fase_` (con `_` final). El código trunca a 20 caracteres y deja el `_`.
-
-**Acción pendiente:** mejorar la generación del subdominio (quitar `_` final, limitar mejor).
-
-### ⚠️ Warnings recurrentes en el log
-
-1. ⚠️ `user_loader: This session is provisioning a new connection` (aparece en CADA request)
-2. ⚠️ `LegacyAPIWarning: Query.get()` en `app.py:2194` y `2205`
-3. ⚠️ `Error obteniendo nombre de empresa: 'NoneType' object has no attribute 'is_authenticated'` (al arrancar)
-4. ⚠️ Error calculando días: `datetime - date`
-5. ⚠️ `/api/donaciones/hoy` 404
-6. ⚠️ Reporte PDF: página 2 vacía (bug @media print, cosmético)
-
-### 🧹 Tablas backup en `public`
-
-- 🔧 `public.tenants_backup_20260916`
-- 🔧 `public.tenants_backup_tenant20`
-- 🔧 `public.configuracion_panaderia_backup_20260916`
-- 🔧 `public.alembic_version` (¿se usa Alembic?)
-
-### 🧹 Limpieza de templates
-
-- 🔧 Migrar `dashboard.html` a `base.html`
-- 🔧 Migrar `ventas_avanzado.html` a `base.html`
-- 🔧 Migrar `control_diario.html` a `base.html` O deprecarlo
-- 🔧 Migrar `reporte_activos.html`, `reporte_inventario_externo.html`, `reporte_ventas_externas.html`, `reporte_produccion.html`
-- 🔧 Deprecar `/control_diario` (código muerto)
-- 🔧 Mejora UX: selector de fechas en `/reportes`
-
-### 🧹 Arquitectura a revisar
-
-- 🔧 `public.usuarios` con usuarios de tenant_1 (3 filas). Revisar si es la arquitectura correcta.
-
+## 9️⃣ Deuda técnica pendiente
 
 ### 🚨 CRÍTICO — 22 tablas con columnas extras (Fase C.3)
 
-**Hallazgo Fase C.2:** el script `audit_columns.py` identificó 79 columnas extras en 23 tablas. Se limpió solo `activos_fijos`. Las 22 restantes siguen con:
+**Hallazgo Fase C.2:** `audit_columns.py` identificó 79 columnas huérfanas en 23 tablas. Se limpió solo `activos_fijos`. Las 22 restantes siguen con:
 
-| Tabla | Columnas extras |
-|-------|-----------------|
+| Tabla | Extras |
+|-------|--------|
 | `configuracion_produccion` | 7 |
 | `registros_financieros` | 7 |
 | `ventas` | 7 |
@@ -346,54 +214,60 @@ text
 5. Commit.
 
 **Tiempo estimado:** 4-6 horas.
+
+### 🚨 CRÍTICO — `public` tiene el schema duplicado
+
+`public` tiene ~45 tablas, de las cuales 40 son copia del schema del tenant. Residuo de la migración SQLite → PostgreSQL. **Riesgo:** si un tenant no tiene `search_path` configurado, SQLAlchemy usa `public` por defecto.
+
+### 🚨 Encoding en CMD
+
+Los caracteres con tilde (`Nariño`, `Panadería`) se ven mal en `psql` dentro de CMD. **Solución:** `chcp 65001` + `SET client_encoding TO 'UTF8';` antes de cada consulta.
+
+### 🟡 Warnings recurrentes
+
+1. `user_loader: This session is provisioning a new connection` (cada request)
+2. `LegacyAPIWarning: Query.get()` (app.py:2194, 2205)
+3. `Error obteniendo nombre de empresa: 'NoneType'` (al arrancar)
+4. `/api/donaciones/hoy` 404
+5. Reporte PDF: página 2 vacía (cosmético)
+
+### 🧹 Limpieza pendiente
+
+- Migrar templates autónomos a `base.html`
+- Deprecar `/control_diario`
+- Tablas backup en `public`: `tenants_backup_20260916`, `tenants_backup_tenant20`, `configuracion_panaderia_backup_20260916`
+
 ---
 
 ## 🔟 Roadmap completo
-✅ Fase 1: Módulos 1-10 (COMPLETADO)
-🔧 Fase 2: Módulo 11 Reportes (90% completado)
-├── ✅ Fase A+B: migración + sidebar (71f5b1d)
-├── ✅ Fase E: dashboard reorganizado (19e843a)
-├── ✅ Fase D1: historiales + multi-país (ee3bcc9)
-└── ⏳ Fase D2: exportación PDF (PENDIENTE)
+✅ Fase 1: Módulos 1-10
+🔧 Fase 2: Módulo 11 Reportes (90%)
+└── ⏳ Fase D2: exportación PDF
 ✅ Fase C.1: Auditoría de esquemas básica (61799c4)
-├── ✅ 7 CREATE TABLE renombrados
-├── ✅ CREATE TABLE facturas agregado
-├── ✅ Fix CREATE INDEX
-├── ✅ Transacción atómica en crear_tenant_saas
-├── ✅ Fix plan desde tipo_licencia
-├── ✅ Fix permisos_requeridos (super_admin)
-└── ✅ tenant_25 creado con 40 tablas correctas
-
-⏳ Fase C.3: Warnings + limpieza de public + encoding
-⏳ Fase C.4: Migración de templates autónomos
-⏳ Fase Demo: Tenant Demo para marketing
+🔧 Fase C.2: Auditoría de columnas (parcial, 5cb2fa6)
+└── ⏳ Fase C.3: 22 tablas restantes (73 columnas)
+🔧 Fase Demo: Tenant Demo (Fases 1-5 completadas, 5bfad7f)
+├── ✅ Fase 1: Configuración base
+├── ✅ Fase 2: Proveedores
+├── ✅ Fase 3: Materias primas
+├── ✅ Fase 4: Recetas
+├── ✅ Fase 5: Productos
+├── ⏳ Fase 6: Producción diaria (30-90 días)
+├── ⏳ Fase 7: Ventas (3 meses)
+├── ⏳ Fase 8: Productos externos
+├── ⏳ Fase 9: Activos fijos
+├── ⏳ Fase 10: Movimientos financieros
+├── ⏳ Fase 11: Cierres diarios
+└── ⏳ Fase 12: Reset automatizado
 ⏳ Fase 4: Dockerización + nube
-├── Dockerfile + docker-compose
-├── Nginx + subdominios dinámicos
-├── Deploy VPS
-└── SSL/HTTPS + Backups automáticos
 ⏳ Fase 5: API REST
-├── Endpoints públicos (v1)
-├── Autenticación por API Key
-├── Swagger/OpenAPI
-└── Integración con DAPTA, Shopify, etc.
-⏳ Fase 6: Chat IA básico (Nivel 1)
-⏳ Fase 7: Junta Directiva IA (multi-agente)
+⏳ Fase 6: Chat IA básico
+⏳ Fase 7: Junta Directiva IA
 ⏳ Fase 8: Integraciones estratégicas
-├── DAPTA (leads WhatsApp)
-├── Pasarelas de pago (Stripe, MercadoPago)
-├── WhatsApp Business API
-└── Facturación electrónica multi-país (DIAN)
 
 text
 
 ---
-✅ Fase C.2: Auditoría de columnas (parcial)
-        ├── ✅ Script audit_columns.py creado
-        ├── ✅ auditoría ejecutada (reveló 79 columnas extras)
-        ├── ✅ activos_fijos limpiado (6 columnas eliminadas + 6 agregadas del ORM)
-        └── ⏳ 22 tablas restantes (73 columnas) → Fase C.3
-⏳ Fase C.3: Auditoría de columnas completa (22 tablas)
 
 ## 1️⃣1️⃣ Metodología de trabajo
 
@@ -410,24 +284,26 @@ text
 
 ### Comandos útiles
 
-**Ver líneas específicas:**
+**Encoding en CMD (obligatorio para psql):**
 ```cmd
-findstr /N "^" app.py | findstr /R "^1234: ^1235:"
-Buscar texto:
-
-cmd
-findstr /N /C:"texto" app.py
+chcp 65001
+psql -U postgres -p 5433 -h localhost -d panaderia_master -c "SET client_encoding TO 'UTF8'; ..."
 Ver estructura de tabla:
 
 cmd
-psql -U postgres -p 5433 -h localhost -d panaderia_master -c "\d tenant_1.tabla"
-Compilar:
+psql -U postgres -p 5433 -h localhost -d panaderia_master -c "SET client_encoding TO 'UTF8'; \d tenant_1.tabla"
+Seed Demo (tenant_27):
+
+cmd
+python seed_demo.py --list                    # Lista fases
+python seed_demo.py --tenant=27 --status      # Estado actual
+python seed_demo.py --tenant=27 --fase=1,2,3  # Ejecutar fases
+python seed_demo.py --tenant=27 --fase=all    # Todas
+python seed_demo.py --tenant=27 --reset       # Resetear
+Compilar / Servidor:
 
 cmd
 python -m py_compile app.py
-Arrancar servidor:
-
-cmd
 python app.py
 Activar venv:
 
@@ -436,17 +312,15 @@ venv\Scripts\activate
 Ritual de inicio de sesión
 Activar venv: venv\Scripts\activate
 
-Verificar estado de git: git status
+Verificar git: git status
 
 Arrancar servidor: python app.py
 
 Continuar con el plan de la fase actual.
 
 1️⃣2️⃣ Configuración crítica del código
-Event listener (app.py ~línea 1300)
+Event listener (app.py ~1300)
 Configura search_path en cada checkout del pool SQLAlchemy.
-
-Prioridad: g.search_path_override > tenant del usuario > session.
 
 Multi-tenant
 Decorador @tenant_required configura el schema.
@@ -455,170 +329,163 @@ SQL directo calificado: UPDATE tenant_X.tabla.
 
 Cada query filtra por panaderia_id.
 
-Context processor (inject_user_permissions)
-Inyecta en todos los templates:
-
-usuario_puede, usuario_tiene_acceso
-
-modulos_permitidos, modulos_con_acceso_completo
-
-MODULOS_SISTEMA, config, dias_restantes
+Context processor
+Inyecta en templates: usuario_puede, usuario_tiene_acceso, modulos_permitidos, config, dias_restantes.
 
 Rutas críticas
-/reportes — dashboard de reportes
+/reportes, /historial_pagos, /historial_depositos
 
-/historial_pagos — historial con filtros y paginación
-
-/historial_depositos — historial con filtros y paginación
-
-/gestion_financiera — módulo financiero completo
-
-/mi_perfil — perfil del usuario (todos los roles)
-
-/cambiar_licencia/<id> — super_admin cambia licencia de tenant
+/gestion_financiera, /mi_perfil, /cambiar_licencia/<id>
 
 Bancos dinámicos multi-país
-Backend: en /gestion_financiera, se extraen bancos usados por el tenant.
+Backend extrae bancos usados por tenant.
 
-Frontend: <input list> + <datalist> en el modal de nuevo depósito.
+Frontend: <input list> + <datalist>.
 
-Fallback: 12 bancos genéricos si el tenant no tiene ninguno.
+Fallback: 12 bancos genéricos.
 
-_sincronizar_columnas_tenant
-Compara columnas del ORM con las de la BD.
+_sincronizar_columnas_tenant (app.py:12034)
+Compara columnas del ORM con la BD.
 
 Agrega las faltantes con ALTER TABLE ADD COLUMN IF NOT EXISTS.
 
-Se ejecuta al arrancar el servidor para cada tenant.
+Limitación: no actualiza constraints ni elimina extras.
 
-Limitación: no actualiza constraints (NOT NULL).
+crear_tablas_en_orden (app.py:8-900)
+Crea los 40 CREATE TABLE en orden.
 
-Deuda técnica: parchea las 68 columnas que crear_tablas_en_orden no crea.
+Deuda técnica: activos_fijos limpiado, 22 tablas con 73 columnas extras.
 
-crear_tablas_en_orden (app.py:8-900 aprox)
-Crea los 40 CREATE TABLE en orden de dependencias.
-
-Renombrado en Fase C.1 para alinear con ORM.
-
-Deuda técnica: 68 columnas faltantes.
-
-crear_tenant_saas (app.py:938-1180 aprox)
+crear_tenant_saas (app.py:938-1180)
 Crea schema + tablas + datos base + usuarios.
 
-Transacción atómica desde Fase C.1.
+Transacción atómica.
 
 Decoradores críticos
-@login_required — Flask-Login.
+@modulo_requerido(modulo) — exceptúa super_admin.
 
-@modulo_requerido(modulo) — verifica acceso al módulo, exceptúa super_admin.
+@permisos_requeridos(modulo, accion) — exceptúa super_admin.
 
-@permisos_requeridos(modulo, accion) — verifica permiso específico, exceptúa super_admin (arreglado en Fase C.1).
+@licencia_premium_requerida().
 
-@licencia_premium_requerida() — verifica licencia premium.
+Reglas de cálculo de recetas
+**costo_promedio = 
+/
+g
+r
+a
+m
+o
+∗
+∗
+(
+n
+o
+/gramo∗∗(no/kg ni $/unidad).
+
+stock_actual = gramos (no kg ni unidades).
+
+Fórmula: costo_ingrediente = cantidad_gramos × costo_promedio.
+
+CIF = 45% del costo de MP.
+
+Margen deseado: variable (default 30-45%).
 
 1️⃣3️⃣ Pendientes críticos antes de Dockerización
 🚨 PRIORIDAD ALTA
-Auditoría de columnas: completar los 40 CREATE TABLE de crear_tablas_en_orden (68 columnas faltantes).
+Fase C.3: auditar 22 tablas (73 columnas extras).
 
-Limpiar public: decidir sobre las 40 tablas duplicadas.
-
-Revisar encoding de nombres de tenants.
+Limpiar public: decidir sobre 40 tablas duplicadas.
 
 Resolver warnings del log.
 
 🟡 PRIORIDAD MEDIA
 Fase D2 del Módulo 11: exportación PDF.
 
-Migrar templates autónomos a base.html.
+Migrar templates a base.html.
 
-Deprecar /control_diario.
-
-Crear tenant Demo (marketing).
+Completar Fases 6-12 del Demo.
 
 🟢 PRIORIDAD BAJA
 Mejoras UX.
 
 Reporte PDF: página 2 vacía.
 
-/api/donaciones/hoy 404.
-
 1️⃣4️⃣ Próxima sesión — Prioridad sugerida
-🎯 Plan recomendado (3 bloques)
-BLOQUE 1 — Tenant Demo (marketing) (1-2h)
+🎯 Plan recomendado
+BLOQUE 1 — Prueba manual de Producción Diaria (15-20 min)
 
-Diseñar datos demo realistas.
+Login como admin_demo en tenant_27.
 
-Crear script seed_demo.py.
+Crear 1-2 órdenes de producción manualmente.
 
-Crear tenant + ejecutar seed.
+Verificar descuento de MP y suma de stock.
 
-Verificar en UI.
+Documentar bugs si aparecen.
 
-Commit + push.
+BLOQUE 2 — Fase 6: Producción diaria automatizada (45-60 min)
 
-BLOQUE 2 — Auditoría de columnas (2-3h)
+Script seeds/fase6_produccion.py.
 
-Script de comparación ORM vs BD.
+Generar órdenes de producción de 30-90 días.
 
-Aplicar fixes a crear_tablas_en_orden.
+Descontar MP, sumar stock.
 
-Recrear tenant + verificar.
+Verificar coherencia.
 
-Commit + push.
+BLOQUE 3 — Fase 7: Ventas (3 meses) (1-1.5h)
 
-BLOQUE 3 — Fase D2 (PDF de historiales) (1.5-2h)
+Script seeds/fase7_ventas.py.
 
-2 funciones en reportes.py.
+Generar 3.600 ventas distribuidas en 90 días.
 
-2 rutas en app.py.
+Consumir stock de productos.
 
-2 botones en templates.
+Actualizar jornadas_ventas y cierres_diarios.
 
-Commit + push.
+BLOQUE 4 — Fases 8-12 del Demo (1-2h)
 
-Alternativa: Fase C.3 (warnings + limpieza) primero.
+Productos externos, activos fijos, movimientos financieros.
+
+Reset automatizado.
+
+Alternativa: Fase D2 (PDF) primero.
 
 1️⃣5️⃣ Notas estratégicas del proyecto
 Objetivo del ERP
-ERP SaaS para panaderías multi-tenant multi-país con:
-
-Punto de venta, inventario, producción, recetas, activos fijos
-
-Reportes con IA (predictivos ya implementados)
-
-Finanzas completas
-
-Multi-país (bancos, moneda, fechas)
-
-Base para API REST + IA avanzada
+ERP SaaS para panaderías multi-tenant multi-país con: POS, inventario, producción, recetas, activos fijos, reportes con IA, finanzas, multi-país, base para API REST + IA avanzada.
 
 Diferenciadores técnicos
-Multi-tenant real con schemas PostgreSQL.
+Multi-tenant real (schemas PostgreSQL).
 
 Multi-país (configuración dinámica).
 
-IA-ready (reportes predictivos + tendencias).
+IA-ready.
 
-Bancos dinámicos (funciona en cualquier país).
+Bancos dinámicos.
 
 🎁 Tenant Demo (marketing)
-Objetivo: tenant público con datos precargados y realistas para que clientes potenciales experimenten el ERP en vivo.
+Objetivo: tenant público con datos precargados y realistas.
 
-Características:
+Estado actual: Fases 1-5 completadas (124 filas). Fases 6-12 pendientes.
 
-Productos típicos de panadería (pan, pasteles, bebidas, etc.).
-
-Ventas de 3-6 meses de historial (para que los reportes IA tengan datos).
-
-Usuarios por rol: admin, supervisor, cajero.
-
-Reset automático cada X días (automatización futura).
+Características planeadas:
 
 Subdominio sugerido: demo.panaderiapro.com.
 
-Enlace desde landing page: "Probar sin registro".
+Datos: 6 proveedores, 17 MP, 12 recetas, 12 productos.
 
-Estado: pendiente de crear.
+Ventas de 3 meses (Fase 7).
+
+Reset automatizado cada X días (Fase 12).
+
+Regla de negocio importante (Colombia):
+
+Productos SIN IVA: pan, empanadas, arepas, buñuelos, almojábanas. Marcados con es_pan=True.
+
+Productos CON IVA: bebidas, snacks, productos externos.
+
+No es bug que "emPANada" contenga "pan". Es intencional.
 
 Roadmap a futuro
 Chat IA básico (Nivel 1)
@@ -634,7 +501,7 @@ Mercado objetivo
 
 10.000-30.000 en LATAM
 
-Precio sugerido: $60k-$600k COP/mes según plan
+Precio sugerido: $60k-$600k COP/mes
 
 📞 Cómo continuar en un chat nuevo
 Al iniciar un nuevo chat, pegar este archivo como contexto inicial.
@@ -643,18 +510,18 @@ Instrucción sugerida para el asistente:
 "Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el archivo HANDOFF.md con el contexto maestro del proyecto. Vamos a continuar desde donde lo dejamos. Por favor actúa como instructor guiando paso a paso, con la metodología de trabajo descrita en el HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/findstr, commit tras cada fix verificado."
 
 Próxima tarea sugerida
-Tenant Demo (marketing) → Auditoría de columnas → Fase D2 (PDF) (ver sección 14).
+Prueba manual de Producción Diaria + Fase 6 (Producción automatizada) (ver sección 14).
 
 ✅ Última validación
-Último commit: 61799c4 (pusheado a GitHub)
+Último commit: 5bfad7f (pusheado a GitHub)
 
 Working tree: clean
 
 Servidor: corriendo en http://localhost:5000
 
-Próximo hito: Tenant Demo + Auditoría de columnas
+Próximo hito: Fases 6-12 del Demo
 
-Estado del proyecto: Estable, multi-tenant funcional, listo para crear tenant Demo y completar auditoría de esquemas.
+Estado del proyecto: Estable, multi-tenant funcional, Demo parcialmente poblado, listo para completar Fases 6-12.
 
 Fin del HANDOFF.md
 
@@ -662,76 +529,11 @@ text
 
 ---
 
-## 🎯 Cómo aplicar este HANDOFF
+## 🎯 Instrucciones para aplicar el HANDOFF
 
-**Opción A — Reemplazar completo (recomendado):**
+**Mauricio:**
 
-1. **Backup del HANDOFF actual:**
+1. **Backup del actual:**
 
 ```cmd
-copy HANDOFF.md HANDOFF.md.bak_20260926
-Abrir HANDOFF.md en tu editor.
-
-Seleccionar todo (Ctrl+A) → Borrar (Delete).
-
-Pegar el contenido nuevo que te di arriba.
-
-Guardar (Ctrl+S).
-
-Opción B — Parchear secciones: más tedioso. No lo recomiendo.
-
-🛑 Antes de aplicar
-Mauricio, antes de pegar el nuevo HANDOFF:
-
-Revisa mi propuesta. Si algo no te gusta (redacción, secciones, orden), dime y lo ajusto.
-
-Verifica que el HANDOFF actual esté en git status como clean:
-
-cmd
-git status
-Debe estar limpio (el push anterior lo dejó clean).
-
-Copia el backup antes de reemplazar:
-
-cmd
-copy HANDOFF.md HANDOFF.md.bak_20260926
-🎯 Después de aplicar el nuevo HANDOFF
-1. Verifica el diff:
-
-cmd
-git diff HANDOFF.md --stat
-2. Commit:
-
-cmd
-git add HANDOFF.md
-git commit -m "docs(HANDOFF): actualizar a Fase C.1 completada - 8 bugs corregidos + tenant_25 + pendientes C.2"
-3. Push:
-
-cmd
-git push origin main
-📋 Estado del plan
-Bloque	Tarea	Estado
-1	HANDOFF - Leer actual	✅
-1	HANDOFF - Reescribir	🟡 Revisar propuesta
-1	HANDOFF - Backup + reemplazar	⏳
-1	HANDOFF - Commit + push	⏳
-2	Demo - Diseñar + seed	⏳
-3	Auditoría - Columnas	⏳
-
-## 1️⃣4️⃣ Próxima sesión
-### 🎯 Plan recomendado
-
-**BLOQUE 1 — Tenant Demo (marketing)** (1-2h)
-- Crear tenant Demo con datos simples (sin activos fijos complejos).
-- Script seed_demo.py.
-- Verificar en UI.
-- Commit + push.
-
-**BLOQUE 2 — Fase C.3 (auditoría completa)** (4-6h)
-- Analizar las 22 tablas restantes.
-- Clasificar columnas: usadas / huérfanas / conflictos.
-- Aplicar fixes.
-- Commit + push.
-
-**BLOQUE 3 — Fase D2 (PDF de historiales)** (1.5-2h)
-- ...
+copy HANDOFF.md HANDOFF.md.bak_20260926_epic
