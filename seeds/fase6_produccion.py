@@ -1,7 +1,6 @@
 """
 Fase 6 — Producción diaria del tenant Demo.
-Genera 90 días de órdenes de producción realistas.
-Descuenta MP, suma stock de productos terminados, registra historial.
+Genera 90 días de órdenes de producción realistas con reposición semanal de MP.
 
 Depende de:
   - Fase 3 (materias primas con stock)
@@ -13,6 +12,8 @@ Reglas de negocio:
   - Verifica stock antes de descontar (nunca deja negativo).
   - costo_promedio está en $/gramo, stock_actual en gramos.
   - panaderia_id SIEMPRE explícito (evitar default=1).
+  - REPOSICIÓN SEMANAL: cada 7 días se rellena el stock de MP hasta
+    el 150% del stock inicial (simula compras del dueño).
 """
 import random
 from datetime import datetime, timedelta, date
@@ -21,10 +22,12 @@ from datetime import datetime, timedelta, date
 DIAS_TOTALES = 90
 USUARIO_CREADOR_ID = 1  # admin_27
 COMMIT_CADA_N_DIAS = 10  # Punto de guardado parcial
+FACTOR_STOCK_OBJETIVO = 1.5  # 150% del stock inicial
+DIAS_ENTRE_REPOSICIONES = 7  # Reposición semanal
 
 
 def run(schema_name, cursor, dry_run=False):
-    """Ejecuta la Fase 6. Retorna (filas_insertadas, mensaje)."""
+    """Ejecuta la Fase 6 con reposición semanal. Retorna (filas, mensaje)."""
     filas = 0
 
     # --- 1. Obtener panaderia_id ---
@@ -66,8 +69,7 @@ def run(schema_name, cursor, dry_run=False):
     cursor.execute(f"""
         SELECT id, stock_actual, costo_promedio
         FROM {schema_name}.materias_primas
-        WHERE activo = TRUE
-        AND panaderia_id = %s
+        WHERE activo = TRUE AND panaderia_id = %s
     """, (panaderia_id,))
     mp_stock = {}
     mp_costo = {}
@@ -75,7 +77,15 @@ def run(schema_name, cursor, dry_run=False):
         mp_stock[mp_id] = float(stock or 0)
         mp_costo[mp_id] = float(costo or 0)
 
-    # --- 5. Cargar stock actual de productos (cache) ---
+    # --- 5. Definir stock objetivo por MP (1.5x stock actual de arranque) ---
+    # Se asume que el stock_actual actual es el "inicial" del seed.
+    # Si lo quieres basar en los valores de Fase 3, hay que resetear antes.
+    mp_objetivo = {
+        mp_id: stock * FACTOR_STOCK_OBJETIVO
+        for mp_id, stock in mp_stock.items()
+    }
+
+    # --- 6. Cargar stock actual de productos (cache) ---
     cursor.execute(f"""
         SELECT id, stock_actual
         FROM {schema_name}.productos
@@ -85,15 +95,17 @@ def run(schema_name, cursor, dry_run=False):
     for prod_id, stock in cursor.fetchall():
         producto_stock[prod_id] = int(stock or 0)
 
-    # --- 6. Rango de fechas ---
+    # --- 7. Rango de fechas ---
     hoy = date.today()
     fecha_inicio = hoy - timedelta(days=DIAS_TOTALES)
 
     print(f"      Rango: {fecha_inicio} → {hoy} ({DIAS_TOTALES} días)")
     print(f"      Recetas activas: {len(recetas)}")
     print(f"      MP con stock: {len(mp_stock)}")
+    print(f"      Reposición cada {DIAS_ENTRE_REPOSICIONES} días "
+          f"(objetivo = {int(FACTOR_STOCK_OBJETIVO*100)}% del inicial)")
 
-    # --- 7. Bucle principal por día ---
+    # --- 8. Bucle principal por día ---
     for i in range(DIAS_TOTALES):
         fecha_dia = fecha_inicio + timedelta(days=i)
 
@@ -104,6 +116,16 @@ def run(schema_name, cursor, dry_run=False):
         """, (fecha_dia, panaderia_id))
         if cursor.fetchone()[0] > 0:
             continue
+
+        # Reposición semanal (día 7, 14, 21, ..., 84)
+        if (i + 1) % DIAS_ENTRE_REPOSICIONES == 0:
+            filas_rep = _reponer_mp(
+                cursor, schema_name, panaderia_id, fecha_dia,
+                mp_stock, mp_objetivo, dry_run,
+            )
+            filas += filas_rep
+            if filas_rep > 0:
+                print(f"      📦 Día {i+1}: reposición de {filas_rep} MP")
 
         # ¿Cuántas órdenes hoy? 1-2
         num_ordenes = random.choice([1, 1, 2])
@@ -123,7 +145,64 @@ def run(schema_name, cursor, dry_run=False):
     if not dry_run:
         cursor.connection.commit()
 
-    return filas, f"{filas} órdenes de producción en {DIAS_TOTALES} días"
+    return filas, f"{filas} filas en {DIAS_TOTALES} días (con reposición semanal)"
+
+
+def _reponer_mp(cursor, schema_name, panaderia_id, fecha_dia,
+                mp_stock, mp_objetivo, dry_run):
+    """Repone MP hasta el stock objetivo (simula compras semanales)."""
+    filas = 0
+    hora_compra = datetime.combine(
+        fecha_dia, datetime.min.time()
+    ) + timedelta(hours=3)  # 3 AM, antes de la producción
+
+    # Obtener un producto_id de referencia (historial_inventario.producto_id es NOT NULL)
+    cursor.execute(f"""
+        SELECT id FROM {schema_name}.productos
+        WHERE panaderia_id = %s LIMIT 1
+    """, (panaderia_id,))
+    prod_ref_row = cursor.fetchone()
+    prod_ref = prod_ref_row[0] if prod_ref_row else None
+
+    for mp_id, objetivo in mp_objetivo.items():
+        actual = mp_stock.get(mp_id, 0)
+        if actual >= objetivo:
+            continue
+        cantidad_comprada = objetivo - actual
+        nuevo_stock = objetivo
+
+        if dry_run:
+            mp_stock[mp_id] = nuevo_stock
+            filas += 1
+            continue
+
+        # UPDATE stock
+        cursor.execute(f"""
+            UPDATE {schema_name}.materias_primas
+            SET stock_actual = %s, fecha_ultima_actualizacion = NOW()
+            WHERE id = %s AND panaderia_id = %s
+        """, (nuevo_stock, mp_id, panaderia_id))
+
+        # Registro en historial_inventario
+        cursor.execute(f"""
+            INSERT INTO {schema_name}.historial_inventario
+            (panaderia_id, producto_id, cantidad_anterior, cantidad_nueva,
+             tipo_movimiento, usuario_id, fecha_movimiento, observaciones,
+             materia_prima_id, cantidad_utilizada)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            panaderia_id, prod_ref,
+            int(actual), int(nuevo_stock),
+            'COMPRA_REPOSICION', USUARIO_CREADOR_ID,
+            hora_compra,
+            f'Reposición semanal MP id={mp_id}',
+            mp_id, cantidad_comprada,
+        ))
+
+        mp_stock[mp_id] = nuevo_stock
+        filas += 1
+
+    return filas
 
 
 def _crear_orden(cursor, schema_name, panaderia_id, fecha_dia,
@@ -163,7 +242,6 @@ def _crear_orden(cursor, schema_name, panaderia_id, fecha_dia,
             lotes_posibles = min(lotes_posibles, max_lotes_mp)
 
         if lotes_posibles <= 0:
-            # No alcanza ni para 1 lote → saltar esta receta
             continue
 
         lotes = lotes_posibles
@@ -177,6 +255,12 @@ def _crear_orden(cursor, schema_name, panaderia_id, fecha_dia,
             costo_real += costo_mp
 
         if dry_run:
+            # Simular descuento en cache
+            for mp_id, gramos_por_lote in ingredientes:
+                mp_stock[mp_id] = mp_stock.get(mp_id, 0) - gramos_por_lote * lotes
+                if mp_stock[mp_id] < 0:
+                    mp_stock[mp_id] = 0
+            producto_stock[producto_id] = producto_stock.get(producto_id, 0) + unidades
             filas += 1
             continue
 
@@ -204,20 +288,16 @@ def _crear_orden(cursor, schema_name, panaderia_id, fecha_dia,
             stock_antes = mp_stock.get(mp_id, 0)
             stock_despues = stock_antes - gramos_total
             if stock_despues < 0:
-                stock_despues = 0  # seguridad
+                stock_despues = 0
 
-            # UPDATE stock
             cursor.execute(f"""
                 UPDATE {schema_name}.materias_primas
-                SET stock_actual = %s,
-                    fecha_ultima_actualizacion = NOW()
+                SET stock_actual = %s, fecha_ultima_actualizacion = NOW()
                 WHERE id = %s AND panaderia_id = %s
             """, (stock_despues, mp_id, panaderia_id))
 
-            # Actualizar cache
             mp_stock[mp_id] = stock_despues
 
-            # Registro en historial_inventario
             cursor.execute(f"""
                 INSERT INTO {schema_name}.historial_inventario
                 (panaderia_id, producto_id, cantidad_anterior, cantidad_nueva,
