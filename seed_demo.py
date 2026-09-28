@@ -38,7 +38,7 @@ FASES = {
     4: ('Recetas y fórmulas', 'seeds.fase4_recetas'),
     5: ('Productos', 'seeds.fase5_productos'),
     # Fases futuras:
-    # 6: ('Producción diaria', 'seeds.fase6_produccion'),
+    6: ('Producción diaria', 'seeds.fase6_produccion'),
     # 7: ('Ventas', 'seeds.fase7_ventas'),
     # 8: ('Productos externos', 'seeds.fase8_externos'),
     # 9: ('Activos fijos', 'seeds.fase9_activos'),
