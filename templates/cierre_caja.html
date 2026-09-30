@@ -450,7 +450,7 @@
                     <button class="btn btn-pdf me-2 no-print" onclick="generarPDF()">
                         <i class="fas fa-file-pdf"></i> PDF
                     </button>
-                    <button class="btn btn-light no-print" onclick="window.close()">
+                    <button class="btn btn-light no-print" onclick="cerrarReporte()">
                         <i class="fas fa-times"></i> Cerrar
                     </button>
                 </div>
@@ -958,6 +958,17 @@
                 });
             }
         });
+
+        function cerrarReporte() {
+            // Intenta cerrar la ventana (funciona si fue abierta con window.open)
+            window.close();
+            // Fallback: si no se cerró, vuelve atrás
+            setTimeout(() => {
+                if (!window.closed) {
+                    window.history.back();
+                }
+            }, 100);
+        }
     </script>
 </body>
 </html>
