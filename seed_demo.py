@@ -41,8 +41,8 @@ FASES = {
     6: ('Producción diaria', 'seeds.fase6_produccion'),
     7: ('Ventas', 'seeds.fase7_ventas'),
     # 8: ('Productos externos', 'seeds.fase8_externos'),
-    # 9: ('Activos fijos', 'seeds.fase9_activos'),
-     10: ('Movimientos financieros', 'seeds.fase10_financieros'),
+    9: ('Activos fijos', 'seeds.fase9_activos'),
+    10: ('Movimientos financieros', 'seeds.fase10_financieros'),
     # 11: ('Cierres diarios', 'seeds.fase11_cierres'),
 }
 
