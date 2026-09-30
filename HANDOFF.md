@@ -1,9 +1,7 @@
-HANDOFF.md — Versión actualizada
-markdown
-# 🗂️ CONTEXTO MAESTRO — PanaderíaPro (Bakery ERP)
+🗂️ CONTEXTO MAESTRO — PanaderíaPro (Bakery ERP)
 
-**Última actualización:** 27 de Septiembre, 2026  
-**Último commit:** e26c138 (5 bugs críticos resueltos + Demo Fases 1-5)
+**Última actualización:** 29 de Septiembre, 2026
+**Último commit:** 93bf74c (Fase 7 - Ventas: 3.069 ventas en 90 días)
 
 ---
 
@@ -11,9 +9,9 @@ markdown
 
 - **Nombre:** PanaderíaPro (bakery-erp)
 - **Repo:** https://github.com/mauricioaea/bakery-erp
-- **Estado:** v1.0.0 — 10.95/11 módulos completados (~99.5%) + Sistema 100% funcional
+- **Estado:** v1.0.0 — 10.95/11 módulos completados (~99.5%) + Demo Fases 1-7 (78%)
 - **Arquitectura:** Multi-tenant con PostgreSQL (schemas por tenant)
-- **Próximo hito:** Tenant Demo (Fases 6-12) + Auditoría completa + Dockerización
+- **Próximo hito:** Demo Fases 8-11 + Fase D2 (PDF) + bugs menores
 
 ---
 
@@ -33,7 +31,7 @@ markdown
 - `models.py` (~130 KB) — modelos SQLAlchemy
 - `reportes.py` (~147 KB) — generación PDF
 - `seed_demo.py` (~15 KB) — seed modular del Demo
-- `seeds/` — 5 fases del seed
+- `seeds/` — 7 fases del seed (fase1 a fase7)
 - `middleware_saas.py`, `tenant_decorators.py`, `tenant_context.py` — multi-tenant
 - `templates/`, `static/`
 - `HANDOFF.md` — este archivo
@@ -49,9 +47,7 @@ markdown
 | 26 | Test Audit Fase C.2 | test_audit_fase_c2 | premium | nube_premium |
 | 27 | **Panadería Demo** | panadería_demo | premium | nube_premium |
 
-**Tenant principal del Demo:** `tenant_27` ("Panadería Demo"), poblado con `seed_demo.py` (Fases 1-5 completadas).
-
-**Nota:** tenants 25 y 26 son de prueba (Fase C.1 y C.2). Pueden limpiarse si es necesario.
+**Tenant principal del Demo:** `tenant_27` ("Panadería Demo"), poblado con `seed_demo.py` (Fases 1-7 completadas).
 
 ---
 
@@ -67,7 +63,7 @@ markdown
 - `dev_master` (super_admin, tenant_1)
 - `admin_25`, `super_25`, `cajero_25` (tenant_25)
 - `admin_26`, `super_26`, `cajero_26` (tenant_26)
-- `admin_27`, `super_27`, `cajero_27` (tenant_27 — Demo)
+- `admin_27` (id=1), `super_27` (id=2), `cajero_27` (id=3) — tenant_27 Demo
 
 ### Licencias
 - `local` → permanente, acceso completo
@@ -82,14 +78,14 @@ markdown
 |---|--------|--------|
 | 1 | Punto de Venta | ✅ COMPLETO |
 | 2 | Producción Diaria | ✅ COMPLETO |
-| 3 | Productos Externos | ✅ COMPLETO |
+| 3 | Productos Externos | ✅ COMPLETO (falta seed Fase 8) |
 | 4 | Recetas y Fórmulas | ✅ COMPLETO |
 | 5 | Materias Primas | ✅ COMPLETO |
 | 6 | Proveedores | ✅ COMPLETO |
 | 7 | Gestión de Clientes (solo dev_master) | ✅ COMPLETO |
-| 8 | Activos Fijos | ✅ COMPLETO |
+| 8 | Activos Fijos | ✅ COMPLETO (falta seed Fase 9) |
 | 9 | Gestión de Usuarios + Mi Perfil | ✅ COMPLETO |
-| 10 | Gestión Financiera | ✅ COMPLETO |
+| 10 | Gestión Financiera | ✅ COMPLETO (falta seed Fase 10) |
 | 11 | Reportes Profesionales | 🔧 90% (falta Fase D2) |
 
 **Progreso global:** 10.95/11 módulos (~99.5%)
@@ -97,19 +93,15 @@ markdown
 ---
 
 ## 6️⃣ Últimos commits pusheados
+93bf74c feat(demo): Fase 7 - ventas (90 dias, 3069 ventas, 4677 detalles, 90 jornadas)
+252b7a8 feat(demo): Fase 6 v2 - reposicion semanal de MP (12 semanas, 279 ordenes, 2413 filas)
+fd862c3 feat(demo): Fase 6 - produccion diaria (90 dias, 71 ordenes, 560 filas)
+a43045e docs(HANDOFF): actualizar con 5 fixes críticos del 27 Sep + hallazgos QA
 e26c138 fix(materias_primas): corregir recalculo de stock/costo en editar_materia_prima
 ececcd2 fix(materias_primas): corregir editar_materia_prima - HistorialCompra.fecha -> fecha_compra + panaderia_id
 d1f0c3f fix(jornadas): alinear esquema + panaderia_id en obtener_jornada_activa
 5715742 fix(pos): agregar panaderia_id a DetalleVenta en ambos INSERTs
 8a0fde8 fix(pos): corregir detalle_venta - agregar subtotal + producto_externo_id + producto_id nullable
-9c7114c docs(HANDOFF): actualizar con tenant Demo + seed_demo.py Fases 1-5 + reglas de negocio
-5bfad7f feat(demo): seed_demo.py modular + Fases 1-5 del tenant Demo
-5cb2fa6 fix(faseC2): limpiar activos_fijos + documentar 22 tablas pendientes
-7fad49b docs(HANDOFF): actualizar a Fase C.1 completada
-61799c4 fix(faseC1): auditoria de esquemas - alinear crear_tablas_en_orden con modelos ORM
-20442a9 docs(HANDOFF): actualizar contexto pre-Fase C con logros recientes
-4846513 fix(multi-tenant): completar CREATE TABLE de depositos_bancarios, pagos_individuales y saldos_banco
-ee3bcc9 feat(reportes): historiales de pagos/depositos + bancos dinamicos multi-pais
 
 text
 
@@ -134,83 +126,93 @@ text
 
 ---
 
-## 8️⃣ Logros recientes (sesión del 27 Sep 2026)
+## 8️⃣ Demo — Estado de las fases del seed
 
-### 🎯 Fase C.1 — Auditoría de esquemas básica (61799c4)
+| # | Fase | Estado | Filas | Commit |
+|---|------|--------|-------|--------|
+| 1 | Configuración base | ✅ | 9 | fd862c3 |
+| 2 | Proveedores | ✅ | 6 | fd862c3 |
+| 3 | Materias primas | ✅ | 18 | fd862c3 |
+| 4 | Recetas y fórmulas | ✅ | 80 | fd862c3 |
+| 5 | Productos | ✅ | 13 | fd862c3 |
+| 6 | Producción diaria (v2 con reposición) | ✅ | 2.413 | 252b7a8 |
+| 7 | Ventas | ✅ | 7.836 | 93bf74c |
+| 8 | Productos externos | ⏳ | — | pendiente |
+| 9 | Activos fijos | ⏳ | — | pendiente |
+| 10 | Movimientos financieros | ⏳ | — | pendiente |
+| 11 | Cierres diarios (módulo) | ⏳ | — | pendiente |
+| 12 | Reset automatizado | ⏳ | — | pendiente |
 
-- ✅ 7 CREATE TABLE renombrados en `crear_tablas_en_orden`.
-- ✅ `CREATE TABLE facturas` agregado.
-- ✅ `CREATE INDEX idx_detalles_venta_venta` corregido.
-- ✅ Transacción atómica en `crear_tenant_saas`.
-- ✅ `plan` en `public.tenants` calculado desde `tipo_licencia`.
-- ✅ `permisos_requeridos` exceptúa `super_admin`.
-- ✅ `Factura`: quitados defaults hardcodeados.
-- ✅ Limpieza `tenant_1` (44 → 40 tablas).
-- ✅ `tenant_25` creado.
+**Total acumulado:** ~10.375 filas en tenant_27.
 
-### 🎯 Fase C.2 — Auditoría de columnas (5cb2fa6)
+### Desglose de Fase 6 v2 (producción)
 
-- ✅ Script `audit_columns.py` creado.
-- ✅ **Hallazgo:** NO faltan columnas del ORM. Sobran 79 columnas huérfanas en 23 tablas.
-- ✅ **Fix:** `CREATE TABLE activos_fijos` limpiado (6 huérfanas eliminadas + 6 del ORM agregadas).
+- **Reposición semanal:** cada 7 días, MP repuestas hasta 150% del stock inicial.
+- **279 órdenes** de producción en 90 días.
+- **12 reposiciones** (~190 filas en historial_inventario).
+- **1.665 consumos** de MP.
+- **279 entradas** de producto.
+- **Resultado:** ~12.000 unidades de producto terminado.
 
-### 🎯 Tenant Demo (Fases 1-5, 5bfad7f)
+### Desglose de Fase 7 (ventas)
 
-- ✅ `seed_demo.py` modular y reutilizable.
-- ✅ 5 archivos de fase en `seeds/`:
-  - Fase 1: Configuración base (9 filas)
-  - Fase 2: Proveedores (6 filas)
-  - Fase 3: Materias primas (17 filas)
-  - Fase 4: Recetas (12 recetas + 68 ingredientes = 80 filas)
-  - Fase 5: Productos (12 filas)
-- ✅ **Total: 124 filas** en `tenant_27`.
-- ✅ **Costos exactos a Excel real:** Pan de Yema = $7.906 vs $7.905.
+- **3.069 ventas** en 90 días (~34/día con factor estacional).
+- **4.677 detalles** de venta (1.52 productos/venta).
+- **90 jornadas** cerradas.
+- **$12.608.800 COP** en ventas totales.
+- **Distribución de métodos:** 59.3% efectivo / 30.8% transferencia / 9.9% tarjeta.
+- **Ticket promedio:** ~$4.108 COP.
 
-### 🎯 5 Bugs críticos resueltos (sesión del 27 Sep - tarde)
+---
 
-**Bug #1 — POS no procesaba ventas (`detalle_venta`)**
-- **Causa:** `detalle_venta.subtotal` NOT NULL pero el modelo ORM no lo tenía + los INSERTs no lo enviaban. También `producto_id` era NOT NULL (impedía ventas externas) y faltaba `producto_externo_id`.
-- **Fix (8a0fde8):** modelo `DetalleVenta` con `subtotal`; `app.py` con `subtotal` en ambos INSERTs; `CREATE TABLE detalle_venta` con `producto_externo_id` + `producto_id` nullable; `ALTER TABLE` para tenants 1, 25, 26, 27, public.
-- **Verificado:** venta POS procesada (venta_id=5, panaderia_id=27, subtotal=1000, total=1000), recibo POS generado.
-
-**Bug #1.5 — POS fallaba con `panaderia_id=1` (detalle_venta)**
-- **Causa:** los 2 INSERTs de `DetalleVenta` no pasaban `panaderia_id` → tomaba `default=1`.
-- **Fix (5715742):** agregado `panaderia_id=panaderia_id` a ambos `DetalleVenta(...)`.
-- **Verificado:** POS funcionando 100%.
-
-**Bug #2 — Cierre diario fallaba (`jornadas_ventas`)**
-- **Causa:** `CREATE TABLE jornadas_ventas` con esquema viejo (`usuario_id NOT NULL`, `fecha_apertura`, etc.) desalineado con el ORM.
-- **Fix (d1f0c3f):** `CREATE TABLE` alineado con el ORM (`fecha`, `created_at`, `cerrada_at`, `total_tarjeta`); `ALTER TABLE` para tenants 25, 26, 27.
-
-**Bug #2.5 — `obtener_jornada_activa` sin `panaderia_id`**
-- **Causa:** la función no filtraba ni pasaba `panaderia_id` → tomaba `default=1`.
-- **Fix (d1f0c3f):** la función ahora acepta/detecta `panaderia_id` y filtra por él.
-- **Verificado:** `/api/cierre_diario/estado` responde 200; `jornadas_ventas` con `panaderia_id=27`.
-
-**Bug #3 — `/api/cierre_diario/estado` retornaba 500**
-- **Causa:** efecto cascada de Bug #2.5.
-- **Fix:** automático al resolver #2.5.
-
-**Bug #4 — Editar Materia Prima fallaba (`AttributeError`)**
-- **Causa:** `HistorialCompra.fecha` no existe en el ORM (es `fecha_compra`); además `HistorialCompra(...)` no pasaba `panaderia_id`.
-- **Fix (ececcd2):** `order_by` cambiado a `HistorialCompra.fecha_compra` (2 lugares); agregado `panaderia_id=panaderia_id`.
-- **Verificado:** GET y POST retornan 200 y 302.
-
-**Bug #5 — Recalculo de stock/costo no se persistía al editar MP**
-- **Causa:** el `+=` de SQLAlchemy no se persistía en el commit (posible conflicto con event listeners multi-tenant).
-- **Fix (e26c138):** `UPDATE SQL directo` a `tenant_N.materias_primas`; `db.session.rollback()` en los `except`.
-- **Verificado:** stock pasa de 200000 → 400000 tras 2 compras; costo promedio recalculado (1.9499999).
-
-### 🎯 Reglas de negocio confirmadas
+## 9️⃣ Reglas de negocio confirmadas
 
 - **Unidades de costo:** `costo_promedio` en **$/gramo**, `stock_actual` en **gramos**.
 - **Fórmula del sistema:** `costo_ingrediente = cantidad_gramos × costo_promedio` (sin división).
 - **Empanadas en Colombia NO llevan IVA** (junto con pan, arepas, buñuelos, almojábanas). `es_pan=True` los marca correctamente.
 - **Huevos:** se manejan por gramos (~50g por unidad), costo por gramo calculado desde el precio de la cubeta.
+- **Reposición de MP:** cada 7 días hasta 150% del stock inicial.
+- **Estacionalidad de ventas:** lun-vie normal, sábado +20%, domingo -30%.
+- **Métodos de pago reales:** 60% efectivo, 30% transferencia, 10% tarjeta.
+- **Horarios pico:** 7-9am (desayuno) y 4-6pm (merienda).
 
 ---
 
-## 9️⃣ Deuda técnica pendiente
+## 🔟 Hallazgos de la verificación visual (29 Sep 2026)
+
+### ✅ Lo que funciona bien
+- Login funcional (`admin_27`).
+- `/dashboard`, `/produccion_diaria`, `/punto_venta`, `/reportes` cargan OK.
+- Los 13 productos con stock correcto.
+- Las 18 MP con stock correcto.
+- Las 13 recetas visibles.
+- `/gestion_financiera` y `/mi_perfil` cargan.
+- `/editar_materia_prima/50` funciona (Bug #4 resuelto).
+
+### ⚠️ Bugs menores detectados
+
+**1. `/api/donaciones/hoy` retorna 404**
+- **Ya estaba en el HANDOFF previo.**
+- **Impacto:** cosmético (frontend llama, no rompe UI).
+- **Fix:** crear endpoint o eliminar llamada del frontend.
+
+**2. `/api/stock_vitrina_actualizado` retorna 404**
+- **Nuevo hallazgo.**
+- **Impacto:** la vitrina del POS no se actualiza en tiempo real.
+- **Fix:** crear endpoint o eliminar llamada del JS.
+
+**3. `user_loader` warning recurrente**
+- Ya estaba en HANDOFF previo (warning #1).
+- `This session is provisioning a new connection; concurrent operations are not permitted`
+- **Impacto:** ruido en logs, no rompe nada.
+- **Fix:** investigar session pooling de SQLAlchemy.
+
+**4. Historial de pagos y depósitos vacíos**
+- **NO es bug.** Se llenan en Fase 10 (movimientos financieros).
+
+---
+
+## 1️⃣1️⃣ Deuda técnica pendiente
 
 ### 🚨 CRÍTICO — 22 tablas con columnas extras (Fase C.3)
 
@@ -241,26 +243,7 @@ text
 | `productos_externos` | 1 |
 | `sucursales` | 1 |
 
-**Total:** 73 columnas.
-
-**Plan Fase C.3:** auditar cada tabla, buscar las columnas extras en código, clasificar (usada/no usada/conflicto) y aplicar fix. Tiempo estimado: 4-6 horas.
-
-### 🚨 Hallazgos de QA (prueba manual de Mauricio)
-
-**1. "Adicionales" en recetas (topins, rellenos, decoraciones)**
-- **Problema:** el formulario de recetas solo tiene "ingredientes" que suman al peso de la masa. Los adicionales (ej. bocadillo del roscón, decoraciones de torta) NO entran en el amasado pero SÍ cuestan.
-- **Solución propuesta:** agregar sección "Adicionales" separada en el formulario. Deben sumar al costo pero NO al peso de la masa ni a las unidades obtenidas.
-- **Prioridad:** media. **Fase:** post-Demo (Fase C.4).
-
-**2. Historial de producción por fecha**
-- **Problema:** el selector de fechas en Producción Diaria no filtra. Muestra siempre el stock actual.
-- **Solución propuesta:** 2 vistas: 1) Stock actual en vitrina (para inventarios diarios), 2) Histórico por fecha (para análisis).
-- **Prioridad:** media. **Fase:** post-Demo.
-
-**3. Análisis de costos vs rentabilidad (UX)**
-- **Observación:** en `/detalle_receta`, "Valor Total de Producción" ($21.000) vs "Costo Total Producción" ($11.464). Los valores son correctos pero la etiqueta podría ser más clara.
-- **Solución propuesta:** agregar tooltips explicativos.
-- **Prioridad:** baja. **Fase:** post-Demo.
+**Plan Fase C.3:** auditar cada tabla, clasificar (usada/no usada/conflicto) y aplicar fix. Tiempo estimado: 4-6 horas.
 
 ### 🚨 CRÍTICO — `public` tiene el schema duplicado
 
@@ -268,23 +251,14 @@ text
 
 **Plan:** decidir si se eliminan o se documentan. **Fase C.3.**
 
-### 🚨 Encoding en CMD
-
-Los caracteres con tilde (`Nariño`, `Panadería`) se ven mal en `psql` dentro de CMD.
-
-**Solución:** `chcp 65001` + `SET client_encoding TO 'UTF8';` antes de cada consulta.
-
 ### 🟡 Warnings recurrentes
 
 1. `user_loader: This session is provisioning a new connection` (cada request) → investigar.
 2. `LegacyAPIWarning: Query.get()` (app.py:2196, 2207) → migrar a `db.session.get()`.
 3. `Error obteniendo nombre de empresa: 'NoneType'` (al arrancar) → investigar.
 4. `/api/donaciones/hoy` 404 → crear endpoint o eliminar llamada.
-5. Reporte PDF: página 2 vacía (cosmético).
-
-### 🧹 Limpieza de datos basura
-
-- **`tenant_27.jornadas_ventas`:** ~47 filas basura generadas por los intentos fallidos de Bug #2. Limpiar con `DELETE FROM tenant_27.jornadas_ventas WHERE total_ventas = 0;`.
+5. `/api/stock_vitrina_actualizado` 404 → crear endpoint o eliminar llamada.
+6. Reporte PDF: página 2 vacía (cosmético).
 
 ### 🧹 Limpieza de templates
 
@@ -293,29 +267,32 @@ Los caracteres con tilde (`Nariño`, `Panadería`) se ven mal en `psql` dentro d
 
 ---
 
-## 🔟 Roadmap completo
+## 1️⃣2️⃣ Roadmap completo
 ✅ Fase 1: Módulos 1-10
 🔧 Fase 2: Módulo 11 Reportes (90%)
-└── ⏳ Fase D2: exportación PDF
+└── ⏳ Fase D2: exportación PDF (1.5-2h)
+
 ✅ Fase C.1: Auditoría de esquemas básica (61799c4)
 ✅ Fase C.2: Auditoría de columnas (parcial, 5cb2fa6)
-└── ⏳ Fase C.3: 22 tablas restantes (73 columnas)
-✅ Fase Demo: Tenant Demo (Fases 1-5 completadas, 5bfad7f)
+└── ⏳ Fase C.3: 22 tablas restantes (73 columnas, 4-6h)
+
+✅ Fase Demo: Tenant Demo
 ├── ✅ Fase 1: Configuración base
 ├── ✅ Fase 2: Proveedores
 ├── ✅ Fase 3: Materias primas
 ├── ✅ Fase 4: Recetas
 ├── ✅ Fase 5: Productos
-├── ⏳ Fase 6: Producción diaria (30-90 días)
-├── ⏳ Fase 7: Ventas (3 meses)
-├── ⏳ Fase 8: Productos externos
-├── ⏳ Fase 9: Activos fijos
-├── ⏳ Fase 10: Movimientos financieros
-├── ⏳ Fase 11: Cierres diarios
-└── ⏳ Fase 12: Reset automatizado
+├── ✅ Fase 6: Producción diaria (v2 con reposición, 252b7a8)
+├── ✅ Fase 7: Ventas (93bf74c)
+├── ⏳ Fase 8: Productos externos (~1h)
+├── ⏳ Fase 9: Activos fijos (~1h)
+├── ⏳ Fase 10: Movimientos financieros (~1.5h)
+├── ⏳ Fase 11: Cierres diarios (~1h)
+└── ⏳ Fase 12: Reset automatizado (~1h)
+
 ✅ Fase Fixes: 5 bugs críticos resueltos (27 Sep 2026)
-⏳ Fase C.3: Auditoría de columnas completa (22 tablas)
-⏳ Fase C.4: Mejoras de diseño post-Demo (adicionales, historial, UX)
+
+⏳ Bugs 404 (donaciones, stock vitrina) (~30 min)
 ⏳ Fase 4: Dockerización + nube
 ⏳ Fase 5: API REST
 ⏳ Fase 6: Chat IA básico
@@ -326,7 +303,7 @@ text
 
 ---
 
-## 1️⃣1️⃣ Metodología de trabajo
+## 1️⃣3️⃣ Metodología de trabajo
 
 ### Reglas de oro
 1. **Un paso a la vez** con confirmación antes de continuar.
@@ -345,11 +322,17 @@ text
 **Encoding en CMD (obligatorio para psql):**
 ```cmd
 chcp 65001
-psql -U postgres -p 5433 -h localhost -d panaderia_master -c "SET client_encoding TO 'UTF8'; ..."
-Ver estructura de tabla:
+Modo interactivo psql (recomendado para múltiples queries):
 
 cmd
-psql -U postgres -p 5433 -h localhost -d panaderia_master -c "SET client_encoding TO 'UTF8'; \d tenant_1.tabla"
+psql -U postgres -p 5433 -h localhost -d panaderia_master
+Dentro: SET client_encoding TO 'UTF8'; y luego las queries directas.
+Salir: \q
+
+Ver estructura de tabla:
+
+text
+\d tenant_27.tabla
 Seed Demo (tenant_27):
 
 cmd
@@ -358,6 +341,7 @@ python seed_demo.py --tenant=27 --status      # Estado actual
 python seed_demo.py --tenant=27 --fase=1,2,3  # Ejecutar fases
 python seed_demo.py --tenant=27 --fase=all    # Todas
 python seed_demo.py --tenant=27 --reset       # Resetear
+python seed_demo.py --tenant=27 --fase=6 --dry-run  # Simular
 Compilar / Servidor:
 
 cmd
@@ -378,7 +362,7 @@ Arrancar servidor: python app.py
 
 Continuar con el plan de la fase actual.
 
-1️⃣2️⃣ Configuración crítica del código
+1️⃣4️⃣ Configuración crítica del código
 Multi-tenant
 Decorador @tenant_required configura el schema.
 
@@ -398,6 +382,10 @@ Rutas críticas
 
 /materias_primas, /editar_materia_prima/<id>
 
+/produccion_diaria, /reporte/cierre_caja
+
+/reporte/ventas_avanzado
+
 Reglas de cálculo de recetas
 costo_promedio = $/gramo.
 
@@ -412,11 +400,14 @@ Margen deseado: variable (default 30-45%).
 Bug sistémico conocido — panaderia_id default=1
 Múltiples modelos tienen panaderia_id = db.Column(db.Integer, nullable=False, default=1).
 
-Si el código NO pasa panaderia_id explícitamente en un INSERT, toma 1. Esto causó 3 bugs hoy (DetalleVenta, JornadaVentas, HistorialCompra).
+Si el código NO pasa panaderia_id explícitamente en un INSERT, toma 1. Esto causó 3 bugs (DetalleVenta, JornadaVentas, HistorialCompra).
 
 Regla: SIEMPRE pasar panaderia_id=panaderia_id en cada INSERT.
 
-Modelos afectados (verificados): DetalleVenta, JornadaVentas, HistorialCompra, RegistroDiario, SaldoBanco, PagoIndividual, CierreDiario, PermisoUsuario, MateriaPrima, RecetaIngrediente, Producto, Receta, etc.
+Bug sistémico conocido — productos.id ≠ productos.producto_id
+La tabla productos usa id como PK. Otras tablas usan producto_id como FK.
+
+Regla: al consultar productos, usar SELECT id, .... Al consultar detalle_venta, stock_productos, historial_inventario, usar producto_id.
 
 Workaround conocido — SQLAlchemy no persiste cambios
 En editar_materia_prima, el += de SQLAlchemy no se persistía al commit.
@@ -429,63 +420,54 @@ db.session.execute(text(f"""
     SET col = :val
     WHERE id = :id
 """), {...})
-Aplicar si vuelve a pasar en otras rutas.
-
-1️⃣3️⃣ Pendientes críticos antes de Dockerización
+1️⃣5️⃣ Pendientes críticos antes de Dockerización
 🚨 PRIORIDAD ALTA
+Fase 10: Movimientos financieros (llenar historial_pagos, historial_depositos).
+
+Fase 9: Activos fijos (hornos, batidoras, vitrinas).
+
+Fase 8: Productos externos (gaseosas, papas).
+
+Fase D2: Exportación PDF de reportes.
+
+Bugs 404: /api/donaciones/hoy, /api/stock_vitrina_actualizado.
+
 Fase C.3: auditar 22 tablas (73 columnas extras).
 
 Limpiar public: decidir sobre 40 tablas duplicadas.
 
 Resolver warnings del log (user_loader, LegacyAPIWarning).
 
-Limpiar tenant_27.jornadas_ventas (47 filas basura).
-
 🟡 PRIORIDAD MEDIA
-Fase D2 del Módulo 11: exportación PDF.
-
 Migrar templates a base.html.
 
-Completar Fases 6-12 del Demo.
+Completar Fase 11 (Cierres diarios) y Fase 12 (Reset).
 
-Fase C.4: mejoras post-Demo (adicionales, historial producción).
+Fase C.4: mejoras post-Demo (adicionales en recetas, historial producción).
 
 🟢 PRIORIDAD BAJA
 Mejoras UX.
 
 Reporte PDF: página 2 vacía.
 
-/api/donaciones/hoy 404.
+1️⃣6️⃣ Próxima sesión — Prioridad sugerida
+Plan acordado (29 Sep 2026):
 
-1️⃣4️⃣ Próxima sesión — Prioridad sugerida
-🎯 Plan recomendado
-BLOQUE 1 — Continuar Demo (Fase 6) (1h)
+✅ Actualizar HANDOFF + commit ← AHORA
 
-Script seeds/fase6_produccion.py.
+⏳ Fase 10 (Movimientos financieros) — ~1.5 h
 
-Generar órdenes de producción de 30-90 días.
+⏳ Fase 9 (Activos fijos) — ~1 h
 
-Descontar MP, sumar stock.
+⏳ Fase 8 (Productos externos) — ~1 h
 
-BLOQUE 2 — Fase 7: Ventas (3 meses) (1-1.5h)
+⏳ Fase D2 (Export PDF) — ~1.5 h
 
-Script seeds/fase7_ventas.py.
+⏳ Bugs 404 — ~30 min
 
-Generar ~3.600 ventas distribuidas en 90 días.
+⏳ Fase C.3 (Auditoría columnas) — ~4–6 h
 
-Actualizar jornadas_ventas y cierres_diarios.
-
-BLOQUE 3 — Fase 8-12 del Demo (1-2h)
-
-Productos externos, activos fijos, movimientos financieros, cierres.
-
-BLOQUE 4 — Limpieza de datos basura (30 min)
-
-Limpiar jornadas_ventas de tenant_27.
-
-Alternativa: Fase D2 (PDF) o Fase C.3 (auditoría).
-
-1️⃣5️⃣ Notas estratégicas del proyecto
+1️⃣7️⃣ Notas estratégicas del proyecto
 Objetivo del ERP
 ERP SaaS para panaderías multi-tenant multi-país con: POS, inventario, producción, recetas, activos fijos, reportes con IA, finanzas, multi-país, base para API REST + IA avanzada.
 
@@ -501,15 +483,17 @@ Bancos dinámicos.
 🎁 Tenant Demo (marketing)
 Objetivo: tenant público con datos precargados y realistas.
 
-Estado actual: Fases 1-5 completadas (124 filas). Fases 6-12 pendientes.
+Estado actual: Fases 1-7 completadas (~10.375 filas).
 
 Características planeadas:
 
 Subdominio sugerido: demo.panaderiapro.com.
 
-Datos: 6 proveedores, 17 MP, 12 recetas, 12 productos.
+Datos: 6 proveedores, 18 MP, 13 recetas, 13 productos.
 
-Ventas de 3 meses (Fase 7).
+279 órdenes de producción (90 días).
+
+3.069 ventas (90 días).
 
 Reset automatizado cada X días (Fase 12).
 
@@ -523,23 +507,23 @@ API REST para integraciones (DAPTA, Shopify, MercadoPago).
 Dockerización + Deploy en VPS.
 
 Mercado objetivo
-3.000-5.000 panaderías en Colombia
+3.000-5.000 panaderías en Colombia.
 
-10.000-30.000 en LATAM
+10.000-30.000 en LATAM.
 
-Precio sugerido: $60k-$600k COP/mes
+Precio sugerido: $60k-$600k COP/mes.
 
 📞 Cómo continuar en un chat nuevo
 Al iniciar un nuevo chat, pegar este archivo como contexto inicial.
+
 Instrucción sugerida para el asistente:
 
 "Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el archivo HANDOFF.md con el contexto maestro del proyecto. Vamos a continuar desde donde lo dejamos. Por favor actúa como instructor guiando paso a paso, con la metodología de trabajo descrita en el HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/findstr, commit tras cada fix verificado."
 
-Próxima tarea sugerida
-Fase 6 del Demo (Producción diaria) o Fase C.3 (auditoría de columnas).
+Próxima tarea sugerida: Fase 10 (Movimientos financieros).
 
 ✅ Última validación
-Último commit: e26c138 (pusheado a GitHub).
+Último commit: 93bf74c (pusheado a GitHub).
 
 Working tree: clean (excepto HANDOFF pendiente de commit).
 
@@ -547,7 +531,7 @@ Servidor: detenido.
 
 Sistema: 100% funcional end-to-end.
 
-Estado del proyecto: Estable, multi-tenant funcional, Demo parcialmente poblado, listo para Fases 6-12.
+Estado del proyecto: Estable, multi-tenant funcional, Demo Fases 1-7 completadas.
 
 Fin del HANDOFF.md
 
@@ -555,11 +539,9 @@ text
 
 ---
 
-## 🎯 Instrucciones
+## ▶️ PASO 3 — Reemplazar el HANDOFF
 
-**Mauricio:**
-
-1. **Backup del actual:**
+**Antes de reemplazar**, verifica que el backup esté hecho:
 
 ```cmd
-copy HANDOFF.md HANDOFF.md.bak_20260927
+dir HANDOFF.md*
