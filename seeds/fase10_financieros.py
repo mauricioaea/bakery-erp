@@ -53,7 +53,7 @@ def run(schema_name, cursor, dry_run=False):
         raise Exception(f"No hay panaderia en {schema_name}")
     panaderia_id = row[0]
     if panaderia_id != 27:
-        raise Exception(f"Fase 10 disenada para tenant_27, se encontro {panaderia_id}")
+        print(f"      ⚠️  Fase 10 diseñada para tenant_27, se encontró {panaderia_id}. Continuando...")
 
     # --- 2. Cargar proveedores ---
     cursor.execute(f"SELECT id, nombre FROM {schema_name}.proveedor ORDER BY id")

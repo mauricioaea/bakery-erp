@@ -71,9 +71,7 @@ def run(schema_name, cursor, dry_run=False):
         raise Exception(f"No hay panadería en {schema_name}")
     panaderia_id = row[0]
     if panaderia_id != 27:
-        raise Exception(
-            f"Fase 7 diseñada para tenant_27, se encontró panaderia_id={panaderia_id}"
-        )
+        print(f"      ⚠️  Fase 7 diseñada para tenant_27, se encontró {panaderia_id}. Continuando...")
 
     # --- 2. Cargar productos con stock + precio ---
     cursor.execute(f"""

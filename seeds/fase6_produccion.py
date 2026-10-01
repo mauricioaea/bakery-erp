@@ -38,9 +38,7 @@ def run(schema_name, cursor, dry_run=False):
     panaderia_id = row[0]
 
     if panaderia_id != 27:
-        raise Exception(
-            f"Fase 6 diseñada para tenant_27, se encontró panaderia_id={panaderia_id}"
-        )
+        print(f"      ⚠️  Fase 6 diseñada para tenant_27, se encontró {panaderia_id}. Continuando...")
 
     # --- 2. Cargar recetas activas con su producto_id ---
     cursor.execute(f"""

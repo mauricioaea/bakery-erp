@@ -30,7 +30,7 @@ def run(schema_name, cursor, dry_run=False):
         raise Exception(f"No hay panaderia en {schema_name}")
     panaderia_id = row[0]
     if panaderia_id != 27:
-        raise Exception(f"Fase 11 disenada para tenant_27, se encontro {panaderia_id}")
+        print(f"      ⚠️  Fase 11 diseñada para tenant_27, se encontró {panaderia_id}. Continuando...")
 
     # --- 2. Verificar que no haya cierres ya ---
     cursor.execute(f"SELECT COUNT(*) FROM {schema_name}.cierres_diarios")

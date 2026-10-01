@@ -92,7 +92,7 @@ def run(schema_name, cursor, dry_run=False):
         raise Exception(f"No hay panaderia en {schema_name}")
     panaderia_id = row[0]
     if panaderia_id != 27:
-        raise Exception(f"Fase 9 disenada para tenant_27, se encontro {panaderia_id}")
+        print(f"      ⚠️  Fase 9 diseñada para tenant_27, se encontró {panaderia_id}. Continuando...")
 
     hoy = date.today()
     fecha_min = hoy - timedelta(days=2 * 365)   # 2 años atras
