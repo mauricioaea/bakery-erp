@@ -221,6 +221,7 @@ def cmd_reset(tenant_id):
     ]
 
     total_borradas = 0
+    tablas_con_error = []
     for tabla in tablas_a_limpiar:
         try:
             cursor.execute(f"DELETE FROM {schema_name}.{tabla}")
@@ -229,22 +230,39 @@ def cmd_reset(tenant_id):
             print(f"   ✅ {tabla}: {rowcount} filas borradas")
         except Exception as e:
             print(f"   ⚠️  {tabla}: {e}")
-            conn.rollback()
+            tablas_con_error.append(tabla)
             continue
 
-    # Resetear sequences
+    # Resetear sequences (excluir usuarios y panaderias)
     print("   🔄 Reseteando sequences...")
     cursor.execute(f"""
         SELECT sequence_name FROM information_schema.sequences
         WHERE sequence_schema = '{schema_name}'
     """)
     sequences = [row[0] for row in cursor.fetchall()]
+    sequences_excluidas = ['usuarios_id_seq', 'panaderias_id_seq']
+    seq_reseteadas = 0
     for seq in sequences:
+        if seq in sequences_excluidas:
+            continue
         try:
             cursor.execute(f"SELECT setval('{schema_name}.{seq}', 1, false)")
+            seq_reseteadas += 1
         except Exception:
             pass
-    print(f"   ✅ {len(sequences)} sequences reseteadas")
+    print(f"   ✅ {seq_reseteadas} sequences reseteadas (excluidas: {sequences_excluidas})")
+
+    if tablas_con_error:
+        conn.commit()  # commit de lo que sí se pudo borrar
+        print("=" * 60)
+        print(f"⚠️  RESET INCOMPLETO: {len(tablas_con_error)} tablas con error:")
+        for t in tablas_con_error:
+            print(f"      - {t}")
+        print(f"   Total borradas: {total_borradas} filas (parcial)")
+        print("=" * 60)
+        cursor.close()
+        conn.close()
+        return False
 
     conn.commit()
     print("=" * 60)

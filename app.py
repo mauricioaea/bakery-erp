@@ -12244,7 +12244,22 @@ def inicializar_al_arranque():
 
 
 
-
+def _pid_vivo(pid):
+    """
+    Verifica si un PID está vivo en Windows sin matarlo.
+    os.kill(pid, 0) en Windows TERMINA el proceso, no lo verifica.
+    """
+    try:
+        import subprocess
+        result = subprocess.run(
+            ['tasklist', '/FI', f'PID eq {pid}', '/NH'],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        return str(pid) in result.stdout
+    except Exception:
+        return False
 
 # ============================================
 # 🔄 RESET DEMO (solo super_admin)
@@ -12268,17 +12283,19 @@ def admin_reset_demo():
         try:
             with open(lock_file, 'r') as f:
                 pid_existente = int(f.read().strip())
-            try:
-                os.kill(pid_existente, 0)
+            if _pid_vivo(pid_existente):
                 # El proceso sigue vivo → rechazar
                 return jsonify({
                     'success': False,
                     'error': 'Ya hay un reset en curso. Espera a que termine.',
                     'lock_exists': True,
                 }), 409
-            except OSError:
+            else:
                 # Proceso muerto → limpiar lock
-                os.remove(lock_file)
+                try:
+                    os.remove(lock_file)
+                except Exception:
+                    pass
         except Exception:
             # Lock corrupto → limpiar
             try:
@@ -12298,11 +12315,12 @@ def admin_reset_demo():
             os.path.dirname(os.path.abspath(__file__)),
             'reset_demo.log'
         )
-        log_file = open(log_path, 'w')
+        log_file = open(log_path, 'w', encoding='utf-8')
 
-        # 4. Variable de entorno para saltar confirmación
+        # 4. Variables de entorno (encoding UTF-8 + saltar confirmación)
         env = os.environ.copy()
         env['RESET_DEMO_NO_CONFIRM'] = '1'
+        env['PYTHONIOENCODING'] = 'utf-8'
 
         # 5. Lanzar subprocess en background
         proc = subprocess.Popen(
@@ -12352,15 +12370,14 @@ def admin_reset_demo_status():
         with open(lock_file, 'r') as f:
             pid = int(f.read().strip())
 
-        try:
-            os.kill(pid, 0)
+        if _pid_vivo(pid):
             return jsonify({
                 'success': True,
                 'in_progress': True,
                 'message': 'Reset en curso...',
                 'pid': pid,
             })
-        except OSError:
+        else:
             # Proceso muerto → limpiar lock
             try:
                 os.remove(lock_file)
