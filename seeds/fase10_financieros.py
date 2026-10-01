@@ -3,7 +3,7 @@ Fase 10 — Movimientos financieros del tenant Demo.
 
 Pobla:
   - historial_compras    (~200): compras semanales de MP
-  - pagos_individuales   (~26):  pagos a proveedores
+  - pagos_individuales   (~20):  pagos a proveedores de insumos
   - depositos_bancarios  (~18):  depositos a bancos cada 5 dias
   - saldos_banco         (4):    saldos de Bancolombia, Davivienda, Nequi, Efectivo
   - gastos               (~48):  nomina, servicios, alquiler, otros
@@ -17,6 +17,10 @@ Reglas de negocio:
   - 90 dias, mismo rango que Fase 7 (2026-07-01 -> 2026-09-29)
   - panaderia_id SIEMPRE explicito
   - Precios y montos en COP
+  - SEMANTICA:
+      * pagos_individuales = pagos puntuales a proveedores de insumos.
+      * gastos = gastos operativos (nomina, alquiler, servicios, otros).
+      * NO hay duplicacion entre ambas tablas.
 """
 import random
 from datetime import datetime, timedelta, date
@@ -24,29 +28,18 @@ from datetime import datetime, timedelta, date
 
 DIAS_TOTALES = 90
 USUARIO_ID = 1  # admin_27
-COMMIT_CADA_N_DIAS = 10
-FACTOR_STOCK_OBJETIVO = 1.5
 
 # Bancos (deben coincidir con depositos_bancarios.banco y saldos_banco.banco)
 BANCOS = ['Bancolombia', 'Davivienda', 'Nequi']
 
-# Categorias de pagos_individuales
-CATEGORIAS_PAGO = [
-    ('insumos', 'Compra de insumos'),
-    ('servicios', 'Servicios publicos'),
-    ('nomina', 'Nomina semanal'),
-    ('alquiler', 'Arriendo local'),
-    ('otros', 'Gastos varios'),
+# Conceptos de pagos a proveedores de insumos
+CONCEPTOS_PAGO_INSUMOS = [
+    'Compra de insumos',
+    'Reposicion de MP',
+    'Compra urgente',
+    'Pedido semanal',
+    'Compra adicional',
 ]
-
-# Conceptos por categoria (para variedad)
-CONCEPTOS_PAGO = {
-    'insumos': ['Compra de insumos', 'Reposicion de MP', 'Compra urgente'],
-    'servicios': ['Energia electrica', 'Agua y alcantarillado', 'Gas natural', 'Internet'],
-    'nomina': ['Nomina semanal', 'Pago ayudante', 'Pago panadero'],
-    'alquiler': ['Arriendo local', 'Arriendo bodega'],
-    'otros': ['Mantenimiento', 'Aseo', 'Papeleria', 'Domicilios'],
-}
 
 
 def run(schema_name, cursor, dry_run=False):
@@ -99,7 +92,7 @@ def run(schema_name, cursor, dry_run=False):
 
     # --- 5. Generar historial_compras (semanal, dias 7, 14, 21, ..., 84) ---
     for semana in range(1, DIAS_TOTALES // 7 + 1):
-        dia_offset = semana * 7 - 1  # dia 6, 13, 20, ...
+        dia_offset = semana * 7 - 1
         if dia_offset >= DIAS_TOTALES:
             break
         fecha_compra = fecha_inicio + timedelta(days=dia_offset)
@@ -107,7 +100,6 @@ def run(schema_name, cursor, dry_run=False):
             fecha_compra, datetime.min.time()
         ) + timedelta(hours=random.randint(7, 10), minutes=random.randint(0, 59))
 
-        # Comprar la mayoria de MP
         num_mps = random.randint(12, len(materias))
         mps_a_comprar = random.sample(materias, num_mps)
 
@@ -133,10 +125,12 @@ def run(schema_name, cursor, dry_run=False):
             ))
             filas += 1
 
-    # --- 6. Generar pagos_individuales (~2 por semana) ---
+    # --- 6. Generar pagos_individuales (SOLO a proveedores de insumos) ---
+    # Semantica: pagos_individuales son pagos puntuales a proveedores.
+    # Los gastos operativos (nomina, alquiler, servicios) van en `gastos`.
     for semana in range(DIAS_TOTALES // 7 + 1):
         fecha_semana = fecha_inicio + timedelta(days=semana * 7)
-        for _ in range(random.randint(2, 3)):
+        for _ in range(random.randint(1, 2)):
             fecha_pago = datetime.combine(
                 fecha_semana, datetime.min.time()
             ) + timedelta(
@@ -144,27 +138,10 @@ def run(schema_name, cursor, dry_run=False):
                 hours=random.randint(8, 17),
                 minutes=random.randint(0, 59),
             )
-            # Elegir categoria con pesos (mas nomina y servicios)
-            cat = random.choices(
-                [c[0] for c in CATEGORIAS_PAGO],
-                weights=[25, 25, 20, 10, 20],
-                k=1,
-            )[0]
-            concepto = random.choice(CONCEPTOS_PAGO[cat])
-            proveedor_id = random.choice(proveedor_ids) if cat != 'nomina' else None
+            concepto = random.choice(CONCEPTOS_PAGO_INSUMOS)
+            proveedor_id = random.choice(proveedor_ids)
             metodo_pago = random.choice(['efectivo', 'transferencia'])
-
-            # Monto por categoria
-            if cat == 'nomina':
-                monto = random.randint(250000, 400000)
-            elif cat == 'alquiler':
-                monto = random.randint(500000, 700000)
-            elif cat == 'servicios':
-                monto = random.randint(100000, 200000)
-            elif cat == 'insumos':
-                monto = random.randint(80000, 250000)
-            else:  # otros
-                monto = random.randint(30000, 80000)
+            monto = random.randint(80000, 200000)
 
             if dry_run:
                 filas += 1
@@ -174,9 +151,9 @@ def run(schema_name, cursor, dry_run=False):
                 INSERT INTO {schema_name}.pagos_individuales
                 (panaderia_id, concepto, categoria, proveedor_id, monto,
                  fecha_pago, metodo_pago, observaciones, usuario_id)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, 'insumos', %s, %s, %s, %s, %s, %s)
             """, (
-                panaderia_id, concepto, cat, proveedor_id, monto,
+                panaderia_id, concepto, proveedor_id, monto,
                 fecha_pago, metodo_pago, None, USUARIO_ID,
             ))
             filas += 1
@@ -226,14 +203,15 @@ def run(schema_name, cursor, dry_run=False):
         ))
         filas += 1
 
-    # --- 9. Generar gastos ---
-    # Nomina semanal (cada 7 dias)
+    # --- 9. Generar gastos (SOLO operativos: nomina, servicios, alquiler, otros) ---
+
+    # 9a. Nomina semanal (cada 7 dias)
     for semana in range(DIAS_TOTALES // 7 + 1):
         fecha_gasto = fecha_inicio + timedelta(days=semana * 7)
         fecha_gasto_dt = datetime.combine(
             fecha_gasto, datetime.min.time()
         ) + timedelta(hours=random.randint(8, 17))
-        monto = random.randint(250000, 400000)
+        monto = random.randint(250000, 350000)
 
         if dry_run:
             filas += 1
@@ -242,20 +220,20 @@ def run(schema_name, cursor, dry_run=False):
                 INSERT INTO {schema_name}.gastos
                 (panaderia_id, concepto, monto, fecha_gasto, categoria,
                  usuario_id)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, 'nomina', %s)
             """, (
                 panaderia_id, 'Nomina semanal', monto,
-                fecha_gasto_dt, 'nomina', USUARIO_ID,
+                fecha_gasto_dt, USUARIO_ID,
             ))
             filas += 1
 
-    # Servicios mensuales (cada 30 dias)
+    # 9b. Servicios mensuales (cada 30 dias)
     for mes in range(3):
         fecha_gasto = fecha_inicio + timedelta(days=mes * 30 + 5)
         fecha_gasto_dt = datetime.combine(
             fecha_gasto, datetime.min.time()
         ) + timedelta(hours=random.randint(8, 17))
-        monto = random.randint(120000, 200000)
+        monto = random.randint(150000, 250000)
 
         if dry_run:
             filas += 1
@@ -264,20 +242,20 @@ def run(schema_name, cursor, dry_run=False):
                 INSERT INTO {schema_name}.gastos
                 (panaderia_id, concepto, monto, fecha_gasto, categoria,
                  usuario_id)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, 'servicios', %s)
             """, (
                 panaderia_id, 'Servicios publicos', monto,
-                fecha_gasto_dt, 'servicios', USUARIO_ID,
+                fecha_gasto_dt, USUARIO_ID,
             ))
             filas += 1
 
-    # Alquiler mensual
+    # 9c. Alquiler mensual
     for mes in range(3):
         fecha_gasto = fecha_inicio + timedelta(days=mes * 30 + 1)
         fecha_gasto_dt = datetime.combine(
             fecha_gasto, datetime.min.time()
         ) + timedelta(hours=random.randint(8, 12))
-        monto = 600000
+        monto = 500000
 
         if dry_run:
             filas += 1
@@ -286,21 +264,21 @@ def run(schema_name, cursor, dry_run=False):
                 INSERT INTO {schema_name}.gastos
                 (panaderia_id, concepto, monto, fecha_gasto, categoria,
                  usuario_id)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, 'alquiler', %s)
             """, (
                 panaderia_id, 'Arriendo local', monto,
-                fecha_gasto_dt, 'alquiler', USUARIO_ID,
+                fecha_gasto_dt, USUARIO_ID,
             ))
             filas += 1
 
-    # Otros gastos esporadicos (~30)
+    # 9d. Otros gastos esporadicos (~30)
     for _ in range(30):
         dia_offset = random.randint(0, DIAS_TOTALES - 1)
         fecha_gasto = fecha_inicio + timedelta(days=dia_offset)
         fecha_gasto_dt = datetime.combine(
             fecha_gasto, datetime.min.time()
         ) + timedelta(hours=random.randint(8, 18))
-        monto = random.randint(30000, 80000)
+        monto = random.randint(30000, 70000)
         concepto = random.choice([
             'Mantenimiento', 'Aseo', 'Papeleria',
             'Domicilios', 'Imprevisto', 'Reparacion',
@@ -313,10 +291,10 @@ def run(schema_name, cursor, dry_run=False):
                 INSERT INTO {schema_name}.gastos
                 (panaderia_id, concepto, monto, fecha_gasto, categoria,
                  usuario_id)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, 'otros', %s)
             """, (
                 panaderia_id, concepto, monto,
-                fecha_gasto_dt, 'otros', USUARIO_ID,
+                fecha_gasto_dt, USUARIO_ID,
             ))
             filas += 1
 
