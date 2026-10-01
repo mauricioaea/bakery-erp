@@ -12244,6 +12244,57 @@ def inicializar_al_arranque():
 
 
 
+
+# ============================================
+# 🎁 BANNER DEMO (inyectado via after_request)
+# ============================================
+@app.after_request
+def inyectar_banner_demo(response):
+    """Inyecta el banner Demo en el HTML del tenant_27."""
+    try:
+        # Solo procesar HTML 200
+        if response.status_code != 200:
+            return response
+        if 'text/html' not in response.content_type:
+            return response
+        
+        # Solo si el usuario está autenticado y es tenant_27
+        if not current_user.is_authenticated:
+            return response
+        if getattr(current_user, 'panaderia_id', None) != 27:
+            return response
+        
+        # Evitar doble inyección (por si el template ya lo tiene)
+        html = response.get_data(as_text=True)
+        if 'BANNER-DEMO-PANADERIAPRO' in html:
+            return response
+        if '<body' not in html:
+            return response
+        
+        banner = '''
+    <!-- BANNER-DEMO-PANADERIAPRO -->
+    <div class="alert alert-warning mb-0 rounded-0 text-center py-2"
+         style="border-bottom: 3px solid #f5b81b; position: sticky; top: 0; z-index: 9999;">
+        <strong>⚠️ Este es un Demo de PanaderíaPro.</strong>
+        Los cambios se borran cada 24 horas. Para empezar con tus propios datos,
+        <a href="mailto:contacto@panaderiapro.com" class="alert-link">contáctanos</a>.
+    </div>
+    <!-- /BANNER-DEMO-PANADERIAPRO -->
+'''
+        
+        # Insertar justo después del cierre del tag <body...>
+        idx = html.find('<body')
+        end = html.find('>', idx)
+        if end > 0:
+            html = html[:end+1] + banner + html[end+1:]
+            response.set_data(html)
+    except Exception:
+        pass
+    return response
+
+# ============================================
+# FIN BANNER DEMO
+# ============================================
 # ============================================
 # 🆕 ENDPOINTS FALTANTES (agregados para arreglar 404s)
 # ============================================
