@@ -194,4 +194,160 @@
         </div>
     </div>
 </div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- 🔧 SECCIÓN SUPER ADMIN (solo para super_admin)         -->
+<!-- ═══════════════════════════════════════════════════════ -->
+{% if current_user.is_authenticated and current_user.rol == 'super_admin' %}
+<div class="row justify-content-center mt-4">
+    <div class="col-md-8">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-tools me-2"></i>Panel Super Admin
+                </h5>
+                <span class="badge bg-light text-dark">DEV MASTER</span>
+            </div>
+            <div class="card-body">
+                <h6 class="mb-2">🔄 Reset del Tenant Demo (tenant_27)</h6>
+                <p class="text-muted small mb-3">
+                    Borra TODOS los datos del tenant_27 y vuelve a ejecutar el seed completo
+                    (11 fases: configuración, proveedores, MP, recetas, productos, producción,
+                    ventas, externos, activos, financieros, cierres).
+                    <strong>Tarda ~5 minutos.</strong>
+                </p>
+
+                <!-- Estado en vivo -->
+                <div id="reset-demo-estado" class="alert alert-secondary py-2 mb-3">
+                    <i class="fas fa-circle-notch me-2"></i>
+                    <span id="reset-demo-texto">Verificando estado...</span>
+                </div>
+
+                <!-- Botón -->
+                <button id="btn-reset-demo" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#modalResetDemo">
+                    <i class="fas fa-redo me-2"></i>Resetear Demo (tenant_27)
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmación -->
+<div class="modal fade" id="modalResetDemo" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Confirmar Reset
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>¿Estás seguro?</strong></p>
+                <p>Esto va a:</p>
+                <ul>
+                    <li>🗑️ <strong>Borrar TODOS los datos</strong> del tenant_27 (Demo).</li>
+                    <li>🌱 Volver a ejecutar las 11 fases del seed.</li>
+                    <li>⏱️ Tardar aproximadamente <strong>5 minutos</strong>.</li>
+                </ul>
+                <p class="mb-0 text-danger"><strong>Esta acción no se puede deshacer.</strong></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="btn-confirmar-reset">
+                    <i class="fas fa-redo me-1"></i>Sí, resetear Demo
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    const estadoDiv = document.getElementById('reset-demo-estado');
+    const estadoTexto = document.getElementById('reset-demo-texto');
+    const btnReset = document.getElementById('btn-reset-demo');
+    const btnConfirmar = document.getElementById('btn-confirmar-reset');
+
+    let pollInterval = null;
+
+    function mostrarEstado(estado, mensaje) {
+        if (!estadoDiv || !estadoTexto) return;
+        estadoDiv.className = 'alert py-2 mb-3 alert-' + estado;
+        estadoTexto.textContent = mensaje;
+    }
+
+    function chequearEstado() {
+        fetch('/admin/reset-demo/status', { credentials: 'same-origin' })
+            .then(r => r.json())
+            .then(data => {
+                if (!data.success) {
+                    mostrarEstado('danger', 'Error: ' + (data.error || 'desconocido'));
+                    return;
+                }
+                if (data.in_progress) {
+                    mostrarEstado('warning', '🔄 Reset en curso... No cierres esta ventana.');
+                    if (btnReset) btnReset.disabled = true;
+                    // Seguir haciendo polling cada 10 seg
+                    if (!pollInterval) {
+                        pollInterval = setInterval(chequearEstado, 10000);
+                    }
+                } else {
+                    mostrarEstado('secondary', '✅ Sin reset en curso. Listo para resetear.');
+                    if (btnReset) btnReset.disabled = false;
+                    if (pollInterval) {
+                        clearInterval(pollInterval);
+                        pollInterval = null;
+                    }
+                }
+            })
+            .catch(err => {
+                mostrarEstado('danger', 'Error de conexión: ' + err.message);
+            });
+    }
+
+    // Chequeo inicial
+    chequearEstado();
+
+    // Confirmar reset
+    if (btnConfirmar) {
+        btnConfirmar.addEventListener('click', function() {
+            btnConfirmar.disabled = true;
+            btnConfirmar.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Iniciando...';
+
+            fetch('/admin/reset-demo', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+            })
+                .then(r => r.json())
+                .then(data => {
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('modalResetDemo'));
+                    if (modal) modal.hide();
+
+                    if (data.success) {
+                        mostrarEstado('warning', '🔄 Reset iniciado. Tarda ~5 min. No cierres esta ventana.');
+                        if (btnReset) btnReset.disabled = true;
+                        // Iniciar polling
+                        if (!pollInterval) {
+                            pollInterval = setInterval(chequearEstado, 10000);
+                        }
+                    } else {
+                        mostrarEstado('danger', '❌ Error: ' + (data.error || 'desconocido'));
+                    }
+                })
+                .catch(err => {
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('modalResetDemo'));
+                    if (modal) modal.hide();
+                    mostrarEstado('danger', '❌ Error de conexión: ' + err.message);
+                })
+                .finally(() => {
+                    btnConfirmar.disabled = false;
+                    btnConfirmar.innerHTML = '<i class="fas fa-redo me-1"></i>Sí, resetear Demo';
+                });
+        });
+    }
+})();
+</script>
+{% endif %}
 {% endblock %}
