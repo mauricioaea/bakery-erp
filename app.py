@@ -1216,7 +1216,7 @@ from flask_login import LoginManager, login_required, current_user, login_user, 
 from flask_migrate import Migrate
 
 from datetime import datetime, timedelta, date, timezone
-from sqlalchemy import func, extract
+from sqlalchemy import func, extract, text
 from reportes import GeneradorReportes
 from io import BytesIO
 import matplotlib.pyplot as plt
@@ -12241,6 +12241,112 @@ def inicializar_al_arranque():
             print(f"❌ Error crítico en inicializar_al_arranque: {e}")
             import traceback
             traceback.print_exc()
+
+
+
+# ============================================
+# 🆕 ENDPOINTS FALTANTES (agregados para arreglar 404s)
+# ============================================
+
+@app.route('/api/donaciones/hoy')
+@login_required
+def api_donaciones_hoy():
+    """Retorna el total de donaciones del día actual."""
+    try:
+        panaderia_id = obtener_panaderia_actual()
+        if not panaderia_id:
+            return jsonify({'success': False, 'error': 'No autorizado'}), 401
+        
+        hoy = date.today()
+        
+        resultado = db.session.execute(text(f"""
+            SELECT 
+                COALESCE(SUM(total), 0) AS total_donaciones,
+                COUNT(*) AS num_donaciones
+            FROM tenant_{panaderia_id}.ventas
+            WHERE DATE(fecha_hora) = :hoy
+              AND es_donacion = TRUE
+              AND panaderia_id = :panaderia_id
+        """), {'hoy': hoy, 'panaderia_id': panaderia_id}).fetchone()
+        
+        return jsonify({
+            'success': True,
+            'total_donaciones': float(resultado[0] or 0),
+            'num_donaciones': int(resultado[1] or 0),
+            'fecha': hoy.isoformat(),
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/stock_vitrina_actualizado')
+@login_required
+def api_stock_vitrina_actualizado():
+    """Retorna el stock actual por receta con su estado (para la vitrina)."""
+    try:
+        panaderia_id = obtener_panaderia_actual()
+        if not panaderia_id:
+            return jsonify({'success': False, 'error': 'No autorizado'}), 401
+        
+        # El JS usa data-receta-id, por eso devolvemos el id de la receta
+        filas = db.session.execute(text(f"""
+            SELECT 
+                r.id AS receta_id,
+                r.nombre AS receta_nombre,
+                r.unidades_obtenidas,
+                p.id AS producto_id,
+                COALESCE(p.stock_actual, 0) AS stock_actual,
+                COALESCE(p.stock_minimo, 0) AS stock_minimo
+            FROM tenant_{panaderia_id}.recetas r
+            LEFT JOIN tenant_{panaderia_id}.productos p 
+                ON p.receta_id = r.id 
+                AND p.panaderia_id = r.panaderia_id
+            WHERE r.activo = TRUE 
+              AND r.panaderia_id = :panaderia_id
+            ORDER BY r.id
+        """), {'panaderia_id': panaderia_id}).fetchall()
+        
+        stock_list = []
+        for fila in filas:
+            receta_id = fila[0]
+            unidades_obtenidas = int(fila[2] or 0)
+            stock_actual = int(fila[4] or 0)
+            stock_minimo = int(fila[5] or 0)
+            
+            # Porcentaje (vs unidades_obtenidas como capacidad máxima)
+            if unidades_obtenidas > 0:
+                porcentaje = min(int((stock_actual / unidades_obtenidas) * 100), 100)
+            else:
+                porcentaje = 0
+            
+            # Estado
+            if stock_actual == 0:
+                estado = 'CRITICO'
+            elif stock_actual < stock_minimo:
+                estado = 'BAJO'
+            elif porcentaje < 50:
+                estado = 'MEDIO'
+            else:
+                estado = 'OPTIMO'
+            
+            stock_list.append({
+                'id': receta_id,
+                'nombre': fila[1],
+                'stock_actual': stock_actual,
+                'porcentaje': porcentaje,
+                'estado': estado,
+            })
+        
+        return jsonify({
+            'success': True,
+            'stock': stock_list,
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ============================================
+# FIN ENDPOINTS NUEVOS
+# ============================================
 
 
 # ============================================

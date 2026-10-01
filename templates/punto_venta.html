@@ -1423,22 +1423,15 @@ function mostrarNotificacion(mensaje, tipo = 'info') {
         }
 
         // FUNCIONALIDAD DONACIONES
-        async function actualizarDonacionesPuntoVenta() {
-            try {
-                const response = await fetch('/api/donaciones/hoy');
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.success) {
-                        document.getElementById('donacionesHoyPuntoVenta').textContent = data.total_donaciones || '0';
-                    }
-                }
-            } catch (error) {
-                console.log('ℹ️ No se pudieron cargar las donaciones:', error);
-            }
+                
+        // (El widget "Donaciones de Hoy" ya no existe en el template.
+        //  Estas funciones quedan como no-op para no romper llamadas existentes.)
+        function actualizarDonacionesPuntoVenta() {
+            // No-op: el widget fue removido del template.
         }
 
         function actualizarDonacionesDespuesVenta() {
-            setTimeout(actualizarDonacionesPuntoVenta, 1500);
+            // No-op: el widget fue removido del template.
         }
 
                 // =============================================
