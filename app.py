@@ -12245,6 +12245,138 @@ def inicializar_al_arranque():
 
 
 
+
+# ============================================
+# 🔄 RESET DEMO (solo super_admin)
+# ============================================
+@app.route('/admin/reset-demo', methods=['POST'])
+@login_required
+def admin_reset_demo():
+    """Lanza el reset-all del tenant_27 en background. Solo super_admin."""
+    # 1. Verificar permisos
+    if not (hasattr(current_user, 'rol') and current_user.rol == 'super_admin'):
+        return jsonify({'success': False, 'error': 'No autorizado. Solo super_admin.'}), 403
+
+    import os
+    import subprocess
+    import sys
+
+    lock_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.reset_demo.lock')
+
+    # 2. Verificar lock: si existe, ver si el proceso sigue vivo
+    if os.path.exists(lock_file):
+        try:
+            with open(lock_file, 'r') as f:
+                pid_existente = int(f.read().strip())
+            try:
+                os.kill(pid_existente, 0)
+                # El proceso sigue vivo → rechazar
+                return jsonify({
+                    'success': False,
+                    'error': 'Ya hay un reset en curso. Espera a que termine.',
+                    'lock_exists': True,
+                }), 409
+            except OSError:
+                # Proceso muerto → limpiar lock
+                os.remove(lock_file)
+        except Exception:
+            # Lock corrupto → limpiar
+            try:
+                os.remove(lock_file)
+            except Exception:
+                pass
+
+    try:
+        # 3. Preparar paths
+        script_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            'seed_demo.py'
+        )
+        python_exe = sys.executable
+
+        log_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            'reset_demo.log'
+        )
+        log_file = open(log_path, 'w')
+
+        # 4. Variable de entorno para saltar confirmación
+        env = os.environ.copy()
+        env['RESET_DEMO_NO_CONFIRM'] = '1'
+
+        # 5. Lanzar subprocess en background
+        proc = subprocess.Popen(
+            [python_exe, script_path, '--tenant=27', '--reset-all'],
+            stdout=log_file,
+            stderr=subprocess.STDOUT,
+            stdin=subprocess.DEVNULL,
+            cwd=os.path.dirname(os.path.abspath(__file__)),
+            env=env,
+        )
+
+        # 6. Crear lock con el PID
+        with open(lock_file, 'w') as f:
+            f.write(str(proc.pid))
+
+        return jsonify({
+            'success': True,
+            'message': 'Reset iniciado. Tarda ~5 minutos.',
+            'pid': proc.pid,
+            'log_file': 'reset_demo.log',
+        })
+
+    except Exception as e:
+        # Si falla, limpiar el lock
+        try:
+            if os.path.exists(lock_file):
+                os.remove(lock_file)
+        except Exception:
+            pass
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/admin/reset-demo/status', methods=['GET'])
+@login_required
+def admin_reset_demo_status():
+    """Verifica si hay un reset en curso."""
+    if not (hasattr(current_user, 'rol') and current_user.rol == 'super_admin'):
+        return jsonify({'success': False, 'error': 'No autorizado'}), 403
+
+    import os
+    lock_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.reset_demo.lock')
+
+    if not os.path.exists(lock_file):
+        return jsonify({'success': True, 'in_progress': False, 'message': 'Sin reset en curso.'})
+
+    try:
+        with open(lock_file, 'r') as f:
+            pid = int(f.read().strip())
+
+        try:
+            os.kill(pid, 0)
+            return jsonify({
+                'success': True,
+                'in_progress': True,
+                'message': 'Reset en curso...',
+                'pid': pid,
+            })
+        except OSError:
+            # Proceso muerto → limpiar lock
+            try:
+                os.remove(lock_file)
+            except Exception:
+                pass
+            return jsonify({'success': True, 'in_progress': False, 'message': 'Reset terminado.'})
+    except Exception:
+        # Lock corrupto → limpiar
+        try:
+            os.remove(lock_file)
+        except Exception:
+            pass
+        return jsonify({'success': True, 'in_progress': False, 'message': 'Sin reset en curso.'})
+
+
+
 # ============================================
 # 🎁 BANNER DEMO (inyectado via after_request)
 # ============================================

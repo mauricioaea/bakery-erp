@@ -180,12 +180,17 @@ def cmd_reset(tenant_id):
     print("=" * 60)
     print("⚠️  Esto borrará TODOS los datos del tenant (NO el schema ni las tablas base).")
     print("⚠️  Se conservan: panaderias, usuarios.")
-    confirm = input("   ¿Continuar? (escribe 'SI' para confirmar): ")
-    if confirm.strip().upper() != 'SI':
-        print("❌ Cancelado.")
-        cursor.close()
-        conn.close()
-        return False
+    # Saltar confirmación si viene de subprocess (variable de entorno)
+    import os
+    if os.environ.get('RESET_DEMO_NO_CONFIRM') == '1':
+        print("   🔄 Modo automático (sin confirmación).")
+    else:
+        confirm = input("   ¿Continuar? (escribe 'SI' para confirmar): ")
+        if confirm.strip().upper() != 'SI':
+            print("❌ Cancelado.")
+            cursor.close()
+            conn.close()
+            return False
 
     # Orden respetando FKs: hijos primero, padres despues
     tablas_a_limpiar = [
