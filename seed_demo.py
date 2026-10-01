@@ -168,7 +168,7 @@ def cmd_status(tenant_id):
 
 
 def cmd_reset(tenant_id):
-    """Borra los datos del seed (pero NO el schema ni las tablas)."""
+    """Borra TODOS los datos del tenant Demo (excepto panaderias y usuarios)."""
     schema_name = f"tenant_{tenant_id}"
     conn = conectar_bd()
     cursor = conn.cursor()
@@ -176,40 +176,99 @@ def cmd_reset(tenant_id):
     verificar_tenant(cursor, tenant_id)
 
     print("=" * 60)
-    print(f"🗑️  RESET — tenant_{tenant_id}")
+    print(f"🗑️  RESET TOTAL — tenant_{tenant_id}")
     print("=" * 60)
-    print("⚠️  Esto borrará los datos de seed (NO el schema ni las tablas base).")
+    print("⚠️  Esto borrará TODOS los datos del tenant (NO el schema ni las tablas base).")
+    print("⚠️  Se conservan: panaderias, usuarios.")
     confirm = input("   ¿Continuar? (escribe 'SI' para confirmar): ")
     if confirm.strip().upper() != 'SI':
         print("❌ Cancelado.")
         cursor.close()
         conn.close()
-        return
+        return False
 
-    # Orden inverso a las dependencias
+    # Orden respetando FKs: hijos primero, padres despues
     tablas_a_limpiar = [
-        'detalle_venta', 'ventas', 'jornadas_ventas', 'cierres_diarios',
-        'productos', 'receta_ingredientes', 'recetas',
-        'materias_primas', 'proveedor',
+        # Detalles / hijos
+        'detalle_venta', 'detalle_compras', 'receta_ingredientes',
+        'historial_inventario', 'historial_mantenimientos', 'historial_compras',
+        'historial_precios_recetas', 'historial_rotacion_producto',
+        'control_vida_util', 'pagos_individuales',
+        # Cabeceras
+        'ventas', 'compras', 'compras_externas', 'cierres_diarios',
+        'jornadas_ventas', 'ordenes_produccion', 'activos_fijos',
+        'depositos_bancarios', 'gastos', 'registros_financieros',
+        'registros_diarios', 'logs_sistema', 'saldos_banco', 'stock_productos',
+        'facturas',
+        # Productos y recetas
+        'productos', 'productos_externos', 'recetas', 'materias_primas',
+        # Proveedores
+        'proveedor',
+        # Clientes
+        'clientes', 'sucursales',
+        # Configuracion
+        'configuracion_produccion', 'configuracion_sistema',
+        'consecutivos_pos',
+        # Categorias
         'categorias',
-        # 'configuracion_panaderia',  ← NO borrar
-        'seed_demo_history'
+        # Seed
+        'seed_demo_history',
     ]
 
+    total_borradas = 0
     for tabla in tablas_a_limpiar:
         try:
             cursor.execute(f"DELETE FROM {schema_name}.{tabla}")
-            print(f"   ✅ {tabla}: {cursor.rowcount} filas borradas")
+            rowcount = cursor.rowcount
+            total_borradas += rowcount
+            print(f"   ✅ {tabla}: {rowcount} filas borradas")
         except Exception as e:
             print(f"   ⚠️  {tabla}: {e}")
             conn.rollback()
             continue
 
+    # Resetear sequences
+    print("   🔄 Reseteando sequences...")
+    cursor.execute(f"""
+        SELECT sequence_name FROM information_schema.sequences
+        WHERE sequence_schema = '{schema_name}'
+    """)
+    sequences = [row[0] for row in cursor.fetchall()]
+    for seq in sequences:
+        try:
+            cursor.execute(f"SELECT setval('{schema_name}.{seq}', 1, false)")
+        except Exception:
+            pass
+    print(f"   ✅ {len(sequences)} sequences reseteadas")
+
     conn.commit()
     print("=" * 60)
-    print("✅ RESET completado.")
+    print(f"✅ RESET completado. Total: {total_borradas} filas borradas.")
+    print("=" * 60)
     cursor.close()
     conn.close()
+    return True
+
+def cmd_reset_all(tenant_id, dry_run=False):
+    """Reset total + re-seed completo del tenant Demo."""
+    print("=" * 60)
+    print(f"🔄 RESET + RE-SEED COMPLETO — tenant_{tenant_id}")
+    print("=" * 60)
+
+    # 1. Reset
+    ok = cmd_reset(tenant_id)
+    if not ok:
+        print("❌ Reset cancelado. Abortando.")
+        return
+
+    # 2. Re-seed todas las fases
+    print("\n🌱 Iniciando re-seed completo...")
+    todas_fases = sorted(FASES.keys())
+    cmd_run_fases(tenant_id, todas_fases, dry_run=dry_run)
+
+    print("\n" + "=" * 60)
+    print("✅ RESET + RE-SEED completado.")
+    print("=" * 60)
 
 
 def cmd_run_fases(tenant_id, fases_a_correr, dry_run=False):
@@ -290,8 +349,14 @@ def main():
     parser.add_argument('--fase', type=str, help='Fases a correr: 1, 1,2,3, o "all"')
     parser.add_argument('--list', action='store_true', help='Lista las fases disponibles')
     parser.add_argument('--status', action='store_true', help='Muestra el estado de las fases')
-    parser.add_argument('--reset', action='store_true', help='Borra los datos del seed')
+    
     parser.add_argument('--dry-run', action='store_true', help='Simula sin ejecutar')
+    parser.add_argument('--reset', action='store_true',
+                        help='Borra TODOS los datos del tenant (legacy, alias de --reset-only)')
+    parser.add_argument('--reset-only', action='store_true',
+                        help='Borra TODOS los datos del tenant sin re-seedear')
+    parser.add_argument('--reset-all', action='store_true',
+                        help='Borra TODOS los datos Y re-ejecuta todas las fases')
 
     args = parser.parse_args()
 
@@ -308,7 +373,16 @@ def main():
         cmd_status(args.tenant)
         return
 
+    if args.reset_only:
+        cmd_reset(args.tenant)
+        return
+
+    if args.reset_all:
+        cmd_reset_all(args.tenant, dry_run=args.dry_run)
+        return
+
     if args.reset:
+        # Alias legacy: --reset ahora hace reset-only
         cmd_reset(args.tenant)
         return
 
