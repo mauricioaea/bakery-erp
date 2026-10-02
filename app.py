@@ -3263,6 +3263,7 @@ def guardar_cliente():
         else:
             # ✅ CREAR NUEVO CLIENTE
             cliente = Cliente(
+                panaderia_id=current_user.panaderia_id,  # ✅ FIX DT-20: multi-tenant
                 documento=data['documento'],
                 nombre=data['nombre'],
                 tipo_documento=data.get('tipo_documento', '31'),
@@ -5806,6 +5807,7 @@ def actualizar_rotaciones_automaticas():
                         
                         # ✅ CORREGIDO: HistorialRotacionProducto (no historicalRotacionProducto)
                         historial = HistorialRotacionProducto(
+                            panaderia_id=producto.panaderia_id,  # ✅ FIX DT-20: multi-tenant
                             producto_id=producto.id,
                             rotacion_real=nueva_rotacion
                         )
@@ -6950,8 +6952,10 @@ def crear_productos_prueba():
             db.session.flush()
         
         # Crear productos de prueba
+        panaderia_id = current_user.panaderia_id  # ✅ FIX DT-20: multi-tenant
         productos_prueba = [
             Producto(
+                panaderia_id=panaderia_id,
                 nombre="Pan Mantequilla",
                 categoria_id=categoria_pan.id,
                 precio_venta=3000,
@@ -6960,6 +6964,7 @@ def crear_productos_prueba():
                 tipo_producto='produccion'
             ),
             Producto(
+                panaderia_id=panaderia_id,
                 nombre="Pan Integral", 
                 categoria_id=categoria_pan.id,
                 precio_venta=4000,
@@ -6968,6 +6973,7 @@ def crear_productos_prueba():
                 tipo_producto='produccion'
             ),
             Producto(
+                panaderia_id=panaderia_id,
                 nombre="Café Americano",
                 categoria_id=categoria_bebida.id,
                 precio_venta=2000,
@@ -6977,6 +6983,7 @@ def crear_productos_prueba():
                 costo_compra=800
             ),
             Producto(
+                panaderia_id=panaderia_id,
                 nombre="Jugo de Naranja",
                 categoria_id=categoria_bebida.id, 
                 precio_venta=4000,
@@ -10968,6 +10975,7 @@ def guardar_permisos(usuario_id):
                     accion = partes[2]
                     
                     permiso = PermisoUsuario(
+                        panaderia_id=current_user.panaderia_id,  # ✅ FIX DT-20: multi-tenant
                         usuario_id=usuario_id,
                         modulo=modulo,
                         accion=accion,
