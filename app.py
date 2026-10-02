@@ -12413,31 +12413,48 @@ def admin_reset_demo():
     import sys
 
     lock_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.reset_demo.lock')
+    lock_creado = False  # ✅ B3: trackear si nosotros creamos el lock
 
-    # 2. Verificar lock: si existe, ver si el proceso sigue vivo
-    if os.path.exists(lock_file):
+    # 2. B3: Crear lock ATÓMICAMENTE antes de lanzar el subprocess.
+    #    Esto elimina la race condition entre "verificar" y "crear".
+    for intento in range(2):
         try:
-            with open(lock_file, 'r') as f:
-                pid_existente = int(f.read().strip())
-            if _pid_vivo(pid_existente):
-                # El proceso sigue vivo → rechazar
-                return jsonify({
-                    'success': False,
-                    'error': 'Ya hay un reset en curso. Espera a que termine.',
-                    'lock_exists': True,
-                }), 409
-            else:
-                # Proceso muerto → limpiar lock
+            fd = os.open(lock_file, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            os.close(fd)
+            lock_creado = True
+            break
+        except FileExistsError:
+            # Lock existe: verificar si el PID dueño sigue vivo
+            try:
+                with open(lock_file, 'r') as f:
+                    pid_existente = int(f.read().strip())
+                if _pid_vivo(pid_existente):
+                    # Proceso vivo → rechazar
+                    return jsonify({
+                        'success': False,
+                        'error': 'Ya hay un reset en curso. Espera a que termine.',
+                        'lock_exists': True,
+                    }), 409
+                else:
+                    # Proceso muerto → lock obsoleto, borrar y reintentar UNA vez
+                    try:
+                        os.remove(lock_file)
+                    except Exception:
+                        pass
+            except Exception:
+                # Lock corrupto → borrar y reintentar
                 try:
                     os.remove(lock_file)
                 except Exception:
                     pass
-        except Exception:
-            # Lock corrupto → limpiar
-            try:
-                os.remove(lock_file)
-            except Exception:
-                pass
+        except Exception as e:
+            return jsonify({'success': False, 'error': f'Error creando lock: {e}'}), 500
+    else:
+        # Después de 2 intentos no pudimos crear el lock → alguien más lo tiene
+        return jsonify({
+            'success': False,
+            'error': 'Conflicto al crear lock. Reintentá en unos segundos.',
+        }), 409
 
     try:
         # 3. Preparar paths
@@ -12480,12 +12497,13 @@ def admin_reset_demo():
         })
 
     except Exception as e:
-        # Si falla, limpiar el lock
-        try:
-            if os.path.exists(lock_file):
-                os.remove(lock_file)
-        except Exception:
-            pass
+        # Si falla, limpiar el lock SOLO si lo creamos nosotros
+        if lock_creado:
+            try:
+                if os.path.exists(lock_file):
+                    os.remove(lock_file)
+            except Exception:
+                pass
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
@@ -12521,7 +12539,7 @@ def admin_reset_demo_status():
                 pass
             return jsonify({'success': True, 'in_progress': False, 'message': 'Reset terminado.'})
     except Exception:
-        # Lock corrupto → limpiar
+        # Lock corrupto â†’ limpiar
         try:
             os.remove(lock_file)
         except Exception:

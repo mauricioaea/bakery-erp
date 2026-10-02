@@ -384,7 +384,15 @@ def cmd_run_fases(tenant_id, fases_a_correr, dry_run=False):
 
     cursor.close()
     conn.close()
-    return errores == 0  # True si no hubo errores
+
+    # ✅ B4: marcador para que /admin/reset-demo/status sepa si fue exitoso
+    exito = (errores == 0)
+    if exito:
+        print("✅ EXIT_CODE=0")
+    else:
+        print(f"❌ EXIT_CODE=1 (errores: {errores})")
+
+    return exito  # True si no hubo errores
 
 
 # ============================================
