@@ -22,13 +22,16 @@ DEMO_PASSWORD = 'demo2026'
 # =========================|===================
 # CONFIGURACIÓN
 # ============================================
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
 DB_CONFIG = {
     'host': 'localhost',
     'port': 5433,
     'database': 'panaderia_master',
     'user': 'postgres',
-    'password': 'PanaderiaPro2026!'
-    
+    'password': os.getenv('DB_PASSWORD', 'PanaderiaPro2026!')
 }
 
 # Fases disponibles: (número, nombre, módulo)

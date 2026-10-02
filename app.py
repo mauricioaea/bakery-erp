@@ -1258,9 +1258,10 @@ import os
 load_dotenv()
 
 # Usar PostgreSQL para la base de datos maestra
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://postgres:PanaderiaPro2026!@localhost:5433/panaderia_master')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+if not app.config['SQLALCHEMY_DATABASE_URI']:
+    raise RuntimeError("DATABASE_URL no está definida en el entorno. Verificá tu archivo .env")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
 # =============================================
 # IMPORTAR DB PRIMERO, LUEGO MODELOS
 
@@ -1778,7 +1779,7 @@ def antes_de_cada_peticion():
                     port=5433,
                     database='panaderia_master',
                     user='postgres',
-                    password='PanaderiaPro2026!'
+                    password=os.getenv('DB_PASSWORD')
                 )
                 cursor = conn.cursor()
                 cursor.execute('SELECT id, nombre, subdominio, base_datos FROM tenants WHERE id = %s AND activo = true', (current_user.panaderia_id,))
@@ -1812,7 +1813,7 @@ def antes_de_cada_peticion():
                     port=5433,
                     database='panaderia_master',
                     user='postgres',
-                    password='PanaderiaPro2026!'
+                    password=os.getenv('DB_PASSWORD')
                 )
                 cursor = conn.cursor()
                 cursor.execute('SELECT id, nombre, subdominio, base_datos FROM tenants WHERE id = %s AND activo = true', (tenant_id,))
@@ -1862,7 +1863,7 @@ def antes_de_cada_peticion():
     # 🗄️ CONFIGURACIÓN PARA TENANT EN POSTGRESQL
     # =============================================
     tenant_schema = f"tenant_{tenant_detectado['id']}"
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://postgres:PanaderiaPro2026!@localhost:5433/panaderia_master')
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 
     # ✅ USAR set_tenant_schema() EN LUGAR DEL CÓDIGO MANUAL
     try:
