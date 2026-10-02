@@ -2575,21 +2575,6 @@ class GeneradorReportes:
             print(f"Error en generación de recomendaciones: {e}")
             return ["Recomendaciones no disponibles temporalmente"]
         
-    def _agregar_resumen_ejecutivo_tesoreria(self, elements, datos):
-        """Agrega el resumen ejecutivo al reporte de tesorería"""
-        metricas = datos['metricas']
-        
-        resumen_texto = f"""
-        <b>Total Ingresos:</b> ${metricas['total_ingresos']:,.0f}<br/>
-        <b>Total Egresos:</b> ${metricas['total_egresos']:,.0f}<br/>
-        <b>Saldo Final:</b> ${metricas['saldo_final']:,.0f}<br/>
-        <b>Flujo Neto Total:</b> ${metricas['flujo_neto_total']:,.0f}<br/>
-        <b>Días Analizados:</b> {metricas['dias_analizados']}<br/>
-        <b>Días con Flujo Positivo:</b> {metricas['dias_positivos']} ({metricas['dias_positivos']/metricas['dias_analizados']*100 if metricas['dias_analizados'] > 0 else 0:.1f}%)<br/>
-        <b>Total Movimientos:</b> {metricas['total_movimientos']}
-        """
-        elements.append(Paragraph(resumen_texto, self.styles['Normal']))
-
     def _agregar_analisis_flujo_tesoreria(self, elements, datos):
         """Agrega el análisis de flujo al reporte"""
         metricas = datos['metricas']
@@ -2626,36 +2611,37 @@ class GeneradorReportes:
                 f"${saldo_acumulado:,.0f}"
             ])
 
-            # Totales
-            total_ingresos = sum(mov[3] for mov in movimientos)
-            total_egresos = sum(mov[4] for mov in movimientos)
-            data.append([
-                'TOTALES', '', '', 
-                f"${total_ingresos:,.0f}", 
-                f"${total_egresos:,.0f}", 
-                f"${saldo_acumulado:,.0f}"
-            ])
+        # Totales (fuera del for, una sola vez)
+        total_ingresos = sum(mov[3] for mov in movimientos)
+        total_egresos = sum(mov[4] for mov in movimientos)
+        data.append([
+            'TOTALES', '', '', 
+            f"${total_ingresos:,.0f}", 
+            f"${total_egresos:,.0f}", 
+            f"${saldo_acumulado:,.0f}"
+        ])
 
-            tabla = Table(data, colWidths=[0.8*inch, 2.2*inch, 1.2*inch, 1.0*inch, 1.0*inch, 1.2*inch])
-            tabla.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2c3e50')),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 8),
-                ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
-                ('FONTNAME', (0, 1), (-1, -2), 'Helvetica'),
-                ('FONTSIZE', (0, 1), (-1, -1), 7),
-                ('ALIGN', (0, 1), (2, -1), 'LEFT'),
-                ('ALIGN', (3, 1), (-1, -1), 'RIGHT'),
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-                ('BACKGROUND', (0, 1), (-1, -2), colors.HexColor('#f8f9fa')),
-                ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#34495e')),
-                ('TEXTCOLOR', (0, -1), (-1, -1), colors.white),
-                ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, -1), (-1, -1), 8),
-            ]))
-            elements.append(tabla)
+        # Crear y agregar tabla (fuera del for, una sola vez)
+        tabla = Table(data, colWidths=[0.8*inch, 2.2*inch, 1.2*inch, 1.0*inch, 1.0*inch, 1.2*inch])
+        tabla.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2c3e50')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 8),
+            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+            ('FONTNAME', (0, 1), (-1, -2), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -1), 7),
+            ('ALIGN', (0, 1), (2, -1), 'LEFT'),
+            ('ALIGN', (3, 1), (-1, -1), 'RIGHT'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('BACKGROUND', (0, 1), (-1, -2), colors.HexColor('#f8f9fa')),
+            ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#34495e')),
+            ('TEXTCOLOR', (0, -1), (-1, -1), colors.white),
+            ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, -1), (-1, -1), 8),
+        ]))
+        elements.append(tabla)
 
     def _agregar_recomendaciones_tesoreria(self, elements, datos):
         """Agrega recomendaciones estratégicas basadas en el análisis"""
@@ -2688,15 +2674,6 @@ class GeneradorReportes:
         for rec in recomendaciones:
             elements.append(Paragraph(rec, self.styles['Normal']))
 
-    def _generar_reporte_error(self, mensaje):
-        """Genera un PDF de error mínimo"""
-        buffer = BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=A4)
-        elements = [Paragraph(f"Error: {mensaje}", self.styles['Normal'])]
-        doc.build(elements)
-        buffer.seek(0)
-        return buffer
-        
         # ========================================== NUEVAS FUNCIONES PARA REPORTE UNIFICADO DE TESORERÍA ===========================================
 
     def _obtener_datos_tesoreria_combinados(self, panaderia_id, fecha_inicio, fecha_fin):
