@@ -195,6 +195,8 @@ def cmd_reset(tenant_id):
 
     # Orden respetando FKs: hijos primero, padres despues
     tablas_a_limpiar = [
+        # Permisos (primero, porque depende de usuarios)
+        'permisos_usuario',
         # Detalles / hijos
         'detalle_venta', 'detalle_compras', 'receta_ingredientes',
         'historial_inventario', 'historial_mantenimientos', 'historial_compras',
@@ -214,6 +216,7 @@ def cmd_reset(tenant_id):
         'clientes', 'sucursales',
         # Configuracion
         'configuracion_produccion', 'configuracion_sistema',
+        'configuracion_panaderia',
         'consecutivos_pos',
         # Categorias
         'categorias',
