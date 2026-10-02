@@ -9485,6 +9485,133 @@ def generar_reporte_tesoreria_unificado():
         flash(f'❌ Error al generar reporte: {str(e)}', 'error')
         return redirect(url_for('reportes'))
    
+# =========================================================================
+# FASE D2 — Export PDF: Historial de Pagos y Depósitos
+# =========================================================================
+
+@app.route('/exportar_historial_pagos')
+@permisos_requeridos('reportes', 'exportar')
+@login_required
+@licencia_premium_requerida()
+@tenant_required
+def exportar_historial_pagos():
+    """Genera PDF del historial de pagos con los filtros actuales de la vista."""
+    try:
+        from datetime import datetime, date, timedelta
+
+        panaderia_id = obtener_panaderia_actual()
+        if not panaderia_id:
+            flash('No se pudo determinar la panadería', 'error')
+            return redirect(url_for('historial_pagos'))
+
+        # Leer filtros de la URL (mismos que usa la vista HTML)
+        fecha_inicio_str = request.args.get('fecha_inicio')
+        fecha_fin_str = request.args.get('fecha_fin')
+        categoria = request.args.get('categoria', '')
+        proveedor_id = request.args.get('proveedor_id', '')
+
+        # Default: últimos 30 días (igual que la vista HTML)
+        hoy = date.today()
+        if fecha_inicio_str and fecha_fin_str:
+            try:
+                fecha_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d').date()
+                fecha_fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d').date()
+            except ValueError:
+                fecha_inicio = hoy - timedelta(days=30)
+                fecha_fin = hoy
+        else:
+            fecha_inicio = hoy - timedelta(days=30)
+            fecha_fin = hoy
+
+        if fecha_inicio > fecha_fin:
+            fecha_inicio, fecha_fin = fecha_fin, fecha_inicio
+
+        # Generar PDF
+        generador = GeneradorReportes()
+        pdf_buffer = generador.generar_reporte_historial_pagos(
+            panaderia_id, fecha_inicio, fecha_fin, categoria, proveedor_id
+        )
+
+        if pdf_buffer.getbuffer().nbytes == 0:
+            raise Exception("El PDF generado está vacío")
+
+        nombre_archivo = f"historial_pagos_{fecha_inicio}_{fecha_fin}.pdf"
+
+        return Response(
+            pdf_buffer.getvalue(),
+            mimetype='application/pdf',
+            headers={
+                'Content-Disposition': f'attachment; filename={nombre_archivo}'
+            }
+        )
+
+    except Exception as e:
+        print(f"Error exportando historial de pagos: {e}")
+        flash(f'Error al generar el PDF: {str(e)}', 'error')
+        return redirect(url_for('historial_pagos'))
+
+
+@app.route('/exportar_historial_depositos')
+@permisos_requeridos('reportes', 'exportar')
+@login_required
+@licencia_premium_requerida()
+@tenant_required
+def exportar_historial_depositos():
+    """Genera PDF del historial de depósitos con los filtros actuales de la vista."""
+    try:
+        from datetime import datetime, date, timedelta
+
+        panaderia_id = obtener_panaderia_actual()
+        if not panaderia_id:
+            flash('No se pudo determinar la panadería', 'error')
+            return redirect(url_for('historial_depositos'))
+
+        # Leer filtros de la URL (mismos que usa la vista HTML)
+        fecha_inicio_str = request.args.get('fecha_inicio')
+        fecha_fin_str = request.args.get('fecha_fin')
+        banco = request.args.get('banco', '')
+        estado = request.args.get('estado', '')
+
+        # Default: últimos 30 días
+        hoy = date.today()
+        if fecha_inicio_str and fecha_fin_str:
+            try:
+                fecha_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d').date()
+                fecha_fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d').date()
+            except ValueError:
+                fecha_inicio = hoy - timedelta(days=30)
+                fecha_fin = hoy
+        else:
+            fecha_inicio = hoy - timedelta(days=30)
+            fecha_fin = hoy
+
+        if fecha_inicio > fecha_fin:
+            fecha_inicio, fecha_fin = fecha_fin, fecha_inicio
+
+        # Generar PDF
+        generador = GeneradorReportes()
+        pdf_buffer = generador.generar_reporte_historial_depositos(
+            panaderia_id, fecha_inicio, fecha_fin, banco, estado
+        )
+
+        if pdf_buffer.getbuffer().nbytes == 0:
+            raise Exception("El PDF generado está vacío")
+
+        nombre_archivo = f"historial_depositos_{fecha_inicio}_{fecha_fin}.pdf"
+
+        return Response(
+            pdf_buffer.getvalue(),
+            mimetype='application/pdf',
+            headers={
+                'Content-Disposition': f'attachment; filename={nombre_archivo}'
+            }
+        )
+
+    except Exception as e:
+        print(f"Error exportando historial de depósitos: {e}")
+        flash(f'Error al generar el PDF: {str(e)}', 'error')
+        return redirect(url_for('historial_depositos'))
+    
 # ==========================================
 # RUTAS PARA DEPÓSITOS BANCARIOS (MÓDULO TESORERÍA)
 # ==========================================

@@ -2915,3 +2915,340 @@ class GeneradorReportes:
             import traceback
             traceback.print_exc()
             raise
+        
+    # =========================================================================
+    # FASE D2 — Historial de Pagos y Depósitos (export PDF)
+    # =========================================================================
+
+    def generar_reporte_historial_pagos(self, panaderia_id, fecha_inicio, fecha_fin,
+                                         categoria='', proveedor_id=''):
+        """Genera PDF del historial de pagos (PagoIndividual) con filtros opcionales."""
+        from models import PagoIndividual, Proveedor
+        from sqlalchemy import func
+
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=1*inch)
+        elements = []
+
+        elements.append(Paragraph(self.nombre_empresa, self.estilo_titulo))
+        elements.append(Paragraph("HISTORIAL DE PAGOS", self.estilo_titulo))
+        elements.append(Paragraph(
+            f"Período: {fecha_inicio} a {fecha_fin}",
+            self.styles['Normal']
+        ))
+        elements.append(Spacer(1, 15))
+
+        # --- Filtros aplicados (informativo) ---
+        filtros_texto = []
+        if categoria:
+            filtros_texto.append(f"<b>Categoría:</b> {categoria}")
+        if proveedor_id:
+            try:
+                prov = Proveedor.query.get(int(proveedor_id))
+                if prov:
+                    filtros_texto.append(f"<b>Proveedor:</b> {prov.nombre}")
+            except (ValueError, TypeError):
+                pass
+        if filtros_texto:
+            elements.append(Paragraph(" | ".join(filtros_texto), self.styles['Normal']))
+            elements.append(Spacer(1, 10))
+
+        # --- Query base (mismos filtros que la vista HTML) ---
+        query = PagoIndividual.query.filter(
+            PagoIndividual.panaderia_id == panaderia_id,
+            PagoIndividual.fecha_pago >= fecha_inicio,
+            PagoIndividual.fecha_pago <= fecha_fin
+        )
+        if categoria:
+            query = query.filter(PagoIndividual.categoria == categoria)
+        if proveedor_id:
+            try:
+                query = query.filter(PagoIndividual.proveedor_id == int(proveedor_id))
+            except (ValueError, TypeError):
+                pass
+
+        pagos = query.order_by(
+            PagoIndividual.fecha_pago.asc(),
+            PagoIndividual.id.asc()
+        ).all()
+
+        if not pagos:
+            elements.append(Paragraph(
+                "No hay pagos para el período y filtros seleccionados.",
+                self.styles['Normal']
+            ))
+        else:
+            # --- KPIs ---
+            total_monto = sum(float(p.monto or 0) for p in pagos)
+            total_cantidad = len(pagos)
+            promedio = total_monto / total_cantidad if total_cantidad > 0 else 0
+
+            kpi_data = [
+                ['Total Pagado', 'Cantidad de Pagos', 'Promedio por Pago'],
+                [f"${total_monto:,.0f}", f"{total_cantidad}", f"${promedio:,.0f}"]
+            ]
+            kpi_tabla = Table(kpi_data, colWidths=[2.0*inch, 2.0*inch, 2.0*inch])
+            kpi_tabla.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2c3e50')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 9),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('BACKGROUND', (0, 1), (-1, 1), colors.HexColor('#f8f9fa')),
+                ('FONTNAME', (0, 1), (-1, 1), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 1), (-1, 1), 11),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ]))
+            elements.append(kpi_tabla)
+            elements.append(Spacer(1, 20))
+
+            # --- Desglose por categoría ---
+            desglose = query.with_entities(
+                PagoIndividual.categoria,
+                func.sum(PagoIndividual.monto).label('total'),
+                func.count(PagoIndividual.id).label('cantidad')
+            ).group_by(PagoIndividual.categoria).order_by(
+                func.sum(PagoIndividual.monto).desc()
+            ).all()
+
+            if desglose:
+                elements.append(Paragraph("DESGLOSE POR CATEGORÍA", self.estilo_subtitulo))
+                desg_data = [['Categoría', 'Cantidad', 'Total']]
+                for cat, tot, cant in desglose:
+                    desg_data.append([
+                        (cat or '-').replace('_', ' ').title(),
+                        str(int(cant or 0)),
+                        f"${float(tot or 0):,.0f}"
+                    ])
+                desg_tabla = Table(desg_data, colWidths=[3.0*inch, 1.5*inch, 1.5*inch])
+                desg_tabla.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#34495e')),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, 0), 9),
+                    ('ALIGN', (0, 0), (0, -1), 'LEFT'),
+                    ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
+                    ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                    ('FONTSIZE', (0, 1), (-1, -1), 8),
+                    ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+                    ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f8f9fa')),
+                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ]))
+                elements.append(desg_tabla)
+                elements.append(Spacer(1, 20))
+
+            # --- Detalle de pagos (sin paginar) ---
+            elements.append(Paragraph("DETALLE DE PAGOS", self.estilo_subtitulo))
+
+            det_data = [['Fecha', 'Categoría', 'Concepto', 'Método', 'Monto']]
+            for p in pagos:
+                det_data.append([
+                    p.fecha_pago.strftime('%d/%m/%Y') if p.fecha_pago else '-',
+                    (p.categoria or '-').replace('_', ' ').title(),
+                    ((p.concepto or p.descripcion or '-'))[:40],
+                    (p.metodo_pago or '-'),
+                    f"${float(p.monto or 0):,.0f}"
+                ])
+            det_data.append([
+                'TOTAL', '', '', '',
+                f"${total_monto:,.0f}"
+            ])
+
+            det_tabla = Table(
+                det_data,
+                colWidths=[0.8*inch, 1.3*inch, 2.2*inch, 1.0*inch, 1.0*inch],
+                repeatRows=1
+            )
+            det_tabla.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2c3e50')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 8),
+                ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+                ('FONTNAME', (0, 1), (-1, -2), 'Helvetica'),
+                ('FONTSIZE', (0, 1), (-1, -1), 7),
+                ('ALIGN', (0, 1), (2, -1), 'LEFT'),
+                ('ALIGN', (3, 1), (-1, -1), 'RIGHT'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+                ('BACKGROUND', (0, 1), (-1, -2), colors.HexColor('#f8f9fa')),
+                ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#34495e')),
+                ('TEXTCOLOR', (0, -1), (-1, -1), colors.white),
+                ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, -1), (-1, -1), 8),
+            ]))
+            elements.append(det_tabla)
+
+        elements.append(Spacer(1, 30))
+        elements.append(Paragraph(
+            f"Generado el: {datetime.now().strftime('%d/%m/%Y %H:%M')}",
+            ParagraphStyle('Footer', parent=self.styles['Normal'],
+                           fontSize=8, textColor=colors.gray)
+        ))
+
+        doc.build(elements)
+        buffer.seek(0)
+        return buffer
+
+    def generar_reporte_historial_depositos(self, panaderia_id, fecha_inicio, fecha_fin,
+                                             banco='', estado=''):
+        """Genera PDF del historial de depósitos bancarios (DepositoBancario) con filtros opcionales."""
+        from models import DepositoBancario
+        from sqlalchemy import func
+
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=1*inch)
+        elements = []
+
+        elements.append(Paragraph(self.nombre_empresa, self.estilo_titulo))
+        elements.append(Paragraph("HISTORIAL DE DEPÓSITOS BANCARIOS", self.estilo_titulo))
+        elements.append(Paragraph(
+            f"Período: {fecha_inicio} a {fecha_fin}",
+            self.styles['Normal']
+        ))
+        elements.append(Spacer(1, 15))
+
+        # --- Filtros aplicados (informativo) ---
+        filtros_texto = []
+        if banco:
+            filtros_texto.append(f"<b>Banco:</b> {banco}")
+        if estado:
+            filtros_texto.append(f"<b>Estado:</b> {estado}")
+        if filtros_texto:
+            elements.append(Paragraph(" | ".join(filtros_texto), self.styles['Normal']))
+            elements.append(Spacer(1, 10))
+
+        # --- Query base (mismos filtros que la vista HTML) ---
+        query = DepositoBancario.query.filter(
+            DepositoBancario.panaderia_id == panaderia_id,
+            DepositoBancario.fecha_deposito >= fecha_inicio,
+            DepositoBancario.fecha_deposito <= fecha_fin
+        )
+        if banco:
+            query = query.filter(DepositoBancario.banco == banco)
+        if estado:
+            query = query.filter(DepositoBancario.estado == estado)
+
+        depositos = query.order_by(
+            DepositoBancario.fecha_deposito.asc(),
+            DepositoBancario.id.asc()
+        ).all()
+
+        if not depositos:
+            elements.append(Paragraph(
+                "No hay depósitos para el período y filtros seleccionados.",
+                self.styles['Normal']
+            ))
+        else:
+            total_monto = sum(float(d.monto or 0) for d in depositos)
+            total_cantidad = len(depositos)
+            promedio = total_monto / total_cantidad if total_cantidad > 0 else 0
+
+            kpi_data = [
+                ['Total Depositado', 'Cantidad de Depósitos', 'Promedio por Depósito'],
+                [f"${total_monto:,.0f}", f"{total_cantidad}", f"${promedio:,.0f}"]
+            ]
+            kpi_tabla = Table(kpi_data, colWidths=[2.0*inch, 2.0*inch, 2.0*inch])
+            kpi_tabla.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2c3e50')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 9),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('BACKGROUND', (0, 1), (-1, 1), colors.HexColor('#f8f9fa')),
+                ('FONTNAME', (0, 1), (-1, 1), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 1), (-1, 1), 11),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ]))
+            elements.append(kpi_tabla)
+            elements.append(Spacer(1, 20))
+
+            # --- Desglose por banco ---
+            desglose = query.with_entities(
+                DepositoBancario.banco,
+                func.sum(DepositoBancario.monto).label('total'),
+                func.count(DepositoBancario.id).label('cantidad')
+            ).group_by(DepositoBancario.banco).order_by(
+                func.sum(DepositoBancario.monto).desc()
+            ).all()
+
+            if desglose:
+                elements.append(Paragraph("DESGLOSE POR BANCO", self.estilo_subtitulo))
+                desg_data = [['Banco', 'Cantidad', 'Total']]
+                for b, tot, cant in desglose:
+                    desg_data.append([
+                        b or '-',
+                        str(int(cant or 0)),
+                        f"${float(tot or 0):,.0f}"
+                    ])
+                desg_tabla = Table(desg_data, colWidths=[3.0*inch, 1.5*inch, 1.5*inch])
+                desg_tabla.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#34495e')),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, 0), 9),
+                    ('ALIGN', (0, 0), (0, -1), 'LEFT'),
+                    ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
+                    ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                    ('FONTSIZE', (0, 1), (-1, -1), 8),
+                    ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+                    ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f8f9fa')),
+                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ]))
+                elements.append(desg_tabla)
+                elements.append(Spacer(1, 20))
+
+            # --- Detalle de depósitos ---
+            elements.append(Paragraph("DETALLE DE DEPÓSITOS", self.estilo_subtitulo))
+
+            det_data = [['Fecha', 'Banco', 'Referencia', 'Método', 'Monto']]
+            for d in depositos:
+                det_data.append([
+                    d.fecha_deposito.strftime('%d/%m/%Y') if d.fecha_deposito else '-',
+                    d.banco or '-',
+                    ((d.referencia or d.descripcion or '-'))[:25],
+                    (d.metodo_deposito or '-'),
+                    f"${float(d.monto or 0):,.0f}"
+                ])
+            det_data.append([
+                'TOTAL', '', '', '',
+                f"${total_monto:,.0f}"
+            ])
+
+            det_tabla = Table(
+                det_data,
+                colWidths=[0.8*inch, 1.5*inch, 2.0*inch, 1.0*inch, 1.0*inch],
+                repeatRows=1
+            )
+            det_tabla.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2c3e50')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 8),
+                ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+                ('FONTNAME', (0, 1), (-1, -2), 'Helvetica'),
+                ('FONTSIZE', (0, 1), (-1, -1), 7),
+                ('ALIGN', (0, 1), (2, -1), 'LEFT'),
+                ('ALIGN', (3, 1), (-1, -1), 'RIGHT'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+                ('BACKGROUND', (0, 1), (-1, -2), colors.HexColor('#f8f9fa')),
+                ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#34495e')),
+                ('TEXTCOLOR', (0, -1), (-1, -1), colors.white),
+                ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, -1), (-1, -1), 8),
+            ]))
+            elements.append(det_tabla)
+
+        elements.append(Spacer(1, 30))
+        elements.append(Paragraph(
+            f"Generado el: {datetime.now().strftime('%d/%m/%Y %H:%M')}",
+            ParagraphStyle('Footer', parent=self.styles['Normal'],
+                           fontSize=8, textColor=colors.gray)
+        ))
+
+        doc.build(elements)
+        buffer.seek(0)
+        return buffer
