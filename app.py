@@ -1740,9 +1740,34 @@ def verificar_y_crear_datos_tenant(tenant_id):
 # =============================================
 # ✅ MIDDLEWARE - SE EJECUTA ANTES DE CADA PETICIÓN
 # =============================================
-
 @app.before_request
 def antes_de_cada_peticion():
+    # =============================================
+    # ✅ B7: Validación global de Origin (mitigación CSRF)
+    # =============================================
+    # Bloquea POST/PUT/DELETE/PATCH con Origin distinto al Host.
+    # Navegadores SIEMPRE envían Origin en POST cross-origin → vector CSRF bloqueado.
+    # Clientes sin Origin (curl, tests, webhooks) son permitidos pero logueados.
+    if request.method in ('POST', 'PUT', 'DELETE', 'PATCH'):
+        from urllib.parse import urlparse
+        _origen = request.headers.get('Origin') or request.headers.get('Referer')
+        if _origen:
+            try:
+                _origen_host = urlparse(_origen).netloc
+                if _origen_host and _origen_host != request.host:
+                    print(f"🚨 CSRF bloqueado: origen={_origen_host} host={request.host} path={request.path}")
+                    return jsonify({
+                        'success': False,
+                        'error': 'Origen no autorizado.'
+                    }), 403
+            except Exception as e:
+                print(f"⚠️ Error validando origen: {e}")
+                return jsonify({
+                    'success': False,
+                    'error': 'Error validando origen.'
+                }), 403
+        else:
+            print(f"⚠️ POST sin Origin/Referer: {request.method} {request.path}")
     
     # =============================================
     # ✅ VERIFICAR SI LA SESIÓN ES VÁLIDA
