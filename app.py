@@ -1319,16 +1319,26 @@ migrate = Migrate(app, db)
 # ANTES de cualquier consulta. Soluciona el bug multi-tenant de raíz.
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
-
 @event.listens_for(Engine, "checkout")
 def configurar_search_path_en_checkout(dbapi_connection, connection_record, connection_proxy):
     """
     Se ejecuta en cada checkout de conexión del pool.
     Configura el search_path según el tenant actual del request.
-    
+
+    DT-11 fix v4: NUNCA acceder a current_user desde aquí. current_user es un
+    LocalProxy de Flask-Login que dispara load_user al primer acceso. Como
+    load_user a su vez hace db.session.execute() → checkout → este listener,
+    se crea una recursión infinita que SQLAlchemy 2.0 aborta con
+    "This session is provisioning a new connection; concurrent operations
+    are not permitted" (isce).
+
+    Solución: leer SOLO de flask.session (que es un dict, no dispara load_user).
+    El before_request propio de la app (línea ~1758) ya setea session['tenant_id']
+    durante el login, así que está disponible en todos los requests autenticados.
+
     ✅ PRIORIDAD:
     1. Si g.search_path_override está seteado → usarlo (permite cambiar schema explícitamente)
-    2. Si no → usar el tenant del usuario actual
+    2. Si no → usar session.get('tenant_id')
     """
     try:
         from flask import g, session, has_request_context
@@ -1338,29 +1348,11 @@ def configurar_search_path_en_checkout(dbapi_connection, connection_record, conn
             return
 
         # ✅ PRIORIDAD 1: Override explícito desde la ruta
-        search_path_final = None
         if hasattr(g, 'search_path_override') and g.search_path_override:
             search_path_final = g.search_path_override
         else:
-            # ✅ PRIORIDAD 2: Determinar tenant_id del contexto
-            tenant_id = None
-
-            # 1. Intentar desde g.tenant (configurado por before_request)
-            if hasattr(g, 'tenant') and g.tenant:
-                tenant_id = g.tenant.get('id')
-
-            # 2. Si no hay, desde current_user (si está autenticado)
-            if not tenant_id:
-                try:
-                    from flask_login import current_user
-                    if hasattr(current_user, 'is_authenticated') and current_user.is_authenticated:
-                        tenant_id = getattr(current_user, 'panaderia_id', None)
-                except Exception:
-                    pass
-
-            # 3. Fallback: desde session
-            if not tenant_id:
-                tenant_id = session.get('tenant_id')
+            # ✅ PRIORIDAD 2: tenant_id desde session (NUNCA desde current_user)
+            tenant_id = session.get('tenant_id')
 
             # Si no hay tenant identificado, no tocar el search_path
             if not tenant_id:
@@ -1383,83 +1375,98 @@ def configurar_search_path_en_checkout(dbapi_connection, connection_record, conn
 def load_user(user_id):
     """
     🎯 CARGA PROFESIONAL DE USUARIOS - ARQUITECTURA MULTI-TENANT
-    Busca al usuario en el schema del tenant usando el tenant_id de la sesión
+    Busca al usuario en el schema del tenant usando el tenant_id de la sesión.
+
+    DT-11 fix v3: cachear el usuario en flask.g para evitar que Flask-Login
+    dispare múltiples queries por request (una por cada current_user.<attr>).
+    Esto reduce N queries por request a 1 sola, eliminando el error
+    "This session is provisioning a new connection; concurrent operations
+    are not permitted" causado por el event listener de search_path.
+
+    Bitácora de intentos:
+      v1: reducir queries en load_user → no resolvió (era concurrencia, no cantidad).
+      v2: usar db.engine.connect() → PEOR (agotó el pool).
+      v3: cache con flask.g → correcto (esta versión).
     """
+    from sqlalchemy import text
+    from flask import session, g
+
+    # ✅ CACHE: si ya cargamos este usuario en el request actual, devolverlo sin query
+    cached = getattr(g, '_load_user_cache', None)
+    if cached is not None and str(cached.id) == str(user_id):
+        return cached
+
+    user = None
     try:
-        from sqlalchemy import text
-        import re
-        
-        # =============================================
-        # 1. OBTENER tenant_id DE LA SESIÓN
-        # =============================================
-        from flask import session
         tenant_id = session.get('tenant_id')
-        
+
         # =============================================
-        # 2. SI HAY tenant_id, BUSCAR EN ESE SCHEMA
+        # 1. SI HAY tenant_id, BUSCAR EN ESE SCHEMA
         # =============================================
         if tenant_id:
             schema_name = f"tenant_{tenant_id}"
-            
-            # Verificar si la tabla usuarios existe
-            table_check = db.session.execute(
-                text(f"SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = :schema AND table_name = 'usuarios')"),
-                {'schema': schema_name}
-            ).fetchone()[0]
-            
-            if table_check:
-                result = db.session.execute(
-                    text(f"SELECT id, username, password_hash, panaderia_id, rol, nombre_completo, email, telefono, activo, fecha_creacion FROM {schema_name}.usuarios WHERE id = :id"),
-                    {'id': user_id}
-                )
-                user_data = result.fetchone()
-                
-                if user_data:
-                    user = Usuario()
-                    user.id = user_data[0]
-                    user.username = user_data[1]
-                    user.password_hash = user_data[2]
-                    user.panaderia_id = user_data[3]
-                    user.rol = user_data[4]
-                    user.nombre_completo = user_data[5]
-                    user.email = user_data[6]
-                    user.telefono = user_data[7]
-                    user.activo = user_data[8] if user_data[8] is not None else True
-                    user.fecha_creacion = user_data[9]
-                    user.tenant_id = tenant_id
-                    
-                    print(f"✅ [LOAD_USER] Usuario cargado desde {schema_name}: {user.username} (tenant_id: {tenant_id})")
-                    return user
-        
+            result = db.session.execute(
+                text(
+                    f"SELECT id, username, password_hash, panaderia_id, rol, "
+                    f"nombre_completo, email, telefono, activo, fecha_creacion "
+                    f"FROM {schema_name}.usuarios WHERE id = :id"
+                ),
+                {'id': user_id}
+            )
+            user_data = result.fetchone()
+
+            if user_data:
+                user = Usuario()
+                user.id = user_data[0]
+                user.username = user_data[1]
+                user.password_hash = user_data[2]
+                user.panaderia_id = user_data[3]
+                user.rol = user_data[4]
+                user.nombre_completo = user_data[5]
+                user.email = user_data[6]
+                user.telefono = user_data[7]
+                user.activo = user_data[8] if user_data[8] is not None else True
+                user.fecha_creacion = user_data[9]
+                user.tenant_id = tenant_id
+
         # =============================================
-        # 3. FALLBACK: BUSCAR EN PUBLIC (solo para dev_master)
+        # 2. FALLBACK: BUSCAR EN PUBLIC (solo para dev_master)
         # =============================================
-        result = db.session.execute(
-            text("SELECT id, username, password_hash, panaderia_id, rol, nombre_completo, email, telefono FROM public.usuarios WHERE id = :id"),
-            {'id': user_id}
-        )
-        user_data = result.fetchone()
-        
-        if user_data:
-            user = Usuario()
-            user.id = user_data[0]
-            user.username = user_data[1]
-            user.password_hash = user_data[2]
-            user.panaderia_id = user_data[3]
-            user.rol = user_data[4]
-            user.nombre_completo = user_data[5]
-            user.email = user_data[6]
-            user.telefono = user_data[7]
-            user.tenant_id = 1
-            print(f"✅ [LOAD_USER] Usuario cargado desde public: {user.username} (tenant_id: 1)")
-            return user
-        
-        print(f"⚠️ [LOAD_USER] Usuario con ID {user_id} no encontrado")
-            
+        if user is None:
+            result = db.session.execute(
+                text(
+                    "SELECT id, username, password_hash, panaderia_id, rol, "
+                    "nombre_completo, email, telefono "
+                    "FROM public.usuarios WHERE id = :id"
+                ),
+                {'id': user_id}
+            )
+            user_data = result.fetchone()
+
+            if user_data:
+                user = Usuario()
+                user.id = user_data[0]
+                user.username = user_data[1]
+                user.password_hash = user_data[2]
+                user.panaderia_id = user_data[3]
+                user.rol = user_data[4]
+                user.nombre_completo = user_data[5]
+                user.email = user_data[6]
+                user.telefono = user_data[7]
+                user.tenant_id = 1
+
     except Exception as e:
+        # Rollback defensivo: si una query falla, liberamos la sesión para
+        # que el siguiente request no herede un estado inconsistente.
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
         print(f"⚠️ Error en user_loader: {e}")
-    
-    return None
+
+    # ✅ Guardar en cache del request (incluso si es None, para no reintentar)
+    g._load_user_cache = user
+    return user
 
 # =============================================
 # 🆕 DEFINICIÓN DE MÓDULOS DEL SISTEMA
