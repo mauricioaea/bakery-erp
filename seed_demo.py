@@ -392,6 +392,24 @@ def cmd_run_fases(tenant_id, fases_a_correr, dry_run=False):
     else:
         print(f"❌ EXIT_CODE=1 (errores: {errores})")
 
+    # ✅ B4 v2: persistir el resultado en un JSON separado del lock
+    try:
+        import json
+        status_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            'reset_demo.last_status.json'
+        )
+        with open(status_path, 'w', encoding='utf-8') as f:
+            json.dump({
+                'exitoso': exito,
+                'errores': errores,
+                'tenant_id': tenant_id,
+                'timestamp': datetime.now().isoformat(timespec='seconds'),
+            }, f, ensure_ascii=False, indent=2)
+        print(f"📝 Estado persistido en reset_demo.last_status.json")
+    except Exception as e:
+        print(f"⚠️ No se pudo persistir el estado: {e}")
+
     return exito  # True si no hubo errores
 
 

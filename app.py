@@ -12518,7 +12518,39 @@ def admin_reset_demo_status():
     lock_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.reset_demo.lock')
 
     if not os.path.exists(lock_file):
-        return jsonify({'success': True, 'in_progress': False, 'message': 'Sin reset en curso.'})
+        # ✅ B4 v2: sin lock → leer el estado del último reset desde el JSON
+        status_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            'reset_demo.last_status.json'
+        )
+        try:
+            import json as _json
+            with open(status_path, 'r', encoding='utf-8') as f:
+                last = _json.load(f)
+            exitoso = bool(last.get('exitoso', True))
+            mensaje = 'Último reset completado exitosamente.' if exitoso \
+                      else 'El último reset FALLÓ. Revisá reset_demo.log.'
+            return jsonify({
+                'success': True,
+                'in_progress': False,
+                'exitoso': exitoso,
+                'message': mensaje,
+                'timestamp': last.get('timestamp'),
+                'errores': last.get('errores', 0),
+            })
+        except FileNotFoundError:
+            # Nunca corrió un reset en este entorno
+            return jsonify({
+                'success': True,
+                'in_progress': False,
+                'message': 'Sin reset en curso.',
+            })
+        except Exception as e:
+            return jsonify({
+                'success': True,
+                'in_progress': False,
+                'message': f'Sin reset en curso (error leyendo estado: {e}).',
+            })
 
     try:
         with open(lock_file, 'r') as f:

@@ -96,3 +96,7 @@ backups_postgresql/
 *.dump 
 _ARCHIVE_*/
 *.bak_*
+# Reset Demo (runtime)
+.reset_demo.lock
+reset_demo.log
+reset_demo.last_status.json
