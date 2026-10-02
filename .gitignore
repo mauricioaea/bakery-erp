@@ -1,5 +1,5 @@
 # ==========================================
-# .gitignore OPTIMIZADO - SISTEMA PANADER�A
+# .gitignore - SISTEMA PANADERIA
 # ==========================================
 
 # Entorno virtual de Python
@@ -11,6 +11,8 @@ ENV/
 *.db
 *.sqlite
 *.sqlite3
+*.sql
+*.dump
 
 # Archivos temporales de Python
 __pycache__/
@@ -19,12 +21,14 @@ __pycache__/
 *.pyd
 .Python
 
-# Archivos de entorno y configuraci�n sensible
+# Archivos de entorno y configuracion sensible
 .env
 .env.local
 .env.production
 .env.development
 config_secret.py
+config.py
+secrets.py
 
 # Archivos del sistema operativo
 .DS_Store
@@ -42,7 +46,7 @@ ehthumbs.db
 *.swo
 *~
 
-# Logs y archivos de diagn�stico
+# Logs y archivos de diagnostico
 *.log
 logs/
 pip-log.txt
@@ -52,51 +56,42 @@ temp/
 tmp/
 *.tmp
 *.temp
-
-# Archivos de reportes temporales
 static/temp/
 
-# =============================================
-# =============================================
-
-# Backup folders
-Respaldo_*/
-static_respaldos_*/
-backups/
-temp/
-tmp/
-
-# Backup file patterns
+# Backups y datos
+backup_antiguos/
 *.backup
 *.backup_*
 *.old
-*.tmp
 *_respaldo_*
-backups_ultra_seguros/ 
-# Backups y datos
-backup_antiguos/
-*.db
+backups/
+backups_ultra_seguros/
+backups_postgresql/
+Respaldo_*/
+static_respaldos_*/
 instance/
 databases_tenants/
-
-# Archivos sensibles
-.env
-*.env
-config.py
-secrets.py"migrations/__pycache__/" 
-limpieza_super_segura.py 
-__pycache__/ 
-*.pyc 
-instance/ 
-backup_final_20260630/ 
-backup_temp/ 
-backups_postgresql/ 
-*.sql 
-*.backup 
-*.dump 
+backup_final_20260630/
+backup_temp/
 _ARCHIVE_*/
 *.bak_*
+
+# Migraciones
+migrations/__pycache__/
+
+# Scripts de limpieza
+limpieza_super_segura.py
+
+# =============================================
 # Reset Demo (runtime)
+# =============================================
 .reset_demo.lock
 reset_demo.log
 reset_demo.last_status.json
+
+# =============================================
+# Artefactos de pruebas manuales
+# =============================================
+cookies.txt
+server_output.txt
+warning_traceback.txt
