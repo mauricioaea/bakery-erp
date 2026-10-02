@@ -1,7 +1,7 @@
 # 🗂️ CONTEXTO MAESTRO — PanaderíaPro (Bakery ERP)
 
 **Última actualización:** 2 de Octubre, 2026
-**Último commit:** 3cac49e (Fase D2 — export PDF historial de pagos y depósitos)
+**Último commit:** 4a9669b (B7 — validación global de Origin / mitigación CSRF)
 
 ---
 
@@ -9,9 +9,9 @@
 
 - **Nombre:** PanaderíaPro (bakery-erp)
 - **Repo:** https://github.com/mauricioaea/bakery-erp
-- **Estado:** v1.1.0 — **11/11 módulos completados (100%)** + Demo Fases 1-12 completadas
+- **Estado:** v1.1.1 — **11/11 módulos completados (100%)** + Demo Fases 1-12 completadas + Endurecimiento de seguridad
 - **Arquitectura:** Multi-tenant con PostgreSQL (schemas por tenant)
-- **Próximo hito:** Fase C.3 (auditoría) + Seguridad (D1) + Fixes B3/B4/B7
+- **Próximo hito:** DT-11 + DT-12 (warnings SQLAlchemy) + Fase C.3 (auditoría de columnas)
 
 ---
 
@@ -21,7 +21,7 @@
 - Python 3.10+, Flask 3.1.2, SQLAlchemy 2.0
 - PostgreSQL 17.10 (puerto 5433)
 - Flask-Login, Werkzeug (pbkdf2:sha256, scrypt), ReportLab, Matplotlib
-- **BD:** `panaderia_master` — user: `postgres`, password: `PanaderiaPro2026!`
+- **BD:** `panaderia_master` — credenciales en `.env` (no hardcodeadas)
 
 ### Frontend
 - HTML5/CSS3, JavaScript vanilla, Bootstrap 5.1.3, Chart.js, Font Awesome 6
@@ -30,10 +30,11 @@
 - `app.py` (~12.700 líneas, ~530 KB) — aplicación principal
 - `models.py` (~3.100 líneas, ~130 KB) — modelos SQLAlchemy
 - `reportes.py` (~3.254 líneas, ~160 KB) — generación PDF
-- `seed_demo.py` (~18 KB) — seed modular del Demo
+- `seed_demo.py` (~450 líneas, ~18 KB) — seed modular del Demo
 - `seeds/` — 11 fases del seed (fase1 a fase11)
 - `middleware_saas.py`, `tenant_decorators.py`, `tenant_context.py` — multi-tenant
 - `templates/`, `static/`
+- `.env` — variables de entorno (credenciales BD, SECRET_KEY)
 - `HANDOFF.md` — este archivo
 
 ---
@@ -86,23 +87,20 @@
 | 8 | Activos Fijos | ✅ COMPLETO |
 | 9 | Gestión de Usuarios + Mi Perfil | ✅ COMPLETO |
 | 10 | Gestión Financiera | ✅ COMPLETO |
-| 11 | Reportes Profesionales | ✅ **COMPLETO** (Fase D2 cerrada 2 Oct 2026) |
+| 11 | Reportes Profesionales | ✅ COMPLETO (Fase D2 cerrada 2 Oct 2026) |
 
 ---
 
 ## 6️⃣ Últimos commits pusheados
+4a9669b security(B7): validacion global de Origin en before_request (mitigacion CSRF para todos los POST)
+11f0689 fix(reset-demo): B4 v2 - persistir estado del ultimo reset en JSON separado + /status lo lee
+35fe33c fix(reset-demo): B3 lock atomico con O_CREAT|O_EXCL (elimina race condition) + marcadores EXIT_CODE en seed
+344c552 fix(multi-tenant): DT-20 Fase B - agregar panaderia_id explicito a 4 INSERTs criticos
+dcad6d6 fix(reportes): DT-2 y DT-2b - eliminar metodos duplicados + corregir indentacion en tabla de tesoreria
+9d5c88f security(D1): externalizar password PostgreSQL a variables de entorno
+4250ba3 docs: HANDOFF v4 (Fase D2 completada, 11/11 modulos, DT-1 a DT-12)
 3cac49e feat(reportes): Fase D2 - export PDF historial de pagos y depositos
-239612f docs+fix: HANDOFF v3 (Fases 1-12 + admin panel) + A7 (permisos_usuario, configuracion_panaderia en reset)
-bd0cac8 fix(admin): 3 pendientes menores (A2 codigo salida reset-all, A4 restaurar passwords demo, C1 texto banner)
-378f810 fix(admin): 4 fixes criticos del reset (pid_vivo, encoding utf8, rollback loop, sequences usuarios)
-b5bb809 feat(admin): panel Super Admin con boton Reset Demo (solo dev_master)
-59581f3 feat(admin): endpoints /admin/reset-demo y /admin/reset-demo/status
-99aecea feat(demo): banner Demo via after_request (solo tenant_27)
-9a2732e refactor(seeds): reemplazar raise por warning en validacion de tenant_27 (fases 6-11)
-19c15b1 feat(demo): Fase 12 - reset total + reset-all (37 tablas, sequences, re-seed completo)
-0695350 feat(demo): Fase 11 - cierres diarios (90 cierres con tendencia y productos top)
-135a5b9 feat(demo): Fase 8 - productos externos (12 productos: bebidas, snacks, pasabocas)
-fda25b9 fix(demo): Fase 10 v3 - separar pagos (insumos) de gastos (operativos) + ajustar montos (utilidad +18%)
+239612f docs+fix: HANDOFF v3 (Fases 1-12 + admin panel) + A7
 
 text
 
@@ -135,7 +133,7 @@ text
 
 ---
 
-## 8️⃣ Fase 12 — Reset automatizado
+## 8️⃣ Fase 12 — Reset automatizado (con mejoras B3, B4 v2)
 
 ### Comandos disponibles
 
@@ -159,9 +157,29 @@ text
 ### Endpoints backend
 
 - `POST /admin/reset-demo` — dispara el reset.
-- `GET /admin/reset-demo/status` — verifica si hay reset en curso.
+- `GET /admin/reset-demo/status` — verifica si hay reset en curso y su resultado.
 - Lock file: `.reset_demo.lock` (con PID).
 - Log: `reset_demo.log`.
+- **Estado persistente:** `reset_demo.last_status.json` (JSON con `{exitoso, errores, tenant_id, timestamp}`).
+
+### B3 — Lock atómico (fix 2 Oct 2026)
+
+- Creación del lock con `os.open(lock_file, os.O_CREAT | os.O_EXCL | os.O_WRONLY)`.
+- Elimina race condition entre "verificar" y "crear".
+- Flag `lock_creado` para cleanup selectivo.
+
+### B4 v2 — Estado persistente (fix 2 Oct 2026)
+
+- `seed_demo.py` escribe `reset_demo.last_status.json` al terminar.
+- `/status` lee el JSON cuando no hay lock.
+- Responde con `exitoso: true/false`, `timestamp`, `errores`.
+
+### B7 — CSRF global (fix 2 Oct 2026)
+
+- Validación global de `Origin`/`Referer` en `@app.before_request`.
+- Política: rechaza POST/PUT/DELETE/PATCH con `Origin` distinto al `Host`.
+- Permite requests sin `Origin` (curl, tests, webhooks) con warning en log.
+- Cubre TODOS los endpoints POST del sistema (todos los tenants actuales y futuros).
 
 ### Tablas del reset (39)
 
@@ -172,117 +190,99 @@ Permisos, hijos, cabeceras, productos, recetas, proveedores, clientes, configura
 - `usuarios_id_seq` (los usuarios no se borran).
 - `panaderias_id_seq` (la panadería no se borra).
 
-### Contraseñas restauradas
+---
 
-- Constante `DEMO_PASSWORD = 'demo2026'` en `seed_demo.py`.
-- Se aplica a `admin_27`, `super_27`, `cajero_27`.
-- Solo para `tenant_id == 27`.
+## 9️⃣ Configuración crítica
+
+### Variables de entorno (.env)
+DATABASE_URL=postgresql://postgres:...@localhost:5433/panaderia_master
+DB_PASSWORD=...
+FLASK_ENV=development
+SECRET_KEY=...
+
+text
+
+- `.env` está en `.gitignore` (protegido).
+- `load_dotenv()` se llama al inicio de `app.py`.
+- `app.py` y `seed_demo.py` usan `os.getenv()` para credenciales.
+- Fallback en `seed_demo.py` (`'PanaderiaPro2026!'`) por compatibilidad con dev.
+
+### Rutas críticas
+
+- `/reportes`, `/historial_pagos`, `/historial_depositos`
+- `/exportar_historial_pagos`, `/exportar_historial_depositos`
+- `/gestion_financiera`, `/mi_perfil`, `/cambiar_licencia/<id>`
+- `/punto_venta`, `/registrar_venta`, `/recibo-pos/<id>`
+- `/materias_primas`, `/editar_materia_prima/<id>`
+- `/produccion_diaria`, `/reporte/cierre_caja`
+- `/reporte/ventas_avanzado`, `/activos_fijos`
+- `/depositos_bancarios`
+- `/admin/reset-demo`, `/admin/reset-demo/status` (super_admin)
+
+### Bug sistémico — panaderia_id default=1 (DT-20)
+
+- **~32 modelos** tienen `panaderia_id = db.Column(..., default=1)`.
+- Algunos INSERTs olvidan pasar `panaderia_id` → cae en `tenant_1` silenciosamente.
+- **Fase A (auditoría):** completada — se identificaron 4 INSERTs críticos.
+- **Fase B (fix quirúrgico):** completada — 4 INSERTs corregidos (commit `344c552`).
+- **Fase C (eliminar defaults):** pendiente — sesión dedicada.
+
+### Bug sistémico — productos.id ≠ productos.producto_id
+
+- `productos.id` = PK.
+- `producto_id` = FK en otras tablas.
 
 ---
 
-## 9️⃣ Fixes críticos del reset (resueltos)
+## 🔟 Deuda técnica acumulada
 
-| # | Fix | Problema | Solución |
-|---|-----|----------|----------|
-| B1 | `os.kill(pid, 0)` mataba el proceso en Windows | Función `_pid_vivo()` usando `tasklist` |
-| B2 | Falta `PYTHONIOENCODING=utf-8` | Variables de entorno + `encoding='utf-8'` en log |
-| A1 | Rollback deshacía borrados previos | Eliminado `conn.rollback()` del loop DELETE |
-| A3 | Sequences de usuarios se reseteaban | Excluidas `usuarios_id_seq`, `panaderias_id_seq` |
-| A2 | `cmd_run_fases` no devolvía error | Ahora retorna `True`/`False` |
-| A4 | Contraseñas no se restauraban | Restaurar a `demo2026` en cada reset |
-| A7 | Faltaban tablas en reset | Agregadas `permisos_usuario`, `configuracion_panaderia` |
+### 🔴 Críticos
 
----
+| # | Ubicación | Descripción |
+|---|-----------|-------------|
+| DT-2 | `reportes.py:2578 y 2733` | `_agregar_resumen_ejecutivo_tesoreria` y `_generar_reporte_error` duplicados |
+| DT-6 | `models.py:2124` | `PagoIndividual.panaderia_id default=1` |
+| DT-9 | `models.py:523` | `Proveedor.panaderia_id default=1` |
+| DT-14 | `.env` | `SECRET_KEY` débil (`panaderiapro2026`) |
+| DT-20 | `models.py` (32 modelos) | Bug sistémico `panaderia_id default=1` (Fase C pendiente) |
 
-## 🔟 Banner Demo
+### 🟡 Medias
 
-**Implementación:** vía `@app.after_request` en `app.py`.
-**Ubicación:** franja amarilla arriba de todo, solo para `tenant_27`.
-**Texto:** "Este es un Demo de PanaderíaPro. Los cambios son temporales y pueden borrarse en cualquier momento."
+| # | Ubicación | Descripción |
+|---|-----------|-------------|
+| DT-1 | `reportes.py:48-68` | `_obtener_nombre_empresa` doble filtro tenant_id/panaderia_id |
+| DT-5 | `models.py:1055 vs 2441` | `Gasto` vs `RegistroFinanciero` posible solapamiento |
+| DT-7 | `models.py:2075 vs 2124` | Inconsistencia `nullable` entre modelos hermanos |
+| DT-11 | `user_loader` | Warning `This session is provisioning a new connection` en cada request |
+| DT-13 | repo | Falta `.env.example` documentando variables requeridas |
+| DT-15 | `.env` | Password PostgreSQL embebida en `DATABASE_URL` (inevitable con ese formato) |
+| DT-16 | `app.py:login` | Log de login imprime `DATABASE_URL` con password visible |
+| DT-17 | `reportes.py` | Reporte de tesorería muestra `$0` de ingresos porque busca en tabla incorrecta/vacía |
+| DT-18 | `reportes.py` | Reporte de tesorería no tiene nivel contable profesional (NIT, consecutivo, discriminación) |
+| DT-19 | global | CSRF fix completo con `flask-wtf` (mitigación actual usa Origin; cobertura 99%) |
+| DT-21 | POS | Modal de crear cliente sin botón visible; solo se abre durante el flujo de venta |
+| DT-25 | `app.py:1744` | Verificar orden real de ejecución de `before_request` vs `login_required` |
 
----
+### 🟢 Bajas
 
-## 1️⃣1️⃣ Módulo 11 — Reportes (estado detallado)
+| # | Ubicación | Descripción |
+|---|-----------|-------------|
+| DT-3 | `reportes.py:12` | Import muerto de `Response` |
+| DT-4 | `reportes.py` (varios) | Reimport local de modelos |
+| DT-10 | `app.py:9022-9495` | Exports PDF no agrupados bajo comentario separador |
+| DT-12 | `reportes.py:48-68` | `current_user` puede ser `None` al arrancar |
+| DT-22 | `/configuracion/facturacion` | Permite modificar NIT del tenant sin confirmación |
+| DT-23 | `models.py` | Ver DT-20 (Fase C) |
+| DT-24 | `mi_perfil.html` | Frontend no muestra el campo `exitoso` del último reset |
 
-### Fases completadas
-- ✅ **Fase A+B:** migración + sidebar
-- ✅ **Fase E:** dashboard reorganizado + 7 reportes expuestos
-- ✅ **Fase D1:** historiales de pagos y depósitos + multi-país
-- ✅ **Fase D2:** exportación PDF historial pagos + depósitos (COMPLETADO 2 Oct 2026, commit `3cac49e`)
+### 🚨 Otras deudas (HANDOFF v4)
 
-### Fase D2 (COMPLETADA — 2 Oct 2026)
-
-**Implementación:**
-1. ✅ 2 funciones agregadas a `reportes.py`:
-   - `generar_reporte_historial_pagos()` — línea 2923
-   - `generar_reporte_historial_depositos()` — línea 3094
-2. ✅ 2 rutas agregadas a `app.py`:
-   - `/exportar_historial_pagos` — línea 9497
-   - `/exportar_historial_depositos` — línea 9559
-3. ✅ Botones "Exportar PDF" agregados en:
-   - `templates/historial_pagos.html` — línea 137
-   - `templates/historial_depositos.html` — línea 146
-
-**Diseño:** Opción A — el PDF respeta los filtros actuales de la vista (fecha, categoría/proveedor o banco/estado). Sin JS, usando `url_for` con query string (coherente con la paginación existente).
-
-**Reportes que YA tienen export PDF:**
-- `analisis_predictivo.html`
-- `productos_populares.html`
-- `ventas_avanzado.html`
-- `ventas_periodo.html`
-- `historial_pagos.html` 🆕
-- `historial_depositos.html` 🆕
-
-**Pruebas:** 5/5 tests end-to-end con `admin_27` / `demo2026` (tenant_27 Demo). Todos los PDFs generados y descargados correctamente.
-
----
-
-## 1️⃣2️⃣ Pendientes clasificados
-
-### 🔴 CRÍTICOS (seguridad)
-- **D1 — Password PostgreSQL en texto plano.** En `seed_demo.py` y `HANDOFF.md`. Rotar y pasar a variables de entorno.
-
-### 🟡 IMPORTANTES (funcionalidad)
-- **B3 — Race condition del lock.** Crear lock ANTES con `os.open(..., O_CREAT | O_EXCL)`.
-- **B4 — `/status` no informa si falló.** Leer `reset_demo.log` y reportar éxito/fallo.
-- **B7 — CSRF.** Verificar si el POST `/admin/reset-demo` tiene token CSRF.
-
-### 🟢 MENORES (cosmético)
-- ✅ **A8 — RESUELTO.** Conteos verificados con psql: 17 MP, 12 productos, 12 recetas, 6 proveedores. HANDOFF v4 actualizado.
-- **B5 — PID reutilizado.** Bajo riesgo. Documentar.
-- **B6 — Reset con usuarios conectados.** Durante 5 min el Demo se ve a medias. Aceptable.
-- **C2 — `after_request` traga excepciones.** Útil pero oculta fallos.
-
-### 🚨 DEUDA TÉCNICA (Fase C.3)
 - **22 tablas con columnas huérfanas (79 columnas).** Fase C.3 planificada.
 - **`public` con 40 tablas duplicadas.** Residuo de migración SQLite → PostgreSQL.
 
-### 🧹 DEUDA TÉCNICA NUEVA (detectada en Fase D2, commit `3cac49e`)
-
-| # | Ubicación | Descripción | Prioridad |
-|---|-----------|-------------|-----------|
-| DT-1 | `reportes.py:48-68` | `_obtener_nombre_empresa` doble filtro `tenant_id` → `panaderia_id` (migración a medias) | 🟡 Media |
-| DT-2 | `reportes.py:2578 y 2733`, `2691 y 2749` | `_agregar_resumen_ejecutivo_tesoreria` y `_generar_reporte_error` definidos **2 veces** (el segundo pisa al primero) | 🔴 Alta |
-| DT-3 | `reportes.py:12` | Import muerto de `Response` (solo se usa en `app.py`) | 🟢 Baja |
-| DT-4 | `reportes.py` (varios métodos) | Reimport local de modelos (`PagoIndividual`, `DepositoBancario`) duplicando el import global | 🟢 Baja |
-| DT-5 | `models.py:1055` vs `2441` | `Gasto` vs `RegistroFinanciero` — posible solapamiento funcional | 🟡 Media |
-| DT-6 | `models.py:2124` | `PagoIndividual.panaderia_id default=1` — bug sistémico | 🔴 Alta |
-| DT-7 | `models.py:2075` vs `2124` | Inconsistencia de criterio `nullable` entre `DepositoBancario` y `PagoIndividual` | 🟡 Media |
-| DT-9 | `models.py:523` | `Proveedor.panaderia_id default=1` — bug sistémico confirmado | 🔴 Alta |
-| DT-10 | `app.py:9022-9495` | Los 9 exports PDF no están agrupados bajo comentario separador coherente | 🟢 Baja |
-| DT-11 | `user_loader` (`app.py`) | Warning `This session is provisioning a new connection` en cada request autenticado | 🟡 Media |
-| DT-12 | `reportes.py:48-68` | `current_user` puede ser `None` al arrancar (`_obtener_nombre_empresa`) | 🟢 Baja |
-
-**Nota:** DT-8 fue descartada — el FK `PagoIndividual.proveedor_id → proveedor.id` es correcto.
-
-### 🟡 WARNINGS RECURRENTES
-- `user_loader: This session is provisioning a new connection` → investigar session pooling (ver DT-11).
-- `LegacyAPIWarning: Query.get()` (app.py:2196, 2207) → migrar a `db.session.get()`.
-- `Error obteniendo nombre de empresa: 'NoneType'` (al arrancar) → ver DT-12.
-
 ---
 
-## 1️⃣3️⃣ Metodología de trabajo
+## 1️⃣1️⃣ Metodología de trabajo
 
 ### Reglas de oro
 1. **Un paso a la vez** con confirmación antes de continuar.
@@ -298,7 +298,9 @@ Permisos, hijos, cabeceras, productos, recetas, proveedores, clientes, configura
 11. **Insertar bloques: mostrar ANTES → DESPUÉS con número de línea exacto.**
 12. **Verificar ubicación y compilar tras cada inserción.**
 13. **Al detectar deuda técnica: anotarla (no tocarla), priorizarla, decidir después.**
-14. **Al insertar código a nivel de módulo (`app.py`): ubicarlo junto a sus hermanos temáticos, nunca al final del archivo ni después del `if __name__ == '__main__'`.**
+14. **Al insertar código a nivel de módulo: ubicarlo junto a sus hermanos temáticos.**
+15. **Al pedir un test, incluir TODAS las verificaciones previas necesarias en el mismo mensaje.**
+16. **Cuando el punto de inserción esté justo debajo de un decorador, incluir el decorador en el ANTES → DESPUÉS.**
 
 ### Comandos útiles
 
@@ -326,133 +328,66 @@ Compilar / Servidor:
 cmd
 python -m py_compile app.py
 python -m py_compile reportes.py
+python -m py_compile seed_demo.py
 python app.py
-1️⃣4️⃣ Configuración crítica del código
-Multi-tenant
-Decorador @tenant_required configura el schema.
+Test CSRF con curl:
 
-SQL directo calificado: UPDATE tenant_X.tabla.
-
-Cada query filtra por panaderia_id.
-
-Rutas críticas
-/reportes, /historial_pagos, /historial_depositos
-
-/exportar_historial_pagos, /exportar_historial_depositos 🆕
-
-/gestion_financiera, /mi_perfil, /cambiar_licencia/<id>
-
-/punto_venta, /registrar_venta, /recibo-pos/<id>
-
-/materias_primas, /editar_materia_prima/<id>
-
-/produccion_diaria, /reporte/cierre_caja
-
-/reporte/ventas_avanzado, /activos_fijos
-
-/depositos_bancarios
-
-/admin/reset-demo, /admin/reset-demo/status (super_admin)
-
-Bug sistémico — panaderia_id default=1
-Múltiples modelos tienen panaderia_id default=1. Si no se pasa explícito, toma 1.
-
-Regla: SIEMPRE pasar panaderia_id=panaderia_id en cada INSERT.
-
-Modelos confirmados con este bug: PagoIndividual, Proveedor (ver DT-6 y DT-9).
-
-Bug sistémico — productos.id ≠ productos.producto_id
-productos.id = PK.
-
-producto_id = FK en otras tablas.
-
-Workaround — SQLAlchemy no persiste cambios
-En editar_materia_prima, el += no se persiste. Usar UPDATE SQL directo.
-
-Fases del seed — ya no hay hardcode a tenant_27
-Las fases 6-11 tienen un print de warning (no raise) si panaderia_id != 27. Permite reutilización.
-
-1️⃣5️⃣ Roadmap completo
+cmd
+curl -c cookies.txt -X POST http://localhost:5000/ -d "username=admin_27&password=demo2026" -L -o nul
+curl -b cookies.txt -X POST http://localhost:5000/admin/reset-demo -H "Origin: https://malicious.example.com" -i
+1️⃣2️⃣ Roadmap
 text
 ✅ Fase 1: Módulos 1-10
 ✅ Fase 2: Módulo 11 Reportes (100%)
-└── ✅ Fase D2: exportación PDF (completada 2 Oct 2026)
+✅ Fase D2: exportación PDF (2 Oct 2026)
 
-✅ Fase C.1: Auditoría de esquemas básica
-✅ Fase C.2: Auditoría de columnas (parcial)
-└── ⏳ Fase C.3: 22 tablas restantes (4-6h)
-
-✅ Fase Demo: Tenant Demo
-├── ✅ Fase 1: Configuración base
-├── ✅ Fase 2: Proveedores
-├── ✅ Fase 3: Materias primas
-├── ✅ Fase 4: Recetas
-├── ✅ Fase 5: Productos
-├── ✅ Fase 6: Producción diaria (v2 con reposición)
-├── ✅ Fase 7: Ventas
-├── ✅ Fase 8: Productos externos
-├── ✅ Fase 9: Activos fijos
-├── ✅ Fase 10: Movimientos financieros
-├── ✅ Fase 11: Cierres diarios
-└── ✅ Fase 12: Reset automatizado
-
-✅ Fase Fixes: 5 bugs críticos resueltos (27 Sep 2026)
+✅ Fase Demo: Tenant Demo (Fases 1-12)
 ✅ Fase Admin: Banner Demo + Panel Super Admin + Reset desde frontend
-✅ Fase Fixes 2: 4 fixes críticos del reset + 3 pendientes menores
-✅ Prueba end-to-end: reset desde frontend en tenant_25 (exitosa)
-✅ Fase D2: Export PDF (completada 2 Oct 2026)
 
-⏳ Pendientes críticos: D1 (password), B3, B4, B7
-⏳ Deuda técnica nueva: DT-1 a DT-12
-⏳ Fase C.3: Auditoría de columnas (4-6 h)
-⏳ Warnings SQLAlchemy: user_loader, Query.get() (DT-11, DT-12)
+✅ D1: Password PostgreSQL a env vars (2 Oct 2026)
+✅ DT-2 + DT-2b: Métodos duplicados + indentación (2 Oct 2026)
+✅ DT-20 Fase A + B: Multi-tenant INSERTs (2 Oct 2026)
+✅ B3: Lock atómico (2 Oct 2026)
+✅ B4 v2: Estado persistente reset (2 Oct 2026)
+✅ B7: CSRF global (2 Oct 2026)
+
+⏳ DT-11, DT-12 (warnings SQLAlchemy)
+⏳ DT-20 Fase C (eliminar 32 defaults)
+⏳ Fase C.3 (auditoría de columnas, 22 tablas)
+⏳ DT-18 (reporte tesorería nivel contable)
+⏳ DT-19 (CSRF completo con flask-wtf)
 ⏳ Fase 4: Dockerización + nube
 ⏳ Fase 5: API REST
 ⏳ Fase 6: Chat IA básico
 ⏳ Fase 7: Junta Directiva IA
 ⏳ Fase 8: Integraciones estratégicas
-1️⃣6️⃣ Próxima sesión — Prioridad sugerida
-Plan acordado (2 Oct 2026 — post Fase D2):
+1️⃣3️⃣ Próxima sesión — Prioridad sugerida
+Plan acordado (2 Oct 2026 — post sesión de seguridad):
 
-✅ Fase D2 (Export PDF) — COMPLETADA
+✅ D1, DT-2, DT-20 Fase B, B3, B4, B7 — COMPLETADAS
 
-⏳ D1 (Password PostgreSQL a variables de entorno) — ~30 min
+⏳ DT-11 (warning user_loader)
 
-⏳ B3, B4, B7 (Race condition, status, CSRF) — ~1 h
+⏳ DT-12 (warning current_user is None)
 
-⏳ DT-2 (métodos duplicados en reportes.py) — ~30 min
+⏳ DT-20 Fase C (eliminar default=1 de 32 modelos)
 
-⏳ DT-11, DT-12 (warnings SQLAlchemy) — ~1 h
+⏳ Fase C.3 (auditoría columnas)
 
-⏳ Fase C.3 (Auditoría de columnas) — ~4-6 h
+Recomendación: Empezar con DT-11 y DT-12 (warnings, ~1 h), luego DT-20 Fase C (~3-4 h), finalmente C.3 (~4-6 h).
 
-Recomendación para próxima sesión: Empezar con D1 (seguridad, rápido), luego DT-2 (fix de duplicados, rápido, evita bugs silenciosos), luego B3/B4/B7, finalmente C.3 (larga).
-
-1️⃣7️⃣ Notas estratégicas del proyecto
+1️⃣4️⃣ Notas estratégicas
 Objetivo del ERP
-ERP SaaS para panaderías multi-tenant multi-país con: POS, inventario, producción, recetas, activos fijos, reportes con IA, finanzas, multi-país, base para API REST + IA avanzada.
+ERP SaaS multi-tenant multi-país con: POS, inventario, producción, recetas, activos fijos, reportes con IA, finanzas, multi-país, base para API REST + IA avanzada.
 
 🎁 Tenant Demo (marketing)
-Objetivo: tenant público con datos precargados y realistas.
+Fases 1-12 completadas (~10.100 filas).
 
-Estado: Fases 1-12 completadas (~10.100 filas).
+Contraseña: demo2026.
 
-Contraseña: demo2026 para todos los usuarios del Demo.
-
-Reset: automático desde /mi_perfil con dev_master, o manual por CMD.
+Reset: automático desde /mi_perfil con dev_master.
 
 Subdominio sugerido: demo.panaderiapro.com.
-
-Reset automático programado: PENDIENTE (no implementado). El banner actual dice "los cambios son temporales" (sin prometer 24h).
-
-Roadmap a futuro
-Chat IA básico (Nivel 1).
-
-Junta Directiva IA (multi-agente).
-
-API REST para integraciones (DAPTA, Shopify, MercadoPago).
-
-Dockerización + Deploy en VPS.
 
 Mercado objetivo
 3.000-5.000 panaderías en Colombia.
@@ -468,10 +403,10 @@ Instrucción sugerida para el asistente:
 
 "Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el archivo HANDOFF.md con el contexto maestro del proyecto. Vamos a continuar desde donde lo dejamos. Por favor actúa como instructor guiando paso a paso, con la metodología de trabajo descrita en el HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/findstr, commit tras cada fix verificado. Al insertar bloques, muéstrame ANTES → DESPUÉS con número de línea exacto."
 
-Próxima tarea sugerida: D1 (Password PostgreSQL a variables de entorno).
+Próxima tarea sugerida: DT-11 (warning user_loader).
 
 ✅ Última validación
-Último commit: 3cac49e (pusheado a GitHub).
+Último commit: 4a9669b (pusheado a GitHub).
 
 Working tree: clean.
 
@@ -483,8 +418,10 @@ Módulos: 11/11 completados (100%).
 
 Demo: Fases 1-12 completadas, contraseña demo2026, ~10.100 filas.
 
-Fase D2: COMPLETADA (2 Oct 2026) — export PDF de historiales de pagos y depósitos.
+Sesión 2 Oct 2026: 6 commits (D1, DT-2, DT-20 Fase B, B3, B4 v2, B7).
 
-Pendientes críticos: D1 (password), Fase C.3 (auditoría), B3/B4/B7, DT-2.
+Pendientes críticos: DT-11, DT-12, DT-20 Fase C, Fase C.3.
 
-Fin del HANDOFF.md — v4
+Fin del HANDOFF.md — v5
+
+text
