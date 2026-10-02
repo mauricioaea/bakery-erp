@@ -12425,7 +12425,7 @@ def inyectar_banner_demo(response):
     <div class="alert alert-warning mb-0 rounded-0 text-center py-2"
          style="border-bottom: 3px solid #f5b81b; position: sticky; top: 0; z-index: 9999;">
         <strong>⚠️ Este es un Demo de PanaderíaPro.</strong>
-        Los cambios se borran cada 24 horas. Para empezar con tus propios datos,
+        Los cambios son temporales y pueden borrarse en cualquier momento. Para empezar con tus propios datos,
         <a href="mailto:contacto@panaderiapro.com" class="alert-link">contáctanos</a>.
     </div>
     <!-- /BANNER-DEMO-PANADERIAPRO -->

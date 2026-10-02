@@ -18,8 +18,8 @@ from datetime import datetime
 
 import psycopg2
 
-
-# ============================================
+DEMO_PASSWORD = 'demo2026'
+# =========================|===================
 # CONFIGURACIÓN
 # ============================================
 DB_CONFIG = {
@@ -28,6 +28,7 @@ DB_CONFIG = {
     'database': 'panaderia_master',
     'user': 'postgres',
     'password': 'PanaderiaPro2026!'
+    
 }
 
 # Fases disponibles: (número, nombre, módulo)
@@ -264,6 +265,21 @@ def cmd_reset(tenant_id):
         conn.close()
         return False
 
+        # Restaurar contraseñas de los usuarios del Demo (solo tenant_27)
+    if tenant_id == 27:
+        print("   🔐 Restaurando contraseñas de usuarios del Demo...")
+        try:
+            from werkzeug.security import generate_password_hash
+            nuevo_hash = generate_password_hash(DEMO_PASSWORD)
+            cursor.execute(f"""
+                UPDATE {schema_name}.usuarios
+                SET password_hash = %s
+                WHERE username IN ('admin_27', 'super_27', 'cajero_27')
+            """, (nuevo_hash,))
+            print(f"   ✅ {cursor.rowcount} usuarios → contraseña '{DEMO_PASSWORD}'")
+        except Exception as e:
+            print(f"   ⚠️  No se pudieron restaurar contraseñas: {e}")
+
     conn.commit()
     print("=" * 60)
     print(f"✅ RESET completado. Total: {total_borradas} filas borradas.")
@@ -281,19 +297,22 @@ def cmd_reset_all(tenant_id, dry_run=False):
     # 1. Reset
     ok = cmd_reset(tenant_id)
     if not ok:
-        print("❌ Reset cancelado. Abortando.")
-        return
+        print("❌ Reset NO completado (hubo errores). Abortando.")
+        return False
 
     # 2. Re-seed todas las fases
     print("\n🌱 Iniciando re-seed completo...")
     todas_fases = sorted(FASES.keys())
-    cmd_run_fases(tenant_id, todas_fases, dry_run=dry_run)
+    ok_seed = cmd_run_fases(tenant_id, todas_fases, dry_run=dry_run)
 
     print("\n" + "=" * 60)
-    print("✅ RESET + RE-SEED completado.")
-    print("=" * 60)
-
-
+    if ok_seed:
+        print("✅ RESET + RE-SEED completado (sin errores).")
+        return True
+    else:
+        print("❌ RESET + RE-SEED completado CON ERRORES. Revisar el log.")
+        return False
+    
 def cmd_run_fases(tenant_id, fases_a_correr, dry_run=False):
     """Ejecuta las fases indicadas."""
     schema_name = f"tenant_{tenant_id}"
@@ -359,6 +378,7 @@ def cmd_run_fases(tenant_id, fases_a_correr, dry_run=False):
 
     cursor.close()
     conn.close()
+    return errores == 0  # True si no hubo errores
 
 
 # ============================================
