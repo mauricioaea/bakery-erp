@@ -1,8 +1,8 @@
 # 🗂️ CONTEXTO MAESTRO — PanaderíaPro (Bakery ERP)
 
 **Última actualización:** 2 de Octubre, 2026
-**Último commit:** cafc325 (fix DT-14: SECRET_KEY desde .env)
-**Sesión de hoy:** Mañana (DT-11, B3, B4, B7) + Tarde (DT-12, DT-13, DT-14, DT-16, DT-26, DT-27)
+**Último commit:** 71f6ae1 (fix DT-3 + DT-4: imports muertos)
+**Sesión de hoy:** Mañana (DT-11, B3, B4, B7) + Tarde (DT-12, DT-13, DT-14, DT-16, DT-26, DT-27, DT-3, DT-4)
 
 ---
 
@@ -10,9 +10,9 @@
 
 - **Nombre:** PanaderíaPro (bakery-erp)
 - **Repo:** https://github.com/mauricioaea/bakery-erp
-- **Estado:** v1.1.3 — **11/11 módulos completados (100%)** + Demo Fases 1-12 completadas + Endurecimiento de seguridad + Log limpio sin warnings
+- **Estado:** v1.1.4 — **11/11 módulos completados (100%)** + Demo Fases 1-12 completadas + Endurecimiento de seguridad + Log limpio sin warnings + Código sin imports muertos
 - **Arquitectura:** Multi-tenant con PostgreSQL (schemas por tenant)
-- **Próximo hito:** DT-3 + DT-4 (imports muertos) + DT-6 + DT-9 (`default=1`) + DT-20 Fase C
+- **Próximo hito:** DT-6 + DT-9 (`default=1` en 2 modelos) + DT-20 Fase C
 
 ---
 
@@ -30,13 +30,13 @@
 ### Estructura de archivos
 - `app.py` (~12.700 líneas, ~530 KB) — aplicación principal
 - `models.py` (~3.100 líneas, ~130 KB) — modelos SQLAlchemy
-- `reportes.py` (~3.254 líneas, ~160 KB) — generación PDF
+- `reportes.py` (~3.250 líneas, ~160 KB) — generación PDF
 - `seed_demo.py` (~450 líneas, ~18 KB) — seed modular del Demo
 - `seeds/` — 11 fases del seed (fase1 a fase11)
 - `middleware_saas.py`, `tenant_decorators.py`, `tenant_context.py` — multi-tenant
 - `templates/`, `static/`
 - `.env` — variables de entorno (credenciales BD, SECRET_KEY)
-- `.env.example` — plantilla documentada (NUEVO, 2 Oct 2026)
+- `.env.example` — plantilla documentada
 - `HANDOFF.md` — este archivo
 
 ---
@@ -94,6 +94,8 @@
 ---
 
 ## 6️⃣ Últimos commits pusheados
+71f6ae1 fix(DT-3, DT-4): eliminar import muerto Response y 4 reimports redundantes de func en reportes.py
+8bda650 docs: HANDOFF v7 - 7 deudas resueltas (DT-11 a DT-27), estimaciones Fases 3-8, reglas 17-19
 cafc325 fix(DT-14): leer SECRET_KEY desde .env en lugar de hardcodearla
 301bd65 docs(DT-13): agregar .env.example con variables requeridas documentadas
 ffd8e8f fix(DT-16): no imprimir password de BD en log de login - sanitizar URI
@@ -170,10 +172,12 @@ text
 
 ## 9️⃣ Deuda técnica acumulada
 
-### ✅ RESUELTAS hoy (2 Oct 2026)
+### ✅ RESUELTAS hoy (2 Oct 2026) — 9 deudas
 
 | # | Descripción | Commit |
 |---|-------------|--------|
+| DT-3 | Import muerto `Response` en reportes.py | `71f6ae1` |
+| DT-4 | 4 reimports redundantes de `func` en reportes.py | `71f6ae1` |
 | DT-11 | Event listener `checkout` sin `current_user` (rompe recursión con `load_user`) | `a522e0c` |
 | DT-12 | `_obtener_nombre_empresa` verifica `current_user` seguro | `6e260b1` |
 | DT-13 | `.env.example` con variables documentadas | `301bd65` |
@@ -213,8 +217,6 @@ text
 
 | # | Ubicación | Descripción |
 |---|-----------|-------------|
-| DT-3 | `reportes.py:12` | Import muerto de `Response` |
-| DT-4 | `reportes.py` (varios) | Reimport local de modelos |
 | DT-10 | `app.py:9022-9495` | Exports PDF no agrupados bajo comentario separador |
 | DT-22 | `/configuracion/facturacion` | Permite modificar NIT del tenant sin confirmación |
 | DT-23 | `models.py` | Ver DT-20 (Fase C) |
@@ -248,6 +250,7 @@ text
 17. **Antes de proponer un fix de concurrencia, medir impacto en el pool de SQLAlchemy.**
 18. **Nunca usar `echo texto >> archivo` en Windows para modificar archivos de texto. Usar Notepad o PowerShell.**
 19. **Nunca acceder a `current_user` desde event listeners de SQLAlchemy (`checkout`, `connect`). Causa recursión con `load_user`. Usar `flask.session` o `flask.g`.**
+20. **En Windows, `findstr "patrón"` sin `/c:` hace búsqueda con wildcards y a veces no encuentra coincidencias literales. Usar siempre `findstr /c:"patrón"` para búsquedas literales.**
 
 ### Comandos útiles
 
@@ -276,6 +279,10 @@ Generar SECRET_KEY nueva:
 
 cmd
 python -c "import secrets; print(secrets.token_hex(32))"
+Búsquedas literales con findstr:
+
+cmd
+findstr /n /c:"patrón exacto" archivo.py
 1️⃣1️⃣ Roadmap
 text
 ✅ Fase 1: Módulos 1-10
@@ -290,6 +297,9 @@ text
 ✅ B3: Lock atómico
 ✅ B4 v2: Estado persistente reset
 ✅ B7: CSRF global
+
+--- Sesión 2 Oct 2026 (tarde) ---
+✅ DT-3 + DT-4: Imports muertos y redundantes
 ✅ DT-11: Event listener sin current_user
 ✅ DT-12: _obtener_nombre_empresa seguro
 ✅ DT-13: .env.example
@@ -298,9 +308,8 @@ text
 ✅ DT-26: Latencia resuelta indirectamente
 ✅ DT-27: Query.get() → db.session.get()
 
-⏳ DT-3 + DT-4: Limpieza de imports
-⏳ DT-6 + DT-9: default=1 en 2 modelos
-⏳ DT-20 Fase C: eliminar 32 defaults
+⏳ DT-6 + DT-9: default=1 en 2 modelos (CRÍTICO)
+⏳ DT-20 Fase C: eliminar 32 defaults (CRÍTICO)
 ⏳ Fase C.3: auditoría de columnas (22 tablas)
 ⏳ DT-17, DT-18: Reportes tesorería nivel contable
 ⏳ DT-19: CSRF completo con flask-wtf
@@ -344,7 +353,7 @@ Precio sugerido: $60k-$600k COP/mes.
 
 Estimación de tiempos (2 Oct 2026)
 Bloque	Estimación
-Limpieza pre-docker	~7 h
+Limpieza pre-docker	~7 h (quedan ~3-4 h: DT-6, DT-9, DT-20 C)
 Fase 3 (nube + Docker)	~22-32 h
 Fase 4 (seguridad)	~14-20 h
 Fase 5 (monetización)	~26-36 h
@@ -355,12 +364,12 @@ Al iniciar un nuevo chat, pegar este archivo como contexto inicial.
 
 Instrucción sugerida para el asistente:
 
-"Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el archivo HANDOFF.md v7 con el contexto maestro del proyecto. Vamos a continuar desde donde lo dejamos. Por favor actúa como instructor guiando paso a paso, con la metodología de trabajo descrita en el HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/findstr, commit tras cada fix verificado. Al insertar bloques, muéstrame ANTES → DESPUÉS con número de línea exacto."
+"Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el archivo HANDOFF.md v7.1 con el contexto maestro del proyecto. Vamos a continuar desde donde lo dejamos. Por favor actúa como instructor guiando paso a paso, con la metodología de trabajo descrita en el HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/findstr, commit tras cada fix verificado. Al insertar bloques, muéstrame ANTES → DESPUÉS con número de línea exacto."
 
-Próxima tarea sugerida: DT-3 + DT-4 (limpieza de imports muertos en reportes.py).
+Próxima tarea sugerida: DT-6 + DT-9 (default=1 en PagoIndividual y Proveedor en models.py).
 
 ✅ Última validación
-Último commit: cafc325 (pusheado a GitHub).
+Último commit: 71f6ae1 (pusheado a GitHub).
 
 Working tree: clean.
 
@@ -372,8 +381,10 @@ Módulos: 11/11 completados (100%).
 
 Demo: Fases 1-12 completadas, contraseña demo2026.
 
-Log: limpio, sin warnings (DT-11, DT-12, DT-14, DT-16, DT-27 resueltos).
+Log: limpio, sin warnings (9 deudas resueltas hoy).
 
-Pendientes críticos: DT-3, DT-4, DT-6, DT-9, DT-20 Fase C, Fase C.3.
+PDF generation: probado con /exportar_historial_pagos → OK.
 
-Fin del HANDOFF.md — v7
+Pendientes críticos: DT-6, DT-9, DT-20 Fase C, Fase C.3.
+
+Fin del HANDOFF.md — v7.1
