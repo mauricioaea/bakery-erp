@@ -1718,6 +1718,7 @@ def verificar_y_crear_datos_tenant(tenant_id):
             # ✅ Crear panadería si no existe
             panaderia = Panaderia(
                 id=tenant_id,
+                panaderia_id=tenant_id,   # ✅ DT-20 Tanda 3 fix
                 nombre=f"Panadería {tenant_id}",
                 direccion="Dirección por defecto",
                 telefono="00000000"

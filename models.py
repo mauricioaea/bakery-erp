@@ -269,7 +269,7 @@ class ConfiguracionPanaderia(db.Model):
     
     
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)# ✅ PRIMARY KEY PRIMERO Y AUTOINCREMENT
-    panaderia_id = db.Column(db.Integer, nullable=False, default=1)
+    panaderia_id = db.Column(db.Integer, nullable=False)
     
     # 🆕 CAMPO PARA SINCRONIZAR CON TENANT_MASTER
     tenant_id = db.Column(db.Integer, nullable=True)
@@ -430,7 +430,7 @@ class Panaderia(db.Model):
     __tablename__ = 'panaderias'
     
     id = db.Column(db.Integer, primary_key=True)
-    panaderia_id = db.Column(db.Integer, nullable=False, default=1)  # ✅ ACTIVADO (no comentado)
+    panaderia_id = db.Column(db.Integer, nullable=False)  # ✅ ACTIVADO (no comentado)
     nombre = db.Column(db.String(100), nullable=False)
     direccion = db.Column(db.String(200))
     telefono = db.Column(db.String(20))
