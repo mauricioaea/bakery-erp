@@ -2045,7 +2045,11 @@ def login():
         password = request.form['password']
         
         print(f"🔍 [LOGIN] Buscando usuario: {username}")
-        print(f"🔍 [LOGIN] URI de BD: {app.config['SQLALCHEMY_DATABASE_URI']}")
+        # ✅ DT-16 fix: no imprimir la URI completa (contiene password).
+        # Mostrar solo el host y el nombre de la BD para diagnóstico.
+        _uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
+        _uri_safe = _uri.split('@')[-1] if '@' in _uri else _uri
+        print(f"🔍 [LOGIN] BD destino: ...@{_uri_safe}")
         
         # 🔧 CORREGIDO: Buscar usuario en PostgreSQL usando SQLAlchemy
         from sqlalchemy import text
