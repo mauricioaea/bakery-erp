@@ -2226,7 +2226,8 @@ def login():
     if 'tenant_id' in session:
         try:
             from models import Tenant
-            tenant = Tenant.query.get(session['tenant_id'])
+            # ✅ DT: SQLAlchemy 2.0 — usar db.session.get() en lugar de Query.get() (deprecado)
+            tenant = db.session.get(Tenant, session['tenant_id'])
             if tenant:
                 tenant_actual = tenant.nombre
         except Exception as e:
@@ -2237,7 +2238,8 @@ def login():
         try:
             if hasattr(current_user, 'panaderia_id') and current_user.panaderia_id:
                 from models import Tenant
-                tenant = Tenant.query.get(current_user.panaderia_id)
+                # ✅ DT: SQLAlchemy 2.0 — usar db.session.get() en lugar de Query.get() (deprecado)
+                tenant = db.session.get(Tenant, current_user.panaderia_id)
                 if tenant:
                     tenant_actual = tenant.nombre
                     tenant_id = current_user.panaderia_id
