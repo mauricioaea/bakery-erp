@@ -1,9 +1,9 @@
 # 🗂️ CONTEXTO MAESTRO — PanaderíaPro (Bakery ERP)
 
 **Última actualización:** 3 de Octubre, 2026
-**Último commit:** a25505a (fix DT-6 + DT-9: default=1 eliminado)
+**Último commit:** 14de608 (fix DT-20 Fase C - Tanda 2)
 **Sesión 2 Oct:** DT-11, DT-12, DT-13, DT-14, DT-16, DT-26, DT-27, DT-3, DT-4
-**Sesión 3 Oct:** DT-6, DT-9
+**Sesión 3 Oct:** DT-1, DT-6, DT-9, DT-20 Fase C (Tanda 1 + Tanda 2), DT-30
 
 ---
 
@@ -11,9 +11,9 @@
 
 - **Nombre:** PanaderíaPro (bakery-erp)
 - **Repo:** https://github.com/mauricioaea/bakery-erp
-- **Estado:** v1.1.5 — **11/11 módulos completados (100%)** + Demo Fases 1-12 completadas + Endurecimiento de seguridad + Log limpio sin warnings + Código sin imports muertos + 2 deudas críticas de `default=1` resueltas
+- **Estado:** v1.1.6 — **11/11 módulos completados (100%)** + Demo Fases 1-12 completadas + Endurecimiento de seguridad + Log limpio sin warnings + Código sin imports muertos + DT-20 Fase C al 93%
 - **Arquitectura:** Multi-tenant con PostgreSQL (schemas por tenant)
-- **Próximo hito:** DT-20 Fase C (eliminar los 30 `default=1` restantes)
+- **Próximo hito:** DT-20 Fase C Tanda 3 (Panaderia + ConfiguracionPanaderia) + Fase C.3
 
 ---
 
@@ -29,8 +29,8 @@
 - HTML5/CSS3, JavaScript vanilla, Bootstrap 5.1.3, Chart.js, Font Awesome 6
 
 ### Estructura de archivos
-- `app.py` (~12.700 líneas, ~530 KB) — aplicación principal
-- `models.py` (~3.100 líneas, ~130 KB) — modelos SQLAlchemy
+- `app.py` (~12.600 líneas, ~528 KB) — aplicación principal
+- `models.py` (~3.050 líneas, ~130 KB) — modelos SQLAlchemy
 - `reportes.py` (~3.250 líneas, ~160 KB) — generación PDF
 - `seed_demo.py` (~450 líneas, ~18 KB) — seed modular del Demo
 - `seeds/` — 11 fases del seed (fase1 a fase11)
@@ -74,6 +74,13 @@
 - **Se restaura automáticamente** en cada `--reset-all` (fix A4).
 - Constante `DEMO_PASSWORD` en `seed_demo.py` (línea 21).
 
+### Creación de usuarios (diseño del negocio)
+- **NO se crean usuarios desde el frontend.**
+- Los usuarios se crean **al alta del tenant** en `crear_tenant_saas()` (SQL directo con `panaderia_id` explícito).
+- **Licencia premium:** 3 usuarios (admin, supervisor, cajero).
+- **Licencia básica:** 1 usuario (admin).
+- El endpoint `/crear_usuario` fue **eliminado** en DT-20 Fase C Tanda 2 (era código huérfano).
+
 ---
 
 ## 5️⃣ Estado de los módulos (11/11 = 100%)
@@ -88,25 +95,29 @@
 | 6 | Proveedores | ✅ COMPLETO |
 | 7 | Gestión de Clientes (solo dev_master) | ✅ COMPLETO |
 | 8 | Activos Fijos | ✅ COMPLETO |
-| 9 | Gestión de Usuarios + Mi Perfil | ✅ COMPLETO |
+| 9 | Gestión de Usuarios + Mi Perfil | ✅ COMPLETO (sin crear usuarios) |
 | 10 | Gestión Financiera | ✅ COMPLETO |
-| 11 | Reportes Profesionales | ✅ COMPLETO (Fase D2 cerrada 2 Oct 2026) |
+| 11 | Reportes Profesionales | ✅ COMPLETO |
 
 ---
 
 ## 6️⃣ Últimos commits pusheados
+14de608 fix(DT-20 Fase C - Tanda 2): eliminar endpoint /crear_usuario huérfano + eliminar default=1 en Categoria y Usuario
+45d011e fix(DT-20 Fase C - Tanda 1): eliminar default=1 en panaderia_id de 27 modelos seguros - Grupo A
+0becbf8 fix(DT-1): eliminar filtro redundante por tenant_id en _obtener_nombre_empresa
+9b29c3b docs: HANDOFF v7.2 - DT-6 + DT-9 resueltas, regla 21
 a25505a fix(DT-6, DT-9): eliminar default=1 de panaderia_id en PagoIndividual y Proveedor
-11662f5 docs: HANDOFF v7.1 - DT-3 + DT-4 resueltas, regla 20 (findstr /c:), balance del día 9 deudas
-71f6ae1 fix(DT-3, DT-4): eliminar import muerto Response y 4 reimports redundantes de func en reportes.py
-8bda650 docs: HANDOFF v7 - 7 deudas resueltas (DT-11 a DT-27), estimaciones Fases 3-8, reglas 17-19
-cafc325 fix(DT-14): leer SECRET_KEY desde .env en lugar de hardcodearla
-301bd65 docs(DT-13): agregar .env.example con variables requeridas documentadas
-ffd8e8f fix(DT-16): no imprimir password de BD en log de login - sanitizar URI
-6e260b1 fix(DT-12): verificar current_user de forma segura en _obtener_nombre_empresa
-1e4c120 fix(DT-27): reemplazar Query.get() por db.session.get() en login
-a2a2e71 docs: HANDOFF v6 - DT-11 resuelto
+11662f5 docs: HANDOFF v7.1
+71f6ae1 fix(DT-3, DT-4): eliminar import muerto Response y 4 reimports redundantes
+8bda650 docs: HANDOFF v7
+cafc325 fix(DT-14): leer SECRET_KEY desde .env
+301bd65 docs(DT-13): agregar .env.example
+ffd8e8f fix(DT-16): no imprimir password de BD en log de login
+6e260b1 fix(DT-12): verificar current_user de forma segura
+1e4c120 fix(DT-27): reemplazar Query.get() por db.session.get()
+a2a2e71 docs: HANDOFF v6
 cbcb76b chore: limpiar .gitignore
-a522e0c fix(DT-11): eliminar acceso a current_user en event listener de checkout
+a522e0c fix(DT-11): eliminar acceso a current_user en event listener
 
 text
 
@@ -114,20 +125,20 @@ text
 
 ## 7️⃣ Demo — Estado de las fases del seed
 
-| # | Fase | Estado | Filas | Commit |
-|---|------|--------|-------|--------|
-| 1 | Configuración base | ✅ | 9 | fd862c3 |
-| 2 | Proveedores | ✅ | 6 | fd862c3 |
-| 3 | Materias primas | ✅ | 17 | fd862c3 |
-| 4 | Recetas y fórmulas | ✅ | 12 recetas / 80 ingredientes | fd862c3 |
-| 5 | Productos | ✅ | 12 | fd862c3 |
-| 6 | Producción diaria (v2 con reposición) | ✅ | ~2.300 | 252b7a8 |
-| 7 | Ventas | ✅ | ~7.300 | 93bf74c |
-| 8 | Productos externos | ✅ | 12 | 135a5b9 |
-| 9 | Activos fijos | ✅ | ~38 | 3fa92ef |
-| 10 | Movimientos financieros | ✅ | ~265 | fda25b9 |
-| 11 | Cierres diarios | ✅ | 90 | 0695350 |
-| 12 | Reset automatizado | ✅ | — | 19c15b1 |
+| # | Fase | Estado | Filas |
+|---|------|--------|-------|
+| 1 | Configuración base | ✅ | 9 |
+| 2 | Proveedores | ✅ | 6 |
+| 3 | Materias primas | ✅ | 17 |
+| 4 | Recetas y fórmulas | ✅ | 12 recetas / 80 ingredientes |
+| 5 | Productos | ✅ | 12 |
+| 6 | Producción diaria (v2 con reposición) | ✅ | ~2.300 |
+| 7 | Ventas | ✅ | ~7.300 |
+| 8 | Productos externos | ✅ | 12 |
+| 9 | Activos fijos | ✅ | ~38 |
+| 10 | Movimientos financieros | ✅ | ~265 |
+| 11 | Cierres diarios | ✅ | 90 |
+| 12 | Reset automatizado | ✅ | — |
 
 **Total aproximado:** ~10.100 filas en tenant_27.
 
@@ -146,54 +157,59 @@ text
 - `.env` está en `.gitignore` (protegido).
 - `.env.example` está en el repo (documenta las variables).
 - `load_dotenv()` se llama al inicio de `app.py` (línea ~1258).
-- `app.py` y `seed_demo.py` usan `os.getenv()` para credenciales.
 - **SECRET_KEY** se lee del `.env` (fix DT-14).
-- Fallback en `seed_demo.py` (`'PanaderiaPro2026!'`) por compatibilidad con dev.
 
 ### Rutas críticas
 
 - `/reportes`, `/historial_pagos`, `/historial_depositos`
-- `/exportar_historial_pagos`, `/exportar_historial_depositos`
 - `/gestion_financiera`, `/mi_perfil`, `/cambiar_licencia/<id>`
 - `/punto_venta`, `/registrar_venta`, `/recibo-pos/<id>`
 - `/materias_primas`, `/editar_materia_prima/<id>`
 - `/produccion_diaria`, `/reporte/cierre_caja`
 - `/reporte/ventas_avanzado`, `/activos_fijos`
 - `/depositos_bancarios`
-- `/admin/reset-demo`, `/admin/reset-demo/status` (super_admin)
+- `/admin/reset-demo`, `/admin/reset-demo/status`
+- `/crear_cliente`, `/editar_cliente_super`, `/renovar_suscripcion_super`, `/eliminar_cliente`
+- **Eliminado:** `/crear_usuario` (DT-20 Fase C Tanda 2)
 
 ### Bug sistémico — panaderia_id default=1 (DT-20)
 
-- **~30 modelos** todavía tienen `panaderia_id = db.Column(..., default=1)`.
 - **Fase A (auditoría):** completada.
 - **Fase B (fix quirúrgico):** completada — 4 INSERTs corregidos (commit `344c552`).
-- **Fixes puntuales:** DT-6 (`PagoIndividual`) y DT-9 (`Proveedor`) — commit `a25505a`.
-- **Fase C (eliminar ~30 defaults restantes):** pendiente.
+- **Fase C - Tanda 1:** completada — 27 modelos del Grupo A sin default (commit `45d011e`).
+- **Fase C - Tanda 2:** completada — Categoria y Usuario sin default + endpoint huérfano eliminado (commit `14de608`).
+- **Fase C - Tanda 3 (pendiente):** Panaderia + ConfiguracionPanaderia.
+
+**Progreso DT-20:** 29 de 31 modelos sin default (93%).
 
 ---
 
 ## 9️⃣ Deuda técnica acumulada
 
-### ✅ RESUELTAS el 3 de Octubre 2026
+### ✅ RESUELTAS el 3 de Octubre 2026 (6 deudas)
 
 | # | Descripción | Commit |
 |---|-------------|--------|
+| DT-1 | Filtro redundante por tenant_id en `_obtener_nombre_empresa` | `0becbf8` |
 | DT-6 | `PagoIndividual.panaderia_id default=1` | `a25505a` |
 | DT-9 | `Proveedor.panaderia_id default=1` | `a25505a` |
+| DT-20 Fase C Tanda 1 | 27 modelos del Grupo A sin default | `45d011e` |
+| DT-20 Fase C Tanda 2 | Categoria + Usuario sin default + 2 INSERTs arreglados | `14de608` |
+| DT-30 | Endpoint `/crear_usuario` huérfano eliminado | `14de608` |
 
 ### ✅ RESUELTAS el 2 de Octubre 2026 (11 deudas)
 
 | # | Descripción | Commit |
 |---|-------------|--------|
-| DT-3 | Import muerto `Response` en reportes.py | `71f6ae1` |
-| DT-4 | 4 reimports redundantes de `func` en reportes.py | `71f6ae1` |
-| DT-11 | Event listener `checkout` sin `current_user` (rompe recursión con `load_user`) | `a522e0c` |
-| DT-12 | `_obtener_nombre_empresa` verifica `current_user` seguro | `6e260b1` |
-| DT-13 | `.env.example` con variables documentadas | `301bd65` |
-| DT-14 | `SECRET_KEY` leída del `.env` (no hardcodeada) | `cafc325` |
-| DT-16 | Password de BD ya no se imprime en log de login | `ffd8e8f` |
-| DT-26 | Latencia ~3s — **resuelta indirectamente por DT-11** | — |
-| DT-27 | `Query.get()` reemplazado por `db.session.get()` | `1e4c120` |
+| DT-3 | Import muerto `Response` | `71f6ae1` |
+| DT-4 | 4 reimports redundantes de `func` | `71f6ae1` |
+| DT-11 | Event listener `checkout` sin `current_user` | `a522e0c` |
+| DT-12 | `_obtener_nombre_empresa` con `current_user` seguro | `6e260b1` |
+| DT-13 | `.env.example` | `301bd65` |
+| DT-14 | `SECRET_KEY` desde `.env` | `cafc325` |
+| DT-16 | Password BD oculta en log | `ffd8e8f` |
+| DT-26 | Latencia (resuelta por DT-11) | — |
+| DT-27 | `Query.get()` → `db.session.get()` | `1e4c120` |
 
 ### ✅ RESUELTAS anteriormente
 
@@ -203,35 +219,36 @@ text
 
 | # | Ubicación | Descripción |
 |---|-----------|-------------|
-| DT-20 | `models.py` (~30 modelos) | Bug sistémico `panaderia_id default=1` (Fase C pendiente) |
+| DT-20 | `models.py` (2 modelos) | `Panaderia.panaderia_id default=1` (línea 433) + `ConfiguracionPanaderia.panaderia_id default=1` (línea 272) — Tanda 3 |
 
 ### 🟡 Medias pendientes
 
 | # | Ubicación | Descripción |
 |---|-----------|-------------|
-| DT-1 | `reportes.py:48-68` | `_obtener_nombre_empresa` doble filtro tenant_id/panaderia_id |
 | DT-5 | `models.py:1055 vs 2441` | `Gasto` vs `RegistroFinanciero` posible solapamiento |
 | DT-7 | `models.py:2075 vs 2124` | Inconsistencia `nullable` entre modelos hermanos |
 | DT-15 | `.env` | Password PostgreSQL embebida en `DATABASE_URL` |
-| DT-17 | `reportes.py` | Reporte de tesorería muestra `$0` de ingresos |
-| DT-18 | `reportes.py` | Reporte de tesorería no tiene nivel contable profesional |
-| DT-19 | global | CSRF fix completo con `flask-wtf` (mitigación actual usa Origin; cobertura 99%) |
+| DT-17 | `reportes.py` | Reporte tesorería muestra `$0` de ingresos |
+| DT-18 | `reportes.py` | Reporte tesorería nivel contable profesional |
+| DT-19 | global | CSRF completo con `flask-wtf` |
 | DT-21 | POS | Modal de crear cliente sin botón visible |
-| DT-25 | `app.py:1744` | Verificar orden real de ejecución de `before_request` vs `login_required` |
-| DT-28 | `POST /` | Doble submit detectado (mitigado, no crítico) |
+| DT-25 | `app.py:1744` | Orden real de ejecución de `before_request` vs `login_required` |
+| DT-28 | `POST /` | Doble submit detectado |
+| **DT-29** | `app.py` (before_request fallback) | Tenant por defecto "Panadería Principal" (tenant_1) se aplica a usuarios anónimos. En producción con subdominios debería determinarse por Host. |
+| **DT-31** | `tenant_27.usuarios` + otros | Columnas `tenant_id` con `DEFAULT 1` en PostgreSQL (residuo histórico). Eliminar con `ALTER TABLE`. |
 
 ### 🟢 Bajas pendientes
 
 | # | Ubicación | Descripción |
 |---|-----------|-------------|
 | DT-10 | `app.py:9022-9495` | Exports PDF no agrupados bajo comentario separador |
-| DT-22 | `/configuracion/facturacion` | Permite modificar NIT del tenant sin confirmación |
-| DT-23 | `models.py` | Ver DT-20 (Fase C) |
-| DT-24 | `mi_perfil.html` | Frontend no muestra el campo `exitoso` del último reset |
+| DT-22 | `/configuracion/facturacion` | Permite modificar NIT sin confirmación |
+| DT-23 | `models.py` | Ver DT-20 (Fase C Tanda 3) |
+| DT-24 | `mi_perfil.html` | Frontend no muestra `exitoso` del último reset |
 
 ### 🚨 Otras deudas
 - **22 tablas con columnas huérfanas (79 columnas).** Fase C.3 planificada.
-- **`public` con 40 tablas duplicadas.** Residuo de migración SQLite → PostgreSQL.
+- **`public` con 40 tablas duplicadas.**
 
 ---
 
@@ -255,10 +272,11 @@ text
 15. **Al pedir un test, incluir TODAS las verificaciones previas necesarias en el mismo mensaje.**
 16. **Cuando el punto de inserción esté justo debajo de un decorador, incluir el decorador en el ANTES → DESPUÉS.**
 17. **Antes de proponer un fix de concurrencia, medir impacto en el pool de SQLAlchemy.**
-18. **Nunca usar `echo texto >> archivo` en Windows para modificar archivos de texto. Usar Notepad o PowerShell.**
-19. **Nunca acceder a `current_user` desde event listeners de SQLAlchemy (`checkout`, `connect`). Causa recursión con `load_user`. Usar `flask.session` o `flask.g`.**
-20. **En Windows, `findstr "patrón"` sin `/c:` hace búsqueda con wildcards y a veces no encuentra coincidencias literales. Usar siempre `findstr /c:"patrón"` para búsquedas literales.**
-21. **Antes de aplicar un fix según el HANDOFF, verificar el estado actual del archivo. El HANDOFF puede estar desactualizado — el código es la fuente de verdad.**
+18. **Nunca usar `echo texto >> archivo` en Windows para modificar archivos de texto.**
+19. **Nunca acceder a `current_user` desde event listeners de SQLAlchemy.**
+20. **En Windows, usar `findstr /c:"patrón"` para búsquedas literales.**
+21. **Antes de aplicar un fix según el HANDOFF, verificar el estado actual del archivo.**
+22. **Al eliminar código huérfano (endpoints, templates, funciones no usadas), verificar PRIMERO que no haya referencias activas en el proyecto con `findstr /s`.**
 
 ### Comandos útiles
 
@@ -278,9 +296,6 @@ psql -U postgres -p 5433 -h localhost -d panaderia_master -c "\d tenant_27.nombr
 Seed Demo:
 
 cmd
-python seed_demo.py --list
-python seed_demo.py --tenant=27 --status
-python seed_demo.py --tenant=27 --fase=all
 python seed_demo.py --tenant=27 --reset-all
 Compilar / Servidor:
 
@@ -295,6 +310,10 @@ Búsquedas literales con findstr:
 
 cmd
 findstr /n /c:"patrón exacto" archivo.py
+Búsquedas recursivas:
+
+cmd
+findstr /s /n /c:"patrón" *.py
 1️⃣1️⃣ Roadmap
 text
 ✅ Fase 1: Módulos 1-10
@@ -311,25 +330,27 @@ text
 ✅ B7: CSRF global
 
 --- Sesión 2 Oct 2026 ---
-✅ DT-3 + DT-4: Imports muertos y redundantes
+✅ DT-3 + DT-4: Imports muertos
 ✅ DT-11: Event listener sin current_user
 ✅ DT-12: _obtener_nombre_empresa seguro
 ✅ DT-13: .env.example
 ✅ DT-14: SECRET_KEY desde .env
 ✅ DT-16: Password BD oculta en log
-✅ DT-26: Latencia resuelta indirectamente
+✅ DT-26: Latencia resuelta
 ✅ DT-27: Query.get() → db.session.get()
 
 --- Sesión 3 Oct 2026 ---
-✅ DT-6: PagoIndividual.panaderia_id default=1 eliminado
-✅ DT-9: Proveedor.panaderia_id default=1 eliminado
+✅ DT-1: Filtro redundante tenant_id
+✅ DT-6 + DT-9: default=1 en 2 modelos
+✅ DT-20 Fase C Tanda 1: 27 modelos sin default
+✅ DT-20 Fase C Tanda 2: Categoria + Usuario + endpoint huérfano
+✅ DT-30: Endpoint /crear_usuario eliminado
 
-⏳ DT-20 Fase C: eliminar ~30 defaults restantes (CRÍTICO)
+⏳ DT-20 Fase C Tanda 3: Panaderia + ConfiguracionPanaderia
 ⏳ Fase C.3: auditoría de columnas (22 tablas)
-⏳ DT-17, DT-18: Reportes tesorería nivel contable
-⏳ DT-19: CSRF completo con flask-wtf
-⏳ DT-1, DT-5, DT-7, DT-21, DT-25, DT-28: Deudas medias varias
-⏳ DT-10, DT-22, DT-24: Deudas bajas
+⏳ DT-31: tenant_id DEFAULT 1 en PostgreSQL
+⏳ DT-29: Tenant por defecto en usuarios anónimos
+⏳ DT-5, DT-7, DT-17, DT-18, DT-19, DT-21, DT-25, DT-28: Deudas medias
 
 ⏳ Fase 3: Dockerización + subdominios + nube
 ⏳ Fase 4: HTTPS/SSL + rate limiting + logging + monitoreo + caché
@@ -338,22 +359,35 @@ text
 ⏳ Fase 7: Junta Directiva IA
 ⏳ Fase 8: Integraciones estratégicas (API REST, webhooks)
 1️⃣2️⃣ DT-11 — Resuelto (2 Oct 2026) — Bitácora
-Causa raíz: El event listener checkout (app.py:1322-1380) accedía a current_user (Flask-Login) para determinar el tenant. current_user es un LocalProxy que dispara load_user al primer acceso. load_user hace db.session.execute() → checkout → event listener → current_user → load_user → ... recursión infinita. SQLAlchemy 2.0 detecta la reentrada y aborta con isce.
+Causa raíz: El event listener checkout accedía a current_user (Flask-Login) para determinar el tenant. current_user es un LocalProxy que dispara load_user al primer acceso. load_user hace db.session.execute() → checkout → event listener → current_user → load_user → ... recursión infinita. SQLAlchemy 2.0 aborta con isce.
 
 Solución: Eliminar el acceso a current_user del event listener. Leer el tenant SOLO desde flask.session.
 
 Bitácora de intentos fallidos:
 
 Versión	Cambio	Resultado
-v1	Reducir queries en load_user (3→1)	❌ No resolvió — era concurrencia, no cantidad
-v2	Usar db.engine.connect() en load_user	❌ Peor — agotó el pool
-v3	Cache con flask.g en load_user	❌ No resolvió — el cache no estaba listo a tiempo
+v1	Reducir queries en load_user	❌ No resolvió
+v2	db.engine.connect() en load_user	❌ Peor: agotó el pool
+v3	Cache con flask.g	❌ No resolvió
 v4	Eliminar current_user del event listener	✅ RESUELTO
-Efecto colateral positivo: DT-26 (latencia ~3s) se resolvió indirectamente. La latencia era causada por los reintentos fallidos de load_user.
+Efecto colateral positivo: DT-26 (latencia) se resolvió indirectamente.
 
 Commit: a522e0c
 
-1️⃣3️⃣ Notas estratégicas
+1️⃣3️⃣ DT-20 Fase C — Bitácora
+Objetivo: eliminar default=1 de la columna panaderia_id en todos los modelos.
+
+Fases:
+
+Fase	Modelos	Commit
+A (auditoría)	—	—
+B (INSERTs críticos)	4 INSERTs	344c552
+C - Tanda 1	27 (Grupo A)	45d011e
+C - Tanda 2	2 (Categoria, Usuario) + endpoint huérfano	14de608
+C - Tanda 3 (pendiente)	2 (Panaderia, ConfiguracionPanaderia)	—
+Progreso: 29 de 31 modelos sin default (93%).
+
+1️⃣4️⃣ Notas estratégicas
 Objetivo del ERP
 ERP SaaS multi-tenant multi-país con: POS, inventario, producción, recetas, activos fijos, reportes con IA, finanzas, multi-país, base para API REST + IA avanzada.
 
@@ -365,30 +399,36 @@ Mercado objetivo
 
 10.000-30.000 en LATAM.
 
-Precio sugerido: $60k-$600k COP/mes.
+Precio: $60k-$600k COP/mes.
+
+Modelo de licencias
+Premium: 3 usuarios (admin, supervisor, cajero).
+
+Básica: 1 usuario (admin).
+
+Los usuarios se crean al alta del tenant, no desde el frontend.
 
 Estimación de tiempos (3 Oct 2026)
 Bloque	Estimación
-DT-20 Fase C	3-4 h
-Fase C.3	4-6 h
+DT-20 Tanda 3 + Fase C.3	~4-6 h
 Fase 3 (nube + Docker)	~22-32 h
 Fase 4 (seguridad)	~14-20 h
 Fase 5 (monetización)	~26-36 h
 Fases 6-8 (IA + integraciones)	~50-85 h
-TOTAL hasta Fase 8	~120-180 h
+TOTAL hasta Fase 8	~116-179 h
 📞 Cómo continuar en un chat nuevo
 Al iniciar un nuevo chat, pegar este archivo como contexto inicial.
 
 Instrucción sugerida para el asistente:
 
-"Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el archivo HANDOFF.md v7.2 con el contexto maestro del proyecto. Vamos a continuar desde donde lo dejamos. Por favor actúa como instructor guiando paso a paso, con la metodología de trabajo descrita en el HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/findstr, commit tras cada fix verificado. Al insertar bloques, muéstrame ANTES → DESPUÉS con número de línea exacto."
+"Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el archivo HANDOFF.md v7.3 con el contexto maestro del proyecto. Vamos a continuar desde donde lo dejamos. Por favor actúa como instructor guiando paso a paso, con la metodología de trabajo descrita en el HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/findstr, commit tras cada fix verificado. Al insertar bloques, muéstrame ANTES → DESPUÉS con número de línea exacto."
 
-Próxima tarea sugerida: DT-20 Fase C (eliminar los ~30 default=1 restantes en models.py).
+Próxima tarea sugerida: DT-20 Fase C Tanda 3 (Panaderia + ConfiguracionPanaderia).
 
 ✅ Última validación
-Último commit: a25505a (pusheado a GitHub).
+Último commit: 14de608 (pusheado a GitHub).
 
-Última sesión: 3 Oct 2026 — DT-6 + DT-9 resueltos.
+Última sesión: 3 Oct 2026 — 6 deudas resueltas (DT-1, DT-6, DT-9, DT-20 Tanda 1, DT-20 Tanda 2, DT-30).
 
 Working tree: clean.
 
@@ -400,10 +440,10 @@ Módulos: 11/11 completados (100%).
 
 Demo: Fases 1-12 completadas, contraseña demo2026.
 
-Log: limpio, sin warnings (11 deudas resueltas en 2 días).
+Log: limpio, sin warnings.
 
-PDF generation: probado.
+DT-20: 93% resuelto.
 
-Pendientes críticos: DT-20 Fase C, Fase C.3.
+Pendientes críticos: DT-20 Tanda 3, Fase C.3.
 
-Fin del HANDOFF.md — v7.2
+Fin del HANDOFF.md — v7.3
