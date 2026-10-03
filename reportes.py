@@ -2,7 +2,7 @@
 import os
 from datetime import datetime, timedelta
 from io import BytesIO
-from flask import Response
+
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -1786,7 +1786,7 @@ class GeneradorReportes:
         """Obtiene datos de productos populares - CON FILTRO MULTI-TENANT"""
         try:
             from models import Producto, DetalleVenta, Venta
-            from sqlalchemy import func
+            
             
             # ✅ FILTRAR POR TENANT
             productos = Producto.query.filter_by(
@@ -2405,7 +2405,7 @@ class GeneradorReportes:
         """Obtiene datos REALES de rotación de inventarios - CON FILTRO MULTI-TENANT"""
         try:
             from models import Producto, ProductoExterno, DetalleVenta, Venta
-            from sqlalchemy import func
+            
             
             datos_rotacion = []
             
@@ -2906,7 +2906,7 @@ class GeneradorReportes:
                                          categoria='', proveedor_id=''):
         """Genera PDF del historial de pagos (PagoIndividual) con filtros opcionales."""
         from models import PagoIndividual, Proveedor
-        from sqlalchemy import func
+        
 
         buffer = BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=1*inch)
@@ -3077,7 +3077,7 @@ class GeneradorReportes:
                                              banco='', estado=''):
         """Genera PDF del historial de depósitos bancarios (DepositoBancario) con filtros opcionales."""
         from models import DepositoBancario
-        from sqlalchemy import func
+        
 
         buffer = BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=1*inch)
