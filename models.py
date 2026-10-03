@@ -228,7 +228,7 @@ ROLES_PERMISOS = {
 class Sucursal(db.Model):
     __tablename__ = 'sucursales'
     
-    panaderia_id = db.Column(db.Integer, nullable=False, default=1)
+    panaderia_id = db.Column(db.Integer, nullable=False)
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
     direccion = db.Column(db.Text)
@@ -492,7 +492,7 @@ class Producto(db.Model):
                            backref=db.backref('producto_asociado', uselist=False))
     
     # ✅ NUEVO: Relación con panadería para multicliente
-    panaderia_id = db.Column(db.Integer, db.ForeignKey('panaderias.id'), nullable=False, default=1)
+    panaderia_id = db.Column(db.Integer, db.ForeignKey('panaderias.id'), nullable=False)
     panaderia = db.relationship('Panaderia', backref=db.backref('productos_list', lazy=True))
     
     # ✅ NUEVAS PROPIEDADES CALCULADAS
@@ -587,7 +587,7 @@ class ProductoExterno(db.Model):
 class CompraExterna(db.Model):
     __tablename__ = 'compras_externas'
     
-    panaderia_id = db.Column(db.Integer, nullable=False, default=1)
+    panaderia_id = db.Column(db.Integer, nullable=False)
     id = db.Column(db.Integer, primary_key=True)
     producto_externo_id = db.Column(db.Integer, db.ForeignKey('productos_externos.id'))
     proveedor_id = db.Column(db.Integer, db.ForeignKey('proveedor.id'))
@@ -691,7 +691,7 @@ class Receta(db.Model):
     # =============================================
     
     # ✅ NUEVO: Relación con panadería para multicliente
-    panaderia_id = db.Column(db.Integer, db.ForeignKey('panaderias.id'), nullable=False, default=1)
+    panaderia_id = db.Column(db.Integer, db.ForeignKey('panaderias.id'), nullable=False)
     panaderia = db.relationship('Panaderia', backref=db.backref('recetas_list', lazy=True))
     
     ingredientes = db.relationship('RecetaIngrediente', backref='receta', lazy=True, cascade='all, delete-orphan')
@@ -834,7 +834,7 @@ def calcular_precio_venta(self):
     
 class HistorialCompra(db.Model):
     __tablename__ = 'historial_compras'
-    panaderia_id = db.Column(db.Integer, nullable=False, default=1)
+    panaderia_id = db.Column(db.Integer, nullable=False)
     id = db.Column(db.Integer, primary_key=True)
     materia_prima_id = db.Column(db.Integer, db.ForeignKey('materias_primas.id'), nullable=False)
     fecha_compra = db.Column(db.DateTime, default=datetime.utcnow)
@@ -883,7 +883,7 @@ class HistorialCompra(db.Model):
 class Cliente(db.Model):
     __tablename__ = 'clientes'
     
-    panaderia_id = db.Column(db.Integer, nullable=False, default=1)
+    panaderia_id = db.Column(db.Integer, nullable=False)
     id = db.Column(db.Integer, primary_key=True)
     
     # ✅ INFORMACIÓN BÁSICA DEL CLIENTE
@@ -1004,7 +1004,7 @@ class Venta(db.Model):
     motivo_donacion = db.Column(db.String(200), nullable=True)
     
     # ✅ NUEVO: Relación con panadería para multicliente
-    panaderia_id = db.Column(db.Integer, db.ForeignKey('panaderias.id'), nullable=False, default=1)
+    panaderia_id = db.Column(db.Integer, db.ForeignKey('panaderias.id'), nullable=False)
     panaderia = db.relationship('Panaderia', backref=db.backref('ventas_list', lazy=True))
     
     # ✅✅✅ RELACIONES CORREGIDAS - SIN CONFLICTOS
@@ -1016,7 +1016,7 @@ class Venta(db.Model):
     
 class DetalleVenta(db.Model):
     __tablename__ = 'detalle_venta'
-    panaderia_id = db.Column(db.Integer, nullable=False, default=1)
+    panaderia_id = db.Column(db.Integer, nullable=False)
     id = db.Column(db.Integer, primary_key=True)
     venta_id = db.Column(db.Integer, db.ForeignKey('ventas.id'), nullable=False)
     producto_id = db.Column(db.Integer, db.ForeignKey('productos.id'), nullable=True)  # Hacer nullable
@@ -1036,7 +1036,7 @@ class DetalleVenta(db.Model):
     
 class Compra(db.Model):
     __tablename__ = 'compras'
-    panaderia_id = db.Column(db.Integer, nullable=False, default=1)
+    panaderia_id = db.Column(db.Integer, nullable=False)
     id = db.Column(db.Integer, primary_key=True)
     fecha = db.Column(db.DateTime, default=datetime.utcnow)
     proveedor = db.Column(db.String(200), nullable=False)
@@ -1045,7 +1045,7 @@ class Compra(db.Model):
 
 class DetalleCompra(db.Model):
     __tablename__ = 'detalle_compras'
-    panaderia_id = db.Column(db.Integer, nullable=False, default=1)
+    panaderia_id = db.Column(db.Integer, nullable=False)
     id = db.Column(db.Integer, primary_key=True)
     compra_id = db.Column(db.Integer, db.ForeignKey('compras.id'), nullable=False)
     materia_prima_id = db.Column(db.Integer, db.ForeignKey('materias_primas.id'), nullable=False)
@@ -1054,7 +1054,7 @@ class DetalleCompra(db.Model):
 
 class Gasto(db.Model):
     __tablename__ = 'gastos'
-    panaderia_id = db.Column(db.Integer, nullable=False, default=1)
+    panaderia_id = db.Column(db.Integer, nullable=False)
     id = db.Column(db.Integer, primary_key=True)
     fecha = db.Column(db.DateTime, default=datetime.utcnow)
     descripcion = db.Column(db.String(200), nullable=False)
@@ -1067,7 +1067,7 @@ class RecetaIngrediente(db.Model):
     # =============================================
     # CAMPOS EXISTENTES
     # =============================================
-    panaderia_id = db.Column(db.Integer, nullable=False, default=1)
+    panaderia_id = db.Column(db.Integer, nullable=False)
     id = db.Column(db.Integer, primary_key=True)
     receta_id = db.Column(db.Integer, db.ForeignKey('recetas.id'), nullable=False)
     materia_prima_id = db.Column(db.Integer, db.ForeignKey('materias_primas.id'), nullable=False)
@@ -1106,7 +1106,7 @@ class OrdenProduccion(db.Model):
     stock_generado = db.Column(db.Boolean, default=False)
     
     # ✅ FILTRO MULTICLIENTE
-    panaderia_id = db.Column(db.Integer, db.ForeignKey('panaderias.id'), nullable=False, default=1)
+    panaderia_id = db.Column(db.Integer, db.ForeignKey('panaderias.id'), nullable=False)
     
     # RELACIONES
     receta = db.relationship('Receta', backref='ordenes_produccion')
@@ -1261,7 +1261,7 @@ class OrdenProduccion(db.Model):
 # NUEVA CLASE PARA HISTORIAL DE DESCUENTO DE INVENTARIO
 class HistorialInventario(db.Model):
     __tablename__ = 'historial_inventario'
-    panaderia_id = db.Column(db.Integer, nullable=False, default=1)
+    panaderia_id = db.Column(db.Integer, nullable=False)
     id = db.Column(db.Integer, primary_key=True)
     materia_prima_id = db.Column(db.Integer, db.ForeignKey('materias_primas.id'), nullable=False)
     orden_produccion_id = db.Column(db.Integer, db.ForeignKey('ordenes_produccion.id'), nullable=False)
@@ -1279,7 +1279,7 @@ class HistorialInventario(db.Model):
 
 class StockProducto(db.Model):
     __tablename__ = 'stock_productos'
-    panaderia_id = db.Column(db.Integer, nullable=False, default=1)
+    panaderia_id = db.Column(db.Integer, nullable=False)
     id = db.Column(db.Integer, primary_key=True)
     receta_id = db.Column(db.Integer, db.ForeignKey('recetas.id'), nullable=False)
     stock_actual = db.Column(db.Integer, default=0)
@@ -1292,7 +1292,7 @@ class StockProducto(db.Model):
 # MANTENER ESTA (elimina la otra)
 class ConfiguracionProduccion(db.Model):
     __tablename__ = 'configuracion_produccion'
-    panaderia_id = db.Column(db.Integer, nullable=False, default=1)
+    panaderia_id = db.Column(db.Integer, nullable=False)
     id = db.Column(db.Integer, primary_key=True)
     receta_id = db.Column(db.Integer, db.ForeignKey('recetas.id'), nullable=False)
     
@@ -1343,7 +1343,7 @@ class ConfiguracionProduccion(db.Model):
 
 class HistorialRotacionProducto(db.Model):
     __tablename__ = 'historial_rotacion_producto'
-    panaderia_id = db.Column(db.Integer, nullable=False, default=1)
+    panaderia_id = db.Column(db.Integer, nullable=False)
     id = db.Column(db.Integer, primary_key=True)
     producto_id = db.Column(db.Integer, db.ForeignKey('productos.id'), nullable=False)
     fecha = db.Column(db.Date, nullable=False, default=datetime.utcnow().date)
@@ -1357,7 +1357,7 @@ class HistorialRotacionProducto(db.Model):
 
 class ControlVidaUtil(db.Model):
     __tablename__ = 'control_vida_util'
-    panaderia_id = db.Column(db.Integer, nullable=False, default=1)
+    panaderia_id = db.Column(db.Integer, nullable=False)
     id = db.Column(db.Integer, primary_key=True)
     producto_id = db.Column(db.Integer, db.ForeignKey('productos.id'), nullable=False)
     fecha_produccion = db.Column(db.Date, nullable=False, default=datetime.utcnow().date)
@@ -1370,7 +1370,7 @@ class ControlVidaUtil(db.Model):
 
 class Factura(db.Model):
     __tablename__ = 'facturas'
-    panaderia_id = db.Column(db.Integer, nullable=False, default=1)
+    panaderia_id = db.Column(db.Integer, nullable=False)
     id = db.Column(db.Integer, primary_key=True)
     venta_id = db.Column(db.Integer, db.ForeignKey('ventas.id'), nullable=False)
     numero_factura = db.Column(db.String(50), unique=True, nullable=False)
@@ -1395,7 +1395,7 @@ class JornadaVentas(db.Model):
     """Control de jornadas comerciales diarias"""
     __tablename__ = 'jornadas_ventas'
     
-    panaderia_id = db.Column(db.Integer, nullable=False, default=1)
+    panaderia_id = db.Column(db.Integer, nullable=False)
     id = db.Column(db.Integer, primary_key=True)
     fecha = db.Column(db.Date, nullable=False, unique=True)
     estado = db.Column(db.String(20), default='ACTIVA')  # ACTIVA, CERRADA
@@ -1413,7 +1413,7 @@ class CierreDiario(db.Model):
     """Registro de cierres diarios"""
     __tablename__ = 'cierres_diarios'
     
-    panaderia_id = db.Column(db.Integer, nullable=False, default=1)
+    panaderia_id = db.Column(db.Integer, nullable=False)
     id = db.Column(db.Integer, primary_key=True)
     fecha_cierre = db.Column(db.Date, nullable=False)
     deposito_bancario_id = db.Column(db.Integer, db.ForeignKey('depositos_bancarios.id'))
@@ -1447,7 +1447,7 @@ class CierreDiario(db.Model):
 class PermisoUsuario(db.Model):
     __tablename__ = 'permisos_usuario'
     
-    panaderia_id = db.Column(db.Integer, nullable=False, default=1)
+    panaderia_id = db.Column(db.Integer, nullable=False)
     id = db.Column(db.Integer, primary_key=True)
     usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
     modulo = db.Column(db.String(50), nullable=False)
@@ -1986,7 +1986,7 @@ class RegistroDiario(db.Model):
     """Registro diario simplificado para el usuario"""
     __tablename__ = 'registros_diarios'
     id = db.Column(db.Integer, primary_key=True)
-    panaderia_id = db.Column(db.Integer, nullable=False, default=1)
+    panaderia_id = db.Column(db.Integer, nullable=False)
     fecha = db.Column(db.Date, nullable=False, default=datetime.now().date)
     
     # INGRESOS
@@ -2058,7 +2058,7 @@ class SaldoBanco(db.Model):
     __tablename__ = 'saldos_banco'
     id = db.Column(db.Integer, primary_key=True)
     banco = db.Column(db.String(100), nullable=False, default='Principal')  # ✅ AGREGADO
-    panaderia_id = db.Column(db.Integer, nullable=False, default=1)
+    panaderia_id = db.Column(db.Integer, nullable=False)
     fecha_actualizacion = db.Column(db.DateTime, default=datetime.now)
     saldo_actual = db.Column(db.Float, default=0)
     comentario = db.Column(db.String(200))
@@ -2148,7 +2148,7 @@ class ActivoFijo(db.Model):
     __tablename__ = 'activos_fijos'
     
     id = db.Column(db.Integer, primary_key=True)
-    panaderia_id = db.Column(db.Integer, nullable=False, default=1)
+    panaderia_id = db.Column(db.Integer, nullable=False)
     nombre = db.Column(db.String(200), nullable=False)
     categoria = db.Column(db.String(100), nullable=False)
     descripcion = db.Column(db.Text)
@@ -2282,7 +2282,7 @@ class ConsecutivoPOS(db.Model):
     __tablename__ = 'consecutivos_pos'
     
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)  # ✅ MOVER A PRIMERO Y autoincrement
-    panaderia_id = db.Column(db.Integer, nullable=False, default=1)
+    panaderia_id = db.Column(db.Integer, nullable=False)
     numero_actual = db.Column(db.Integer, default=0)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow)
     
@@ -2292,7 +2292,7 @@ class ConsecutivoPOS(db.Model):
 class ConfiguracionSistema(db.Model):
     """Configuración global del sistema"""
     __tablename__ = 'configuracion_sistema'
-    panaderia_id = db.Column(db.Integer, nullable=False, default=1)
+    panaderia_id = db.Column(db.Integer, nullable=False)
     
     id = db.Column(db.Integer, primary_key=True)
     tipo_facturacion = db.Column(db.String(20), default='POS')  # 'POS' o 'ELECTRONICA'
