@@ -1237,26 +1237,44 @@ from multicliente_middleware import (
 
 # 🆕 OBTENER LA RUTA BASE DEL PROYECTO
 basedir = os.path.abspath(os.path.dirname(__file__))
-
 # 🆕 CREAR APLICACIÓN FLASK
 app = Flask(__name__)
 TenantContext.initialize_app(app)
 # INICIALIZAR SISTEMA SAAS MULTI-TENANT
 init_tenants_app(app)
 # print("🚀 Middleware SaaS - Sistema multi-tenant activado")
-app.secret_key = '023431bcb986f0ebab954d4237dffb57f86d01e38107bfc16c839c717ba8b15f'
-app.config['SESSION_PERMANENT'] = False
-app.config['PERMANENT_SESSION_LIFETIME'] = 3600
 
 # =============================================
-# 🗄️ CONFIGURACIÓN DE BASE DE DATOS (POSTGRESQL)
+# 🗄️ CONFIGURACIÓN DE VARIABLES DE ENTORNO (.env)
 # =============================================
+# ✅ DT-14 fix: cargar .env ANTES de usar variables (secret_key, DATABASE_URL).
 from dotenv import load_dotenv
 import os
 
 # Cargar variables de entorno
 load_dotenv()
 
+# =============================================
+# 🔐 SECRET KEY (firma de sesiones Flask)
+# =============================================
+# ✅ DT-14 fix: leer SECRET_KEY del .env (no hardcodeada en el código).
+# Fallback: clave de desarrollo (NO usar en producción).
+app.secret_key = os.getenv('SECRET_KEY')
+if not app.secret_key:
+    import warnings
+    warnings.warn(
+        "SECRET_KEY no está seteada en .env. Usando clave de desarrollo insegura. "
+        "En producción, generá una con: python -c \"import secrets; print(secrets.token_hex(32))\"",
+        RuntimeWarning
+    )
+    app.secret_key = 'dev-only-insecure-key-cambiar-en-produccion'
+
+app.config['SESSION_PERMANENT'] = False
+app.config['PERMANENT_SESSION_LIFETIME'] = 3600
+
+# =============================================
+# 🗄️ CONFIGURACIÓN DE BASE DE DATOS (POSTGRESQL)
+# =============================================
 # Usar PostgreSQL para la base de datos maestra
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 if not app.config['SQLALCHEMY_DATABASE_URI']:
