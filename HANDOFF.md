@@ -1,8 +1,9 @@
 # 🗂️ CONTEXTO MAESTRO — PanaderíaPro (Bakery ERP)
 
-**Última actualización:** 2 de Octubre, 2026
-**Último commit:** 71f6ae1 (fix DT-3 + DT-4: imports muertos)
-**Sesión de hoy:** Mañana (DT-11, B3, B4, B7) + Tarde (DT-12, DT-13, DT-14, DT-16, DT-26, DT-27, DT-3, DT-4)
+**Última actualización:** 3 de Octubre, 2026
+**Último commit:** a25505a (fix DT-6 + DT-9: default=1 eliminado)
+**Sesión 2 Oct:** DT-11, DT-12, DT-13, DT-14, DT-16, DT-26, DT-27, DT-3, DT-4
+**Sesión 3 Oct:** DT-6, DT-9
 
 ---
 
@@ -10,9 +11,9 @@
 
 - **Nombre:** PanaderíaPro (bakery-erp)
 - **Repo:** https://github.com/mauricioaea/bakery-erp
-- **Estado:** v1.1.4 — **11/11 módulos completados (100%)** + Demo Fases 1-12 completadas + Endurecimiento de seguridad + Log limpio sin warnings + Código sin imports muertos
+- **Estado:** v1.1.5 — **11/11 módulos completados (100%)** + Demo Fases 1-12 completadas + Endurecimiento de seguridad + Log limpio sin warnings + Código sin imports muertos + 2 deudas críticas de `default=1` resueltas
 - **Arquitectura:** Multi-tenant con PostgreSQL (schemas por tenant)
-- **Próximo hito:** DT-6 + DT-9 (`default=1` en 2 modelos) + DT-20 Fase C
+- **Próximo hito:** DT-20 Fase C (eliminar los 30 `default=1` restantes)
 
 ---
 
@@ -94,6 +95,8 @@
 ---
 
 ## 6️⃣ Últimos commits pusheados
+a25505a fix(DT-6, DT-9): eliminar default=1 de panaderia_id en PagoIndividual y Proveedor
+11662f5 docs: HANDOFF v7.1 - DT-3 + DT-4 resueltas, regla 20 (findstr /c:), balance del día 9 deudas
 71f6ae1 fix(DT-3, DT-4): eliminar import muerto Response y 4 reimports redundantes de func en reportes.py
 8bda650 docs: HANDOFF v7 - 7 deudas resueltas (DT-11 a DT-27), estimaciones Fases 3-8, reglas 17-19
 cafc325 fix(DT-14): leer SECRET_KEY desde .env en lugar de hardcodearla
@@ -104,8 +107,6 @@ ffd8e8f fix(DT-16): no imprimir password de BD en log de login - sanitizar URI
 a2a2e71 docs: HANDOFF v6 - DT-11 resuelto
 cbcb76b chore: limpiar .gitignore
 a522e0c fix(DT-11): eliminar acceso a current_user en event listener de checkout
-12bce7b docs: HANDOFF v5
-4a9669b security(B7): validacion global de Origin en before_request
 
 text
 
@@ -163,16 +164,24 @@ text
 
 ### Bug sistémico — panaderia_id default=1 (DT-20)
 
-- **~32 modelos** tienen `panaderia_id = db.Column(..., default=1)`.
+- **~30 modelos** todavía tienen `panaderia_id = db.Column(..., default=1)`.
 - **Fase A (auditoría):** completada.
 - **Fase B (fix quirúrgico):** completada — 4 INSERTs corregidos (commit `344c552`).
-- **Fase C (eliminar defaults):** pendiente.
+- **Fixes puntuales:** DT-6 (`PagoIndividual`) y DT-9 (`Proveedor`) — commit `a25505a`.
+- **Fase C (eliminar ~30 defaults restantes):** pendiente.
 
 ---
 
 ## 9️⃣ Deuda técnica acumulada
 
-### ✅ RESUELTAS hoy (2 Oct 2026) — 9 deudas
+### ✅ RESUELTAS el 3 de Octubre 2026
+
+| # | Descripción | Commit |
+|---|-------------|--------|
+| DT-6 | `PagoIndividual.panaderia_id default=1` | `a25505a` |
+| DT-9 | `Proveedor.panaderia_id default=1` | `a25505a` |
+
+### ✅ RESUELTAS el 2 de Octubre 2026 (11 deudas)
 
 | # | Descripción | Commit |
 |---|-------------|--------|
@@ -194,9 +203,7 @@ text
 
 | # | Ubicación | Descripción |
 |---|-----------|-------------|
-| DT-6 | `models.py:2124` | `PagoIndividual.panaderia_id default=1` |
-| DT-9 | `models.py:523` | `Proveedor.panaderia_id default=1` |
-| DT-20 | `models.py` (32 modelos) | Bug sistémico `panaderia_id default=1` (Fase C pendiente) |
+| DT-20 | `models.py` (~30 modelos) | Bug sistémico `panaderia_id default=1` (Fase C pendiente) |
 
 ### 🟡 Medias pendientes
 
@@ -251,6 +258,7 @@ text
 18. **Nunca usar `echo texto >> archivo` en Windows para modificar archivos de texto. Usar Notepad o PowerShell.**
 19. **Nunca acceder a `current_user` desde event listeners de SQLAlchemy (`checkout`, `connect`). Causa recursión con `load_user`. Usar `flask.session` o `flask.g`.**
 20. **En Windows, `findstr "patrón"` sin `/c:` hace búsqueda con wildcards y a veces no encuentra coincidencias literales. Usar siempre `findstr /c:"patrón"` para búsquedas literales.**
+21. **Antes de aplicar un fix según el HANDOFF, verificar el estado actual del archivo. El HANDOFF puede estar desactualizado — el código es la fuente de verdad.**
 
 ### Comandos útiles
 
@@ -263,6 +271,10 @@ cmd
 psql -U postgres -p 5433 -h localhost -d panaderia_master
 Dentro: SET client_encoding TO 'UTF8';
 Salir: \q
+Ver estructura de una tabla:
+
+cmd
+psql -U postgres -p 5433 -h localhost -d panaderia_master -c "\d tenant_27.nombre_tabla"
 Seed Demo:
 
 cmd
@@ -298,7 +310,7 @@ text
 ✅ B4 v2: Estado persistente reset
 ✅ B7: CSRF global
 
---- Sesión 2 Oct 2026 (tarde) ---
+--- Sesión 2 Oct 2026 ---
 ✅ DT-3 + DT-4: Imports muertos y redundantes
 ✅ DT-11: Event listener sin current_user
 ✅ DT-12: _obtener_nombre_empresa seguro
@@ -308,12 +320,16 @@ text
 ✅ DT-26: Latencia resuelta indirectamente
 ✅ DT-27: Query.get() → db.session.get()
 
-⏳ DT-6 + DT-9: default=1 en 2 modelos (CRÍTICO)
-⏳ DT-20 Fase C: eliminar 32 defaults (CRÍTICO)
+--- Sesión 3 Oct 2026 ---
+✅ DT-6: PagoIndividual.panaderia_id default=1 eliminado
+✅ DT-9: Proveedor.panaderia_id default=1 eliminado
+
+⏳ DT-20 Fase C: eliminar ~30 defaults restantes (CRÍTICO)
 ⏳ Fase C.3: auditoría de columnas (22 tablas)
 ⏳ DT-17, DT-18: Reportes tesorería nivel contable
 ⏳ DT-19: CSRF completo con flask-wtf
-⏳ DT-1, DT-5, DT-7: Deudas medias varias
+⏳ DT-1, DT-5, DT-7, DT-21, DT-25, DT-28: Deudas medias varias
+⏳ DT-10, DT-22, DT-24: Deudas bajas
 
 ⏳ Fase 3: Dockerización + subdominios + nube
 ⏳ Fase 4: HTTPS/SSL + rate limiting + logging + monitoreo + caché
@@ -351,9 +367,10 @@ Mercado objetivo
 
 Precio sugerido: $60k-$600k COP/mes.
 
-Estimación de tiempos (2 Oct 2026)
+Estimación de tiempos (3 Oct 2026)
 Bloque	Estimación
-Limpieza pre-docker	~7 h (quedan ~3-4 h: DT-6, DT-9, DT-20 C)
+DT-20 Fase C	3-4 h
+Fase C.3	4-6 h
 Fase 3 (nube + Docker)	~22-32 h
 Fase 4 (seguridad)	~14-20 h
 Fase 5 (monetización)	~26-36 h
@@ -364,12 +381,14 @@ Al iniciar un nuevo chat, pegar este archivo como contexto inicial.
 
 Instrucción sugerida para el asistente:
 
-"Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el archivo HANDOFF.md v7.1 con el contexto maestro del proyecto. Vamos a continuar desde donde lo dejamos. Por favor actúa como instructor guiando paso a paso, con la metodología de trabajo descrita en el HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/findstr, commit tras cada fix verificado. Al insertar bloques, muéstrame ANTES → DESPUÉS con número de línea exacto."
+"Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el archivo HANDOFF.md v7.2 con el contexto maestro del proyecto. Vamos a continuar desde donde lo dejamos. Por favor actúa como instructor guiando paso a paso, con la metodología de trabajo descrita en el HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/findstr, commit tras cada fix verificado. Al insertar bloques, muéstrame ANTES → DESPUÉS con número de línea exacto."
 
-Próxima tarea sugerida: DT-6 + DT-9 (default=1 en PagoIndividual y Proveedor en models.py).
+Próxima tarea sugerida: DT-20 Fase C (eliminar los ~30 default=1 restantes en models.py).
 
 ✅ Última validación
-Último commit: 71f6ae1 (pusheado a GitHub).
+Último commit: a25505a (pusheado a GitHub).
+
+Última sesión: 3 Oct 2026 — DT-6 + DT-9 resueltos.
 
 Working tree: clean.
 
@@ -381,10 +400,10 @@ Módulos: 11/11 completados (100%).
 
 Demo: Fases 1-12 completadas, contraseña demo2026.
 
-Log: limpio, sin warnings (9 deudas resueltas hoy).
+Log: limpio, sin warnings (11 deudas resueltas en 2 días).
 
-PDF generation: probado con /exportar_historial_pagos → OK.
+PDF generation: probado.
 
-Pendientes críticos: DT-6, DT-9, DT-20 Fase C, Fase C.3.
+Pendientes críticos: DT-20 Fase C, Fase C.3.
 
-Fin del HANDOFF.md — v7.1
+Fin del HANDOFF.md — v7.2
