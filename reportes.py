@@ -59,13 +59,14 @@ class GeneradorReportes:
                 panaderia_id = current_user.panaderia_id
             
             if panaderia_id:
+                # ✅ DT-1 fix: eliminar el filtro redundante por tenant_id.
+                # La columna tenant_id es residuo histórico y está NULL en
+                # varios tenants (tenant_1, tenant_26), lo que hacía que la
+                # primera query SIEMPRE fallara y cayera al fallback.
+                # Ahora se hace un solo filtro por panaderia_id (siempre seteado).
                 config = ConfiguracionPanaderia.query.filter_by(
-                    tenant_id=panaderia_id
+                    panaderia_id=panaderia_id
                 ).first()
-                if not config:
-                    config = ConfiguracionPanaderia.query.filter_by(
-                        panaderia_id=panaderia_id
-                    ).first()
                 if config and config.nombre_panaderia:
                     return config.nombre_panaderia.upper()
         except Exception as e:
