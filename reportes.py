@@ -51,7 +51,12 @@ class GeneradorReportes:
             from models import ConfiguracionPanaderia
             from flask_login import current_user
             
-            panaderia_id = self.panaderia_id or (current_user.panaderia_id if current_user.is_authenticated else None)
+            # ✅ DT-12 fix: verificar current_user de forma segura antes de acceder.
+            # Flask-Login puede devolver None cuando no hay contexto de request
+            # (ej. al instanciar GeneradorReportes fuera de una petición HTTP).
+            panaderia_id = self.panaderia_id
+            if not panaderia_id and current_user is not None and hasattr(current_user, 'is_authenticated') and current_user.is_authenticated:
+                panaderia_id = current_user.panaderia_id
             
             if panaderia_id:
                 config = ConfiguracionPanaderia.query.filter_by(
