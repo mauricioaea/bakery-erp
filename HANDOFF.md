@@ -1,9 +1,9 @@
 # 🗂️ CONTEXTO MAESTRO — PanaderíaPro (Bakery ERP)
 
 **Última actualización:** 3 de Octubre, 2026
-**Último commit:** 14de608 (fix DT-20 Fase C - Tanda 2)
+**Último commit:** b111005 (fix DT-20 Fase C - Tanda 3: DT-20 al 100%)
 **Sesión 2 Oct:** DT-11, DT-12, DT-13, DT-14, DT-16, DT-26, DT-27, DT-3, DT-4
-**Sesión 3 Oct:** DT-1, DT-6, DT-9, DT-20 Fase C (Tanda 1 + Tanda 2), DT-30
+**Sesión 3 Oct:** DT-1, DT-6, DT-9, DT-20 Fase C (Tanda 1 + Tanda 2 + Tanda 3), DT-30
 
 ---
 
@@ -11,9 +11,9 @@
 
 - **Nombre:** PanaderíaPro (bakery-erp)
 - **Repo:** https://github.com/mauricioaea/bakery-erp
-- **Estado:** v1.1.6 — **11/11 módulos completados (100%)** + Demo Fases 1-12 completadas + Endurecimiento de seguridad + Log limpio sin warnings + Código sin imports muertos + DT-20 Fase C al 93%
+- **Estado:** v1.1.7 — **11/11 módulos completados (100%)** + Demo Fases 1-12 + Endurecimiento de seguridad + **DT-20 al 100%** + Código limpio
 - **Arquitectura:** Multi-tenant con PostgreSQL (schemas por tenant)
-- **Próximo hito:** DT-20 Fase C Tanda 3 (Panaderia + ConfiguracionPanaderia) + Fase C.3
+- **Próximo hito:** Fase C.3 (auditoría de columnas huérfanas) + Fase 3 (Docker + nube)
 
 ---
 
@@ -23,7 +23,7 @@
 - Python 3.10+, Flask 3.1.2, SQLAlchemy 2.0
 - PostgreSQL 17.10 (puerto 5433)
 - Flask-Login, Werkzeug (pbkdf2:sha256, scrypt), ReportLab, Matplotlib
-- **BD:** `panaderia_master` — credenciales en `.env` (no hardcodeadas)
+- **BD:** `panaderia_master` — credenciales en `.env`
 
 ### Frontend
 - HTML5/CSS3, JavaScript vanilla, Bootstrap 5.1.3, Chart.js, Font Awesome 6
@@ -32,12 +32,11 @@
 - `app.py` (~12.600 líneas, ~528 KB) — aplicación principal
 - `models.py` (~3.050 líneas, ~130 KB) — modelos SQLAlchemy
 - `reportes.py` (~3.250 líneas, ~160 KB) — generación PDF
-- `seed_demo.py` (~450 líneas, ~18 KB) — seed modular del Demo
-- `seeds/` — 11 fases del seed (fase1 a fase11)
+- `seed_demo.py` (~450 líneas) — seed del Demo
+- `seeds/` — 11 fases del seed
 - `middleware_saas.py`, `tenant_decorators.py`, `tenant_context.py` — multi-tenant
 - `templates/`, `static/`
-- `.env` — variables de entorno (credenciales BD, SECRET_KEY)
-- `.env.example` — plantilla documentada
+- `.env` (protegido en `.gitignore`), `.env.example` (plantilla)
 - `HANDOFF.md` — este archivo
 
 ---
@@ -50,8 +49,6 @@
 | 25 | Panadería Test Fase C | panadería_test_fase_ | premium | nube_premium |
 | 26 | Test Audit Fase C.2 | test_audit_fase_c2 | premium | nube_premium |
 | 27 | **Panadería Demo** | panadería_demo | premium | nube_premium |
-
-**Tenant principal del Demo:** `tenant_27` ("Panadería Demo").
 
 ---
 
@@ -70,16 +67,16 @@
 - `admin_27` (id=1), `super_27` (id=2), `cajero_27` (id=3) — tenant_27 Demo
 
 ### Contraseña del Demo
-- **Todos los usuarios del tenant_27** (`admin_27`, `super_27`, `cajero_27`): contraseña **`demo2026`**.
-- **Se restaura automáticamente** en cada `--reset-all` (fix A4).
+- **Todos los usuarios del tenant_27:** contraseña **`demo2026`**.
+- Se restaura automáticamente en cada `--reset-all`.
 - Constante `DEMO_PASSWORD` en `seed_demo.py` (línea 21).
 
 ### Creación de usuarios (diseño del negocio)
 - **NO se crean usuarios desde el frontend.**
-- Los usuarios se crean **al alta del tenant** en `crear_tenant_saas()` (SQL directo con `panaderia_id` explícito).
+- Los usuarios se crean al **alta del tenant** en `crear_tenant_saas()` (SQL directo con `panaderia_id` explícito).
 - **Licencia premium:** 3 usuarios (admin, supervisor, cajero).
 - **Licencia básica:** 1 usuario (admin).
-- El endpoint `/crear_usuario` fue **eliminado** en DT-20 Fase C Tanda 2 (era código huérfano).
+- Endpoint `/crear_usuario` fue **eliminado** en DT-20 Fase C Tanda 2 (código huérfano).
 
 ---
 
@@ -95,13 +92,15 @@
 | 6 | Proveedores | ✅ COMPLETO |
 | 7 | Gestión de Clientes (solo dev_master) | ✅ COMPLETO |
 | 8 | Activos Fijos | ✅ COMPLETO |
-| 9 | Gestión de Usuarios + Mi Perfil | ✅ COMPLETO (sin crear usuarios) |
+| 9 | Gestión de Usuarios + Mi Perfil | ✅ COMPLETO |
 | 10 | Gestión Financiera | ✅ COMPLETO |
 | 11 | Reportes Profesionales | ✅ COMPLETO |
 
 ---
 
 ## 6️⃣ Últimos commits pusheados
+b111005 fix(DT-20 Fase C - Tanda 3): eliminar default=1 en ConfiguracionPanaderia y Panaderia + arreglar INSERT ORM
+82ed869 docs: HANDOFF v7.3 - 6 deudas resueltas (3 Oct), DT-20 Fase C al 93%, reglas 21-22
 14de608 fix(DT-20 Fase C - Tanda 2): eliminar endpoint /crear_usuario huérfano + eliminar default=1 en Categoria y Usuario
 45d011e fix(DT-20 Fase C - Tanda 1): eliminar default=1 en panaderia_id de 27 modelos seguros - Grupo A
 0becbf8 fix(DT-1): eliminar filtro redundante por tenant_id en _obtener_nombre_empresa
@@ -132,7 +131,7 @@ text
 | 3 | Materias primas | ✅ | 17 |
 | 4 | Recetas y fórmulas | ✅ | 12 recetas / 80 ingredientes |
 | 5 | Productos | ✅ | 12 |
-| 6 | Producción diaria (v2 con reposición) | ✅ | ~2.300 |
+| 6 | Producción diaria | ✅ | ~2.300 |
 | 7 | Ventas | ✅ | ~7.300 |
 | 8 | Productos externos | ✅ | 12 |
 | 9 | Activos fijos | ✅ | ~38 |
@@ -154,10 +153,9 @@ SECRET_KEY=...
 
 text
 
-- `.env` está en `.gitignore` (protegido).
-- `.env.example` está en el repo (documenta las variables).
-- `load_dotenv()` se llama al inicio de `app.py` (línea ~1258).
-- **SECRET_KEY** se lee del `.env` (fix DT-14).
+- `.env` en `.gitignore`. `.env.example` en el repo.
+- `load_dotenv()` al inicio de `app.py`.
+- **SECRET_KEY** se lee del `.env` (DT-14).
 
 ### Rutas críticas
 
@@ -170,23 +168,25 @@ text
 - `/depositos_bancarios`
 - `/admin/reset-demo`, `/admin/reset-demo/status`
 - `/crear_cliente`, `/editar_cliente_super`, `/renovar_suscripcion_super`, `/eliminar_cliente`
-- **Eliminado:** `/crear_usuario` (DT-20 Fase C Tanda 2)
+- **Eliminado:** `/crear_usuario`
 
 ### Bug sistémico — panaderia_id default=1 (DT-20)
 
-- **Fase A (auditoría):** completada.
-- **Fase B (fix quirúrgico):** completada — 4 INSERTs corregidos (commit `344c552`).
-- **Fase C - Tanda 1:** completada — 27 modelos del Grupo A sin default (commit `45d011e`).
-- **Fase C - Tanda 2:** completada — Categoria y Usuario sin default + endpoint huérfano eliminado (commit `14de608`).
-- **Fase C - Tanda 3 (pendiente):** Panaderia + ConfiguracionPanaderia.
+**✅ RESUELTO AL 100% (3 Oct 2026).**
 
-**Progreso DT-20:** 29 de 31 modelos sin default (93%).
+- **Fase A (auditoría):** completada.
+- **Fase B (fix quirúrgico):** completada — 4 INSERTs críticos (`344c552`).
+- **Fase C - Tanda 1:** 27 modelos del Grupo A (`45d011e`).
+- **Fase C - Tanda 2:** Categoria y Usuario + endpoint huérfano eliminado (`14de608`).
+- **Fase C - Tanda 3:** Panaderia y ConfiguracionPanaderia + INSERT ORM de `app.py:1719` (`b111005`).
+
+**Resultado:** ningún modelo tiene `default=1` en `panaderia_id`. Si un INSERT olvida pasar `panaderia_id`, **falla con `IntegrityError`** (fail-fast).
 
 ---
 
 ## 9️⃣ Deuda técnica acumulada
 
-### ✅ RESUELTAS el 3 de Octubre 2026 (6 deudas)
+### ✅ RESUELTAS el 3 de Octubre 2026 (7 deudas)
 
 | # | Descripción | Commit |
 |---|-------------|--------|
@@ -194,7 +194,8 @@ text
 | DT-6 | `PagoIndividual.panaderia_id default=1` | `a25505a` |
 | DT-9 | `Proveedor.panaderia_id default=1` | `a25505a` |
 | DT-20 Fase C Tanda 1 | 27 modelos del Grupo A sin default | `45d011e` |
-| DT-20 Fase C Tanda 2 | Categoria + Usuario sin default + 2 INSERTs arreglados | `14de608` |
+| DT-20 Fase C Tanda 2 | Categoria + Usuario sin default + 2 INSERTs + endpoint huérfano | `14de608` |
+| DT-20 Fase C Tanda 3 | Panaderia + ConfiguracionPanaderia + INSERT ORM | `b111005` |
 | DT-30 | Endpoint `/crear_usuario` huérfano eliminado | `14de608` |
 
 ### ✅ RESUELTAS el 2 de Octubre 2026 (11 deudas)
@@ -204,7 +205,7 @@ text
 | DT-3 | Import muerto `Response` | `71f6ae1` |
 | DT-4 | 4 reimports redundantes de `func` | `71f6ae1` |
 | DT-11 | Event listener `checkout` sin `current_user` | `a522e0c` |
-| DT-12 | `_obtener_nombre_empresa` con `current_user` seguro | `6e260b1` |
+| DT-12 | `_obtener_nombre_empresa` seguro | `6e260b1` |
 | DT-13 | `.env.example` | `301bd65` |
 | DT-14 | `SECRET_KEY` desde `.env` | `cafc325` |
 | DT-16 | Password BD oculta en log | `ffd8e8f` |
@@ -212,14 +213,10 @@ text
 | DT-27 | `Query.get()` → `db.session.get()` | `1e4c120` |
 
 ### ✅ RESUELTAS anteriormente
-
 - D1, DT-2, DT-2b, DT-20 Fase A, DT-20 Fase B, B3, B4 v2, B7.
 
 ### 🔴 Críticas pendientes
-
-| # | Ubicación | Descripción |
-|---|-----------|-------------|
-| DT-20 | `models.py` (2 modelos) | `Panaderia.panaderia_id default=1` (línea 433) + `ConfiguracionPanaderia.panaderia_id default=1` (línea 272) — Tanda 3 |
+**Ninguna.** DT-20 al 100%. ✅
 
 ### 🟡 Medias pendientes
 
@@ -232,19 +229,19 @@ text
 | DT-18 | `reportes.py` | Reporte tesorería nivel contable profesional |
 | DT-19 | global | CSRF completo con `flask-wtf` |
 | DT-21 | POS | Modal de crear cliente sin botón visible |
-| DT-25 | `app.py:1744` | Orden real de ejecución de `before_request` vs `login_required` |
+| DT-25 | `app.py:1744` | Orden real de `before_request` vs `login_required` |
 | DT-28 | `POST /` | Doble submit detectado |
-| **DT-29** | `app.py` (before_request fallback) | Tenant por defecto "Panadería Principal" (tenant_1) se aplica a usuarios anónimos. En producción con subdominios debería determinarse por Host. |
-| **DT-31** | `tenant_27.usuarios` + otros | Columnas `tenant_id` con `DEFAULT 1` en PostgreSQL (residuo histórico). Eliminar con `ALTER TABLE`. |
+| DT-29 | `app.py` (before_request fallback) | Tenant por defecto "Panadería Principal" en usuarios anónimos |
+| DT-31 | `tenant_27.usuarios` + otros | Columnas `tenant_id` con `DEFAULT 1` en PostgreSQL (ALTER TABLE pendiente) |
 
 ### 🟢 Bajas pendientes
 
 | # | Ubicación | Descripción |
 |---|-----------|-------------|
-| DT-10 | `app.py:9022-9495` | Exports PDF no agrupados bajo comentario separador |
+| DT-10 | `app.py:9022-9495` | Exports PDF no agrupados |
 | DT-22 | `/configuracion/facturacion` | Permite modificar NIT sin confirmación |
-| DT-23 | `models.py` | Ver DT-20 (Fase C Tanda 3) |
-| DT-24 | `mi_perfil.html` | Frontend no muestra `exitoso` del último reset |
+| DT-24 | `mi_perfil.html` | No muestra `exitoso` del último reset |
+| **DT-32** | `models.py:433` + `to_dict()` | `Panaderia.panaderia_id` es redundante con `id`. Nadie lo lee en Python. Candidato a eliminar en migración futura. |
 
 ### 🚨 Otras deudas
 - **22 tablas con columnas huérfanas (79 columnas).** Fase C.3 planificada.
@@ -269,27 +266,28 @@ text
 12. **Verificar ubicación y compilar tras cada inserción.**
 13. **Al detectar deuda técnica: anotarla (no tocarla), priorizarla, decidir después.**
 14. **Al insertar código a nivel de módulo: ubicarlo junto a sus hermanos temáticos.**
-15. **Al pedir un test, incluir TODAS las verificaciones previas necesarias en el mismo mensaje.**
+15. **Al pedir un test, incluir TODAS las verificaciones previas necesarias.**
 16. **Cuando el punto de inserción esté justo debajo de un decorador, incluir el decorador en el ANTES → DESPUÉS.**
 17. **Antes de proponer un fix de concurrencia, medir impacto en el pool de SQLAlchemy.**
 18. **Nunca usar `echo texto >> archivo` en Windows para modificar archivos de texto.**
 19. **Nunca acceder a `current_user` desde event listeners de SQLAlchemy.**
 20. **En Windows, usar `findstr /c:"patrón"` para búsquedas literales.**
 21. **Antes de aplicar un fix según el HANDOFF, verificar el estado actual del archivo.**
-22. **Al eliminar código huérfano (endpoints, templates, funciones no usadas), verificar PRIMERO que no haya referencias activas en el proyecto con `findstr /s`.**
+22. **Al eliminar código huérfano, verificar PRIMERO que no haya referencias activas con `findstr /s`.**
+23. **Al auditar modelos con `default=N`: verificar TODOS los INSERTs (ORM + SQL directo) antes de eliminar el default. Considerar si el modelo tiene INSERTs en `models.py` (métodos `@classmethod`), en `app.py`, en `middleware_saas.py`, en `seeds/`, y en ORM DETACHED.**
 
 ### Comandos útiles
 
-**Encoding en CMD:**
+**Encoding:**
 ```cmd
 chcp 65001
-Modo interactivo psql:
+psql:
 
 cmd
 psql -U postgres -p 5433 -h localhost -d panaderia_master
 Dentro: SET client_encoding TO 'UTF8';
 Salir: \q
-Ver estructura de una tabla:
+Ver estructura:
 
 cmd
 psql -U postgres -p 5433 -h localhost -d panaderia_master -c "\d tenant_27.nombre_tabla"
@@ -302,18 +300,19 @@ Compilar / Servidor:
 cmd
 python -m py_compile app.py
 python app.py
-Generar SECRET_KEY nueva:
+Generar SECRET_KEY:
 
 cmd
 python -c "import secrets; print(secrets.token_hex(32))"
-Búsquedas literales con findstr:
+Búsquedas:
 
 cmd
 findstr /n /c:"patrón exacto" archivo.py
-Búsquedas recursivas:
+findstr /s /n /c:"patrón" *.py
+Ver bloque de líneas (PowerShell):
 
 cmd
-findstr /s /n /c:"patrón" *.py
+powershell -Command "$lines = Get-Content archivo.py; for ($i=INICIO; $i -le FIN; $i++) { Write-Host ($i+1)': ' $lines[$i] }"
 1️⃣1️⃣ Roadmap
 text
 ✅ Fase 1: Módulos 1-10
@@ -324,12 +323,12 @@ text
 
 ✅ D1: Password PostgreSQL a env vars
 ✅ DT-2 + DT-2b: Métodos duplicados + indentación
-✅ DT-20 Fase A + B: Multi-tenant INSERTs
+✅ DT-20 Fase A + B + C: Multi-tenant INSERTs y default=1 (100%)
 ✅ B3: Lock atómico
 ✅ B4 v2: Estado persistente reset
 ✅ B7: CSRF global
 
---- Sesión 2 Oct 2026 ---
+--- Sesión 2 Oct 2026 (11 deudas) ---
 ✅ DT-3 + DT-4: Imports muertos
 ✅ DT-11: Event listener sin current_user
 ✅ DT-12: _obtener_nombre_empresa seguro
@@ -339,15 +338,15 @@ text
 ✅ DT-26: Latencia resuelta
 ✅ DT-27: Query.get() → db.session.get()
 
---- Sesión 3 Oct 2026 ---
+--- Sesión 3 Oct 2026 (7 deudas) ---
 ✅ DT-1: Filtro redundante tenant_id
 ✅ DT-6 + DT-9: default=1 en 2 modelos
 ✅ DT-20 Fase C Tanda 1: 27 modelos sin default
 ✅ DT-20 Fase C Tanda 2: Categoria + Usuario + endpoint huérfano
+✅ DT-20 Fase C Tanda 3: Panaderia + ConfiguracionPanaderia + INSERT ORM
 ✅ DT-30: Endpoint /crear_usuario eliminado
 
-⏳ DT-20 Fase C Tanda 3: Panaderia + ConfiguracionPanaderia
-⏳ Fase C.3: auditoría de columnas (22 tablas)
+⏳ Fase C.3: auditoría de columnas (22 tablas, 79 columnas)
 ⏳ DT-31: tenant_id DEFAULT 1 en PostgreSQL
 ⏳ DT-29: Tenant por defecto en usuarios anónimos
 ⏳ DT-5, DT-7, DT-17, DT-18, DT-19, DT-21, DT-25, DT-28: Deudas medias
@@ -359,11 +358,11 @@ text
 ⏳ Fase 7: Junta Directiva IA
 ⏳ Fase 8: Integraciones estratégicas (API REST, webhooks)
 1️⃣2️⃣ DT-11 — Resuelto (2 Oct 2026) — Bitácora
-Causa raíz: El event listener checkout accedía a current_user (Flask-Login) para determinar el tenant. current_user es un LocalProxy que dispara load_user al primer acceso. load_user hace db.session.execute() → checkout → event listener → current_user → load_user → ... recursión infinita. SQLAlchemy 2.0 aborta con isce.
+Causa raíz: El event listener checkout accedía a current_user (Flask-Login). current_user es un LocalProxy que dispara load_user al primer acceso. load_user hace db.session.execute() → checkout → event listener → current_user → load_user → ... recursión infinita. SQLAlchemy 2.0 aborta con isce.
 
 Solución: Eliminar el acceso a current_user del event listener. Leer el tenant SOLO desde flask.session.
 
-Bitácora de intentos fallidos:
+Bitácora:
 
 Versión	Cambio	Resultado
 v1	Reducir queries en load_user	❌ No resolvió
@@ -374,18 +373,26 @@ Efecto colateral positivo: DT-26 (latencia) se resolvió indirectamente.
 
 Commit: a522e0c
 
-1️⃣3️⃣ DT-20 Fase C — Bitácora
-Objetivo: eliminar default=1 de la columna panaderia_id en todos los modelos.
+1️⃣3️⃣ DT-20 — Bug sistémico del default=1 — Bitácora
+Problema: 32 modelos tenían panaderia_id = db.Column(..., default=1). Si un INSERT olvidaba pasar panaderia_id, caía silenciosamente en tenant_1.
 
-Fases:
+Fases y resultados:
 
-Fase	Modelos	Commit
-A (auditoría)	—	—
-B (INSERTs críticos)	4 INSERTs	344c552
-C - Tanda 1	27 (Grupo A)	45d011e
-C - Tanda 2	2 (Categoria, Usuario) + endpoint huérfano	14de608
-C - Tanda 3 (pendiente)	2 (Panaderia, ConfiguracionPanaderia)	—
-Progreso: 29 de 31 modelos sin default (93%).
+Fase	Modelos	Commit	Notas
+A (auditoría)	—	—	Identificados 4 INSERTs críticos
+B (fix quirúrgico)	4 INSERTs	344c552	Agregado panaderia_id explícito
+C - Tanda 1	27 (Grupo A)	45d011e	Modelos cuyos INSERTs ya pasaban panaderia_id
+C - Tanda 2	2 (Categoria, Usuario)	14de608	Arreglados 2 INSERTs + endpoint huérfano eliminado
+C - Tanda 3	2 (Panaderia, ConfiguracionPanaderia)	b111005	Arreglado INSERT ORM de app.py:1719
+Resultado: 31 modelos sin default=1. Si un INSERT olvida pasar panaderia_id, falla con IntegrityError (fail-fast).
+
+Lecciones aprendidas (regla 23):
+
+Verificar TODOS los INSERTs antes de eliminar un default.
+
+Los ORM DETACHED (que solo leen) cuentan como "OK".
+
+Los INSERTs ORM dentro de models.py (métodos @classmethod) también hay que verificarlos.
 
 1️⃣4️⃣ Notas estratégicas
 Objetivo del ERP
@@ -406,29 +413,30 @@ Premium: 3 usuarios (admin, supervisor, cajero).
 
 Básica: 1 usuario (admin).
 
-Los usuarios se crean al alta del tenant, no desde el frontend.
+Los usuarios se crean al alta del tenant.
 
 Estimación de tiempos (3 Oct 2026)
 Bloque	Estimación
-DT-20 Tanda 3 + Fase C.3	~4-6 h
+Fase C.3 (auditoría de columnas)	~4-6 h
+DT-31 (ALTER TABLE tenant_id)	~1-2 h
 Fase 3 (nube + Docker)	~22-32 h
 Fase 4 (seguridad)	~14-20 h
 Fase 5 (monetización)	~26-36 h
 Fases 6-8 (IA + integraciones)	~50-85 h
-TOTAL hasta Fase 8	~116-179 h
+TOTAL hasta Fase 8	~116-180 h
 📞 Cómo continuar en un chat nuevo
 Al iniciar un nuevo chat, pegar este archivo como contexto inicial.
 
 Instrucción sugerida para el asistente:
 
-"Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el archivo HANDOFF.md v7.3 con el contexto maestro del proyecto. Vamos a continuar desde donde lo dejamos. Por favor actúa como instructor guiando paso a paso, con la metodología de trabajo descrita en el HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/findstr, commit tras cada fix verificado. Al insertar bloques, muéstrame ANTES → DESPUÉS con número de línea exacto."
+"Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el archivo HANDOFF.md v7.4 con el contexto maestro del proyecto. Vamos a continuar desde donde lo dejamos. Por favor actúa como instructor guiando paso a paso, con la metodología de trabajo descrita en el HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/findstr, commit tras cada fix verificado. Al insertar bloques, muéstrame ANTES → DESPUÉS con número de línea exacto."
 
-Próxima tarea sugerida: DT-20 Fase C Tanda 3 (Panaderia + ConfiguracionPanaderia).
+Próxima tarea sugerida: Fase C.3 (auditoría de columnas huérfanas en 22 tablas).
 
 ✅ Última validación
-Último commit: 14de608 (pusheado a GitHub).
+Último commit: b111005 (pusheado a GitHub).
 
-Última sesión: 3 Oct 2026 — 6 deudas resueltas (DT-1, DT-6, DT-9, DT-20 Tanda 1, DT-20 Tanda 2, DT-30).
+Última sesión: 3 Oct 2026 — 7 deudas resueltas.
 
 Working tree: clean.
 
@@ -442,8 +450,10 @@ Demo: Fases 1-12 completadas, contraseña demo2026.
 
 Log: limpio, sin warnings.
 
-DT-20: 93% resuelto.
+DT-20: ✅ 100% RESUELTO.
 
-Pendientes críticos: DT-20 Tanda 3, Fase C.3.
+Deudas críticas pendientes: ninguna.
 
-Fin del HANDOFF.md — v7.3
+Pendientes: Fase C.3, DT-31, DT-29, deudas medias varias.
+
+Fin del HANDOFF.md — v7.4
