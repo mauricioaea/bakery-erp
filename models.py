@@ -31,8 +31,8 @@ class Usuario(UserMixin, db.Model):
     # COMENTADO TEMPORALMENTE PARA MIGRACIÓN:
     # panaderia_id = db.Column(db.Integer, db.ForeignKey('configuracion_panaderia.id'), nullable=False, default=1)
     # CAMPO TEMPORAL SIN FOREIGN KEY:
-    panaderia_id = db.Column(db.Integer, nullable=False, default=1)  # ✅ Sin Foreign Key
-    tenant_id = db.Column(db.Integer, nullable=True, default=1)
+    panaderia_id = db.Column(db.Integer, nullable=False)  # ✅ Sin Foreign Key
+    tenant_id = db.Column(db.Integer, nullable=True)
     
     # 🆕 RELACIÓN CON PERMISOS PERSONALIZADOS
     permisos_personalizados = db.relationship('PermisoUsuario', backref='usuario', lazy=True, cascade='all, delete-orphan')
@@ -251,7 +251,7 @@ class Categoria(db.Model):
     nombre = db.Column(db.String(100), nullable=False)
     
     # ✅ NUEVO: Relación con panadería para multicliente
-    panaderia_id = db.Column(db.Integer, db.ForeignKey('panaderias.id'), nullable=False, default=1)
+    panaderia_id = db.Column(db.Integer, db.ForeignKey('panaderias.id'), nullable=False)
     panaderia = db.relationship('Panaderia', backref=db.backref('categorias_list', lazy=True))
     
     # Relación con productos

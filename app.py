@@ -6997,13 +6997,13 @@ def crear_productos_prueba():
         # Obtener o crear categorías
         categoria_pan = Categoria.query.filter_by(nombre="Panadería", panaderia_id=current_user.panaderia_id).first()
         if not categoria_pan:
-            categoria_pan = Categoria(nombre="Panadería")
+            categoria_pan = Categoria(nombre="Panadería", panaderia_id=current_user.panaderia_id)
             db.session.add(categoria_pan)
             db.session.flush()
         
         categoria_bebida = Categoria.query.filter_by(nombre="Bebidas", panaderia_id=current_user.panaderia_id).first()
         if not categoria_bebida:
-            categoria_bebida = Categoria(nombre="Bebidas")
+            categoria_bebida = Categoria(nombre="Bebidas", panaderia_id=current_user.panaderia_id)
             db.session.add(categoria_bebida)
             db.session.flush()
         
@@ -10815,91 +10815,6 @@ def gestion_usuarios():
         return redirect(url_for('dashboard'))
     
     
-@app.route('/crear_usuario', methods=['GET', 'POST'])
-@licencia_premium_requerida()
-@login_required
-@permisos_requeridos('usuarios', 'gestionar')
-def crear_usuario():
-    """Crear nuevo usuario con verificación de límites"""
-    
-    # 🆕 VERIFICAR LÍMITES ANTES DE CONTINUAR
-    from models import obtener_limites_panaderia, verificar_limite_usuarios
-    
-    if verificar_limite_usuarios():
-        limites = obtener_limites_panaderia()
-        flash(f'❌ Límite de usuarios alcanzado. Tienes {limites["usuarios_actuales"]}/{limites["max_usuarios"]} usuarios.', 'error')
-        return redirect(url_for('gestion_usuarios'))
-    
-    if request.method == 'POST':
-        try:
-            username = request.form['username']
-            password = request.form['password']
-            nombre_completo = request.form['nombre_completo']
-            email = request.form.get('email', '')
-            telefono = request.form.get('telefono', '')
-            rol = request.form['rol']
-            
-            # Verificar si usuario ya existe
-            if Usuario.query.filter_by(username=username).first():
-                flash('❌ El nombre de usuario ya existe', 'error')
-                return redirect(url_for('crear_usuario'))
-            
-            # 🆕 ASIGNAR PANADERÍA POR DEFECTO (temporal)
-            nuevo_usuario = Usuario(
-                username=username,
-                nombre_completo=nombre_completo,
-                email=email,
-                telefono=telefono,
-                rol=rol,
-                panaderia_id=1  # Temporal - se actualizará si se crea BD tenant
-            )
-            nuevo_usuario.set_password(password)
-            
-            db.session.add(nuevo_usuario)
-            db.session.commit()
-            
-            # ⭐⭐ NUEVO: CREACIÓN AUTOMÁTICA DE BD TENANT PARA CLIENTES ⭐⭐
-            if rol in ['cliente', 'admin_cliente']:
-                try:
-                    from middleware_saas import gestor_tenants
-                    import os
-                    
-                    print(f"\n" + "="*60)
-                    print(f"🔄 CREANDO BD TENANT PARA NUEVO CLIENTE: {username}")
-                    
-                    # Crear BD automáticamente
-                    tenant_info = gestor_tenants.obtener_tenant_desde_bd(username)
-                    
-                    if tenant_info:
-                        # Actualizar usuario con ID real de panadería
-                        nuevo_usuario.panaderia_id = tenant_info['id']
-                        db.session.commit()
-                        
-                        print(f"✅ BD creada: {tenant_info['base_datos']}")
-                        print(f"✅ ID asignado: {tenant_info['id']}")
-                        print(f"✅ Consecutivo POS inicializado: 0")
-                    else:
-                        print(f"⚠️  No se pudo crear BD para {username}")
-                        
-                except Exception as e:
-                    print(f"⚠️  Error creando BD tenant: {e}")
-            
-            print("="*60 + "\n")
-            # ⭐⭐ FIN DE CREACIÓN AUTOMÁTICA ⭐⭐
-            
-            # 🆕 ACTUALIZAR INFORMACIÓN DE LÍMITES
-            limites = obtener_limites_panaderia()
-            
-            flash(f'✅ Usuario {username} creado exitosamente. ({limites["usuarios_restantes"]} usuarios restantes)', 'success')
-            return redirect(url_for('gestion_usuarios'))
-            
-        except Exception as e:
-            db.session.rollback()
-            flash(f'❌ Error al crear usuario: {str(e)}', 'error')
-    
-    # 🆕 PASAR INFORMACIÓN DE LÍMITES AL TEMPLATE
-    limites = obtener_limites_panaderia()
-    return render_template('crear_usuario.html', limites=limites)
 
 @app.route('/editar_usuario/<int:usuario_id>', methods=['GET', 'POST'])
 @licencia_premium_requerida()
