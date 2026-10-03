@@ -519,7 +519,7 @@ class Producto(db.Model):
 class Proveedor(db.Model):
     __tablename__ = 'proveedor'
     id = db.Column(db.Integer, primary_key=True)
-    panaderia_id = db.Column(db.Integer, nullable=False, default=1)
+    panaderia_id = db.Column(db.Integer, nullable=False)
     nombre = db.Column(db.String(100), nullable=False)
     contacto = db.Column(db.String(100))
     telefono = db.Column(db.String(20))
@@ -2121,7 +2121,7 @@ class PagoIndividual(db.Model):
     """Registro individual de cada pago"""
     __tablename__ = 'pagos_individuales'
     id = db.Column(db.Integer, primary_key=True)
-    panaderia_id = db.Column(db.Integer, nullable=False, default=1)
+    panaderia_id = db.Column(db.Integer, nullable=False)
     fecha_registro = db.Column(db.DateTime, default=datetime.now)
     fecha_pago = db.Column(db.Date, nullable=False)
     
