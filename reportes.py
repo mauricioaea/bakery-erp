@@ -2768,13 +2768,33 @@ class GeneradorReportes:
             story.append(Paragraph(f"Período: {fecha_inicio} a {fecha_fin}", styles['Normal']))
             story.append(Spacer(1, 20))
             
-            # 1. OBTENER INGRESOS (de RegistroDiario)
-            registros = RegistroDiario.query.filter_by(panaderia_id=panaderia_id).filter(
-                RegistroDiario.fecha >= fecha_inicio,
-                RegistroDiario.fecha <= fecha_fin
-            ).order_by(RegistroDiario.fecha).all()
+            # 1. OBTENER INGRESOS (de Venta - fuente real de ingresos)
+            # DT-17 fix: antes se leia de RegistroDiario, que solo se llena
+            # cuando el cajero hace un cierre de caja manual. En tenants
+            # donde no se usa cierre manual (o en el Demo), quedaba vacio
+            # y el reporte mostraba $0 en ingresos.
+            # Ahora se lee de Venta (que se llena con cada venta del POS),
+            # excluyendo donaciones.
+            from models import Venta
+            from datetime import datetime as _dt_combined
             
-            total_ingresos = sum(r.total_ingresos or 0 for r in registros)
+            _fecha_inicio_dt = _dt_combined.combine(fecha_inicio, _dt_combined.min.time())
+            _fecha_fin_dt = _dt_combined.combine(fecha_fin, _dt_combined.max.time())
+            
+            registros_ventas = Venta.query.filter_by(panaderia_id=panaderia_id).filter(
+                Venta.fecha_hora >= _fecha_inicio_dt,
+                Venta.fecha_hora <= _fecha_fin_dt
+            ).all()
+            
+            # Excluir donaciones para el calculo de ingresos reales
+            ventas_normales = [v for v in registros_ventas if not v.es_donacion]
+            total_ingresos = sum(v.total or 0 for v in ventas_normales)
+            
+            # Agrupar por fecha para el detalle diario
+            ingresos_por_dia = {}
+            for v in ventas_normales:
+                fecha_dia = v.fecha_hora.date()
+                ingresos_por_dia[fecha_dia] = ingresos_por_dia.get(fecha_dia, 0) + (v.total or 0)
             
             # 2. OBTENER GASTOS (de PagoIndividual)
             gastos = PagoIndividual.query.filter_by(panaderia_id=panaderia_id).filter(
@@ -2864,16 +2884,21 @@ class GeneradorReportes:
             story.append(tabla_gastos)
             story.append(Spacer(1, 20))
             
-            # DETALLE DE REGISTROS DIARIOS
+            # DETALLE DE INGRESOS DIARIOS (agrupado desde Venta)
+            # DT-17 fix: antes iteraba sobre RegistroDiario (vacio).
+            # Ahora usa los datos agrupados por dia desde Venta.
             story.append(Paragraph("DETALLE DE INGRESOS DIARIOS", styles['Heading2']))
             story.append(Spacer(1, 10))
             
             datos_detalle = [['Fecha', 'Ingresos']]
-            for r in registros:
-                datos_detalle.append([
-                    r.fecha.strftime('%d/%m/%Y'),
-                    f'${(r.total_ingresos or 0):,.0f}'
-                ])
+            if ingresos_por_dia:
+                for fecha_dia in sorted(ingresos_por_dia.keys()):
+                    datos_detalle.append([
+                        fecha_dia.strftime('%d/%m/%Y'),
+                        f'${ingresos_por_dia[fecha_dia]:,.0f}'
+                    ])
+            else:
+                datos_detalle.append(['Sin ingresos en el periodo', '$0'])
             datos_detalle.append(['TOTAL', f'${total_ingresos:,.0f}'])
             
             tabla_detalle = Table(datos_detalle, colWidths=[150, 150])
