@@ -293,16 +293,25 @@
                         pollInterval = setInterval(chequearEstado, 10000);
                     }
                 } else {
-                    mostrarEstado('secondary', '✅ Sin reset en curso. Listo para resetear.');
                     if (btnReset) btnReset.disabled = false;
                     if (pollInterval) {
                         clearInterval(pollInterval);
                         pollInterval = null;
                     }
+                    // DT-24 fix: mostrar estado del ultimo reset
+                    if (data.exitoso === true && data.timestamp) {
+                        mostrarEstado('success', 'Ultimo reset: EXITOSO (' + data.timestamp + ')');
+                    } else if (data.exitoso === false) {
+                        mostrarEstado('danger', 'Ultimo reset: FALLO. Revisa reset_demo.log');
+                    } else if (data.mensaje) {
+                        mostrarEstado('secondary', data.mensaje);
+                    } else {
+                        mostrarEstado('secondary', 'Sin reset en curso. Listo para resetear.');
+                    }
                 }
             })
             .catch(err => {
-                mostrarEstado('danger', 'Error de conexión: ' + err.message);
+                mostrarEstado('danger', 'Error de conexion: ' + err.message);
             });
     }
 

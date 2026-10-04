@@ -6518,6 +6518,10 @@ def reporte_inventario_externo():
                          productos_stock_bajo=productos_stock_bajo,
                          proveedores=proveedores)
 
+# =========================================================================
+# SECCION: EXPORTS PDF - PRODUCTOS EXTERNOS
+# =========================================================================
+
 @app.route('/exportar_inventario_externo')
 @login_required
 @modulo_requerido('productos')
@@ -9083,6 +9087,13 @@ def historial_depositos():
 
 
 
+# =========================================================================
+# SECCION: EXPORTS PDF - REPORTES PROFESIONALES
+# =========================================================================
+# Endpoints para generar reportes en PDF usando GeneradorReportes.
+# Todos requieren autenticacion y filtran por tenant (panaderia_id).
+# =========================================================================
+
 @app.route('/generar_reporte_estado_resultados')
 @permisos_requeridos('reportes', 'exportar')
 @login_required
@@ -9551,7 +9562,10 @@ def generar_reporte_tesoreria_unificado():
         return redirect(url_for('reportes'))
    
 # =========================================================================
-# FASE D2 — Export PDF: Historial de Pagos y Depósitos
+# SECCION: EXPORTS PDF - HISTORIALES (Pagos y Depositos)
+# =========================================================================
+# Endpoints para exportar historiales filtrados por rango de fechas.
+# Fase D2 (2 Oct 2026).
 # =========================================================================
 
 @app.route('/exportar_historial_pagos')

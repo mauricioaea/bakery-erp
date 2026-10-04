@@ -382,13 +382,38 @@
             
             const info = config[moneda] || config['COP'];
             
-            // ✅ Auto-seleccionar usa_centavos según la moneda
-            const usaCentavosSelect = document.getElementById('usa_centavos');
-            if (usaCentavosSelect) {
-                usaCentavosSelect.value = info.usa_centavos ? 'true' : 'false';
-            }
+        // Auto-seleccionar usa_centavos según la moneda
+        const usaCentavosSelect = document.getElementById('usa_centavos');
+        if (usaCentavosSelect) {
+            usaCentavosSelect.value = info.usa_centavos ? 'true' : 'false';
         }
-        
-    </script>
+    }
+
+    // DT-22 fix: confirmar cambios en el NIT (dato fiscal crítico)
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        if (!form) return;
+        const nitActual = "{{ config.nit_empresa }}".trim();
+        form.addEventListener('submit', function(e) {
+            const nitInput = document.getElementById('nit_empresa');
+            if (!nitInput) return;
+            const nitNuevo = nitInput.value.trim();
+            if (nitNuevo !== nitActual) {
+                const ok = confirm(
+                    'Confirmar cambio de NIT\n\n' +
+                    'De: "' + (nitActual || '(vacio)') + '"\n' +
+                    'A:  "' + (nitNuevo || '(vacio)') + '"\n\n' +
+                    'Esto afecta todos los recibos y facturas futuras.\n\n' +
+                    'Confirmas el cambio?'
+                );
+                if (!ok) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            }
+        });
+    });
+
+</script>
 </body>
 </html>
