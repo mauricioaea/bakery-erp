@@ -430,7 +430,7 @@ class Panaderia(db.Model):
     __tablename__ = 'panaderias'
     
     id = db.Column(db.Integer, primary_key=True)
-    panaderia_id = db.Column(db.Integer, nullable=False)  # ✅ ACTIVADO (no comentado)
+    # DT-32 fix: columna panaderia_id eliminada (redundante con id)
     nombre = db.Column(db.String(100), nullable=False)
     direccion = db.Column(db.String(200))
     telefono = db.Column(db.String(20))
@@ -454,7 +454,6 @@ class Panaderia(db.Model):
     def to_dict(self):
         return {
             'id': self.id,
-            'panaderia_id': self.panaderia_id,
             'nombre': self.nombre,
             'direccion': self.direccion,
             'telefono': self.telefono,

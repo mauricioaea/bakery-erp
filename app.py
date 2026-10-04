@@ -1021,12 +1021,11 @@ def crear_tenant_saas(nombre_panaderia, subdominio, email_contacto=None, max_usu
         db.session.execute(
             text(f"""
                 INSERT INTO {schema_name}.panaderias 
-                (id, panaderia_id, nombre, direccion, telefono, email, moneda, impuesto, activa)
-                VALUES (:id, :panaderia_id, :nombre, :direccion, :telefono, :email, :moneda, :impuesto, :activa)
+                (id, nombre, direccion, telefono, email, moneda, impuesto, activa)
+                VALUES (:id, :nombre, :direccion, :telefono, :email, :moneda, :impuesto, :activa)
             """),
             {
                 'id': tenant_id,
-                'panaderia_id': tenant_id,
                 'nombre': nombre_panaderia,
                 'direccion': '',
                 'telefono': '',
