@@ -95,3 +95,6 @@ reset_demo.last_status.json
 cookies.txt
 server_output.txt
 warning_traceback.txt
+
+# Excepcion: versionar scripts SQL de migraciones
+!migrations/sql/*.sql

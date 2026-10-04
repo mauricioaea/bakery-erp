@@ -1,9 +1,9 @@
 # 🗂️ CONTEXTO MAESTRO — PanaderíaPro (Bakery ERP)
 
 **Última actualización:** 3 de Octubre, 2026
-**Último commit:** b111005 (fix DT-20 Fase C - Tanda 3: DT-20 al 100%)
+**Último commit:** b111005 (fix DT-20 Fase C - Tanda 3)
 **Sesión 2 Oct:** DT-11, DT-12, DT-13, DT-14, DT-16, DT-26, DT-27, DT-3, DT-4
-**Sesión 3 Oct:** DT-1, DT-6, DT-9, DT-20 Fase C (Tanda 1 + Tanda 2 + Tanda 3), DT-30
+**Sesión 3 Oct:** DT-1, DT-6, DT-9, DT-20 Fase C (Tanda 1 + Tanda 2 + Tanda 3), DT-30, DT-31
 
 ---
 
@@ -11,7 +11,7 @@
 
 - **Nombre:** PanaderíaPro (bakery-erp)
 - **Repo:** https://github.com/mauricioaea/bakery-erp
-- **Estado:** v1.1.7 — **11/11 módulos completados (100%)** + Demo Fases 1-12 + Endurecimiento de seguridad + **DT-20 al 100%** + Código limpio
+- **Estado:** v1.1.8 — **11/11 módulos completados (100%)** + Demo Fases 1-12 + Endurecimiento de seguridad + **DT-20 al 100%** (modelo + BD) + Código limpio
 - **Arquitectura:** Multi-tenant con PostgreSQL (schemas por tenant)
 - **Próximo hito:** Fase C.3 (auditoría de columnas huérfanas) + Fase 3 (Docker + nube)
 
@@ -186,7 +186,7 @@ text
 
 ## 9️⃣ Deuda técnica acumulada
 
-### ✅ RESUELTAS el 3 de Octubre 2026 (7 deudas)
+### ✅ RESUELTAS el 3 de Octubre 2026 (9 deudas)
 
 | # | Descripción | Commit |
 |---|-------------|--------|
@@ -197,6 +197,8 @@ text
 | DT-20 Fase C Tanda 2 | Categoria + Usuario sin default + 2 INSERTs + endpoint huérfano | `14de608` |
 | DT-20 Fase C Tanda 3 | Panaderia + ConfiguracionPanaderia + INSERT ORM | `b111005` |
 | DT-30 | Endpoint `/crear_usuario` huérfano eliminado | `14de608` |
+| DT-31 | `DEFAULT 1` en PostgreSQL eliminado (7 ALTER TABLE) | (BD) |
+| DT-15 | Password PostgreSQL en `DATABASE_URL` — **Aceptada** | — |
 
 ### ✅ RESUELTAS el 2 de Octubre 2026 (11 deudas)
 
@@ -224,7 +226,7 @@ text
 |---|-----------|-------------|
 | DT-5 | `models.py:1055 vs 2441` | `Gasto` vs `RegistroFinanciero` posible solapamiento |
 | DT-7 | `models.py:2075 vs 2124` | Inconsistencia `nullable` entre modelos hermanos |
-| DT-15 | `.env` | Password PostgreSQL embebida en `DATABASE_URL` |
+
 | DT-17 | `reportes.py` | Reporte tesorería muestra `$0` de ingresos |
 | DT-18 | `reportes.py` | Reporte tesorería nivel contable profesional |
 | DT-19 | global | CSRF completo con `flask-wtf` |
@@ -232,7 +234,7 @@ text
 | DT-25 | `app.py:1744` | Orden real de `before_request` vs `login_required` |
 | DT-28 | `POST /` | Doble submit detectado |
 | DT-29 | `app.py` (before_request fallback) | Tenant por defecto "Panadería Principal" en usuarios anónimos |
-| DT-31 | `tenant_27.usuarios` + otros | Columnas `tenant_id` con `DEFAULT 1` en PostgreSQL (ALTER TABLE pendiente) |
+
 
 ### 🟢 Bajas pendientes
 
@@ -347,7 +349,8 @@ text
 ✅ DT-30: Endpoint /crear_usuario eliminado
 
 ⏳ Fase C.3: auditoría de columnas (22 tablas, 79 columnas)
-⏳ DT-31: tenant_id DEFAULT 1 en PostgreSQL
+✅ DT-31: DEFAULT 1 en PostgreSQL eliminado (3 Oct)
+✅ DT-15: Password PostgreSQL en DATABASE_URL — Aceptada
 ⏳ DT-29: Tenant por defecto en usuarios anónimos
 ⏳ DT-5, DT-7, DT-17, DT-18, DT-19, DT-21, DT-25, DT-28: Deudas medias
 
@@ -434,26 +437,17 @@ Instrucción sugerida para el asistente:
 Próxima tarea sugerida: Fase C.3 (auditoría de columnas huérfanas en 22 tablas).
 
 ✅ Última validación
-Último commit: b111005 (pusheado a GitHub).
+- **Último commit:** `b111005` (pusheado a GitHub).
+- **Última sesión:** 3 Oct 2026 — 9 deudas resueltas.
+- **Working tree:** clean.
+- **Servidor:** detenido.
+- **Sistema:** 100% funcional end-to-end.
+- **Módulos:** 11/11 completados (100%).
+- **Demo:** Fases 1-12 completadas, contraseña `demo2026`.
+- **Log:** limpio, sin warnings.
+- **DT-20:** ✅ **100% RESUELTO** (modelo + PostgreSQL).
+- **Deudas críticas pendientes:** ninguna.
 
-Última sesión: 3 Oct 2026 — 7 deudas resueltas.
+**Pendientes:** Fase C.3, DT-29, deudas medias varias.
 
-Working tree: clean.
-
-Servidor: detenido.
-
-Sistema: 100% funcional end-to-end.
-
-Módulos: 11/11 completados (100%).
-
-Demo: Fases 1-12 completadas, contraseña demo2026.
-
-Log: limpio, sin warnings.
-
-DT-20: ✅ 100% RESUELTO.
-
-Deudas críticas pendientes: ninguna.
-
-Pendientes: Fase C.3, DT-31, DT-29, deudas medias varias.
-
-Fin del HANDOFF.md — v7.4
+**Fin del HANDOFF.md — v7.4.1**
