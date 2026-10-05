@@ -1287,13 +1287,14 @@ class StockProducto(db.Model):
     __tablename__ = 'stock_productos'
     panaderia_id = db.Column(db.Integer, nullable=False)
     id = db.Column(db.Integer, primary_key=True)
-    receta_id = db.Column(db.Integer, db.ForeignKey('recetas.id'), nullable=False)
+    producto_id = db.Column(db.Integer, db.ForeignKey('productos.id'), nullable=False)  # ✅ DT-38: renombrado desde 'receta_id'
     stock_actual = db.Column(db.Integer, default=0)
-    stock_minimo = db.Column(db.Integer, default=10)
+    stock_minimo = db.Column(db.Integer, default=0)  # ✅ DT-38: default alineado con BD (antes 10)
+    stock_maximo = db.Column(db.Integer, default=0)  # ✅ DT-38: agregado
     fecha_actualizacion = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # Relación con receta
-    receta = db.relationship('Receta', backref=db.backref('stock_info', lazy=True))
+    # Relación con producto
+    producto = db.relationship('Producto', backref=db.backref('stock_info', lazy=True))  # ✅ DT-38: renombrado
 
 # MANTENER ESTA (elimina la otra)
 class ConfiguracionProduccion(db.Model):
