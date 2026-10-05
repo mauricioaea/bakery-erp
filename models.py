@@ -1056,10 +1056,12 @@ class Gasto(db.Model):
     __tablename__ = 'gastos'
     panaderia_id = db.Column(db.Integer, nullable=False)
     id = db.Column(db.Integer, primary_key=True)
-    fecha = db.Column(db.DateTime, default=datetime.utcnow)
-    descripcion = db.Column(db.String(200), nullable=False)
-    categoria = db.Column(db.String(50), nullable=False)  # 'nomina', 'servicios', 'alquiler', etc.
+    concepto = db.Column(db.String(100), nullable=False)  # ✅ DT-38: renombrado desde 'descripcion'
+    fecha_gasto = db.Column(db.DateTime, default=datetime.utcnow)  # ✅ DT-38: renombrado desde 'fecha'
+    categoria = db.Column(db.String(50), nullable=True)  # ✅ DT-38: nullable ajustado (BD permite NULL)
     monto = db.Column(db.Float, nullable=False)
+    observaciones = db.Column(db.Text, nullable=True)  # ✅ DT-38: agregado
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=True)  # ✅ DT-38: agregado
 
 class RecetaIngrediente(db.Model):
     __tablename__ = 'receta_ingredientes'
