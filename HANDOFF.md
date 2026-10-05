@@ -1,10 +1,11 @@
 # 🗂️ CONTEXTO MAESTRO — PanaderíaPro (Bakery ERP)
 
-**Última actualización:** 4 de Octubre, 2026 (noche)
-**Último commit:** d8a8afd (feat DT-18: reporte tesorería nivel contable)
+**Última actualización:** 5 de Octubre, 2026 (mañana)
+**Último commit:** cefb33f (fix DT-FaseC.3: alinear ORM y BD - 5 cols ORM + 4 DROP BD + fix seeds + CREATE TABLE)
 **Sesión 2 Oct:** DT-11, DT-12, DT-13, DT-14, DT-16, DT-26, DT-27, DT-3, DT-4
 **Sesión 3 Oct:** DT-1, DT-6, DT-9, DT-20 Fase C (Tanda 1+2+3), DT-30, DT-31
 **Sesión 4 Oct:** DT-10, DT-22, DT-24, DT-17, DT-33, DT-34, DT-32, DT-18
+**Sesión 5 Oct:** Fase C.3 parcial (modelos vivos alineados ORM↔BD)
 
 ---
 
@@ -12,9 +13,9 @@
 
 - **Nombre:** PanaderíaPro (bakery-erp)
 - **Repo:** https://github.com/mauricioaea/bakery-erp
-- **Estado:** v1.2.2 — **11/11 módulos completados (100%)** + Demo Fases 1-12 + Endurecimiento de seguridad + **DT-20 al 100%** + **DT-18 reporte tesorería nivel contable** + tenant_1 limpio
+- **Estado:** v1.2.2 — **11/11 módulos completados (100%)** + Demo Fases 1-12 + Endurecimiento de seguridad + **DT-20 al 100%** + **DT-18 reporte tesorería nivel contable** + tenant_1 limpio + **Fase C.3 parcial (modelos vivos alineados)**
 - **Arquitectura:** Multi-tenant con PostgreSQL (schemas por tenant)
-- **Próximo hito:** Fase C.3 (auditoría columnas) + DT-5 + deudas medias + Docker
+- **Próximo hito:** Fase C.3 continuación (5 modelos muertos + 30 SIN FILAS) + DT-5 + deudas medias + Docker
 
 ---
 
@@ -40,6 +41,7 @@
 - `templates/`, `static/`
 - `.env` (protegido), `.env.example` (plantilla)
 - `HANDOFF.md` — este archivo
+- `audit_columns.py`, `audit_columns_classify.py`, `audit_columns_classify_v2.py` — scripts de auditoría Fase C.3 (5 Oct)
 
 ---
 
@@ -55,6 +57,8 @@
 **Tenant principal del Demo:** `tenant_27` ("Panadería Demo").
 
 **Estado de `tenant_1`:** ✅ Limpio (18 panaderías huérfanas y 1 usuario duplicado eliminados el 4 Oct).
+
+**Estado de `tenant_27`:** ✅ Re-seedeado el 5 Oct con el schema alineado (10.432 filas, EXIT_CODE=0).
 
 ---
 
@@ -116,10 +120,12 @@
 ---
 
 ## 6️⃣ Últimos commits pusheados
-d8a8afd feat(DT-18): reporte tesoreria nivel contable - 6 secciones + firma
-e512c12 feat(DT-18): encabezado fiscal del tenant + consecutivo + fecha emision (bloques 1-2)
-272f60d fix(DT-32): eliminar columna panaderia_id redundante en Panaderia - DROP COLUMN en 4 schemas
-9d0d026 docs: HANDOFF v7.6 - DT-33 + DT-34 resueltas (tenant_1 limpio)
+cefb33f fix(DT-FaseC.3): alinear ORM y BD - 5 cols ORM + 4 DROP BD + fix seeds + CREATE TABLE
+74a76af docs: HANDOFF v7.7 - DT-18 cerrado (reporte tesorería nivel contable), reglas 26-27, DT-35/36/37 documentadas
+d8a8afd feat(DT-18): reporte tesoreria nivel contable - 6 secciones (ingresos, metodos pago, consumo interno, gastos, resumen, detalle diario) + firma
+e512c12 feat(DT-18): encabezado fiscal del tenant + consecutivo + fecha emision en reporte tesoreria (bloques 1-2)
+272f60d fix(DT-32): eliminar columna panaderia_id redundante en Panaderia - DROP COLUMN en 4 schemas + limpiar modelo y INSERT SQL
+9d0d026 docs: HANDOFF v7.6 - DT-33 + DT-34 resueltas (tenant_1 limpio), regla 25, DT-32 desbloqueada
 a417502 docs: HANDOFF v7.5
 08dae2d fix(DT-17): cambiar fuente de ingresos de RegistroDiario a Venta en reporte tesoreria
 70e7916 fix(DT-10, DT-22, DT-24): comentarios separadores en exports PDF + confirmacion NIT + mostrar exitoso en mi_perfil
@@ -144,8 +150,6 @@ a2a2e71 docs: HANDOFF v6
 cbcb76b chore: limpiar .gitignore
 a522e0c fix(DT-11): event listener sin current_user
 
-text
-
 ---
 
 ## 7️⃣ Demo — Estado de las fases del seed
@@ -157,15 +161,17 @@ text
 | 3 | Materias primas | ✅ | 17 |
 | 4 | Recetas y fórmulas | ✅ | 12 recetas / 80 ingredientes |
 | 5 | Productos | ✅ | 12 |
-| 6 | Producción diaria | ✅ | ~2.300 |
-| 7 | Ventas | ✅ | ~7.300 |
+| 6 | Producción diaria | ✅ | ~2.434 |
+| 7 | Ventas | ✅ | ~7.470 |
 | 8 | Productos externos | ✅ | 12 |
-| 9 | Activos fijos | ✅ | ~38 |
-| 10 | Movimientos financieros | ✅ | ~265 |
+| 9 | Activos fijos | ✅ | ~34 |
+| 10 | Movimientos financieros | ✅ | ~268 |
 | 11 | Cierres diarios | ✅ | 90 |
 | 12 | Reset automatizado | ✅ | — |
 
-**Total aproximado:** ~10.100 filas en tenant_27.
+**Total aproximado:** ~10.432 filas en tenant_27 (verificado el 5 Oct).
+
+**Última re-ejecución:** 5 Oct 2026 (post-alineación de schema) — `EXIT_CODE=0`.
 
 ---
 
@@ -176,8 +182,6 @@ DATABASE_URL=postgresql://postgres:...@localhost:5433/panaderia_master
 DB_PASSWORD=...
 FLASK_ENV=development
 SECRET_KEY=...
-
-text
 
 - `.env` en `.gitignore`. `.env.example` en el repo.
 - `load_dotenv()` al inicio de `app.py` (línea ~1258).
@@ -191,7 +195,7 @@ text
 - `/materias_primas`, `/editar_materia_prima/<id>`
 - `/produccion_diaria`, `/reporte/cierre_caja`
 - `/reporte/ventas_avanzado`, `/activos_fijos`
-- `/depositos_bancarios`
+- `/depositos_bancarios`, `/depositos_bancarios/crear`
 - `/admin/reset-demo`, `/admin/reset-demo/status`
 - `/crear_cliente`, `/editar_cliente_super`, `/renovar_suscripcion_super`, `/eliminar_cliente`
 - `/configuracion/facturacion` (datos fiscales del tenant)
@@ -214,6 +218,16 @@ text
 ---
 
 ## 9️⃣ Deuda técnica acumulada
+
+### ✅ RESUELTAS el 5 de Octubre 2026 (Fase C.3 parcial — modelos vivos)
+
+| # | Descripción | Commit |
+|---|-------------|--------|
+| Fase C.3.1 | Auditoría completa: 68 columnas huérfanas identificadas en 21 tablas | (scripts) |
+| Fase C.3.2 | Clasificación por datos reales: 14 REAL + 24 CONSTANTES + 5 MUERTAS + 25 SIN FILAS | (scripts) |
+| Fase C.3.3 | Alineación ORM↔BD en modelos vivos: 5 columnas ORM + 4 DROP BD + 2 CREATE TABLE + 2 seeds | `cefb33f` |
+| Fase C.3.4 | Fix `AmbiguousForeignKeysError` en `OrdenProduccion.usuario` | `cefb33f` |
+| Fase C.3.5 | Fix seeds `fase8_externos.py` y `fase10_financieros.py` | `cefb33f` |
 
 ### ✅ RESUELTAS el 4 de Octubre 2026 (8 deudas)
 
@@ -267,27 +281,28 @@ text
 | # | Ubicación | Descripción |
 |---|-----------|-------------|
 | DT-5 | `models.py:1055 vs 2441` | `Gasto` vs `RegistroFinanciero` posible solapamiento |
-| DT-7 | `models.py` (PagoIndividual, SaldoBanco vs DepositoBancario, RegistroFinanciero) | Inconsistencia FK: 2 modelos tienen FK a `panaderias.id`, 2 no. **Aceptada (4 Oct):** no hay bug funcional, agregar FK requiere ALTER TABLE con validación previa, quitar FK perdería integridad. |
+| DT-7 | `models.py` (PagoIndividual, SaldoBanco vs DepositoBancario, RegistroFinanciero) | Inconsistencia FK: 2 modelos tienen FK a `panaderias.id`, 2 no. **Aceptada (4 Oct):** no hay bug funcional. |
 | DT-19 | global | CSRF completo con `flask-wtf` |
 | DT-21 | POS | Modal de crear cliente sin botón visible |
 | DT-25 | `app.py:1744` | Orden real de `before_request` vs `login_required` |
 | DT-28 | `POST /` | Doble submit detectado |
 | DT-29 | `app.py` (before_request fallback) | Tenant por defecto "Panadería Principal" en usuarios anónimos |
-| **DT-35** | `public.configuracion_sistema` + `public.pagos_individuales` | **Sincronizar columnas** de tablas de `public` con el modelo. Aplicado parcialmente el 4 Oct: `configuracion_sistema` (+3 cols), `pagos_individuales` (+4 cols). Ver DT-36 para auditoría completa. |
-| **DT-36** | `public.*` | **Auditoría completa de `public.*` vs `tenant_*`.** Muchas tablas de `public` están desactualizadas vs los schemas de tenants. Puede causar errores en tests CLI y scripts sin contexto Flask. |
-| **DT-37** | `reportes.py` (todos los reportes) | **Soporte multi-idioma (i18n).** Strings hardcodeados en español. Refactor con `Flask-Babel` cuando se entre a mercados no-hispanos (EE.UU., Brasil, Portugal). Incluye: strings, formato de números/fechas/moneda, fuentes ReportLab. |
+| DT-35 | `public.configuracion_sistema` + `public.pagos_individuales` | **Sincronizar columnas** de tablas de `public` con el modelo. Aplicado parcialmente el 4 Oct. Ver DT-36. |
+| DT-36 | `public.*` | **Auditoría completa de `public.*` vs `tenant_*`.** Muchas tablas de `public` están desactualizadas. |
+| DT-37 | `reportes.py` | **Soporte multi-idioma (i18n).** Refactor con `Flask-Babel`. |
+
+### 🟢 Nuevas deudas surgidas de la Fase C.3 (5 Oct)
+
+| # | Ubicación | Descripción | Prioridad |
+|---|-----------|-------------|-----------|
+| **DT-38** | `models.py` — `Gasto`, `HistorialInventario`, `HistorialMantenimiento`, `JornadaVentas`, `StockProducto` | **5 modelos huérfanos sin uso por ORM.** Ver análisis Fase C.3. Los datos se acceden por SQL crudo (seeds, reportes). Requiere: (a) decidir si agregar al ORM o eliminar, (b) resolver divergencias de nombres (`Gasto.concepto` vs `Gasto.descripcion`, etc.), (c) actualizar seeds/reportes si renombramos. | Media |
+| **DT-39** | `tenant_27.*` — 25 columnas SIN FILAS en tablas vacías | Columnas en `compras`, `detalle_compras`, `control_vida_util`, `historial_rotacion_producto`, `logs_sistema`, `registros_diarios`, `registros_financieros`. **No se pueden clasificar por datos.** Investigar cada una con `findstr` para saber si son features del dominio o ruido. | Media |
+| **DT-40** | `models.py:985` — `Venta` — columnas legacy en BD | Las columnas `total_venta`, `total_donacion`, `descuento`, `impuesto`, `consecutivo`, `observaciones` **existen en BD pero NO en ORM**. Tienen valores `0` o NULL (defaults). Quedan pendientes para eliminar del `CREATE TABLE` y la BD en una próxima tanda. | Baja |
 
 ### 🟢 Bajas pendientes
-
-| # | Ubicación | Descripción |
-|---|-----------|-------------|
-| DT-10 | `app.py` | (Resuelto — ver arriba) |
-| DT-22 | `/configuracion/facturacion` | (Resuelto — ver arriba) |
-| DT-24 | `mi_perfil.html` | (Resuelto — ver arriba) |
-| DT-32 | `models.py:433` | (Resuelto — ver arriba) |
+*(ninguna en este momento)*
 
 ### 🚨 Otras deudas
-- **22 tablas con columnas huérfanas (79 columnas).** Fase C.3 planificada.
 - **`public` con 40 tablas duplicadas.** Cubierto por DT-36.
 
 ---
@@ -322,6 +337,9 @@ text
 25. **Al hacer DELETE masivos en la BD, verificar SIEMPRE: (a) backup previo, (b) que no haya FKs apuntando a los registros, (c) que no sean tenants reales en `public.tenants`.**
 26. **Al modificar un método de `reportes.py` que genera PDF, verificar SIEMPRE el orden de las secciones y que todas las variables estén definidas ANTES de usarse. El código puede compilar (py_compile) pero fallar en runtime (UnboundLocalError).**
 27. **Nunca asumir que el esquema de la BD coincide con el modelo ORM. Verificar con `information_schema.columns` ANTES de usar un ORM en un contexto nuevo. Las tablas de `public` suelen estar desactualizadas.**
+28. **Al auditar columnas (Fase C.3), usar `COUNT(DISTINCT col)` en lugar de `COUNT(col)` para evitar falsos positivos por valores DEFAULT 0/constantes.**
+29. **Al agregar una segunda FK a una tabla, SQLAlchemy requiere `foreign_keys=[...]` explícito en los `relationship` para evitar `AmbiguousForeignKeysError`.**
+30. **Al alinear `CREATE TABLE` con el ORM, actualizar también los seeds que hagan INSERT directo sobre las columnas afectadas.**
 
 ### Comandos útiles
 
@@ -334,6 +352,7 @@ cmd
 psql -U postgres -p 5433 -h localhost -d panaderia_master
 Dentro: SET client_encoding TO 'UTF8';
 Salir: \q
+
 Ver estructura:
 
 cmd
@@ -356,6 +375,10 @@ Búsquedas:
 cmd
 findstr /n /c:"patrón exacto" archivo.py
 findstr /s /n /c:"patrón" *.py
+Extraer líneas de un archivo (PowerShell):
+
+cmd
+powershell -Command "Get-Content models.py | Select-Object -Skip 246 -First 20"
 Backup de BD:
 
 cmd
@@ -370,64 +393,102 @@ cmd
 psql -U postgres -p 5433 -h localhost -d panaderia_master -c "SELECT column_name FROM information_schema.columns WHERE table_schema = 'tenant_27' AND table_name = 'nombre_tabla' ORDER BY ordinal_position;"
 
 psql -U postgres -p 5433 -h localhost -d panaderia_master -c "SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'nombre_tabla' ORDER BY ordinal_position;"
-Test CLI de un reporte con app_context:
+Auditoría de columnas (Fase C.3):
 
 cmd
-python -c "from app import app; from reportes import GeneradorReportes; from datetime import date; ctx = app.app_context(); ctx.push(); g = GeneradorReportes(27); buf = g.generar_reporte_tesoreria_unificado(27, date(2026, 9, 1), date(2026, 10, 4)); print('OK - PDF generado con', len(buf), 'bytes'); ctx.pop()"
-1️⃣1️⃣ Roadmap
-text
-✅ Fase 1: Módulos 1-10
-✅ Fase 2: Módulo 11 Reportes (100%)
-✅ Fase D2: exportación PDF
-✅ Fase Demo: Tenant Demo (Fases 1-12)
-✅ Fase Admin: Banner Demo + Panel Super Admin
+python audit_columns.py          # Compara ORM vs BD
+python audit_columns_classify.py # v1 (con falso positivo)
+python audit_columns_classify_v2.py  # v2 (con COUNT DISTINCT, correcto)
+1️⃣1️⃣ Fase C.3 — Auditoría de columnas huérfanas (en curso)
+Contexto
+El 5 de Oct, se detectó que la BD (tenant_27) y el ORM (models.py) están desalineados. Existen columnas en la BD que el ORM no conoce (y viceversa) por desincronización acumulada entre:
 
-✅ D1: Password PostgreSQL a env vars
-✅ DT-2 + DT-2b: Métodos duplicados + indentación
-✅ DT-20 Fase A + B + C: Multi-tenant INSERTs + default=1 (100%)
-✅ B3: Lock atómico
-✅ B4 v2: Estado persistente reset
-✅ B7: CSRF global
+CREATE TABLE de app.py (crea la BD de tenants nuevos).
 
---- Sesión 2 Oct 2026 (11 deudas) ---
-✅ DT-3 + DT-4: Imports muertos
-✅ DT-11: Event listener sin current_user
-✅ DT-12: _obtener_nombre_empresa seguro
-✅ DT-13: .env.example
-✅ DT-14: SECRET_KEY desde .env
-✅ DT-16: Password BD oculta en log
-✅ DT-26: Latencia resuelta
-✅ DT-27: Query.get() → db.session.get()
+models.py (define el ORM).
 
---- Sesión 3 Oct 2026 (9 deudas) ---
-✅ DT-1: Filtro redundante tenant_id
-✅ DT-6 + DT-9: default=1 en 2 modelos
-✅ DT-20 Fase C Tanda 1+2+3: default=1 eliminado
-✅ DT-30: Endpoint /crear_usuario eliminado
-✅ DT-31: DEFAULT 1 en PostgreSQL eliminado
-✅ DT-15: Password PostgreSQL en DATABASE_URL — Aceptada
+Seeds (usan SQL crudo con nombres viejos).
 
---- Sesión 4 Oct 2026 (8 deudas) ---
-✅ DT-10: Comentarios separadores exports PDF
-✅ DT-22: Confirmación NIT
-✅ DT-24: Campo exitoso en mi_perfil
-✅ DT-17: Reporte tesorería funcional (fuente Venta)
-✅ DT-33: Limpieza de 18 panaderías huérfanas en tenant_1
-✅ DT-34: Usuario admin duplicado eliminado en tenant_1
-✅ DT-32: DROP COLUMN panaderia_id en Panaderia
-✅ DT-18: Reporte tesorería nivel contable (6 secciones + encabezado fiscal)
+Hallazgos clave
+68 columnas huérfanas en 21 tablas de tenant_27.
 
-⏳ Fase C.3: auditoría de columnas (22 tablas)
-⏳ DT-36: Auditoría completa de public.* vs tenant_*
-⏳ DT-37: Soporte multi-idioma (i18n) en reportes
-⏳ DT-5, DT-19, DT-21, DT-25, DT-28, DT-29: Deudas medias
+5 de 9 modelos relevantes están muertos (nadie los usa por ORM): Gasto, HistorialInventario, HistorialMantenimiento, JornadaVentas, StockProducto.
 
-⏳ Fase 3: Dockerización + subdominios + nube
-⏳ Fase 4: HTTPS/SSL + rate limiting + logging + monitoreo + caché
-⏳ Fase 5: Pasarela de pagos + portal autogestión + facturación
-⏳ Fase 6: Chat IA
-⏳ Fase 7: Junta Directiva IA
-⏳ Fase 8: Integraciones estratégicas (API REST, webhooks)
+4 modelos están vivos: Categoria, ProductoExterno, OrdenProduccion, DepositoBancario.
+
+5 columnas son MUERTAS (todo NULL): depositos_bancarios.observaciones, gastos.observaciones, historial_mantenimientos.realizado_por, ventas.consecutivo, ventas.observaciones.
+
+Muchas "huérfanas" son duplicados con otro nombre: gastos.concepto vs gastos.descripcion (ORM), depositos_bancarios.tipo vs metodo_deposito, historial_mantenimientos.activo_fijo_id vs activo_id, ordenes_produccion.fecha_orden vs fecha_produccion.
+
+Lo que se hizo (sesión 5 Oct)
+Lote 2 (modelos vivos):
+
+Acción	Detalle	Ubicación
+ADD al ORM	Categoria.descripcion (Text)	models.py:251
+ADD al ORM	DepositoBancario.usuario_id (FK usuarios)	models.py:~2090
+ADD al ORM	OrdenProduccion.cantidad_real, fecha_orden, usuario_creacion_id	models.py:~1096
+FIX ORM	OrdenProduccion.usuario + usuario_creacion con foreign_keys explícito	models.py:~1115
+DROP BD	tenant_27.depositos_bancarios.{tipo, observaciones, fecha_registro}	(SQL)
+DROP BD	tenant_27.productos_externos.proveedor	(SQL)
+FIX CREATE TABLE	Quitar 4 columnas basura de app.py	app.py:314, 626, 627, 628
+FIX seed	seeds/fase8_externos.py — proveedor → proveedor_id + alinear lista proveedores	líneas 37-43, 89, 98, 109
+FIX seed	seeds/fase10_financieros.py — quitar tipo del INSERT	líneas 166, 176, 181
+Verificaciones:
+
+py_compile app.py + py_compile models.py → OK.
+
+python seed_demo.py --tenant=27 --reset-all → EXIT_CODE=0, 10.432 filas.
+
+Schema verificado: solo usuario_id presente, sin columnas basura.
+
+Smoke test completo: login, dashboard, POS, depósitos, producción, reportes → todos 200 OK.
+
+Commit cefb33f + push a GitHub.
+
+Lo que queda pendiente (DT-38 y DT-39)
+DT-38 — 5 modelos muertos:
+
+Gasto, HistorialInventario, HistorialMantenimiento, JornadaVentas, StockProducto.
+
+No se usan por ORM. Los datos se acceden por SQL crudo (seeds, reportes).
+
+Decidir: agregar al ORM (alineando nombres) o eliminar del ORM (y acceder siempre por SQL crudo).
+
+Importante: si agregamos al ORM, hay que renombrar columnas (gastos.concepto → gastos.descripcion) para alinear con el ORM, lo que rompe los seeds → hay que actualizarlos también.
+
+DT-39 — 25 columnas SIN FILAS:
+
+En tablas vacías: compras, detalle_compras, control_vida_util, historial_rotacion_producto, logs_sistema, registros_diarios, registros_financieros.
+
+No se pueden clasificar por datos. Investigar cada una con findstr.
+
+DT-40 — Columnas legacy de ventas:
+
+total_venta, total_donacion, descuento, impuesto, consecutivo, observaciones.
+
+Existen en BD pero no en ORM. Tienen valores 0 o NULL. Eliminar del CREATE TABLE y la BD.
+
+Cómo continuar la Fase C.3
+Backup: pg_dump ... -f backup_pre_faseC3_parte2.backup.
+
+Decidir estrategia para los 5 modelos muertos (agregar al ORM vs eliminar).
+
+Revisar las 25 SIN FILAS con findstr en app.py, reportes.py, seeds/*.py.
+
+Aplicar cambios por lotes con LUZ VERDE individual.
+
+Re-ejecutar seed + verificar.
+
+Reglas críticas para esta fase:
+
+Regla 24: antes de DROP COLUMN, verificar lecturas en código + datos + FKs.
+
+Regla 28: usar COUNT(DISTINCT col) para clasificar, no COUNT(col).
+
+Regla 29: toda segunda FK a la misma tabla requiere foreign_keys=[...] en relationship.
+
+Regla 30: al alinear CREATE TABLE, actualizar TODOS los seeds con INSERT directo.
+
 1️⃣2️⃣ DT-11 — Resuelto (2 Oct 2026) — Bitácora
 Causa raíz: El event listener checkout accedía a current_user. current_user es un LocalProxy que dispara load_user. load_user hace db.session.execute() → checkout → event listener → current_user → load_user → ... recursión infinita. SQLAlchemy 2.0 aborta con isce.
 
@@ -502,7 +563,7 @@ Objetivo del ERP
 ERP SaaS multi-tenant multi-país con: POS, inventario, producción, recetas, activos fijos, reportes con IA, finanzas, multi-país, base para API REST + IA avanzada.
 
 🎁 Tenant Demo (marketing)
-Fases 1-12 completadas (~10.100 filas). Contraseña: demo2026. Reset desde /mi_perfil con dev_master.
+Fases 1-12 completadas (~10.432 filas). Contraseña: demo2026. Reset desde /mi_perfil con dev_master.
 
 Mercado objetivo
 3.000-5.000 panaderías en Colombia.
@@ -525,12 +586,13 @@ Se usan en recibos POS, facturas electrónicas y todos los reportes.
 
 Los reportes respetan la moneda, régimen y datos de cada tenant.
 
-Estimación de tiempos (4 Oct 2026, noche)
+Estimación de tiempos (5 Oct 2026, mañana)
 Bloque	Estimación
-Fase C.3 (auditoría de columnas)	~4-6 h
+Fase C.3 parte 2 (5 modelos muertos + 25 SIN FILAS)	~4-6 h
+DT-5 (Gasto vs RegistroFinanciero)	~1-2 h
 DT-36 (auditoría public.* vs tenant_*)	~2-3 h
 DT-37 (i18n reportes)	~8-15 h
-DT-5, DT-19, DT-21, DT-25, DT-28, DT-29	~6-10 h
+DT-19, DT-21, DT-25, DT-28, DT-29	~6-10 h
 Fase 3 (nube + Docker)	~22-32 h
 Fase 4 (seguridad)	~14-20 h
 Fase 5 (monetización)	~26-36 h
@@ -540,14 +602,14 @@ Al iniciar un nuevo chat, pegar este archivo como contexto inicial.
 
 Instrucción sugerida para el asistente:
 
-"Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el archivo HANDOFF.md v7.7 con el contexto maestro del proyecto. Vamos a continuar desde donde lo dejamos. Por favor actúa como instructor guiando paso a paso, con la metodología de trabajo descrita en el HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/findstr, commit tras cada fix verificado. Al insertar bloques, muéstrame ANTES → DESPUÉS con número de línea exacto."
+"Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el archivo HANDOFF.md v7.8 con el contexto maestro del proyecto. Vamos a continuar desde donde lo dejamos. Por favor actúa como instructor guiando paso a paso, con la metodología de trabajo descrita en el HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/findstr, commit tras cada fix verificado. Al insertar bloques, muéstrame ANTES → DESPUÉS con número de línea exacto."
 
-Próxima tarea sugerida: Fase C.3 (auditoría de columnas huérfanas) o DT-5 (solapamiento Gasto/RegistroFinanciero).
+Próxima tarea sugerida: Continuar Fase C.3 parte 2 (DT-38: 5 modelos muertos; DT-39: 25 columnas SIN FILAS).
 
 ✅ Última validación
-Último commit: d8a8afd (pusheado a GitHub).
+Último commit: cefb33f (pusheado a GitHub).
 
-Última sesión: 4 Oct 2026 — 8 deudas resueltas (DT-10, DT-22, DT-24, DT-17, DT-33, DT-34, DT-32, DT-18).
+Última sesión: 5 Oct 2026 — Fase C.3 parcial (modelos vivos alineados).
 
 Working tree: clean.
 
@@ -557,7 +619,7 @@ Sistema: 100% funcional end-to-end.
 
 Módulos: 11/11 completados (100%).
 
-Demo: Fases 1-12 completadas, contraseña demo2026.
+Demo: Fases 1-12 completadas, contraseña demo2026, ~10.432 filas.
 
 Log: limpio, sin warnings.
 
@@ -569,10 +631,12 @@ DT-18: ✅ Reporte tesorería nivel contable.
 
 DT-32: ✅ Columna redundante eliminada.
 
+Fase C.3 (modelos vivos): ✅ Alineada.
+
 tenant_1: ✅ Limpio.
 
 Deudas críticas pendientes: ninguna.
 
-Pendientes: Fase C.3, DT-36, DT-37, DT-5, DT-19, DT-21, DT-25, DT-28, DT-29.
+Pendientes: Fase C.3 parte 2 (DT-38, DT-39, DT-40), DT-36, DT-37, DT-5, DT-19, DT-21, DT-25, DT-28, DT-29.
 
-Fin del HANDOFF.md — v7.7
+Fin del HANDOFF.md — v7.8
