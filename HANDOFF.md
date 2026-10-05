@@ -1,10 +1,10 @@
 # 🗂️ CONTEXTO MAESTRO — PanaderíaPro (Bakery ERP)
 
 **Última actualización:** 4 de Octubre, 2026 (noche)
-**Último commit:** a417502 (docs: HANDOFF v7.5)
+**Último commit:** d8a8afd (feat DT-18: reporte tesorería nivel contable)
 **Sesión 2 Oct:** DT-11, DT-12, DT-13, DT-14, DT-16, DT-26, DT-27, DT-3, DT-4
 **Sesión 3 Oct:** DT-1, DT-6, DT-9, DT-20 Fase C (Tanda 1+2+3), DT-30, DT-31
-**Sesión 4 Oct:** DT-10, DT-22, DT-24, DT-17, DT-33, DT-34
+**Sesión 4 Oct:** DT-10, DT-22, DT-24, DT-17, DT-33, DT-34, DT-32, DT-18
 
 ---
 
@@ -12,9 +12,9 @@
 
 - **Nombre:** PanaderíaPro (bakery-erp)
 - **Repo:** https://github.com/mauricioaea/bakery-erp
-- **Estado:** v1.2.1 — **11/11 módulos completados (100%)** + Demo Fases 1-12 + Endurecimiento de seguridad + **DT-20 al 100%** + Reporte de tesorería funcional + **tenant_1 limpio** (panaderías huérfanas y usuarios duplicados eliminados)
+- **Estado:** v1.2.2 — **11/11 módulos completados (100%)** + Demo Fases 1-12 + Endurecimiento de seguridad + **DT-20 al 100%** + **DT-18 reporte tesorería nivel contable** + tenant_1 limpio
 - **Arquitectura:** Multi-tenant con PostgreSQL (schemas por tenant)
-- **Próximo hito:** DT-32 (DROP COLUMN `panaderia_id` en Panaderia) + DT-18 + Fase C.3
+- **Próximo hito:** Fase C.3 (auditoría columnas) + DT-5 + deudas medias + Docker
 
 ---
 
@@ -32,11 +32,11 @@
 ### Estructura de archivos
 - `app.py` (~12.600 líneas) — aplicación principal
 - `models.py` (~3.050 líneas) — modelos SQLAlchemy
-- `reportes.py` (~3.300 líneas) — generación PDF
+- `reportes.py` (~3.400 líneas) — generación PDF
 - `seed_demo.py` (~450 líneas) — seed del Demo
 - `seeds/` — 11 fases del seed
 - `middleware_saas.py`, `tenant_decorators.py`, `tenant_context.py` — multi-tenant
-- `migrations/sql/` — scripts SQL versionados (nuevo 3 Oct)
+- `migrations/sql/` — scripts SQL versionados
 - `templates/`, `static/`
 - `.env` (protegido), `.env.example` (plantilla)
 - `HANDOFF.md` — este archivo
@@ -87,6 +87,14 @@
 - **Licencia básica:** 1 usuario (admin).
 - Endpoint `/crear_usuario` fue **eliminado** en DT-20 Fase C Tanda 2.
 
+### Datos de facturación (por tenant, personalizables)
+- **Cada tenant** configura sus datos fiscales en `/configuracion/facturacion`.
+- Se guardan en `ConfiguracionSistema`:
+  - `nombre_empresa`, `nit_empresa`, `direccion_empresa`, `ciudad_empresa`, `telefono_empresa`, `regimen_empresa`
+  - `moneda`, `usa_centavos`, `simbolo_moneda`
+- **Estos datos se usan en recibos POS, facturas electrónicas y TODOS los reportes.**
+- **Fallback:** si `ConfiguracionSistema` está vacío, se usan datos de `ConfiguracionPanaderia` (legacy).
+
 ---
 
 ## 5️⃣ Estado de los módulos (11/11 = 100%)
@@ -103,12 +111,16 @@
 | 8 | Activos Fijos | ✅ COMPLETO |
 | 9 | Gestión de Usuarios + Mi Perfil | ✅ COMPLETO |
 | 10 | Gestión Financiera | ✅ COMPLETO |
-| 11 | Reportes Profesionales | ✅ COMPLETO |
+| 11 | Reportes Profesionales | ✅ COMPLETO (DT-18 cerró reporte tesorería) |
 
 ---
 
 ## 6️⃣ Últimos commits pusheados
-a417502 docs: HANDOFF v7.5 - 4 deudas resueltas (DT-10, DT-22, DT-24, DT-17) + DT-33 y DT-34 (limpieza tenant_1)
+d8a8afd feat(DT-18): reporte tesoreria nivel contable - 6 secciones + firma
+e512c12 feat(DT-18): encabezado fiscal del tenant + consecutivo + fecha emision (bloques 1-2)
+272f60d fix(DT-32): eliminar columna panaderia_id redundante en Panaderia - DROP COLUMN en 4 schemas
+9d0d026 docs: HANDOFF v7.6 - DT-33 + DT-34 resueltas (tenant_1 limpio)
+a417502 docs: HANDOFF v7.5
 08dae2d fix(DT-17): cambiar fuente de ingresos de RegistroDiario a Venta en reporte tesoreria
 70e7916 fix(DT-10, DT-22, DT-24): comentarios separadores en exports PDF + confirmacion NIT + mostrar exitoso en mi_perfil
 9012851 docs(DT-31): versionar script SQL DROP DEFAULT + HANDOFF v7.4.1
@@ -182,6 +194,7 @@ text
 - `/depositos_bancarios`
 - `/admin/reset-demo`, `/admin/reset-demo/status`
 - `/crear_cliente`, `/editar_cliente_super`, `/renovar_suscripcion_super`, `/eliminar_cliente`
+- `/configuracion/facturacion` (datos fiscales del tenant)
 - **Eliminado:** `/crear_usuario`
 
 ### Bug sistémico — panaderia_id default=1 (DT-20)
@@ -202,16 +215,18 @@ text
 
 ## 9️⃣ Deuda técnica acumulada
 
-### ✅ RESUELTAS el 4 de Octubre 2026 (6 deudas)
+### ✅ RESUELTAS el 4 de Octubre 2026 (8 deudas)
 
 | # | Descripción | Commit |
 |---|-------------|--------|
 | DT-10 | Comentarios separadores en exports PDF | `70e7916` |
 | DT-22 | Confirmación al cambiar NIT | `70e7916` |
 | DT-24 | Mostrar campo `exitoso` en `mi_perfil.html` | `70e7916` |
-| DT-17 | Fuente de ingresos: `RegistroDiario` → `Venta` (reporte tesorería funcional) | `08dae2d` |
+| DT-17 | Fuente de ingresos: `RegistroDiario` → `Venta` | `08dae2d` |
 | DT-33 | Limpieza de 18 panaderías huérfanas en `tenant_1` | (BD) |
 | DT-34 | Eliminación de usuario `admin` duplicado (id=3) en `tenant_1` | (BD) |
+| DT-32 | Eliminar columna `panaderia_id` redundante en `Panaderia` | `272f60d` |
+| DT-18 | Reporte tesorería nivel contable (6 secciones + encabezado fiscal) | `d8a8afd` |
 
 ### ✅ RESUELTAS el 3 de Octubre 2026 (9 deudas)
 
@@ -252,23 +267,28 @@ text
 | # | Ubicación | Descripción |
 |---|-----------|-------------|
 | DT-5 | `models.py:1055 vs 2441` | `Gasto` vs `RegistroFinanciero` posible solapamiento |
-| DT-7 | `models.py` (PagoIndividual, SaldoBanco vs DepositoBancario, RegistroFinanciero) | Inconsistencia FK: 2 modelos tienen FK a `panaderias.id`, 2 no. **Aceptada (4 Oct):** no hay bug funcional, agregar FK requiere ALTER TABLE con validación previa, quitar FK perdería integridad. Se mantiene as-is. |
-| DT-18 | `reportes.py` | Reporte tesorería nivel contable profesional (NIT, consecutivo, discriminación) |
+| DT-7 | `models.py` (PagoIndividual, SaldoBanco vs DepositoBancario, RegistroFinanciero) | Inconsistencia FK: 2 modelos tienen FK a `panaderias.id`, 2 no. **Aceptada (4 Oct):** no hay bug funcional, agregar FK requiere ALTER TABLE con validación previa, quitar FK perdería integridad. |
 | DT-19 | global | CSRF completo con `flask-wtf` |
 | DT-21 | POS | Modal de crear cliente sin botón visible |
 | DT-25 | `app.py:1744` | Orden real de `before_request` vs `login_required` |
 | DT-28 | `POST /` | Doble submit detectado |
 | DT-29 | `app.py` (before_request fallback) | Tenant por defecto "Panadería Principal" en usuarios anónimos |
+| **DT-35** | `public.configuracion_sistema` + `public.pagos_individuales` | **Sincronizar columnas** de tablas de `public` con el modelo. Aplicado parcialmente el 4 Oct: `configuracion_sistema` (+3 cols), `pagos_individuales` (+4 cols). Ver DT-36 para auditoría completa. |
+| **DT-36** | `public.*` | **Auditoría completa de `public.*` vs `tenant_*`.** Muchas tablas de `public` están desactualizadas vs los schemas de tenants. Puede causar errores en tests CLI y scripts sin contexto Flask. |
+| **DT-37** | `reportes.py` (todos los reportes) | **Soporte multi-idioma (i18n).** Strings hardcodeados en español. Refactor con `Flask-Babel` cuando se entre a mercados no-hispanos (EE.UU., Brasil, Portugal). Incluye: strings, formato de números/fechas/moneda, fuentes ReportLab. |
 
 ### 🟢 Bajas pendientes
 
 | # | Ubicación | Descripción |
 |---|-----------|-------------|
-| DT-32 | `models.py:433` + `to_dict()` | `Panaderia.panaderia_id` redundante con `id`. **Desbloqueada (4 Oct):** tenant_1 limpio. Ahora se puede hacer `ALTER TABLE DROP COLUMN` en 4 schemas + limpiar modelo + INSERT. |
+| DT-10 | `app.py` | (Resuelto — ver arriba) |
+| DT-22 | `/configuracion/facturacion` | (Resuelto — ver arriba) |
+| DT-24 | `mi_perfil.html` | (Resuelto — ver arriba) |
+| DT-32 | `models.py:433` | (Resuelto — ver arriba) |
 
 ### 🚨 Otras deudas
 - **22 tablas con columnas huérfanas (79 columnas).** Fase C.3 planificada.
-- **`public` con 40 tablas duplicadas.**
+- **`public` con 40 tablas duplicadas.** Cubierto por DT-36.
 
 ---
 
@@ -300,6 +320,8 @@ text
 23. **Al auditar modelos con `default=N`: verificar TODOS los INSERTs (ORM + SQL directo).**
 24. **Al eliminar una columna de un modelo, verificar SIEMPRE primero: (a) si hay lecturas en el código, (b) si hay datos inconsistentes en la BD, (c) si hay usuarios/registros que apunten a valores huérfanos.**
 25. **Al hacer DELETE masivos en la BD, verificar SIEMPRE: (a) backup previo, (b) que no haya FKs apuntando a los registros, (c) que no sean tenants reales en `public.tenants`.**
+26. **Al modificar un método de `reportes.py` que genera PDF, verificar SIEMPRE el orden de las secciones y que todas las variables estén definidas ANTES de usarse. El código puede compilar (py_compile) pero fallar en runtime (UnboundLocalError).**
+27. **Nunca asumir que el esquema de la BD coincide con el modelo ORM. Verificar con `information_schema.columns` ANTES de usar un ORM en un contexto nuevo. Las tablas de `public` suelen estar desactualizadas.**
 
 ### Comandos útiles
 
@@ -342,6 +364,16 @@ Verificar FK a una tabla:
 
 cmd
 psql -U postgres -p 5433 -h localhost -d panaderia_master -c "SELECT tc.table_name, kcu.column_name FROM information_schema.table_constraints AS tc JOIN information_schema.key_column_usage AS kcu ON tc.constraint_name = kcu.constraint_name JOIN information_schema.constraint_column_usage AS ccu ON ccu.constraint_name = tc.constraint_name WHERE tc.constraint_type = 'FOREIGN KEY' AND tc.table_schema = 'tenant_1' AND ccu.table_name = 'panaderias';"
+Comparar columnas de un schema vs otro:
+
+cmd
+psql -U postgres -p 5433 -h localhost -d panaderia_master -c "SELECT column_name FROM information_schema.columns WHERE table_schema = 'tenant_27' AND table_name = 'nombre_tabla' ORDER BY ordinal_position;"
+
+psql -U postgres -p 5433 -h localhost -d panaderia_master -c "SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'nombre_tabla' ORDER BY ordinal_position;"
+Test CLI de un reporte con app_context:
+
+cmd
+python -c "from app import app; from reportes import GeneradorReportes; from datetime import date; ctx = app.app_context(); ctx.push(); g = GeneradorReportes(27); buf = g.generar_reporte_tesoreria_unificado(27, date(2026, 9, 1), date(2026, 10, 4)); print('OK - PDF generado con', len(buf), 'bytes'); ctx.pop()"
 1️⃣1️⃣ Roadmap
 text
 ✅ Fase 1: Módulos 1-10
@@ -375,18 +407,19 @@ text
 ✅ DT-31: DEFAULT 1 en PostgreSQL eliminado
 ✅ DT-15: Password PostgreSQL en DATABASE_URL — Aceptada
 
---- Sesión 4 Oct 2026 (6 deudas) ---
+--- Sesión 4 Oct 2026 (8 deudas) ---
 ✅ DT-10: Comentarios separadores exports PDF
 ✅ DT-22: Confirmación NIT
 ✅ DT-24: Campo exitoso en mi_perfil
 ✅ DT-17: Reporte tesorería funcional (fuente Venta)
 ✅ DT-33: Limpieza de 18 panaderías huérfanas en tenant_1
 ✅ DT-34: Usuario admin duplicado eliminado en tenant_1
-✅ DT-7: Inconsistencia FK — Aceptada
+✅ DT-32: DROP COLUMN panaderia_id en Panaderia
+✅ DT-18: Reporte tesorería nivel contable (6 secciones + encabezado fiscal)
 
-⏳ DT-32: DROP COLUMN panaderia_id en Panaderia (desbloqueada)
-⏳ DT-18: Reporte tesorería nivel contable
 ⏳ Fase C.3: auditoría de columnas (22 tablas)
+⏳ DT-36: Auditoría completa de public.* vs tenant_*
+⏳ DT-37: Soporte multi-idioma (i18n) en reportes
 ⏳ DT-5, DT-19, DT-21, DT-25, DT-28, DT-29: Deudas medias
 
 ⏳ Fase 3: Dockerización + subdominios + nube
@@ -423,40 +456,48 @@ C - Tanda 3	2 (Panaderia, ConfiguracionPanaderia)	b111005
 DT-31 (ALTER TABLE)	7 columnas PostgreSQL	(BD)
 Resultado: 31 modelos sin default=1. Si un INSERT olvida pasar panaderia_id, falla con IntegrityError (fail-fast).
 
-1️⃣4️⃣ DT-17 — Reporte de tesorería — Resuelto (4 Oct)
-Causa raíz: generar_reporte_tesoreria_unificado() leía los ingresos de RegistroDiario, que solo se llena cuando el cajero hace cierre manual. En tenants donde no se usa → vacío → $0.
+1️⃣4️⃣ DT-18 — Reporte de tesorería nivel contable — Resuelto (4 Oct)
+Contexto: el reporte original tenía solo 3 secciones y sin datos fiscales.
 
-Solución: cambiar la fuente a Venta (que se llena con cada venta del POS), excluyendo donaciones.
+Solución: 6 secciones profesionales:
 
-Resultado: el reporte muestra ingresos reales + detalle diario agrupado.
+Ingresos Operacionales (ventas del período, cantidad de transacciones).
 
-Commit: 08dae2d
+Ingresos por Método de Pago (efectivo, transferencia, tarjeta con %).
 
-1️⃣5️⃣ DT-33 + DT-34 — Limpieza de tenant_1 — Resuelto (4 Oct)
-Contexto: tenant_1 tenía 19 panaderías (18 huérfanas) y 4 usuarios (1 duplicado).
+Consumo Interno / Donaciones (por producto, con costo de producción, nota aclaratoria multi-país).
 
-Diagnóstico:
+Gastos del Período (por categoría).
 
-Las 18 panaderías huérfanas no estaban en public.tenants.
+Resumen Ejecutivo (ingresos - gastos = utilidad).
 
-Sin FK apuntando a tenant_1.panaderias.
+Detalle de Ingresos Diarios.
 
-1 usuario admin duplicado (id=3) apuntando a la panadería huérfana id=2.
+Firma del responsable.
 
-Solución:
+Además:
 
-sql
-DELETE FROM tenant_1.usuarios WHERE id = 3;
-DELETE FROM tenant_1.panaderias WHERE id != 1;
-Resultado:
+Encabezado fiscal del tenant (nombre, NIT, régimen, dirección, teléfono) — desde ConfiguracionSistema con fallback a ConfiguracionPanaderia.
 
-tenant_1.panaderias: 19 → 1.
+Consecutivo con timestamp (TES-YYYYMMDD-HHMM).
 
-tenant_1.usuarios: 4 → 3.
+Fecha de emisión.
 
-Backup previo: backup_pre_dt33.backup.
+Nota aclaratoria sobre el tratamiento contable de las donaciones (multi-país, sin mencionar DIAN).
 
-1️⃣6️⃣ Notas estratégicas
+Tratamiento contable de donaciones/consumo interno:
+
+NO son ingreso (no entra plata).
+
+Se valúan al costo de producción (no al precio de venta).
+
+Se registran como gasto operativo (implícito en la baja de inventario).
+
+Se muestran por separado para transparencia contable.
+
+Commits: e512c12 (bloques 1-2) + d8a8afd (bloques 3-6).
+
+1️⃣5️⃣ Notas estratégicas
 Objetivo del ERP
 ERP SaaS multi-tenant multi-país con: POS, inventario, producción, recetas, activos fijos, reportes con IA, finanzas, multi-país, base para API REST + IA avanzada.
 
@@ -477,11 +518,19 @@ Básica: 1 usuario (admin).
 
 Los usuarios se crean al alta del tenant.
 
+Personalización por tenant
+Cada tenant configura sus datos fiscales en /configuracion/facturacion.
+
+Se usan en recibos POS, facturas electrónicas y todos los reportes.
+
+Los reportes respetan la moneda, régimen y datos de cada tenant.
+
 Estimación de tiempos (4 Oct 2026, noche)
 Bloque	Estimación
-DT-32 (DROP COLUMN, desbloqueada)	~30 min
-DT-18 (reporte nivel contable)	~2-3 h
-Fase C.3	~4-6 h
+Fase C.3 (auditoría de columnas)	~4-6 h
+DT-36 (auditoría public.* vs tenant_*)	~2-3 h
+DT-37 (i18n reportes)	~8-15 h
+DT-5, DT-19, DT-21, DT-25, DT-28, DT-29	~6-10 h
 Fase 3 (nube + Docker)	~22-32 h
 Fase 4 (seguridad)	~14-20 h
 Fase 5 (monetización)	~26-36 h
@@ -491,14 +540,14 @@ Al iniciar un nuevo chat, pegar este archivo como contexto inicial.
 
 Instrucción sugerida para el asistente:
 
-"Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el archivo HANDOFF.md v7.6 con el contexto maestro del proyecto. Vamos a continuar desde donde lo dejamos. Por favor actúa como instructor guiando paso a paso, con la metodología de trabajo descrita en el HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/findstr, commit tras cada fix verificado. Al insertar bloques, muéstrame ANTES → DESPUÉS con número de línea exacto."
+"Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el archivo HANDOFF.md v7.7 con el contexto maestro del proyecto. Vamos a continuar desde donde lo dejamos. Por favor actúa como instructor guiando paso a paso, con la metodología de trabajo descrita en el HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/findstr, commit tras cada fix verificado. Al insertar bloques, muéstrame ANTES → DESPUÉS con número de línea exacto."
 
-Próxima tarea sugerida: DT-32 (DROP COLUMN panaderia_id en Panaderia — desbloqueada tras limpieza de tenant_1).
+Próxima tarea sugerida: Fase C.3 (auditoría de columnas huérfanas) o DT-5 (solapamiento Gasto/RegistroFinanciero).
 
 ✅ Última validación
-Último commit: a417502 (pusheado a GitHub).
+Último commit: d8a8afd (pusheado a GitHub).
 
-Última sesión: 4 Oct 2026 — 6 deudas resueltas (DT-10, DT-22, DT-24, DT-17, DT-33, DT-34).
+Última sesión: 4 Oct 2026 — 8 deudas resueltas (DT-10, DT-22, DT-24, DT-17, DT-33, DT-34, DT-32, DT-18).
 
 Working tree: clean.
 
@@ -516,10 +565,14 @@ DT-20: ✅ 100% RESUELTO.
 
 DT-17: ✅ Reporte tesorería funcional.
 
+DT-18: ✅ Reporte tesorería nivel contable.
+
+DT-32: ✅ Columna redundante eliminada.
+
 tenant_1: ✅ Limpio.
 
 Deudas críticas pendientes: ninguna.
 
-Pendientes: DT-32, DT-18, Fase C.3, deudas medias varias.
+Pendientes: Fase C.3, DT-36, DT-37, DT-5, DT-19, DT-21, DT-25, DT-28, DT-29.
 
-Fin del HANDOFF.md — v7.6
+Fin del HANDOFF.md — v7.7
