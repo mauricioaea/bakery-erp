@@ -2936,27 +2936,173 @@ class GeneradorReportes:
             flujo_neto = total_ingresos - total_gastos
             utilidad_neta = flujo_neto  # La utilidad neta es el flujo neto
             
-            # RESUMEN EJECUTIVO
-            story.append(Paragraph("RESUMEN EJECUTIVO", styles['Heading2']))
+            # =============================================
+            # 1. INGRESOS OPERACIONALES
+            # =============================================
+            story.append(Paragraph("1. INGRESOS OPERACIONALES", styles['Heading2']))
             story.append(Spacer(1, 10))
-            
-            # Crear tabla de resumen - Usar strings planos, NO Paragraphs
+
+            cantidad_ventas = len(ventas_normales)
+            datos_ingresos = [
+                ['Concepto', 'Monto'],
+                ['Ventas del periodo', f'${total_ingresos:,.0f}'],
+                ['Cantidad de transacciones', f'{cantidad_ventas}'],
+                ['TOTAL INGRESOS OPERACIONALES', f'${total_ingresos:,.0f}']
+            ]
+
+            tabla_ingresos = Table(datos_ingresos, colWidths=[250, 150])
+            tabla_ingresos.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 10),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+                ('BACKGROUND', (0, -1), (-1, -1), colors.lightblue),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black)
+            ]))
+            story.append(tabla_ingresos)
+            story.append(Spacer(1, 20))
+
+            # =============================================
+            # 2. INGRESOS POR METODO DE PAGO
+            # =============================================
+            ingresos_por_metodo = {}
+            for v in ventas_normales:
+                metodo = (v.metodo_pago or 'Sin especificar').capitalize()
+                ingresos_por_metodo[metodo] = ingresos_por_metodo.get(metodo, 0) + (v.total or 0)
+
+            if ingresos_por_metodo:
+                story.append(Paragraph("2. INGRESOS POR METODO DE PAGO", styles['Heading2']))
+                story.append(Spacer(1, 10))
+
+                datos_metodos = [['Metodo', 'Monto', 'Porcentaje']]
+                for metodo, monto in sorted(ingresos_por_metodo.items(), key=lambda x: x[1], reverse=True):
+                    pct = (monto / total_ingresos * 100) if total_ingresos > 0 else 0
+                    datos_metodos.append([metodo, f'${monto:,.0f}', f'{pct:.1f}%'])
+                datos_metodos.append(['TOTAL', f'${total_ingresos:,.0f}', '100%'])
+
+                tabla_metodos = Table(datos_metodos, colWidths=[150, 150, 100])
+                tabla_metodos.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, 0), 10),
+                    ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+                    ('BACKGROUND', (0, -1), (-1, -1), colors.lightblue),
+                    ('GRID', (0, 0), (-1, -1), 1, colors.black)
+                ]))
+                story.append(tabla_metodos)
+                story.append(Spacer(1, 20))
+
+            # =============================================
+            # 3. CONSUMO INTERNO / DONACIONES
+            # =============================================
+            story.append(Paragraph("3. CONSUMO INTERNO / DONACIONES", styles['Heading2']))
+            story.append(Spacer(1, 10))
+
+            if consumo_por_producto:
+                datos_consumo = [['Producto', 'Cant.', 'Costo Unit.', 'Total Costo']]
+                for nombre_prod, info in sorted(consumo_por_producto.items(),
+                                                 key=lambda x: x[1]['costo_total'],
+                                                 reverse=True):
+                    datos_consumo.append([
+                        nombre_prod[:30],
+                        str(info['cantidad']),
+                        f"${info['costo_unitario']:,.2f}",
+                        f"${info['costo_total']:,.0f}"
+                    ])
+                datos_consumo.append([
+                    'TOTAL COSTO CONSUMO',
+                    str(total_unidades_consumo),
+                    '',
+                    f'${total_costo_consumo:,.0f}'
+                ])
+
+                tabla_consumo = Table(datos_consumo, colWidths=[200, 60, 90, 90])
+                tabla_consumo.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, 0), 9),
+                    ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+                    ('BACKGROUND', (0, -1), (-1, -1), colors.lightyellow),
+                    ('GRID', (0, 0), (-1, -1), 1, colors.black)
+                ]))
+                story.append(tabla_consumo)
+            else:
+                story.append(Paragraph("Sin consumo interno ni donaciones en el periodo.", styles['Normal']))
+
+            story.append(Spacer(1, 8))
+
+            # Nota aclaratoria (terminologia multi-pais)
+            nota_style = ParagraphStyle(
+                'NotaStyle',
+                parent=styles['Normal'],
+                fontSize=8,
+                textColor=colors.HexColor('#555555'),
+                alignment=0,
+                spaceAfter=2
+            )
+            nota_texto = (
+                "<b>Nota:</b> El consumo interno y las donaciones no generan ingresos. "
+                "El costo de produccion se deduce del inventario y se registra como gasto operativo. "
+                "Consultar con su asesor tributario local para el tratamiento fiscal aplicable en su pais."
+            )
+            story.append(Paragraph(nota_texto, nota_style))
+            story.append(Spacer(1, 20))
+
+            # =============================================
+            # 4. GASTOS DEL PERIODO
+            # =============================================
+            story.append(Paragraph("4. GASTOS DEL PERIODO", styles['Heading2']))
+            story.append(Spacer(1, 10))
+
+            datos_gastos = [['Categoria', 'Monto']]
+            for cat, monto in sorted(gastos_por_categoria.items(), key=lambda x: x[1], reverse=True):
+                datos_gastos.append([str(cat), f'${monto:,.0f}'])
+            datos_gastos.append(['TOTAL GASTOS', f'${total_gastos:,.0f}'])
+
+            tabla_gastos = Table(datos_gastos, colWidths=[250, 150])
+            tabla_gastos.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 10),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+                ('BACKGROUND', (0, -1), (-1, -1), colors.lightyellow),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black)
+            ]))
+            story.append(tabla_gastos)
+            story.append(Spacer(1, 20))
+
+            # =============================================
+            # 5. RESUMEN EJECUTIVO
+            # =============================================
+            story.append(Paragraph("5. RESUMEN EJECUTIVO", styles['Heading2']))
+            story.append(Spacer(1, 10))
+
             datos_resumen = [
                 ['Concepto', 'Monto'],
                 ['Total Ingresos', f'${total_ingresos:,.0f}'],
                 ['Total Gastos', f'${total_gastos:,.0f}'],
                 ['Flujo Neto', f'${flujo_neto:,.0f}']
             ]
-            
-            # Si la utilidad es negativa, mostrarla con formato especial
+
             if utilidad_neta < 0:
-                datos_resumen.append(['Utilidad Neta del Período', f'${utilidad_neta:,.0f} (PÉRDIDA)'])
+                datos_resumen.append(['Utilidad Neta del Periodo', f'${utilidad_neta:,.0f} (PERDIDA)'])
             else:
-                datos_resumen.append(['Utilidad Neta del Período', f'${utilidad_neta:,.0f}'])
-            
+                datos_resumen.append(['Utilidad Neta del Periodo', f'${utilidad_neta:,.0f}'])
+
             tabla_resumen = Table(datos_resumen, colWidths=[200, 200])
-            
-            # Estilo de la tabla
+
             estilo_tabla = [
                 ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
@@ -2966,8 +3112,7 @@ class GeneradorReportes:
                 ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
                 ('GRID', (0, 0), (-1, -1), 1, colors.black)
             ]
-            
-            # Color para la fila de Utilidad Neta
+
             if utilidad_neta < 0:
                 estilo_tabla.append(('BACKGROUND', (0, 4), (-1, 4), colors.pink))
                 estilo_tabla.append(('TEXTCOLOR', (0, 4), (-1, 4), colors.black))
@@ -2976,40 +3121,17 @@ class GeneradorReportes:
                 estilo_tabla.append(('BACKGROUND', (0, 4), (-1, 4), colors.lightgreen))
                 estilo_tabla.append(('TEXTCOLOR', (0, 4), (-1, 4), colors.black))
                 estilo_tabla.append(('FONTNAME', (0, 4), (-1, 4), 'Helvetica-Bold'))
-            
+
             tabla_resumen.setStyle(TableStyle(estilo_tabla))
             story.append(tabla_resumen)
             story.append(Spacer(1, 20))
-            
-            # GASTOS POR CATEGORÍA
-            story.append(Paragraph("GASTOS POR CATEGORÍA", styles['Heading2']))
+
+            # =============================================
+            # 6. DETALLE DE INGRESOS DIARIOS
+            # =============================================
+            story.append(Paragraph("6. DETALLE DE INGRESOS DIARIOS", styles['Heading2']))
             story.append(Spacer(1, 10))
-            
-            # Crear tabla de gastos - Usar strings planos
-            datos_gastos = [['Categoría', 'Monto']]
-            for cat, monto in sorted(gastos_por_categoria.items(), key=lambda x: x[1], reverse=True):
-                datos_gastos.append([str(cat), f'${monto:,.0f}'])
-            datos_gastos.append(['TOTAL GASTOS', f'${total_gastos:,.0f}'])
-            
-            tabla_gastos = Table(datos_gastos, colWidths=[250, 150])
-            tabla_gastos.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 10),
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
-                ('GRID', (0, 0), (-1, -1), 1, colors.black)
-            ]))
-            story.append(tabla_gastos)
-            story.append(Spacer(1, 20))
-            
-            # DETALLE DE INGRESOS DIARIOS (agrupado desde Venta)
-            # DT-17 fix: antes iteraba sobre RegistroDiario (vacio).
-            # Ahora usa los datos agrupados por dia desde Venta.
-            story.append(Paragraph("DETALLE DE INGRESOS DIARIOS", styles['Heading2']))
-            story.append(Spacer(1, 10))
-            
+
             datos_detalle = [['Fecha', 'Ingresos']]
             if ingresos_por_dia:
                 for fecha_dia in sorted(ingresos_por_dia.keys()):
@@ -3020,19 +3142,36 @@ class GeneradorReportes:
             else:
                 datos_detalle.append(['Sin ingresos en el periodo', '$0'])
             datos_detalle.append(['TOTAL', f'${total_ingresos:,.0f}'])
-            
+
             tabla_detalle = Table(datos_detalle, colWidths=[150, 150])
             tabla_detalle.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
                 ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
                 ('FONTSIZE', (0, 0), (-1, 0), 10),
                 ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+                ('BACKGROUND', (0, -1), (-1, -1), colors.lightblue),
                 ('GRID', (0, 0), (-1, -1), 1, colors.black)
             ]))
             story.append(tabla_detalle)
-            
+            story.append(Spacer(1, 40))
+
+            # =============================================
+            # FIRMA DEL RESPONSABLE
+            # =============================================
+            firma_style = ParagraphStyle(
+                'FirmaStyle',
+                parent=styles['Normal'],
+                fontSize=9,
+                alignment=1,
+                spaceAfter=2,
+                textColor=colors.HexColor('#555555')
+            )
+            story.append(Paragraph("_" * 40, firma_style))
+            story.append(Paragraph("Firma del responsable", firma_style))
+
             # Build PDF
             doc.build(story)
             buffer.seek(0)
