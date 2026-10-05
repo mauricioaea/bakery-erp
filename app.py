@@ -12067,7 +12067,20 @@ def eliminar_cliente(tenant_id):
         print(f"✅ [ELIMINAR] Configuración huérfana eliminada")
         
         # =============================================
-        # 5. REPARAR SECUENCIA
+        # 5. ELIMINAR USUARIOS DEL TENANT EN PUBLIC (DT-36)
+        # =============================================
+        # Tras DT-36, public.usuarios es la única tabla con
+        # relación directa al tenant (por columna tenant_id).
+        # Se limpia para evitar huérfanos acumulados.
+        db.session.execute(
+            text("DELETE FROM public.usuarios WHERE tenant_id = :id"),
+            {'id': tenant_id}
+        )
+        db.session.commit()
+        print(f"✅ [ELIMINAR] Usuarios huérfanos del tenant {tenant_id} eliminados de public.usuarios")
+        
+        # =============================================
+        # 6. REPARAR SECUENCIA
         # =============================================
         db.session.execute(text("SELECT setval('tenants_id_seq', (SELECT COALESCE(MAX(id), 1) FROM public.tenants))"))
         db.session.commit()
