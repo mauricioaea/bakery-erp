@@ -1,11 +1,11 @@
 # 🗂️ CONTEXTO MAESTRO — PanaderíaPro (Bakery ERP)
 
 **Última actualización:** 5 de Octubre, 2026 (tarde)
-**Último commit:** 480e9e3 (fix DT-38 Lote D: alinear HistorialMantenimiento con BD + arreglar SQL crudo)
+**Último commit:** a003172 (fix DT-40: eliminar 6 columnas legacy de ventas del CREATE TABLE + DROP en tenant_25/26/27)
 **Sesión 2 Oct:** DT-11, DT-12, DT-13, DT-14, DT-16, DT-26, DT-27, DT-3, DT-4
 **Sesión 3 Oct:** DT-1, DT-6, DT-9, DT-20 Fase C (Tanda 1+2+3), DT-30, DT-31
 **Sesión 4 Oct:** DT-10, DT-22, DT-24, DT-17, DT-33, DT-34, DT-32, DT-18
-**Sesión 5 Oct:** Fase C.3 parcial (modelos vivos) + DT-38 (4/5 lotes)
+**Sesión 5 Oct:** Fase C.3 parcial (modelos vivos) + DT-38 (4/5 lotes) + **DT-40 (cerrada)**
 
 ---
 
@@ -13,7 +13,7 @@
 
 - **Nombre:** PanaderíaPro (bakery-erp)
 - **Repo:** https://github.com/mauricioaea/bakery-erp
-- **Estado:** v1.2.2 — **11/11 módulos completados (100%)** + Demo Fases 1-12 + Endurecimiento de seguridad + **DT-20 al 100%** + **DT-18 reporte tesorería nivel contable** + tenant_1 limpio + **Fase C.3 parcial (modelos vivos alineados)** + **DT-38 4/5 lotes**
+- **Estado:** v1.2.2 — **11/11 módulos completados (100%)** + Demo Fases 1-12 + Endurecimiento de seguridad + **DT-20 al 100%** + **DT-18 reporte tesorería nivel contable** + tenant_1 limpio + **Fase C.3 parcial (modelos vivos alineados)** + **DT-38 4/5 lotes** + **DT-40 cerrada**
 - **Arquitectura:** Multi-tenant con PostgreSQL (schemas por tenant)
 - **Próximo hito:** DT-39 (25 columnas SIN FILAS) + DT-36 (auditoría `public.*`) + deudas medias + Docker
 
@@ -58,7 +58,7 @@
 
 **Estado de `tenant_1`:** ✅ Limpio (18 panaderías huérfanas y 1 usuario duplicado eliminados el 4 Oct). La migración automática del ORM le agregó 7 columnas el 5 Oct (mecanismo normal).
 
-**Estado de `tenant_27`:** ✅ Re-seedeado el 5 Oct con el schema alineado (10.432 filas, EXIT_CODE=0).
+**Estado de `tenant_27`:** ✅ Re-seedeado el 5 Oct post-DT-40 (9.623 filas, EXIT_CODE=0).
 
 ---
 
@@ -120,6 +120,8 @@
 ---
 
 ## 6️⃣ Últimos commits pusheados
+a003172 fix(DT-40): eliminar 6 columnas legacy de ventas del CREATE TABLE + DROP en tenant_25/26/27
+bf31e96 docs: HANDOFF v7.9 - DT-38 cerrada (4/5 lotes) + reglas 31-32
 480e9e3 fix(DT-38 Lote D): alinear HistorialMantenimiento con BD (activo_fijo_id, notas) + arreglar SQL crudo
 b656964 fix(DT-38 Lote C): alinear StockProducto con BD (producto_id, stock_maximo, relationship)
 856392e fix(DT-38 Lote B): alinear Gasto con BD (concepto, fecha_gasto, observaciones, usuario_id)
@@ -166,17 +168,17 @@ a522e0c fix(DT-11): event listener sin current_user
 | 3 | Materias primas | ✅ | 17 |
 | 4 | Recetas y fórmulas | ✅ | 12 recetas / 80 ingredientes |
 | 5 | Productos | ✅ | 12 |
-| 6 | Producción diaria | ✅ | ~2.434 |
-| 7 | Ventas | ✅ | ~7.470 |
+| 6 | Producción diaria | ✅ | ~2.274 |
+| 7 | Ventas | ✅ | ~6.820 |
 | 8 | Productos externos | ✅ | 12 |
-| 9 | Activos fijos | ✅ | ~34 |
-| 10 | Movimientos financieros | ✅ | ~268 |
+| 9 | Activos fijos | ✅ | ~39 |
+| 10 | Movimientos financieros | ✅ | ~264 |
 | 11 | Cierres diarios | ✅ | 90 |
 | 12 | Reset automatizado | ✅ | — |
 
-**Total aproximado:** ~10.432 filas en tenant_27 (verificado el 5 Oct).
+**Total aproximado:** ~9.623 filas en tenant_27 (verificado el 5 Oct post-DT-40). El conteo varía por la naturaleza pseudo-aleatoria del seed.
 
-**Última re-ejecución:** 5 Oct 2026 (post-alineación de schema) — `EXIT_CODE=0`.
+**Última re-ejecución:** 5 Oct 2026 (post-DT-40) — `EXIT_CODE=0`.
 
 ---
 
@@ -225,7 +227,7 @@ SECRET_KEY=...
 
 ## 9️⃣ Deuda técnica acumulada
 
-### ✅ RESUELTAS el 5 de Octubre 2026 (Fase C.3 parcial + DT-38)
+### ✅ RESUELTAS el 5 de Octubre 2026 (Fase C.3 + DT-38 + DT-40)
 
 | # | Descripción | Commit |
 |---|-------------|--------|
@@ -238,6 +240,7 @@ SECRET_KEY=...
 | DT-38 Lote B | `Gasto` alineado con BD (`concepto`, `fecha_gasto`, `observaciones`, `usuario_id`) | `856392e` |
 | DT-38 Lote C | `StockProducto` alineado con BD (`producto_id`, `stock_maximo`, relationship) | `b656964` |
 | DT-38 Lote D | `HistorialMantenimiento` alineado con BD + SQL crudo arreglado | `480e9e3` |
+| **DT-40** | **6 columnas legacy de `ventas` eliminadas del CREATE TABLE + DROP en tenant_25/26/27** | **`a003172`** |
 
 ### ⚠️ DT-38 — Cerrada con 4 de 5 lotes
 
@@ -322,7 +325,6 @@ SECRET_KEY=...
 | DT-36 | `public.*` | **Auditoría completa de `public.*` vs `tenant_*`.** |
 | DT-37 | `reportes.py` | **Soporte multi-idioma (i18n).** Refactor con `Flask-Babel`. |
 | **DT-39** | `tenant_27.*` | **25 columnas SIN FILAS** en tablas vacías: `compras`, `detalle_compras`, `control_vida_util`, `historial_rotacion_producto`, `logs_sistema`, `registros_diarios`, `registros_financieros`. Investigar cada una con `findstr` para saber si son features del dominio o ruido. |
-| **DT-40** | `models.py:985` — `Venta` | Columnas legacy en BD: `total_venta`, `total_donacion`, `descuento`, `impuesto`, `consecutivo`, `observaciones`. **Existen en BD pero NO en ORM.** Tienen valores `0` o NULL (defaults). Eliminar del `CREATE TABLE` y la BD en una próxima tanda. |
 
 ### 🟢 Bajas pendientes
 *(ninguna en este momento)*
@@ -368,6 +370,8 @@ SECRET_KEY=...
 30. **Al alinear `CREATE TABLE` con el ORM, actualizar también los seeds que hagan INSERT directo sobre las columnas afectadas.**
 31. **Al arrancar la app, se ejecuta una migración automática que agrega columnas del ORM que falten en la BD. Nunca asumir que el `CREATE TABLE` en `app.py` refleja el estado real de la BD. Verificar siempre con `information_schema.columns`.**
 32. **Al alinear ORM↔BD, revisar TODOS los usos del modelo en templates HTML, JavaScript y CSS, además del código Python.**
+33. **Al hacer `DROP COLUMN`, verificar SIEMPRE primero con `information_schema.columns` en QUÉ schemas existe la columna. No asumir que existe en todos. Ejecutar el DROP por transacción individual (no en un solo `BEGIN`), para saber exactamente cuál falla si algo sale mal.**
+34. **Al hacer cambios destructivos en BD, tomar un backup FRESCO con `pg_dump -F c` inmediatamente antes (no usar backups viejos). Verificar que el archivo `.backup` pese > 0 bytes.**
 
 ### Comandos útiles
 
@@ -460,39 +464,42 @@ B	Gasto	fecha→fecha_gasto, descripcion→concepto, +observaciones, +usuario_id
 C	StockProducto	receta_id→producto_id, +stock_maximo, stock_minimo default 0, relationship renombrado	b656964
 D	HistorialMantenimiento	activo_id→activo_fijo_id, realizado_por→tecnico, DROP 2 columnas en BD, fix SQL crudo en app.py:10469	480e9e3
 E	HistorialInventario	⏸️ Diferido (ver nota en sección 9️⃣)	—
-Verificaciones:
+DT-40 — Columnas legacy de ventas (cerrada):
 
-py_compile app.py + py_compile models.py → OK en cada lote.
+Acción	Detalle	Ubicación
+FIX CREATE TABLE	Quitar 6 columnas legacy de ventas	app.py:451-467
+DROP BD	tenant_25.ventas.{total_venta, total_donacion, impuesto, descuento, consecutivo, observaciones}	(SQL)
+DROP BD	tenant_26.ventas.{...idem}	(SQL)
+DROP BD	tenant_27.ventas.{...idem}	(SQL)
+SCRIPT	Versionado del DROP	migrations/sql/2026-10-05_drop_ventas_legacy.sql
+Descubrimiento: tenant_1 NO tenía las 6 columnas legacy (schema distinto). Verificado con information_schema.columns.
 
-import app → OK en cada lote.
+Verificaciones (5 Oct tarde, DT-40)
+py_compile app.py + py_compile models.py → OK.
 
-Seed re-ejecutado tras la Fase C.3 (10.432 filas, EXIT_CODE=0).
+import app → OK.
 
-Smoke test: login, dashboard, POS, depósitos, producción, mantenimientos → todos 200 OK.
+Backup fresco: backup_pre_dt40.backup (904 KB).
 
-Mantenimiento ID 23 creado y verificado en BD (verificación end-to-end del Lote D).
+git diff mostró exactamente 6 líneas eliminadas en el CREATE TABLE.
 
-4 commits en main local (falta push).
+Smoke test end-to-end post-DROP: login, dashboard, POS, /buscar_producto, /reporte/cierre_caja, /reporte/ventas_avanzado, /reportes, /configuracion/facturacion, /api/consecutivo-pos/estado → todos 200 OK.
 
-Lo que queda pendiente (DT-39 y DT-40)
+Arranque del servidor: 📊 Columnas agregadas: 0 → el ORM no recreó las columnas legacy.
+
+Re-seed completo: EXIT_CODE=0 (9.623 filas).
+
+Verificación final: 0 rows de columnas legacy en los 4 tenants.
+
+Lo que queda pendiente (DT-39)
 DT-39 — 25 columnas SIN FILAS:
 
 En tablas vacías: compras, detalle_compras, control_vida_util, historial_rotacion_producto, logs_sistema, registros_diarios, registros_financieros.
 
 No se pueden clasificar por datos. Investigar cada una con findstr.
 
-DT-40 — Columnas legacy de ventas:
-
-total_venta, total_donacion, descuento, impuesto, consecutivo, observaciones.
-
-Existen en BD pero no en ORM. Tienen valores 0 o NULL. Eliminar del CREATE TABLE y la BD.
-
 Cómo continuar la Fase C.3
-Push pendiente: git push (los 4 commits de DT-38 + HANDOFF v7.9).
-
 Atacar DT-39: analizar las 25 columnas SIN FILAS con findstr y decidir por cada una.
-
-Atacar DT-40: eliminar las columnas legacy de ventas del CREATE TABLE y de la BD.
 
 Atacar DT-36: auditoría completa de public.* vs tenant_*.
 
@@ -625,12 +632,98 @@ Decisión: dejar como está. Nota de baja prioridad. No hay urgencia porque el e
 
 Si se retoma en el futuro: reescribir el ORM, arreglar el endpoint, DROP 3 columnas, actualizar el seed.
 
-1️⃣6️⃣ Notas estratégicas
+1️⃣6️⃣ DT-40 — Bitácora detallada (5 Oct 2026)
+Contexto: 6 columnas legacy en la tabla ventas que existían en BD pero NO en el ORM (DT-40 del HANDOFF v7.9).
+
+Diagnóstico
+Estructura real (tenant_27.ventas): 23 columnas.
+
+Columnas legacy identificadas: total_venta, total_donacion, impuesto, descuento, consecutivo, observaciones.
+
+Verificación de datos (COUNT DISTINCT):
+
+total_venta: 1 valor distinto (todos 0).
+
+total_donacion: 1 valor distinto (todos 0).
+
+descuento: 1 valor distinto (todos 0).
+
+impuesto: 1 valor distinto (todos 0).
+
+consecutivo: 0 valores distintos (todos NULL).
+
+observaciones: 0 valores distintos (todos NULL).
+
+Búsquedas en código:
+
+findstr "venta.impuesto", "venta.descuento", "venta.observaciones" → 0 hits.
+
+findstr "impuesto" en models.py filtrado por venta → 0 hits.
+
+findstr en seeds/*.py → 0 hits relacionados con las columnas legacy.
+
+findstr en templates/*.html → 0 hits.
+
+Ejecución
+Paso 1 — Limpiar CREATE TABLE en app.py:445-468:
+
+Eliminadas 6 líneas del CREATE TABLE. ✅
+
+py_compile app.py OK. ✅
+
+Paso 2 — Backup + DROP en BD:
+
+Backup fresco: backup_pre_dt40.backup (904 KB). ✅
+
+Verificación previa con information_schema.columns:
+
+tenant_1: 0 columnas legacy (no las tenía). ✅ Descubrimiento.
+
+tenant_25: 6 columnas. ✅
+
+tenant_26: 6 columnas. ✅
+
+tenant_27: 6 columnas. ✅
+
+18 ALTER TABLE DROP COLUMN ejecutados (6 × 3 tenants, uno por uno). Todos ALTER TABLE. ✅
+
+Verificación post-DROP: 0 rows. ✅
+
+Paso 3 — Script SQL versionado:
+
+migrations/sql/2026-10-05_drop_ventas_legacy.sql creado con IF EXISTS (idempotente). ✅
+
+Paso 4 — Smoke test (servidor):
+
+Rutas probadas: /login, /dashboard, /punto_venta, /buscar_producto?q=, /reporte/cierre_caja, /reporte/ventas_avanzado, /reportes, /configuracion/facturacion, /api/consecutivo-pos/estado. Todas 200 OK. ✅
+
+Arranque: 📊 Columnas agregadas: 0 (el ORM no recreó las legacy). ✅
+
+Paso 5 — Re-seed tenant_27:
+
+python seed_demo.py --tenant=27 --reset-all → EXIT_CODE=0, 9.623 filas. ✅
+
+Cero errores de columna inexistente. ✅
+
+Paso 6 — Commit + push:
+
+git diff mostró exactamente 6 líneas eliminadas. ✅
+
+Commit a003172, pusheado. ✅
+
+Archivos afectados
+app.py — CREATE TABLE ventas (líneas 445-462, antes 445-468).
+
+migrations/sql/2026-10-05_drop_ventas_legacy.sql — nuevo.
+
+BD: tenant_25.ventas, tenant_26.ventas, tenant_27.ventas (DROP COLUMN).
+
+1️⃣7️⃣ Notas estratégicas
 Objetivo del ERP
 ERP SaaS multi-tenant multi-país con: POS, inventario, producción, recetas, activos fijos, reportes con IA, finanzas, multi-país, base para API REST + IA avanzada.
 
 🎁 Tenant Demo (marketing)
-Fases 1-12 completadas (~10.432 filas). Contraseña: demo2026. Reset desde /mi_perfil con dev_master.
+Fases 1-12 completadas (~9.623 filas). Contraseña: demo2026. Reset desde /mi_perfil con dev_master.
 
 Mercado objetivo
 3.000-5.000 panaderías en Colombia.
@@ -656,7 +749,6 @@ Los reportes respetan la moneda, régimen y datos de cada tenant.
 Estimación de tiempos (5 Oct 2026, tarde)
 Bloque	Estimación
 DT-39 (25 columnas SIN FILAS)	~2-3 h
-DT-40 (columnas legacy de ventas)	~1-2 h
 DT-36 (auditoría public.* vs tenant_*)	~2-3 h
 DT-5 (Gasto vs RegistroFinanciero)	~1-2 h
 DT-37 (i18n reportes)	~8-15 h
@@ -670,14 +762,14 @@ Al iniciar un nuevo chat, pegar este archivo como contexto inicial.
 
 Instrucción sugerida para el asistente:
 
-"Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el archivo HANDOFF.md v7.9 con el contexto maestro del proyecto. Vamos a continuar desde donde lo dejamos. Por favor actúa como instructor guiando paso a paso, con la metodología de trabajo descrita en el HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/findstr, commit tras cada fix verificado. Al insertar bloques, muéstrame ANTES → DESPUÉS con número de línea exacto."
+"Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el archivo HANDOFF.md v8.0 con el contexto maestro del proyecto. Vamos a continuar desde donde lo dejamos. Por favor actúa como instructor guiando paso a paso, con la metodología de trabajo descrita en el HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/findstr, commit tras cada fix verificado. Al insertar bloques, muéstrame ANTES → DESPUÉS con número de línea exacto."
 
-Próxima tarea sugerida: continuar con DT-39 (25 columnas SIN FILAS) o DT-40 (columnas legacy de ventas).
+Próxima tarea sugerida: continuar con DT-39 (25 columnas SIN FILAS) o DT-36 (auditoría public.* vs tenant_*).
 
 ✅ Última validación
-Último commit: 480e9e3 (4 commits locales, pendiente push).
+Último commit: a003172 (DT-40 cerrada, pusheado).
 
-Última sesión: 5 Oct 2026 — Fase C.3 parcial + DT-38 (4/5 lotes).
+Última sesión: 5 Oct 2026 — Fase C.3 parcial + DT-38 (4/5 lotes) + DT-40 (cerrada).
 
 Working tree: clean.
 
@@ -687,7 +779,7 @@ Sistema: 100% funcional end-to-end.
 
 Módulos: 11/11 completados (100%).
 
-Demo: Fases 1-12 completadas, contraseña demo2026, ~10.432 filas.
+Demo: Fases 1-12 completadas, contraseña demo2026, ~9.623 filas.
 
 Log: limpio, sin warnings.
 
@@ -703,10 +795,12 @@ Fase C.3 (modelos vivos): ✅ Alineada.
 
 DT-38 (5 modelos muertos): ✅ 4/5 lotes. Lote E diferido.
 
+DT-40 (columnas legacy ventas): ✅ RESUELTA.
+
 tenant_1: ✅ Limpio.
 
 Deudas críticas pendientes: ninguna.
 
-Pendientes: DT-39, DT-40, DT-36, DT-37, DT-5, DT-19, DT-21, DT-25, DT-28, DT-29.
+Pendientes: DT-39, DT-36, DT-37, DT-5, DT-19, DT-21, DT-25, DT-28, DT-29.
 
-Fin del HANDOFF.md — v7.9
+Fin del HANDOFF.md — v8.0
