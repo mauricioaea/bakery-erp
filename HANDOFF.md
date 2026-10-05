@@ -1,11 +1,11 @@
 # 🗂️ CONTEXTO MAESTRO — PanaderíaPro (Bakery ERP)
 
-**Última actualización:** 5 de Octubre, 2026 (mañana)
-**Último commit:** cefb33f (fix DT-FaseC.3: alinear ORM y BD - 5 cols ORM + 4 DROP BD + fix seeds + CREATE TABLE)
+**Última actualización:** 5 de Octubre, 2026 (tarde)
+**Último commit:** 480e9e3 (fix DT-38 Lote D: alinear HistorialMantenimiento con BD + arreglar SQL crudo)
 **Sesión 2 Oct:** DT-11, DT-12, DT-13, DT-14, DT-16, DT-26, DT-27, DT-3, DT-4
 **Sesión 3 Oct:** DT-1, DT-6, DT-9, DT-20 Fase C (Tanda 1+2+3), DT-30, DT-31
 **Sesión 4 Oct:** DT-10, DT-22, DT-24, DT-17, DT-33, DT-34, DT-32, DT-18
-**Sesión 5 Oct:** Fase C.3 parcial (modelos vivos alineados ORM↔BD)
+**Sesión 5 Oct:** Fase C.3 parcial (modelos vivos) + DT-38 (4/5 lotes)
 
 ---
 
@@ -13,9 +13,9 @@
 
 - **Nombre:** PanaderíaPro (bakery-erp)
 - **Repo:** https://github.com/mauricioaea/bakery-erp
-- **Estado:** v1.2.2 — **11/11 módulos completados (100%)** + Demo Fases 1-12 + Endurecimiento de seguridad + **DT-20 al 100%** + **DT-18 reporte tesorería nivel contable** + tenant_1 limpio + **Fase C.3 parcial (modelos vivos alineados)**
+- **Estado:** v1.2.2 — **11/11 módulos completados (100%)** + Demo Fases 1-12 + Endurecimiento de seguridad + **DT-20 al 100%** + **DT-18 reporte tesorería nivel contable** + tenant_1 limpio + **Fase C.3 parcial (modelos vivos alineados)** + **DT-38 4/5 lotes**
 - **Arquitectura:** Multi-tenant con PostgreSQL (schemas por tenant)
-- **Próximo hito:** Fase C.3 continuación (5 modelos muertos + 30 SIN FILAS) + DT-5 + deudas medias + Docker
+- **Próximo hito:** DT-39 (25 columnas SIN FILAS) + DT-36 (auditoría `public.*`) + deudas medias + Docker
 
 ---
 
@@ -56,7 +56,7 @@
 
 **Tenant principal del Demo:** `tenant_27` ("Panadería Demo").
 
-**Estado de `tenant_1`:** ✅ Limpio (18 panaderías huérfanas y 1 usuario duplicado eliminados el 4 Oct).
+**Estado de `tenant_1`:** ✅ Limpio (18 panaderías huérfanas y 1 usuario duplicado eliminados el 4 Oct). La migración automática del ORM le agregó 7 columnas el 5 Oct (mecanismo normal).
 
 **Estado de `tenant_27`:** ✅ Re-seedeado el 5 Oct con el schema alineado (10.432 filas, EXIT_CODE=0).
 
@@ -120,6 +120,11 @@
 ---
 
 ## 6️⃣ Últimos commits pusheados
+480e9e3 fix(DT-38 Lote D): alinear HistorialMantenimiento con BD (activo_fijo_id, notas) + arreglar SQL crudo
+b656964 fix(DT-38 Lote C): alinear StockProducto con BD (producto_id, stock_maximo, relationship)
+856392e fix(DT-38 Lote B): alinear Gasto con BD (concepto, fecha_gasto, observaciones, usuario_id)
+2748a70 fix(DT-38 Lote A): agregar JornadaVentas.total_tarjeta al ORM
+e2029a4 docs: HANDOFF v7.8 - Fase C.3 parcial (modelos vivos alineados)
 cefb33f fix(DT-FaseC.3): alinear ORM y BD - 5 cols ORM + 4 DROP BD + fix seeds + CREATE TABLE
 74a76af docs: HANDOFF v7.7 - DT-18 cerrado (reporte tesorería nivel contable), reglas 26-27, DT-35/36/37 documentadas
 d8a8afd feat(DT-18): reporte tesoreria nivel contable - 6 secciones (ingresos, metodos pago, consumo interno, gastos, resumen, detalle diario) + firma
@@ -199,6 +204,7 @@ SECRET_KEY=...
 - `/admin/reset-demo`, `/admin/reset-demo/status`
 - `/crear_cliente`, `/editar_cliente_super`, `/renovar_suscripcion_super`, `/eliminar_cliente`
 - `/configuracion/facturacion` (datos fiscales del tenant)
+- `/activos_fijos`, `/activo/<id>/mantenimientos`, `/activo/<id>/mantenimiento/nuevo`, `/mantenimiento/<id>/detalle`
 - **Eliminado:** `/crear_usuario`
 
 ### Bug sistémico — panaderia_id default=1 (DT-20)
@@ -219,7 +225,7 @@ SECRET_KEY=...
 
 ## 9️⃣ Deuda técnica acumulada
 
-### ✅ RESUELTAS el 5 de Octubre 2026 (Fase C.3 parcial — modelos vivos)
+### ✅ RESUELTAS el 5 de Octubre 2026 (Fase C.3 parcial + DT-38)
 
 | # | Descripción | Commit |
 |---|-------------|--------|
@@ -228,6 +234,31 @@ SECRET_KEY=...
 | Fase C.3.3 | Alineación ORM↔BD en modelos vivos: 5 columnas ORM + 4 DROP BD + 2 CREATE TABLE + 2 seeds | `cefb33f` |
 | Fase C.3.4 | Fix `AmbiguousForeignKeysError` en `OrdenProduccion.usuario` | `cefb33f` |
 | Fase C.3.5 | Fix seeds `fase8_externos.py` y `fase10_financieros.py` | `cefb33f` |
+| DT-38 Lote A | `JornadaVentas.total_tarjeta` agregada al ORM | `2748a70` |
+| DT-38 Lote B | `Gasto` alineado con BD (`concepto`, `fecha_gasto`, `observaciones`, `usuario_id`) | `856392e` |
+| DT-38 Lote C | `StockProducto` alineado con BD (`producto_id`, `stock_maximo`, relationship) | `b656964` |
+| DT-38 Lote D | `HistorialMantenimiento` alineado con BD + SQL crudo arreglado | `480e9e3` |
+
+### ⚠️ DT-38 — Cerrada con 4 de 5 lotes
+
+**Resumen:**
+- **Lote A** (`JornadaVentas`): ✅ Completado.
+- **Lote B** (`Gasto`): ✅ Completado.
+- **Lote C** (`StockProducto`): ✅ Completado.
+- **Lote D** (`HistorialMantenimiento`): ✅ Completado.
+- **Lote E** (`HistorialInventario`): ⏸️ **Diferido como nota de baja prioridad.**
+
+**Nota del Lote E diferido:**
+- `HistorialInventario` **no es un modelo 100% muerto**. Tiene **1 uso por ORM** en el endpoint `producir_receta` (`app.py:4632-4702`), que está **huérfano en el frontend** (0 referencias en templates activos).
+- El endpoint `producir_receta` **está roto** (el ORM intenta insertar sin `producto_id` NOT NULL → `IntegrityError`), pero **nadie lo ejecuta**.
+- La tabla `historial_inventario` tiene **12 columnas** (9 del `CREATE TABLE` + 3 del ORM agregadas por la migración automática).
+- **La tabla se usa solo por el seed** (Fase 6) por SQL crudo, como **auditoría de movimientos de stock de productos**.
+- **Estado:** dejar como está. **No hay urgencia** porque el endpoint es huérfano y la tabla solo se usa para auditoría.
+- **Si en el futuro se necesita el endpoint `producir_receta`**, hay que:
+  1. Reescribir el ORM `HistorialInventario` para que refleje la BD (`producto_id`, `cantidad_anterior`, `cantidad_nueva`).
+  2. Reescribir el endpoint `producir_receta` para que use el nuevo modelo.
+  3. `DROP COLUMN` de `materia_prima_id`, `orden_produccion_id`, `cantidad_utilizada` en BD.
+  4. Actualizar los seeds (Fase 6) para no usar esas columnas.
 
 ### ✅ RESUELTAS el 4 de Octubre 2026 (8 deudas)
 
@@ -281,29 +312,24 @@ SECRET_KEY=...
 | # | Ubicación | Descripción |
 |---|-----------|-------------|
 | DT-5 | `models.py:1055 vs 2441` | `Gasto` vs `RegistroFinanciero` posible solapamiento |
-| DT-7 | `models.py` (PagoIndividual, SaldoBanco vs DepositoBancario, RegistroFinanciero) | Inconsistencia FK: 2 modelos tienen FK a `panaderias.id`, 2 no. **Aceptada (4 Oct):** no hay bug funcional. |
+| DT-7 | `models.py` | Inconsistencia FK: 2 modelos tienen FK a `panaderias.id`, 2 no. **Aceptada (4 Oct).** |
 | DT-19 | global | CSRF completo con `flask-wtf` |
 | DT-21 | POS | Modal de crear cliente sin botón visible |
 | DT-25 | `app.py:1744` | Orden real de `before_request` vs `login_required` |
 | DT-28 | `POST /` | Doble submit detectado |
 | DT-29 | `app.py` (before_request fallback) | Tenant por defecto "Panadería Principal" en usuarios anónimos |
-| DT-35 | `public.configuracion_sistema` + `public.pagos_individuales` | **Sincronizar columnas** de tablas de `public` con el modelo. Aplicado parcialmente el 4 Oct. Ver DT-36. |
-| DT-36 | `public.*` | **Auditoría completa de `public.*` vs `tenant_*`.** Muchas tablas de `public` están desactualizadas. |
+| DT-35 | `public.configuracion_sistema` + `public.pagos_individuales` | **Sincronizar columnas.** Aplicado parcialmente el 4 Oct. Ver DT-36. |
+| DT-36 | `public.*` | **Auditoría completa de `public.*` vs `tenant_*`.** |
 | DT-37 | `reportes.py` | **Soporte multi-idioma (i18n).** Refactor con `Flask-Babel`. |
-
-### 🟢 Nuevas deudas surgidas de la Fase C.3 (5 Oct)
-
-| # | Ubicación | Descripción | Prioridad |
-|---|-----------|-------------|-----------|
-| **DT-38** | `models.py` — `Gasto`, `HistorialInventario`, `HistorialMantenimiento`, `JornadaVentas`, `StockProducto` | **5 modelos huérfanos sin uso por ORM.** Ver análisis Fase C.3. Los datos se acceden por SQL crudo (seeds, reportes). Requiere: (a) decidir si agregar al ORM o eliminar, (b) resolver divergencias de nombres (`Gasto.concepto` vs `Gasto.descripcion`, etc.), (c) actualizar seeds/reportes si renombramos. | Media |
-| **DT-39** | `tenant_27.*` — 25 columnas SIN FILAS en tablas vacías | Columnas en `compras`, `detalle_compras`, `control_vida_util`, `historial_rotacion_producto`, `logs_sistema`, `registros_diarios`, `registros_financieros`. **No se pueden clasificar por datos.** Investigar cada una con `findstr` para saber si son features del dominio o ruido. | Media |
-| **DT-40** | `models.py:985` — `Venta` — columnas legacy en BD | Las columnas `total_venta`, `total_donacion`, `descuento`, `impuesto`, `consecutivo`, `observaciones` **existen en BD pero NO en ORM**. Tienen valores `0` o NULL (defaults). Quedan pendientes para eliminar del `CREATE TABLE` y la BD en una próxima tanda. | Baja |
+| **DT-39** | `tenant_27.*` | **25 columnas SIN FILAS** en tablas vacías: `compras`, `detalle_compras`, `control_vida_util`, `historial_rotacion_producto`, `logs_sistema`, `registros_diarios`, `registros_financieros`. Investigar cada una con `findstr` para saber si son features del dominio o ruido. |
+| **DT-40** | `models.py:985` — `Venta` | Columnas legacy en BD: `total_venta`, `total_donacion`, `descuento`, `impuesto`, `consecutivo`, `observaciones`. **Existen en BD pero NO en ORM.** Tienen valores `0` o NULL (defaults). Eliminar del `CREATE TABLE` y la BD en una próxima tanda. |
 
 ### 🟢 Bajas pendientes
 *(ninguna en este momento)*
 
 ### 🚨 Otras deudas
 - **`public` con 40 tablas duplicadas.** Cubierto por DT-36.
+- **`tenant_1`, `tenant_25`, `tenant_26`:** tienen columnas del ORM duplicadas con las del `CREATE TABLE` (mismo patrón que `tenant_27` tenía antes de la limpieza de `historial_mantenimientos`). **Prioridad baja**, no rompen nada porque nadie las usa en esos tenants.
 
 ---
 
@@ -331,15 +357,17 @@ SECRET_KEY=...
 19. **Nunca acceder a `current_user` desde event listeners de SQLAlchemy.**
 20. **En Windows, usar `findstr /c:"patrón"` para búsquedas literales.**
 21. **Antes de aplicar un fix según el HANDOFF, verificar el estado actual del archivo.**
-22. **Al eliminar código huérfano, verificar PRIMERO que no haya referencias activas.**
+22. **Al eliminar código huérfano, verificar PRIMERO que no haya referencias activas (incluye templates HTML y JS).**
 23. **Al auditar modelos con `default=N`: verificar TODOS los INSERTs (ORM + SQL directo).**
 24. **Al eliminar una columna de un modelo, verificar SIEMPRE primero: (a) si hay lecturas en el código, (b) si hay datos inconsistentes en la BD, (c) si hay usuarios/registros que apunten a valores huérfanos.**
 25. **Al hacer DELETE masivos en la BD, verificar SIEMPRE: (a) backup previo, (b) que no haya FKs apuntando a los registros, (c) que no sean tenants reales en `public.tenants`.**
-26. **Al modificar un método de `reportes.py` que genera PDF, verificar SIEMPRE el orden de las secciones y que todas las variables estén definidas ANTES de usarse. El código puede compilar (py_compile) pero fallar en runtime (UnboundLocalError).**
-27. **Nunca asumir que el esquema de la BD coincide con el modelo ORM. Verificar con `information_schema.columns` ANTES de usar un ORM en un contexto nuevo. Las tablas de `public` suelen estar desactualizadas.**
+26. **Al modificar un método de `reportes.py` que genera PDF, verificar SIEMPRE el orden de las secciones y que todas las variables estén definidas ANTES de usarse.**
+27. **Nunca asumir que el esquema de la BD coincide con el modelo ORM. Verificar con `information_schema.columns` ANTES de usar un ORM en un contexto nuevo.**
 28. **Al auditar columnas (Fase C.3), usar `COUNT(DISTINCT col)` en lugar de `COUNT(col)` para evitar falsos positivos por valores DEFAULT 0/constantes.**
 29. **Al agregar una segunda FK a una tabla, SQLAlchemy requiere `foreign_keys=[...]` explícito en los `relationship` para evitar `AmbiguousForeignKeysError`.**
 30. **Al alinear `CREATE TABLE` con el ORM, actualizar también los seeds que hagan INSERT directo sobre las columnas afectadas.**
+31. **Al arrancar la app, se ejecuta una migración automática que agrega columnas del ORM que falten en la BD. Nunca asumir que el `CREATE TABLE` en `app.py` refleja el estado real de la BD. Verificar siempre con `information_schema.columns`.**
+32. **Al alinear ORM↔BD, revisar TODOS los usos del modelo en templates HTML, JavaScript y CSS, además del código Python.**
 
 ### Comandos útiles
 
@@ -375,6 +403,7 @@ Búsquedas:
 cmd
 findstr /n /c:"patrón exacto" archivo.py
 findstr /s /n /c:"patrón" *.py
+findstr /s /n /c:"patrón" templates\*.html
 Extraer líneas de un archivo (PowerShell):
 
 cmd
@@ -383,16 +412,6 @@ Backup de BD:
 
 cmd
 pg_dump -U postgres -p 5433 -h localhost -d panaderia_master -F c -f backup_pre_XXX.backup
-Verificar FK a una tabla:
-
-cmd
-psql -U postgres -p 5433 -h localhost -d panaderia_master -c "SELECT tc.table_name, kcu.column_name FROM information_schema.table_constraints AS tc JOIN information_schema.key_column_usage AS kcu ON tc.constraint_name = kcu.constraint_name JOIN information_schema.constraint_column_usage AS ccu ON ccu.constraint_name = tc.constraint_name WHERE tc.constraint_type = 'FOREIGN KEY' AND tc.table_schema = 'tenant_1' AND ccu.table_name = 'panaderias';"
-Comparar columnas de un schema vs otro:
-
-cmd
-psql -U postgres -p 5433 -h localhost -d panaderia_master -c "SELECT column_name FROM information_schema.columns WHERE table_schema = 'tenant_27' AND table_name = 'nombre_tabla' ORDER BY ordinal_position;"
-
-psql -U postgres -p 5433 -h localhost -d panaderia_master -c "SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'nombre_tabla' ORDER BY ordinal_position;"
 Auditoría de columnas (Fase C.3):
 
 cmd
@@ -409,19 +428,19 @@ models.py (define el ORM).
 
 Seeds (usan SQL crudo con nombres viejos).
 
+Migración automática del ORM (agrega columnas del ORM que falten en BD).
+
 Hallazgos clave
 68 columnas huérfanas en 21 tablas de tenant_27.
 
-5 de 9 modelos relevantes están muertos (nadie los usa por ORM): Gasto, HistorialInventario, HistorialMantenimiento, JornadaVentas, StockProducto.
+4 de 5 modelos "muertos" confirmados (Gasto, StockProducto, JornadaVentas, HistorialMantenimiento).
 
-4 modelos están vivos: Categoria, ProductoExterno, OrdenProduccion, DepositoBancario.
-
-5 columnas son MUERTAS (todo NULL): depositos_bancarios.observaciones, gastos.observaciones, historial_mantenimientos.realizado_por, ventas.consecutivo, ventas.observaciones.
+1 modelo semi-vivo (HistorialInventario) → DT-38 Lote E diferido.
 
 Muchas "huérfanas" son duplicados con otro nombre: gastos.concepto vs gastos.descripcion (ORM), depositos_bancarios.tipo vs metodo_deposito, historial_mantenimientos.activo_fijo_id vs activo_id, ordenes_produccion.fecha_orden vs fecha_produccion.
 
 Lo que se hizo (sesión 5 Oct)
-Lote 2 (modelos vivos):
+Fase C.3 — Modelos vivos:
 
 Acción	Detalle	Ubicación
 ADD al ORM	Categoria.descripcion (Text)	models.py:251
@@ -431,31 +450,31 @@ FIX ORM	OrdenProduccion.usuario + usuario_creacion con foreign_keys explícito	m
 DROP BD	tenant_27.depositos_bancarios.{tipo, observaciones, fecha_registro}	(SQL)
 DROP BD	tenant_27.productos_externos.proveedor	(SQL)
 FIX CREATE TABLE	Quitar 4 columnas basura de app.py	app.py:314, 626, 627, 628
-FIX seed	seeds/fase8_externos.py — proveedor → proveedor_id + alinear lista proveedores	líneas 37-43, 89, 98, 109
+FIX seed	seeds/fase8_externos.py — proveedor → proveedor_id	líneas 37-43, 89, 98, 109
 FIX seed	seeds/fase10_financieros.py — quitar tipo del INSERT	líneas 166, 176, 181
+DT-38 — 5 modelos muertos (4/5 completados):
+
+Lote	Modelo	Cambios	Commit
+A	JornadaVentas	+total_tarjeta	2748a70
+B	Gasto	fecha→fecha_gasto, descripcion→concepto, +observaciones, +usuario_id, categoria nullable	856392e
+C	StockProducto	receta_id→producto_id, +stock_maximo, stock_minimo default 0, relationship renombrado	b656964
+D	HistorialMantenimiento	activo_id→activo_fijo_id, realizado_por→tecnico, DROP 2 columnas en BD, fix SQL crudo en app.py:10469	480e9e3
+E	HistorialInventario	⏸️ Diferido (ver nota en sección 9️⃣)	—
 Verificaciones:
 
-py_compile app.py + py_compile models.py → OK.
+py_compile app.py + py_compile models.py → OK en cada lote.
 
-python seed_demo.py --tenant=27 --reset-all → EXIT_CODE=0, 10.432 filas.
+import app → OK en cada lote.
 
-Schema verificado: solo usuario_id presente, sin columnas basura.
+Seed re-ejecutado tras la Fase C.3 (10.432 filas, EXIT_CODE=0).
 
-Smoke test completo: login, dashboard, POS, depósitos, producción, reportes → todos 200 OK.
+Smoke test: login, dashboard, POS, depósitos, producción, mantenimientos → todos 200 OK.
 
-Commit cefb33f + push a GitHub.
+Mantenimiento ID 23 creado y verificado en BD (verificación end-to-end del Lote D).
 
-Lo que queda pendiente (DT-38 y DT-39)
-DT-38 — 5 modelos muertos:
+4 commits en main local (falta push).
 
-Gasto, HistorialInventario, HistorialMantenimiento, JornadaVentas, StockProducto.
-
-No se usan por ORM. Los datos se acceden por SQL crudo (seeds, reportes).
-
-Decidir: agregar al ORM (alineando nombres) o eliminar del ORM (y acceder siempre por SQL crudo).
-
-Importante: si agregamos al ORM, hay que renombrar columnas (gastos.concepto → gastos.descripcion) para alinear con el ORM, lo que rompe los seeds → hay que actualizarlos también.
-
+Lo que queda pendiente (DT-39 y DT-40)
 DT-39 — 25 columnas SIN FILAS:
 
 En tablas vacías: compras, detalle_compras, control_vida_util, historial_rotacion_producto, logs_sistema, registros_diarios, registros_financieros.
@@ -469,25 +488,13 @@ total_venta, total_donacion, descuento, impuesto, consecutivo, observaciones.
 Existen en BD pero no en ORM. Tienen valores 0 o NULL. Eliminar del CREATE TABLE y la BD.
 
 Cómo continuar la Fase C.3
-Backup: pg_dump ... -f backup_pre_faseC3_parte2.backup.
+Push pendiente: git push (los 4 commits de DT-38 + HANDOFF v7.9).
 
-Decidir estrategia para los 5 modelos muertos (agregar al ORM vs eliminar).
+Atacar DT-39: analizar las 25 columnas SIN FILAS con findstr y decidir por cada una.
 
-Revisar las 25 SIN FILAS con findstr en app.py, reportes.py, seeds/*.py.
+Atacar DT-40: eliminar las columnas legacy de ventas del CREATE TABLE y de la BD.
 
-Aplicar cambios por lotes con LUZ VERDE individual.
-
-Re-ejecutar seed + verificar.
-
-Reglas críticas para esta fase:
-
-Regla 24: antes de DROP COLUMN, verificar lecturas en código + datos + FKs.
-
-Regla 28: usar COUNT(DISTINCT col) para clasificar, no COUNT(col).
-
-Regla 29: toda segunda FK a la misma tabla requiere foreign_keys=[...] en relationship.
-
-Regla 30: al alinear CREATE TABLE, actualizar TODOS los seeds con INSERT directo.
+Atacar DT-36: auditoría completa de public.* vs tenant_*.
 
 1️⃣2️⃣ DT-11 — Resuelto (2 Oct 2026) — Bitácora
 Causa raíz: El event listener checkout accedía a current_user. current_user es un LocalProxy que dispara load_user. load_user hace db.session.execute() → checkout → event listener → current_user → load_user → ... recursión infinita. SQLAlchemy 2.0 aborta con isce.
@@ -558,7 +565,67 @@ Se muestran por separado para transparencia contable.
 
 Commits: e512c12 (bloques 1-2) + d8a8afd (bloques 3-6).
 
-1️⃣5️⃣ Notas estratégicas
+1️⃣5️⃣ DT-38 — Bitácora detallada (5 Oct 2026)
+Contexto: 5 modelos identificados como "muertos" en la Fase C.3 (nadie los usa por ORM).
+
+Lotes ejecutados (4 de 5):
+
+Lote A — JornadaVentas (commit 2748a70)
+Cambio: agregar total_tarjeta al ORM (1 línea).
+
+Razón: la columna existía en BD (con datos, 67 distintos) pero el ORM no la mapeaba.
+
+Riesgo: nulo (modelo muerto).
+
+Lote B — Gasto (commit 856392e)
+Cambios: fecha → fecha_gasto, descripcion → concepto, +observaciones, +usuario_id, categoria nullable.
+
+Razón: el ORM y la BD usaban nombres distintos para las mismas cosas.
+
+Riesgo: nulo (modelo muerto, verificado con findstr).
+
+Lote C — StockProducto (commit b656964)
+Cambios: receta_id → producto_id, +stock_maximo, stock_minimo default 0, relationship renombrado de receta a producto.
+
+Razón: el ORM apuntaba a recetas.id, la BD a productos.id. Eran cosas distintas.
+
+Riesgo: nulo (modelo muerto, verificamos que Receta.stock_info no se usaba).
+
+Lote D — HistorialMantenimiento (commit 480e9e3)
+Cambios: activo_id → activo_fijo_id, realizado_por → tecnico, DROP 2 columnas en BD (activo_id, realizado_por), fix del SELECT en app.py:10469 (activo_id → activo_fijo_id).
+
+Descubrimientos:
+
+La tabla tenía 12 columnas (9 del CREATE TABLE + 3 del ORM agregadas por la migración automática).
+
+activo_id y realizado_por estaban vacías (0 filas) → candidatas a DROP.
+
+tecnico, notas, fecha_registro tenían datos (los usa el frontend y el seed).
+
+Los templates HTML (nuevo_mantenimiento.html, detalle_mantenimiento.html, mantenimientos.html) usan tecnico, notas, fecha_registro.
+
+Riesgo: medio (el modelo no se usaba por ORM, pero sí por SQL crudo en app.py). Se verificó exhaustivamente antes de tocar.
+
+Verificación funcional: el módulo de mantenimientos funciona end-to-end (creado mantenimiento ID 23 y verificado en BD).
+
+Lote E — HistorialInventario (⏸️ Diferido)
+Hallazgos:
+
+Tiene 1 uso por ORM en el endpoint producir_receta (app.py:4632-4702).
+
+Ese endpoint está huérfano en el frontend (0 referencias en templates activos).
+
+El endpoint está roto (el ORM intenta insertar sin producto_id NOT NULL → IntegrityError).
+
+La tabla tiene 12 columnas (9 del CREATE TABLE + 3 del ORM).
+
+La tabla se usa solo por el seed (Fase 6) por SQL crudo.
+
+Decisión: dejar como está. Nota de baja prioridad. No hay urgencia porque el endpoint es huérfano.
+
+Si se retoma en el futuro: reescribir el ORM, arreglar el endpoint, DROP 3 columnas, actualizar el seed.
+
+1️⃣6️⃣ Notas estratégicas
 Objetivo del ERP
 ERP SaaS multi-tenant multi-país con: POS, inventario, producción, recetas, activos fijos, reportes con IA, finanzas, multi-país, base para API REST + IA avanzada.
 
@@ -586,11 +653,12 @@ Se usan en recibos POS, facturas electrónicas y todos los reportes.
 
 Los reportes respetan la moneda, régimen y datos de cada tenant.
 
-Estimación de tiempos (5 Oct 2026, mañana)
+Estimación de tiempos (5 Oct 2026, tarde)
 Bloque	Estimación
-Fase C.3 parte 2 (5 modelos muertos + 25 SIN FILAS)	~4-6 h
-DT-5 (Gasto vs RegistroFinanciero)	~1-2 h
+DT-39 (25 columnas SIN FILAS)	~2-3 h
+DT-40 (columnas legacy de ventas)	~1-2 h
 DT-36 (auditoría public.* vs tenant_*)	~2-3 h
+DT-5 (Gasto vs RegistroFinanciero)	~1-2 h
 DT-37 (i18n reportes)	~8-15 h
 DT-19, DT-21, DT-25, DT-28, DT-29	~6-10 h
 Fase 3 (nube + Docker)	~22-32 h
@@ -602,14 +670,14 @@ Al iniciar un nuevo chat, pegar este archivo como contexto inicial.
 
 Instrucción sugerida para el asistente:
 
-"Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el archivo HANDOFF.md v7.8 con el contexto maestro del proyecto. Vamos a continuar desde donde lo dejamos. Por favor actúa como instructor guiando paso a paso, con la metodología de trabajo descrita en el HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/findstr, commit tras cada fix verificado. Al insertar bloques, muéstrame ANTES → DESPUÉS con número de línea exacto."
+"Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el archivo HANDOFF.md v7.9 con el contexto maestro del proyecto. Vamos a continuar desde donde lo dejamos. Por favor actúa como instructor guiando paso a paso, con la metodología de trabajo descrita en el HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/findstr, commit tras cada fix verificado. Al insertar bloques, muéstrame ANTES → DESPUÉS con número de línea exacto."
 
-Próxima tarea sugerida: Continuar Fase C.3 parte 2 (DT-38: 5 modelos muertos; DT-39: 25 columnas SIN FILAS).
+Próxima tarea sugerida: continuar con DT-39 (25 columnas SIN FILAS) o DT-40 (columnas legacy de ventas).
 
 ✅ Última validación
-Último commit: cefb33f (pusheado a GitHub).
+Último commit: 480e9e3 (4 commits locales, pendiente push).
 
-Última sesión: 5 Oct 2026 — Fase C.3 parcial (modelos vivos alineados).
+Última sesión: 5 Oct 2026 — Fase C.3 parcial + DT-38 (4/5 lotes).
 
 Working tree: clean.
 
@@ -633,10 +701,12 @@ DT-32: ✅ Columna redundante eliminada.
 
 Fase C.3 (modelos vivos): ✅ Alineada.
 
+DT-38 (5 modelos muertos): ✅ 4/5 lotes. Lote E diferido.
+
 tenant_1: ✅ Limpio.
 
 Deudas críticas pendientes: ninguna.
 
-Pendientes: Fase C.3 parte 2 (DT-38, DT-39, DT-40), DT-36, DT-37, DT-5, DT-19, DT-21, DT-25, DT-28, DT-29.
+Pendientes: DT-39, DT-40, DT-36, DT-37, DT-5, DT-19, DT-21, DT-25, DT-28, DT-29.
 
-Fin del HANDOFF.md — v7.8
+Fin del HANDOFF.md — v7.9
