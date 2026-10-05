@@ -1,11 +1,11 @@
 # 🗂️ CONTEXTO MAESTRO — PanaderíaPro (Bakery ERP)
 
-**Última actualización:** 5 de Octubre, 2026 (tarde)
-**Último commit:** a003172 (fix DT-40: eliminar 6 columnas legacy de ventas del CREATE TABLE + DROP en tenant_25/26/27)
+**Última actualización:** 5 de Octubre, 2026 (tarde-noche)
+**Último commit:** d6961a2 (fix DT-39: eliminar 25 columnas SIN FILAS en 7 tablas + DROP en tenant_25/26/27)
 **Sesión 2 Oct:** DT-11, DT-12, DT-13, DT-14, DT-16, DT-26, DT-27, DT-3, DT-4
 **Sesión 3 Oct:** DT-1, DT-6, DT-9, DT-20 Fase C (Tanda 1+2+3), DT-30, DT-31
 **Sesión 4 Oct:** DT-10, DT-22, DT-24, DT-17, DT-33, DT-34, DT-32, DT-18
-**Sesión 5 Oct:** Fase C.3 parcial (modelos vivos) + DT-38 (4/5 lotes) + **DT-40 (cerrada)**
+**Sesión 5 Oct:** Fase C.3 parcial + DT-38 (4/5 lotes) + **DT-40 (cerrada)** + **DT-39 (cerrada)**
 
 ---
 
@@ -13,9 +13,9 @@
 
 - **Nombre:** PanaderíaPro (bakery-erp)
 - **Repo:** https://github.com/mauricioaea/bakery-erp
-- **Estado:** v1.2.2 — **11/11 módulos completados (100%)** + Demo Fases 1-12 + Endurecimiento de seguridad + **DT-20 al 100%** + **DT-18 reporte tesorería nivel contable** + tenant_1 limpio + **Fase C.3 parcial (modelos vivos alineados)** + **DT-38 4/5 lotes** + **DT-40 cerrada**
+- **Estado:** v1.2.2 — **11/11 módulos completados (100%)** + Demo Fases 1-12 + Endurecimiento de seguridad + **DT-20 al 100%** + **DT-18 reporte tesorería nivel contable** + tenant_1 limpio + **Fase C.3 parcial (modelos vivos alineados)** + **DT-38 4/5 lotes** + **DT-40 cerrada** + **DT-39 cerrada (25 columnas)**
 - **Arquitectura:** Multi-tenant con PostgreSQL (schemas por tenant)
-- **Próximo hito:** DT-39 (25 columnas SIN FILAS) + DT-36 (auditoría `public.*`) + deudas medias + Docker
+- **Próximo hito:** DT-36 (auditoría `public.*`) + deudas medias + Docker
 
 ---
 
@@ -56,9 +56,9 @@
 
 **Tenant principal del Demo:** `tenant_27` ("Panadería Demo").
 
-**Estado de `tenant_1`:** ✅ Limpio (18 panaderías huérfanas y 1 usuario duplicado eliminados el 4 Oct). La migración automática del ORM le agregó 7 columnas el 5 Oct (mecanismo normal).
+**Estado de `tenant_1`:** ✅ Limpio (18 panaderías huérfanas y 1 usuario duplicado eliminados el 4 Oct). La migración automática del ORM le agregó 7 columnas el 5 Oct (mecanismo normal). **No tiene las 25 columnas legacy de DT-40 ni DT-39** (schema distinto).
 
-**Estado de `tenant_27`:** ✅ Re-seedeado el 5 Oct post-DT-40 (9.623 filas, EXIT_CODE=0).
+**Estado de `tenant_27`:** ✅ Re-seedeado el 5 Oct post-DT-39 (9.781 filas, EXIT_CODE=0).
 
 ---
 
@@ -120,6 +120,8 @@
 ---
 
 ## 6️⃣ Últimos commits pusheados
+d6961a2 fix(DT-39): eliminar 25 columnas SIN FILAS en 7 tablas + DROP en tenant_25/26/27
+f2c5d03 docs: HANDOFF v8.0 - DT-40 cerrada (columnas legacy ventas) + reglas 33-34
 a003172 fix(DT-40): eliminar 6 columnas legacy de ventas del CREATE TABLE + DROP en tenant_25/26/27
 bf31e96 docs: HANDOFF v7.9 - DT-38 cerrada (4/5 lotes) + reglas 31-32
 480e9e3 fix(DT-38 Lote D): alinear HistorialMantenimiento con BD (activo_fijo_id, notas) + arreglar SQL crudo
@@ -168,17 +170,17 @@ a522e0c fix(DT-11): event listener sin current_user
 | 3 | Materias primas | ✅ | 17 |
 | 4 | Recetas y fórmulas | ✅ | 12 recetas / 80 ingredientes |
 | 5 | Productos | ✅ | 12 |
-| 6 | Producción diaria | ✅ | ~2.274 |
-| 7 | Ventas | ✅ | ~6.820 |
+| 6 | Producción diaria | ✅ | ~2.168 |
+| 7 | Ventas | ✅ | ~7.084 |
 | 8 | Productos externos | ✅ | 12 |
 | 9 | Activos fijos | ✅ | ~39 |
 | 10 | Movimientos financieros | ✅ | ~264 |
 | 11 | Cierres diarios | ✅ | 90 |
 | 12 | Reset automatizado | ✅ | — |
 
-**Total aproximado:** ~9.623 filas en tenant_27 (verificado el 5 Oct post-DT-40). El conteo varía por la naturaleza pseudo-aleatoria del seed.
+**Total aproximado:** ~9.781 filas en tenant_27 (verificado el 5 Oct post-DT-39). El conteo varía por la naturaleza pseudo-aleatoria del seed.
 
-**Última re-ejecución:** 5 Oct 2026 (post-DT-40) — `EXIT_CODE=0`.
+**Última re-ejecución:** 5 Oct 2026 (post-DT-39) — `EXIT_CODE=0`.
 
 ---
 
@@ -227,7 +229,7 @@ SECRET_KEY=...
 
 ## 9️⃣ Deuda técnica acumulada
 
-### ✅ RESUELTAS el 5 de Octubre 2026 (Fase C.3 + DT-38 + DT-40)
+### ✅ RESUELTAS el 5 de Octubre 2026 (Fase C.3 + DT-38 + DT-40 + DT-39)
 
 | # | Descripción | Commit |
 |---|-------------|--------|
@@ -241,6 +243,7 @@ SECRET_KEY=...
 | DT-38 Lote C | `StockProducto` alineado con BD (`producto_id`, `stock_maximo`, relationship) | `b656964` |
 | DT-38 Lote D | `HistorialMantenimiento` alineado con BD + SQL crudo arreglado | `480e9e3` |
 | **DT-40** | **6 columnas legacy de `ventas` eliminadas del CREATE TABLE + DROP en tenant_25/26/27** | **`a003172`** |
+| **DT-39** | **25 columnas SIN FILAS eliminadas en 7 tablas + DROP en tenant_25/26/27** | **`d6961a2`** |
 
 ### ⚠️ DT-38 — Cerrada con 4 de 5 lotes
 
@@ -324,14 +327,13 @@ SECRET_KEY=...
 | DT-35 | `public.configuracion_sistema` + `public.pagos_individuales` | **Sincronizar columnas.** Aplicado parcialmente el 4 Oct. Ver DT-36. |
 | DT-36 | `public.*` | **Auditoría completa de `public.*` vs `tenant_*`.** |
 | DT-37 | `reportes.py` | **Soporte multi-idioma (i18n).** Refactor con `Flask-Babel`. |
-| **DT-39** | `tenant_27.*` | **25 columnas SIN FILAS** en tablas vacías: `compras`, `detalle_compras`, `control_vida_util`, `historial_rotacion_producto`, `logs_sistema`, `registros_diarios`, `registros_financieros`. Investigar cada una con `findstr` para saber si son features del dominio o ruido. |
 
 ### 🟢 Bajas pendientes
 *(ninguna en este momento)*
 
 ### 🚨 Otras deudas
 - **`public` con 40 tablas duplicadas.** Cubierto por DT-36.
-- **`tenant_1`, `tenant_25`, `tenant_26`:** tienen columnas del ORM duplicadas con las del `CREATE TABLE` (mismo patrón que `tenant_27` tenía antes de la limpieza de `historial_mantenimientos`). **Prioridad baja**, no rompen nada porque nadie las usa en esos tenants.
+- **`tenant_25`, `tenant_26`:** tienen columnas del ORM duplicadas con las del `CREATE TABLE` (mismo patrón que `tenant_27` tenía antes de la limpieza de `historial_mantenimientos`). **Prioridad baja**, no rompen nada porque nadie las usa en esos tenants.
 
 ---
 
@@ -372,435 +374,426 @@ SECRET_KEY=...
 32. **Al alinear ORM↔BD, revisar TODOS los usos del modelo en templates HTML, JavaScript y CSS, además del código Python.**
 33. **Al hacer `DROP COLUMN`, verificar SIEMPRE primero con `information_schema.columns` en QUÉ schemas existe la columna. No asumir que existe en todos. Ejecutar el DROP por transacción individual (no en un solo `BEGIN`), para saber exactamente cuál falla si algo sale mal.**
 34. **Al hacer cambios destructivos en BD, tomar un backup FRESCO con `pg_dump -F c` inmediatamente antes (no usar backups viejos). Verificar que el archivo `.backup` pese > 0 bytes.**
+35. **Al quitar columnas del `CREATE TABLE`, verificar SIEMPRE si la columna eliminada era la ÚLTIMA del bloque. Si lo era, hay que quitar la coma de la línea precedente. Verificar el bloque completo con `powershell` después de editar.**
+36. **Antes de hacer commit de un `CREATE TABLE` modificado, revisar el `git diff` línea por línea para confirmar que las columnas eliminadas son exactamente las previstas (ni una más, ni una menos) y que la sintaxis SQL sigue válida.**
 
 ### Comandos útiles
 
 **Encoding:**
 ```cmd
 chcp 65001
-psql:
+```
 
-cmd
+**psql:**
+```cmd
 psql -U postgres -p 5433 -h localhost -d panaderia_master
-Dentro: SET client_encoding TO 'UTF8';
-Salir: \q
+```
+Dentro: `SET client_encoding TO 'UTF8';`
+Salir: `\q`
 
-Ver estructura:
-
-cmd
+**Ver estructura:**
+```cmd
 psql -U postgres -p 5433 -h localhost -d panaderia_master -c "\d tenant_27.nombre_tabla"
-Seed Demo:
+```
 
-cmd
+**Seed Demo:**
+```cmd
 python seed_demo.py --tenant=27 --reset-all
-Compilar / Servidor:
+```
 
-cmd
+**Compilar / Servidor:**
+```cmd
 python -m py_compile app.py
 python app.py
-Generar SECRET_KEY:
+```
 
-cmd
+**Generar SECRET_KEY:**
+```cmd
 python -c "import secrets; print(secrets.token_hex(32))"
-Búsquedas:
+```
 
-cmd
+**Búsquedas:**
+```cmd
 findstr /n /c:"patrón exacto" archivo.py
 findstr /s /n /c:"patrón" *.py
 findstr /s /n /c:"patrón" templates\*.html
-Extraer líneas de un archivo (PowerShell):
+```
 
-cmd
+**Extraer líneas de un archivo (PowerShell):**
+```cmd
 powershell -Command "Get-Content models.py | Select-Object -Skip 246 -First 20"
-Backup de BD:
+```
 
-cmd
+**Backup de BD:**
+```cmd
 pg_dump -U postgres -p 5433 -h localhost -d panaderia_master -F c -f backup_pre_XXX.backup
-Auditoría de columnas (Fase C.3):
+```
 
-cmd
+**Auditoría de columnas (Fase C.3):**
+```cmd
 python audit_columns.py          # Compara ORM vs BD
 python audit_columns_classify.py # v1 (con falso positivo)
 python audit_columns_classify_v2.py  # v2 (con COUNT DISTINCT, correcto)
-1️⃣1️⃣ Fase C.3 — Auditoría de columnas huérfanas (en curso)
-Contexto
-El 5 de Oct, se detectó que la BD (tenant_27) y el ORM (models.py) están desalineados. Existen columnas en la BD que el ORM no conoce (y viceversa) por desincronización acumulada entre:
+```
 
-CREATE TABLE de app.py (crea la BD de tenants nuevos).
+---
 
-models.py (define el ORM).
+## 1️⃣1️⃣ Fase C.3 — Auditoría de columnas huérfanas (cerrada)
 
-Seeds (usan SQL crudo con nombres viejos).
+### Contexto
+El 5 de Oct, se detectó que la BD (tenant_27) y el ORM (models.py) estaban desalineados. Existían columnas en la BD que el ORM no conocía (y viceversa) por desincronización acumulada entre:
 
-Migración automática del ORM (agrega columnas del ORM que falten en BD).
+1. `CREATE TABLE` de `app.py` (crea la BD de tenants nuevos).
+2. `models.py` (define el ORM).
+3. Seeds (usan SQL crudo con nombres viejos).
+4. Migración automática del ORM (agrega columnas del ORM que falten en BD).
 
-Hallazgos clave
-68 columnas huérfanas en 21 tablas de tenant_27.
+### Hallazgos clave
+- 68 columnas huérfanas en 21 tablas de `tenant_27`.
+- 4 de 5 modelos "muertos" confirmados (Gasto, StockProducto, JornadaVentas, HistorialMantenimiento) → resueltos en DT-38.
+- 1 modelo semi-vivo (HistorialInventario) → DT-38 Lote E diferido.
+- 6 columnas legacy en `ventas` → DT-40 (resuelta).
+- 25 columnas SIN FILAS en 7 tablas → DT-39 (resuelta).
+- Muchas "huérfanas" eran duplicados con otro nombre.
 
-4 de 5 modelos "muertos" confirmados (Gasto, StockProducto, JornadaVentas, HistorialMantenimiento).
+### Lo que se hizo (sesión 5 Oct)
 
-1 modelo semi-vivo (HistorialInventario) → DT-38 Lote E diferido.
+**Fase C.3 — Modelos vivos:**
 
-Muchas "huérfanas" son duplicados con otro nombre: gastos.concepto vs gastos.descripcion (ORM), depositos_bancarios.tipo vs metodo_deposito, historial_mantenimientos.activo_fijo_id vs activo_id, ordenes_produccion.fecha_orden vs fecha_produccion.
+| Acción | Detalle | Ubicación |
+|--------|---------|-----------|
+| ADD al ORM | Categoria.descripcion (Text) | `models.py:251` |
+| ADD al ORM | DepositoBancario.usuario_id (FK usuarios) | `models.py:~2090` |
+| ADD al ORM | OrdenProduccion.cantidad_real, fecha_orden, usuario_creacion_id | `models.py:~1096` |
+| FIX ORM | OrdenProduccion.usuario + usuario_creacion con foreign_keys explícito | `models.py:~1115` |
+| DROP BD | tenant_27.depositos_bancarios.{tipo, observaciones, fecha_registro} | (SQL) |
+| DROP BD | tenant_27.productos_externos.proveedor | (SQL) |
+| FIX CREATE TABLE | Quitar 4 columnas basura de app.py | `app.py:314, 626, 627, 628` |
+| FIX seed | `seeds/fase8_externos.py` — proveedor → proveedor_id | líneas 37-43, 89, 98, 109 |
+| FIX seed | `seeds/fase10_financieros.py` — quitar tipo del INSERT | líneas 166, 176, 181 |
 
-Lo que se hizo (sesión 5 Oct)
-Fase C.3 — Modelos vivos:
+**DT-38 — 5 modelos muertos (4/5 completados):**
 
-Acción	Detalle	Ubicación
-ADD al ORM	Categoria.descripcion (Text)	models.py:251
-ADD al ORM	DepositoBancario.usuario_id (FK usuarios)	models.py:~2090
-ADD al ORM	OrdenProduccion.cantidad_real, fecha_orden, usuario_creacion_id	models.py:~1096
-FIX ORM	OrdenProduccion.usuario + usuario_creacion con foreign_keys explícito	models.py:~1115
-DROP BD	tenant_27.depositos_bancarios.{tipo, observaciones, fecha_registro}	(SQL)
-DROP BD	tenant_27.productos_externos.proveedor	(SQL)
-FIX CREATE TABLE	Quitar 4 columnas basura de app.py	app.py:314, 626, 627, 628
-FIX seed	seeds/fase8_externos.py — proveedor → proveedor_id	líneas 37-43, 89, 98, 109
-FIX seed	seeds/fase10_financieros.py — quitar tipo del INSERT	líneas 166, 176, 181
-DT-38 — 5 modelos muertos (4/5 completados):
+| Lote | Modelo | Cambios | Commit |
+|------|--------|---------|--------|
+| A | JornadaVentas | +total_tarjeta | `2748a70` |
+| B | Gasto | fecha→fecha_gasto, descripcion→concepto, +observaciones, +usuario_id, categoria nullable | `856392e` |
+| C | StockProducto | receta_id→producto_id, +stock_maximo, stock_minimo default 0, relationship renombrado | `b656964` |
+| D | HistorialMantenimiento | activo_id→activo_fijo_id, realizado_por→tecnico, DROP 2 columnas en BD, fix SQL crudo | `480e9e3` |
+| E | HistorialInventario | ⏸️ Diferido (ver nota en sección 9️⃣) | — |
 
-Lote	Modelo	Cambios	Commit
-A	JornadaVentas	+total_tarjeta	2748a70
-B	Gasto	fecha→fecha_gasto, descripcion→concepto, +observaciones, +usuario_id, categoria nullable	856392e
-C	StockProducto	receta_id→producto_id, +stock_maximo, stock_minimo default 0, relationship renombrado	b656964
-D	HistorialMantenimiento	activo_id→activo_fijo_id, realizado_por→tecnico, DROP 2 columnas en BD, fix SQL crudo en app.py:10469	480e9e3
-E	HistorialInventario	⏸️ Diferido (ver nota en sección 9️⃣)	—
-DT-40 — Columnas legacy de ventas (cerrada):
+**DT-40 — Columnas legacy de ventas (cerrada):**
 
-Acción	Detalle	Ubicación
-FIX CREATE TABLE	Quitar 6 columnas legacy de ventas	app.py:451-467
-DROP BD	tenant_25.ventas.{total_venta, total_donacion, impuesto, descuento, consecutivo, observaciones}	(SQL)
-DROP BD	tenant_26.ventas.{...idem}	(SQL)
-DROP BD	tenant_27.ventas.{...idem}	(SQL)
-SCRIPT	Versionado del DROP	migrations/sql/2026-10-05_drop_ventas_legacy.sql
-Descubrimiento: tenant_1 NO tenía las 6 columnas legacy (schema distinto). Verificado con information_schema.columns.
+| Acción | Detalle | Ubicación |
+|--------|---------|-----------|
+| FIX CREATE TABLE | Quitar 6 columnas legacy de `ventas` | `app.py:451-467` |
+| DROP BD | tenant_25/26/27.ventas.{total_venta, total_donacion, impuesto, descuento, consecutivo, observaciones} | (SQL) |
+| SCRIPT | Versionado del DROP | `migrations/sql/2026-10-05_drop_ventas_legacy.sql` |
 
-Verificaciones (5 Oct tarde, DT-40)
-py_compile app.py + py_compile models.py → OK.
+**DT-39 — Columnas SIN FILAS (cerrada):**
 
-import app → OK.
+| Sub-lote | Tabla | Columnas | Commit |
+|----------|-------|----------|--------|
+| 39-A | `logs_sistema` | ip_origen, fecha_log | `d6961a2` |
+| 39-B | `control_vida_util` | dias_restantes, fecha_control | `d6961a2` |
+| 39-C | `historial_rotacion_producto` | rotacion, fecha_calculo | `d6961a2` |
+| 39-D | `detalle_compras` | producto_id, subtotal | `d6961a2` |
+| 39-E | `compras` | proveedor_id, fecha_compra, estado, observaciones | `d6961a2` |
+| 39-F | `registros_diarios` | total_ventas, total_gastos, total_donaciones, saldo_inicial, saldo_final, observaciones | `d6961a2` |
+| 39-G | `registros_financieros` | fecha, tipo, descripcion, ingreso, egreso, saldo, usuario_id | `d6961a2` |
+| SCRIPT | Versionado del DROP | | `migrations/sql/2026-10-05_drop_columnas_sin_filas.sql` |
 
-Backup fresco: backup_pre_dt40.backup (904 KB).
+### Verificaciones (5 Oct tarde-noche)
+- `py_compile app.py` tras cada sub-lote → OK.
+- Backup fresco: `backup_pre_dt39.backup`.
+- 75 `ALTER TABLE DROP COLUMN` ejecutados uno por uno (25 × 3 tenants).
+- Verificación SQL post-DROP: **0 rows** en los 4 tenants.
+- Re-seed completo: `EXIT_CODE=0` (9.781 filas).
+- Arranque: `📊 Columnas agregadas: 0`.
+- Smoke test ampliado: dashboard, POS, `/buscar_producto`, `/reporte/cierre_caja`, `/reporte/ventas_avanzado`, `/reportes`, `/configuracion/facturacion`, `/gestion_financiera`, `/depositos_bancarios`, `/depositos_bancarios/crear` (POST) → **todos 200 OK**.
+- `git diff` revisado línea por línea (regla 36).
+- Commit único + push.
 
-git diff mostró exactamente 6 líneas eliminadas en el CREATE TABLE.
+### Cómo continuar la Fase C.3
+1. **Atacar DT-36:** auditoría completa de `public.*` vs `tenant_*`.
+2. **Atacar DT-5:** `Gasto` vs `RegistroFinanciero` (posible solapamiento).
 
-Smoke test end-to-end post-DROP: login, dashboard, POS, /buscar_producto, /reporte/cierre_caja, /reporte/ventas_avanzado, /reportes, /configuracion/facturacion, /api/consecutivo-pos/estado → todos 200 OK.
+---
 
-Arranque del servidor: 📊 Columnas agregadas: 0 → el ORM no recreó las columnas legacy.
+## 1️⃣2️⃣ DT-11 — Resuelto (2 Oct 2026) — Bitácora
 
-Re-seed completo: EXIT_CODE=0 (9.623 filas).
+**Causa raíz:** El event listener `checkout` accedía a `current_user`. `current_user` es un LocalProxy que dispara `load_user`. `load_user` hace `db.session.execute()` → `checkout` → event listener → `current_user` → `load_user` → ... recursión infinita. SQLAlchemy 2.0 aborta con isce.
 
-Verificación final: 0 rows de columnas legacy en los 4 tenants.
+**Solución:** Eliminar el acceso a `current_user` del event listener. Leer el tenant SOLO desde `flask.session`.
 
-Lo que queda pendiente (DT-39)
-DT-39 — 25 columnas SIN FILAS:
+**Bitácora:**
 
-En tablas vacías: compras, detalle_compras, control_vida_util, historial_rotacion_producto, logs_sistema, registros_diarios, registros_financieros.
+| Versión | Cambio | Resultado |
+|---------|--------|-----------|
+| v1 | Reducir queries en `load_user` | ❌ No resolvió |
+| v2 | `db.engine.connect()` en `load_user` | ❌ Peor: agotó el pool |
+| v3 | Cache con `flask.g` | ❌ No resolvió |
+| v4 | Eliminar `current_user` del event listener | ✅ RESUELTO |
 
-No se pueden clasificar por datos. Investigar cada una con findstr.
+**Commit:** `a522e0c`
 
-Cómo continuar la Fase C.3
-Atacar DT-39: analizar las 25 columnas SIN FILAS con findstr y decidir por cada una.
+---
 
-Atacar DT-36: auditoría completa de public.* vs tenant_*.
+## 1️⃣3️⃣ DT-20 — Bug sistémico del default=1 — Bitácora
 
-1️⃣2️⃣ DT-11 — Resuelto (2 Oct 2026) — Bitácora
-Causa raíz: El event listener checkout accedía a current_user. current_user es un LocalProxy que dispara load_user. load_user hace db.session.execute() → checkout → event listener → current_user → load_user → ... recursión infinita. SQLAlchemy 2.0 aborta con isce.
+**Problema:** 32 modelos tenían `panaderia_id = db.Column(..., default=1)`. Si un INSERT olvidaba pasar `panaderia_id`, caía silenciosamente en `tenant_1`.
 
-Solución: Eliminar el acceso a current_user del event listener. Leer el tenant SOLO desde flask.session.
+**Fases:**
 
-Bitácora:
+| Fase | Modelos | Commit |
+|------|---------|--------|
+| A (auditoría) | — | — |
+| B (INSERTs críticos) | 4 INSERTs | `344c552` |
+| C - Tanda 1 | 27 (Grupo A) | `45d011e` |
+| C - Tanda 2 | 2 (Categoria, Usuario) | `14de608` |
+| C - Tanda 3 | 2 (Panaderia, ConfiguracionPanaderia) | `b111005` |
+| DT-31 (ALTER TABLE) | 7 columnas PostgreSQL | (BD) |
 
-Versión	Cambio	Resultado
-v1	Reducir queries en load_user	❌ No resolvió
-v2	db.engine.connect() en load_user	❌ Peor: agotó el pool
-v3	Cache con flask.g	❌ No resolvió
-v4	Eliminar current_user del event listener	✅ RESUELTO
-Commit: a522e0c
+**Resultado:** 31 modelos sin `default=1`. Si un INSERT olvida pasar `panaderia_id`, falla con `IntegrityError` (fail-fast).
 
-1️⃣3️⃣ DT-20 — Bug sistémico del default=1 — Bitácora
-Problema: 32 modelos tenían panaderia_id = db.Column(..., default=1). Si un INSERT olvidaba pasar panaderia_id, caía silenciosamente en tenant_1.
+---
 
-Fases:
+## 1️⃣4️⃣ DT-18 — Reporte de tesorería nivel contable — Resuelto (4 Oct)
 
-Fase	Modelos	Commit
-A (auditoría)	—	—
-B (INSERTs críticos)	4 INSERTs	344c552
-C - Tanda 1	27 (Grupo A)	45d011e
-C - Tanda 2	2 (Categoria, Usuario)	14de608
-C - Tanda 3	2 (Panaderia, ConfiguracionPanaderia)	b111005
-DT-31 (ALTER TABLE)	7 columnas PostgreSQL	(BD)
-Resultado: 31 modelos sin default=1. Si un INSERT olvida pasar panaderia_id, falla con IntegrityError (fail-fast).
+**Contexto:** el reporte original tenía solo 3 secciones y sin datos fiscales.
 
-1️⃣4️⃣ DT-18 — Reporte de tesorería nivel contable — Resuelto (4 Oct)
-Contexto: el reporte original tenía solo 3 secciones y sin datos fiscales.
+**Solución:** 6 secciones profesionales:
 
-Solución: 6 secciones profesionales:
-
-Ingresos Operacionales (ventas del período, cantidad de transacciones).
-
-Ingresos por Método de Pago (efectivo, transferencia, tarjeta con %).
-
-Consumo Interno / Donaciones (por producto, con costo de producción, nota aclaratoria multi-país).
-
-Gastos del Período (por categoría).
-
-Resumen Ejecutivo (ingresos - gastos = utilidad).
-
-Detalle de Ingresos Diarios.
+1. Ingresos Operacionales (ventas del período, cantidad de transacciones).
+2. Ingresos por Método de Pago (efectivo, transferencia, tarjeta con %).
+3. Consumo Interno / Donaciones (por producto, con costo de producción, nota aclaratoria multi-país).
+4. Gastos del Período (por categoría).
+5. Resumen Ejecutivo (ingresos - gastos = utilidad).
+6. Detalle de Ingresos Diarios.
 
 Firma del responsable.
 
-Además:
+**Además:**
+- Encabezado fiscal del tenant (nombre, NIT, régimen, dirección, teléfono) — desde `ConfiguracionSistema` con fallback a `ConfiguracionPanaderia`.
+- Consecutivo con timestamp (`TES-YYYYMMDD-HHMM`).
+- Fecha de emisión.
+- Nota aclaratoria sobre el tratamiento contable de las donaciones (multi-país, sin mencionar DIAN).
 
-Encabezado fiscal del tenant (nombre, NIT, régimen, dirección, teléfono) — desde ConfiguracionSistema con fallback a ConfiguracionPanaderia.
+**Tratamiento contable de donaciones/consumo interno:**
+- NO son ingreso (no entra plata).
+- Se valúan al costo de producción (no al precio de venta).
+- Se registran como gasto operativo (implícito en la baja de inventario).
+- Se muestran por separado para transparencia contable.
 
-Consecutivo con timestamp (TES-YYYYMMDD-HHMM).
+**Commits:** `e512c12` (bloques 1-2) + `d8a8afd` (bloques 3-6).
 
-Fecha de emisión.
+---
 
-Nota aclaratoria sobre el tratamiento contable de las donaciones (multi-país, sin mencionar DIAN).
+## 1️⃣5️⃣ DT-38 — Bitácora detallada (5 Oct 2026)
 
-Tratamiento contable de donaciones/consumo interno:
+**Contexto:** 5 modelos identificados como "muertos" en la Fase C.3 (nadie los usa por ORM).
 
-NO son ingreso (no entra plata).
+**Lotes ejecutados (4 de 5):**
 
-Se valúan al costo de producción (no al precio de venta).
+### Lote A — JornadaVentas (commit `2748a70`)
+- **Cambio:** agregar `total_tarjeta` al ORM (1 línea).
+- **Razón:** la columna existía en BD (con datos, 67 distintos) pero el ORM no la mapeaba.
+- **Riesgo:** nulo (modelo muerto).
 
-Se registran como gasto operativo (implícito en la baja de inventario).
+### Lote B — Gasto (commit `856392e`)
+- **Cambios:** `fecha` → `fecha_gasto`, `descripcion` → `concepto`, `+observaciones`, `+usuario_id`, `categoria` nullable.
+- **Razón:** el ORM y la BD usaban nombres distintos para las mismas cosas.
+- **Riesgo:** nulo (modelo muerto, verificado con findstr).
 
-Se muestran por separado para transparencia contable.
+### Lote C — StockProducto (commit `b656964`)
+- **Cambios:** `receta_id` → `producto_id`, `+stock_maximo`, `stock_minimo default 0`, relationship renombrado de `receta` a `producto`.
+- **Razón:** el ORM apuntaba a `recetas.id`, la BD a `productos.id`. Eran cosas distintas.
+- **Riesgo:** nulo (modelo muerto, verificamos que `Receta.stock_info` no se usaba).
 
-Commits: e512c12 (bloques 1-2) + d8a8afd (bloques 3-6).
+### Lote D — HistorialMantenimiento (commit `480e9e3`)
+- **Cambios:** `activo_id` → `activo_fijo_id`, `realizado_por` → `tecnico`, DROP 2 columnas en BD (`activo_id`, `realizado_por`), fix del SELECT en `app.py:10469`.
+- **Descubrimientos:** la tabla tenía 12 columnas (9 del CREATE TABLE + 3 del ORM), los templates usan `tecnico`, `notas`, `fecha_registro`.
+- **Riesgo:** medio (el modelo no se usaba por ORM, pero sí por SQL crudo). Se verificó exhaustivamente.
+- **Verificación funcional:** módulo de mantenimientos funciona end-to-end (creado mantenimiento ID 23).
 
-1️⃣5️⃣ DT-38 — Bitácora detallada (5 Oct 2026)
-Contexto: 5 modelos identificados como "muertos" en la Fase C.3 (nadie los usa por ORM).
+### Lote E — HistorialInventario (⏸️ Diferido)
+- **Hallazgos:** 1 uso por ORM en endpoint huérfano `producir_receta`. Tabla con 12 columnas. Se usa solo por seed (Fase 6) por SQL crudo.
+- **Decisión:** dejar como está. No hay urgencia.
 
-Lotes ejecutados (4 de 5):
+---
 
-Lote A — JornadaVentas (commit 2748a70)
-Cambio: agregar total_tarjeta al ORM (1 línea).
+## 1️⃣6️⃣ DT-40 — Bitácora detallada (5 Oct 2026)
 
-Razón: la columna existía en BD (con datos, 67 distintos) pero el ORM no la mapeaba.
+**Contexto:** 6 columnas legacy en `ventas` que existían en BD pero NO en el ORM.
 
-Riesgo: nulo (modelo muerto).
+### Diagnóstico
+1. Estructura real (`tenant_27.ventas`): 23 columnas.
+2. Columnas legacy: `total_venta`, `total_donacion`, `impuesto`, `descuento`, `consecutivo`, `observaciones`.
+3. `COUNT DISTINCT` de cada una: 0 o 1 (todas nulas o constantes).
+4. `findstr` en código: 0 hits reales.
 
-Lote B — Gasto (commit 856392e)
-Cambios: fecha → fecha_gasto, descripcion → concepto, +observaciones, +usuario_id, categoria nullable.
+### Ejecución
 
-Razón: el ORM y la BD usaban nombres distintos para las mismas cosas.
+**Paso 1 — Limpiar `CREATE TABLE` en `app.py:445-468`:** Eliminadas 6 líneas. ✅
 
-Riesgo: nulo (modelo muerto, verificado con findstr).
+**Paso 2 — Backup + DROP en BD:**
+- `backup_pre_dt40.backup` (904 KB).
+- Verificación previa: `tenant_1` tenía 0, los otros 3 tenían 6 cada uno (18 total).
+- 18 `ALTER TABLE DROP COLUMN` → OK.
+- Verificación: 0 rows.
 
-Lote C — StockProducto (commit b656964)
-Cambios: receta_id → producto_id, +stock_maximo, stock_minimo default 0, relationship renombrado de receta a producto.
+**Paso 3 — Script SQL versionado:** `migrations/sql/2026-10-05_drop_ventas_legacy.sql` ✅
 
-Razón: el ORM apuntaba a recetas.id, la BD a productos.id. Eran cosas distintas.
+**Paso 4 — Smoke test:** Rutas básicas + `/configuracion/facturacion` → todas 200 OK. `Columnas agregadas: 0`. ✅
 
-Riesgo: nulo (modelo muerto, verificamos que Receta.stock_info no se usaba).
+**Paso 5 — Re-seed:** `EXIT_CODE=0`, 9.623 filas. ✅
 
-Lote D — HistorialMantenimiento (commit 480e9e3)
-Cambios: activo_id → activo_fijo_id, realizado_por → tecnico, DROP 2 columnas en BD (activo_id, realizado_por), fix del SELECT en app.py:10469 (activo_id → activo_fijo_id).
+**Paso 6 — Commit + push:** `a003172`. ✅
 
-Descubrimientos:
+### Descubrimiento
+`tenant_1` **NO tenía** las 6 columnas legacy (schema distinto).
 
-La tabla tenía 12 columnas (9 del CREATE TABLE + 3 del ORM agregadas por la migración automática).
+---
 
-activo_id y realizado_por estaban vacías (0 filas) → candidatas a DROP.
+## 1️⃣7️⃣ DT-39 — Bitácora detallada (5 Oct 2026)
 
-tecnico, notas, fecha_registro tenían datos (los usa el frontend y el seed).
+**Contexto:** 25 columnas huérfanas SIN FILAS en 7 tablas vacías.
 
-Los templates HTML (nuevo_mantenimiento.html, detalle_mantenimiento.html, mantenimientos.html) usan tecnico, notas, fecha_registro.
+### Diagnóstico
+1. **7 tablas confirmadas vacías (0 filas):** `compras`, `detalle_compras`, `control_vida_util`, `historial_rotacion_producto`, `logs_sistema`, `registros_diarios`, `registros_financieros`.
+2. **91 columnas totales** entre las 7 tablas.
+3. **Cruce ORM↔BD:** 25 huérfanas identificadas exactamente.
+4. **`findstr` en código:** 0 hits reales en `app.py`, `models.py`, `reportes.py`, `seeds/*.py`, `templates/*.html`.
+5. **Clasificación:** 100% RUIDO PURO.
 
-Riesgo: medio (el modelo no se usaba por ORM, pero sí por SQL crudo en app.py). Se verificó exhaustivamente antes de tocar.
+### Ejecución — 7 sub-lotes
 
-Verificación funcional: el módulo de mantenimientos funciona end-to-end (creado mantenimiento ID 23 y verificado en BD).
+**Sub-lote 39-A — `logs_sistema` (2 cols):**
+- `ip_origen`, `fecha_log` eliminadas del `CREATE TABLE`.
+- 6 `ALTER TABLE DROP COLUMN`.
+- Verificación: 0 rows.
 
-Lote E — HistorialInventario (⏸️ Diferido)
-Hallazgos:
-
-Tiene 1 uso por ORM en el endpoint producir_receta (app.py:4632-4702).
-
-Ese endpoint está huérfano en el frontend (0 referencias en templates activos).
-
-El endpoint está roto (el ORM intenta insertar sin producto_id NOT NULL → IntegrityError).
-
-La tabla tiene 12 columnas (9 del CREATE TABLE + 3 del ORM).
-
-La tabla se usa solo por el seed (Fase 6) por SQL crudo.
-
-Decisión: dejar como está. Nota de baja prioridad. No hay urgencia porque el endpoint es huérfano.
-
-Si se retoma en el futuro: reescribir el ORM, arreglar el endpoint, DROP 3 columnas, actualizar el seed.
-
-1️⃣6️⃣ DT-40 — Bitácora detallada (5 Oct 2026)
-Contexto: 6 columnas legacy en la tabla ventas que existían en BD pero NO en el ORM (DT-40 del HANDOFF v7.9).
-
-Diagnóstico
-Estructura real (tenant_27.ventas): 23 columnas.
-
-Columnas legacy identificadas: total_venta, total_donacion, impuesto, descuento, consecutivo, observaciones.
-
-Verificación de datos (COUNT DISTINCT):
-
-total_venta: 1 valor distinto (todos 0).
-
-total_donacion: 1 valor distinto (todos 0).
-
-descuento: 1 valor distinto (todos 0).
-
-impuesto: 1 valor distinto (todos 0).
-
-consecutivo: 0 valores distintos (todos NULL).
-
-observaciones: 0 valores distintos (todos NULL).
-
-Búsquedas en código:
-
-findstr "venta.impuesto", "venta.descuento", "venta.observaciones" → 0 hits.
-
-findstr "impuesto" en models.py filtrado por venta → 0 hits.
-
-findstr en seeds/*.py → 0 hits relacionados con las columnas legacy.
-
-findstr en templates/*.html → 0 hits.
-
-Ejecución
-Paso 1 — Limpiar CREATE TABLE en app.py:445-468:
-
-Eliminadas 6 líneas del CREATE TABLE. ✅
-
-py_compile app.py OK. ✅
-
-Paso 2 — Backup + DROP en BD:
-
-Backup fresco: backup_pre_dt40.backup (904 KB). ✅
-
-Verificación previa con information_schema.columns:
-
-tenant_1: 0 columnas legacy (no las tenía). ✅ Descubrimiento.
-
-tenant_25: 6 columnas. ✅
-
-tenant_26: 6 columnas. ✅
-
-tenant_27: 6 columnas. ✅
-
-18 ALTER TABLE DROP COLUMN ejecutados (6 × 3 tenants, uno por uno). Todos ALTER TABLE. ✅
-
-Verificación post-DROP: 0 rows. ✅
-
-Paso 3 — Script SQL versionado:
-
-migrations/sql/2026-10-05_drop_ventas_legacy.sql creado con IF EXISTS (idempotente). ✅
-
-Paso 4 — Smoke test (servidor):
-
-Rutas probadas: /login, /dashboard, /punto_venta, /buscar_producto?q=, /reporte/cierre_caja, /reporte/ventas_avanzado, /reportes, /configuracion/facturacion, /api/consecutivo-pos/estado. Todas 200 OK. ✅
-
-Arranque: 📊 Columnas agregadas: 0 (el ORM no recreó las legacy). ✅
-
-Paso 5 — Re-seed tenant_27:
-
-python seed_demo.py --tenant=27 --reset-all → EXIT_CODE=0, 9.623 filas. ✅
-
-Cero errores de columna inexistente. ✅
-
-Paso 6 — Commit + push:
-
-git diff mostró exactamente 6 líneas eliminadas. ✅
-
-Commit a003172, pusheado. ✅
-
-Archivos afectados
-app.py — CREATE TABLE ventas (líneas 445-462, antes 445-468).
-
-migrations/sql/2026-10-05_drop_ventas_legacy.sql — nuevo.
-
-BD: tenant_25.ventas, tenant_26.ventas, tenant_27.ventas (DROP COLUMN).
-
-1️⃣7️⃣ Notas estratégicas
-Objetivo del ERP
+**Sub-lote 39-B — `control_vida_util` (2 cols):**
+- `dias_restantes`, `fecha_control` eliminadas.
+- **⚠️ Inicialmente se dejó una coma colgante** en `producto_id` (quedaba como última columna). Se corrigió antes del DROP.
+- 6 `ALTER TABLE DROP COLUMN`.
+- Verificación: 0 rows.
+
+**Sub-lote 39-C — `historial_rotacion_producto` (2 cols):**
+- `rotacion`, `fecha_calculo` eliminadas.
+- Coma ajustada en `producto_id` (última columna).
+- 6 `ALTER TABLE DROP COLUMN`.
+- Verificación: 0 rows.
+
+**Sub-lote 39-D — `detalle_compras` (2 cols):**
+- `producto_id`, `subtotal` eliminadas.
+- Coma ajustada en `precio_unitario` (última columna).
+- 6 `ALTER TABLE DROP COLUMN`.
+- Verificación: 0 rows.
+
+**Sub-lote 39-E — `compras` (4 cols):**
+- `proveedor_id`, `fecha_compra`, `estado`, `observaciones` eliminadas.
+- Coma ajustada en `total` (última columna).
+- 12 `ALTER TABLE DROP COLUMN`.
+- Verificación: 0 rows.
+
+**Sub-lote 39-F — `registros_diarios` (6 cols):**
+- `total_ventas`, `total_gastos`, `total_donaciones`, `saldo_inicial`, `saldo_final`, `observaciones` eliminadas.
+- Sin ajuste de coma (todas intermedias).
+- 18 `ALTER TABLE DROP COLUMN`.
+- Verificación: 0 rows.
+
+**Sub-lote 39-G — `registros_financieros` (7 cols):**
+- `fecha`, `tipo`, `descripcion`, `ingreso`, `egreso`, `saldo`, `usuario_id` eliminadas.
+- Sin ajuste de coma.
+- 21 `ALTER TABLE DROP COLUMN`.
+- Verificación: 0 rows.
+
+### Verificaciones finales
+- Re-seed completo: `EXIT_CODE=0`, 9.781 filas.
+- Arranque: `📊 Columnas agregadas: 0`.
+- Smoke test ampliado (dashboard, POS, `/reporte/cierre_caja`, `/reporte/ventas_avanzado`, `/reportes`, `/configuracion/facturacion`, `/gestion_financiera`, `/depositos_bancarios`, `/depositos_bancarios/crear`) → todos 200 OK.
+- Commit único + push: `d6961a2`.
+
+### Descubrimiento
+`tenant_1` **NO tenía** las 25 columnas (schema distinto).
+
+### Lección aprendida (regla 35)
+Al quitar la ÚLTIMA columna de un `CREATE TABLE`, hay que quitar la coma de la línea precedente. Se escapó en 39-B y hubo que corregirlo.
+
+---
+
+## 1️⃣8️⃣ Notas estratégicas
+
+### Objetivo del ERP
 ERP SaaS multi-tenant multi-país con: POS, inventario, producción, recetas, activos fijos, reportes con IA, finanzas, multi-país, base para API REST + IA avanzada.
 
-🎁 Tenant Demo (marketing)
-Fases 1-12 completadas (~9.623 filas). Contraseña: demo2026. Reset desde /mi_perfil con dev_master.
+### 🎁 Tenant Demo (marketing)
+Fases 1-12 completadas (~9.781 filas). Contraseña: `demo2026`. Reset desde `/mi_perfil` con dev_master.
 
-Mercado objetivo
-3.000-5.000 panaderías en Colombia.
+### Mercado objetivo
+- 3.000-5.000 panaderías en Colombia.
+- 10.000-30.000 en LATAM.
+- Precio: $60k-$600k COP/mes.
 
-10.000-30.000 en LATAM.
+### Modelo de licencias
+- Premium: 3 usuarios (admin, supervisor, cajero).
+- Básica: 1 usuario (admin).
+- Los usuarios se crean al alta del tenant.
 
-Precio: $60k-$600k COP/mes.
+### Personalización por tenant
+- Cada tenant configura sus datos fiscales en `/configuracion/facturacion`.
+- Se usan en recibos POS, facturas electrónicas y todos los reportes.
+- Los reportes respetan la moneda, régimen y datos de cada tenant.
 
-Modelo de licencias
-Premium: 3 usuarios (admin, supervisor, cajero).
+### Estimación de tiempos (5 Oct 2026, tarde-noche)
+| Bloque | Estimación |
+|--------|------------|
+| DT-36 (auditoría `public.*` vs `tenant_*`) | ~2-3 h |
+| DT-5 (Gasto vs RegistroFinanciero) | ~1-2 h |
+| DT-37 (i18n reportes) | ~8-15 h |
+| DT-19, DT-21, DT-25, DT-28, DT-29 | ~6-10 h |
+| Fase 3 (nube + Docker) | ~22-32 h |
+| Fase 4 (seguridad) | ~14-20 h |
+| Fase 5 (monetización) | ~26-36 h |
+| Fases 6-8 (IA + integraciones) | ~50-85 h |
 
-Básica: 1 usuario (admin).
+---
 
-Los usuarios se crean al alta del tenant.
+## 📞 Cómo continuar en un chat nuevo
 
-Personalización por tenant
-Cada tenant configura sus datos fiscales en /configuracion/facturacion.
-
-Se usan en recibos POS, facturas electrónicas y todos los reportes.
-
-Los reportes respetan la moneda, régimen y datos de cada tenant.
-
-Estimación de tiempos (5 Oct 2026, tarde)
-Bloque	Estimación
-DT-39 (25 columnas SIN FILAS)	~2-3 h
-DT-36 (auditoría public.* vs tenant_*)	~2-3 h
-DT-5 (Gasto vs RegistroFinanciero)	~1-2 h
-DT-37 (i18n reportes)	~8-15 h
-DT-19, DT-21, DT-25, DT-28, DT-29	~6-10 h
-Fase 3 (nube + Docker)	~22-32 h
-Fase 4 (seguridad)	~14-20 h
-Fase 5 (monetización)	~26-36 h
-Fases 6-8 (IA + integraciones)	~50-85 h
-📞 Cómo continuar en un chat nuevo
 Al iniciar un nuevo chat, pegar este archivo como contexto inicial.
 
-Instrucción sugerida para el asistente:
+**Instrucción sugerida para el asistente:**
 
-"Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el archivo HANDOFF.md v8.0 con el contexto maestro del proyecto. Vamos a continuar desde donde lo dejamos. Por favor actúa como instructor guiando paso a paso, con la metodología de trabajo descrita en el HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/findstr, commit tras cada fix verificado. Al insertar bloques, muéstrame ANTES → DESPUÉS con número de línea exacto."
+> "Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el archivo HANDOFF.md v8.1 con el contexto maestro del proyecto. Vamos a continuar desde donde lo dejamos. Por favor actúa como instructor guiando paso a paso, con la metodología de trabajo descrita en el HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/findstr, commit tras cada fix verificado. Al insertar bloques, muéstrame ANTES → DESPUÉS con número de línea exacto. **Antes de cualquier cambio, espera mi LUZ VERDE explícita.**"
 
-Próxima tarea sugerida: continuar con DT-39 (25 columnas SIN FILAS) o DT-36 (auditoría public.* vs tenant_*).
+**Próxima tarea sugerida:** DT-36 (auditoría `public.*` vs `tenant_*`) o DT-5 (Gasto vs RegistroFinanciero).
 
-✅ Última validación
-Último commit: a003172 (DT-40 cerrada, pusheado).
+---
 
-Última sesión: 5 Oct 2026 — Fase C.3 parcial + DT-38 (4/5 lotes) + DT-40 (cerrada).
+## ✅ Última validación
 
-Working tree: clean.
+- **Último commit:** `d6961a2` (DT-39 cerrada, pusheado).
+- **Última sesión:** 5 Oct 2026 — Fase C.3 parcial + DT-38 (4/5 lotes) + **DT-40 (cerrada)** + **DT-39 (cerrada)**.
+- **Working tree:** clean.
+- **Servidor:** detenido.
+- **Sistema:** 100% funcional end-to-end.
+- **Módulos:** 11/11 completados (100%).
+- **Demo:** Fases 1-12 completadas, contraseña `demo2026`, ~9.781 filas.
+- **Log:** limpio, sin warnings.
+- **DT-20:** ✅ 100% RESUELTO.
+- **DT-17:** ✅ Reporte tesorería funcional.
+- **DT-18:** ✅ Reporte tesorería nivel contable.
+- **DT-32:** ✅ Columna redundante eliminada.
+- **Fase C.3 (modelos vivos):** ✅ Alineada.
+- **DT-38 (5 modelos muertos):** ✅ 4/5 lotes. Lote E diferido.
+- **DT-40 (columnas legacy ventas):** ✅ **RESUELTA.**
+- **DT-39 (25 columnas SIN FILAS):** ✅ **RESUELTA.**
+- **tenant_1:** ✅ Limpio.
+- **Deudas críticas pendientes:** ninguna.
+- **Pendientes:** DT-36, DT-37, DT-5, DT-19, DT-21, DT-25, DT-28, DT-29.
 
-Servidor: detenido.
+---
 
-Sistema: 100% funcional end-to-end.
-
-Módulos: 11/11 completados (100%).
-
-Demo: Fases 1-12 completadas, contraseña demo2026, ~9.623 filas.
-
-Log: limpio, sin warnings.
-
-DT-20: ✅ 100% RESUELTO.
-
-DT-17: ✅ Reporte tesorería funcional.
-
-DT-18: ✅ Reporte tesorería nivel contable.
-
-DT-32: ✅ Columna redundante eliminada.
-
-Fase C.3 (modelos vivos): ✅ Alineada.
-
-DT-38 (5 modelos muertos): ✅ 4/5 lotes. Lote E diferido.
-
-DT-40 (columnas legacy ventas): ✅ RESUELTA.
-
-tenant_1: ✅ Limpio.
-
-Deudas críticas pendientes: ninguna.
-
-Pendientes: DT-39, DT-36, DT-37, DT-5, DT-19, DT-21, DT-25, DT-28, DT-29.
-
-Fin del HANDOFF.md — v8.0
+**Fin del HANDOFF.md — v8.1**
