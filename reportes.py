@@ -2756,45 +2756,165 @@ class GeneradorReportes:
             styles = getSampleStyleSheet()
             story = []
             
-            # Título
+            # =============================================
+            # 1. CARGAR VENTAS DEL PERIODO (base para todo)
+            # =============================================
+            from models import Venta
+            from datetime import datetime as _dt_combined
+            from datetime import datetime as _dt_now
+
+            _fecha_inicio_dt = _dt_combined.combine(fecha_inicio, _dt_combined.min.time())
+            _fecha_fin_dt = _dt_combined.combine(fecha_fin, _dt_combined.max.time())
+
+            registros_ventas = Venta.query.filter_by(panaderia_id=panaderia_id).filter(
+                Venta.fecha_hora >= _fecha_inicio_dt,
+                Venta.fecha_hora <= _fecha_fin_dt
+            ).all()
+
+            # Separar ventas normales de donaciones
+            ventas_normales = [v for v in registros_ventas if not v.es_donacion]
+            donaciones_ventas = [v for v in registros_ventas if v.es_donacion]
+            total_ingresos = sum(v.total or 0 for v in ventas_normales)
+
+            # =============================================
+            # 2. CARGAR DATOS FISCALES DEL TENANT
+            # =============================================
+            # Fuente principal: ConfiguracionSistema (lo que el usuario configura en /configuracion/facturacion)
+            # Fallback: ConfiguracionPanaderia (para tenants legacy)
+            from models import ConfiguracionSistema, ConfiguracionPanaderia
+
+            config_sis = ConfiguracionSistema.query.filter_by(panaderia_id=panaderia_id).first()
+            config_pan = None
+            if not config_sis or not config_sis.nombre_empresa:
+                config_pan = ConfiguracionPanaderia.query.filter_by(panaderia_id=panaderia_id).first()
+
+            if config_sis and config_sis.nombre_empresa:
+                nombre_empresa = config_sis.nombre_empresa
+                nit_empresa = config_sis.nit_empresa or 'N/A'
+                direccion_empresa = config_sis.direccion_empresa or ''
+                ciudad_empresa = config_sis.ciudad_empresa or ''
+                telefono_empresa = config_sis.telefono_empresa or ''
+                regimen_empresa = config_sis.regimen_empresa or ''
+            elif config_pan:
+                nombre_empresa = config_pan.nombre_panaderia or 'Panaderia'
+                nit_empresa = config_pan.nit or 'N/A'
+                direccion_empresa = config_pan.direccion or ''
+                ciudad_empresa = ''
+                telefono_empresa = config_pan.telefono_contacto or ''
+                regimen_empresa = ''
+            else:
+                nombre_empresa = 'Panaderia'
+                nit_empresa = 'N/A'
+                direccion_empresa = ''
+                ciudad_empresa = ''
+                telefono_empresa = ''
+                regimen_empresa = ''
+
+            # =============================================
+            # 3. CALCULAR CONSUMO INTERNO / DONACIONES (costo de produccion)
+            # =============================================
+            consumo_por_producto = {}
+            total_costo_consumo = 0
+            total_unidades_consumo = 0
+
+            for venta_don in donaciones_ventas:
+                for detalle in venta_don.detalles:
+                    if detalle.producto:
+                        nombre_prod = detalle.producto.nombre
+                        if detalle.producto.receta and detalle.producto.receta.costo_unitario:
+                            costo_unit = detalle.producto.receta.costo_unitario
+                        else:
+                            costo_unit = (detalle.producto.precio_venta or 0) * 0.3
+                    elif detalle.producto_externo:
+                        nombre_prod = detalle.producto_externo.nombre
+                        costo_unit = detalle.producto_externo.precio_compra or 0
+                    else:
+                        nombre_prod = 'Producto sin identificar'
+                        costo_unit = 0
+
+                    costo_total = costo_unit * detalle.cantidad
+                    if nombre_prod not in consumo_por_producto:
+                        consumo_por_producto[nombre_prod] = {
+                            'cantidad': 0,
+                            'costo_unitario': costo_unit,
+                            'costo_total': 0
+                        }
+                    consumo_por_producto[nombre_prod]['cantidad'] += detalle.cantidad
+                    consumo_por_producto[nombre_prod]['costo_total'] += costo_total
+                    total_costo_consumo += costo_total
+                    total_unidades_consumo += detalle.cantidad
+
+            # =============================================
+            # 4. AGRUPAR INGRESOS POR DIA
+            # =============================================
+            ingresos_por_dia = {}
+            for v in ventas_normales:
+                fecha_dia = v.fecha_hora.date()
+                ingresos_por_dia[fecha_dia] = ingresos_por_dia.get(fecha_dia, 0) + (v.total or 0)
+
+            # =============================================
+            # 5. ENCABEZADO FISCAL DEL TENANT
+            # =============================================
+            _ahora = _dt_now.now()
+            _consecutivo = _ahora.strftime('TES-%Y%m%d-%H%M')
+
+            header_bold_style = ParagraphStyle(
+                'HeaderBoldStyle',
+                parent=styles['Normal'],
+                fontSize=13,
+                alignment=1,
+                spaceAfter=4,
+                fontName='Helvetica-Bold'
+            )
+            header_style = ParagraphStyle(
+                'HeaderStyle',
+                parent=styles['Normal'],
+                fontSize=10,
+                alignment=1,
+                spaceAfter=2
+            )
+            meta_style = ParagraphStyle(
+                'MetaStyle',
+                parent=styles['Normal'],
+                fontSize=9,
+                alignment=1,
+                spaceAfter=2,
+                textColor=colors.HexColor('#555555')
+            )
             title_style = ParagraphStyle(
                 'TitleStyle',
                 parent=styles['Heading1'],
                 fontSize=16,
                 alignment=1,
-                spaceAfter=20
+                spaceAfter=8
             )
-            story.append(Paragraph("REPORTE UNIFICADO DE TESORERÍA", title_style))
-            story.append(Paragraph(f"Período: {fecha_inicio} a {fecha_fin}", styles['Normal']))
+
+            # Encabezado del tenant
+            story.append(Paragraph(nombre_empresa, header_bold_style))
+            _nit_linea = f"NIT: {nit_empresa}"
+            if regimen_empresa:
+                _nit_linea += f" | Regimen: {regimen_empresa}"
+            story.append(Paragraph(_nit_linea, header_style))
+            if direccion_empresa:
+                _dir_linea = direccion_empresa
+                if ciudad_empresa:
+                    _dir_linea += f", {ciudad_empresa}"
+                story.append(Paragraph(_dir_linea, header_style))
+            if telefono_empresa:
+                story.append(Paragraph(f"Telefono: {telefono_empresa}", header_style))
+
+            story.append(Spacer(1, 10))
+            story.append(Paragraph("_" * 70, meta_style))
+            story.append(Spacer(1, 15))
+
+            # Titulo del reporte
+            story.append(Paragraph("REPORTE UNIFICADO DE TESORERIA", title_style))
+            _periodo_str = f"Periodo: {fecha_inicio.strftime('%d/%m/%Y')} a {fecha_fin.strftime('%d/%m/%Y')}"
+            story.append(Paragraph(_periodo_str, styles['Normal']))
+            story.append(Paragraph(f"Consecutivo: {_consecutivo}", meta_style))
+            _emitido_str = f"Emitido: {_ahora.strftime('%d/%m/%Y %H:%M')}"
+            story.append(Paragraph(_emitido_str, meta_style))
             story.append(Spacer(1, 20))
-            
-            # 1. OBTENER INGRESOS (de Venta - fuente real de ingresos)
-            # DT-17 fix: antes se leia de RegistroDiario, que solo se llena
-            # cuando el cajero hace un cierre de caja manual. En tenants
-            # donde no se usa cierre manual (o en el Demo), quedaba vacio
-            # y el reporte mostraba $0 en ingresos.
-            # Ahora se lee de Venta (que se llena con cada venta del POS),
-            # excluyendo donaciones.
-            from models import Venta
-            from datetime import datetime as _dt_combined
-            
-            _fecha_inicio_dt = _dt_combined.combine(fecha_inicio, _dt_combined.min.time())
-            _fecha_fin_dt = _dt_combined.combine(fecha_fin, _dt_combined.max.time())
-            
-            registros_ventas = Venta.query.filter_by(panaderia_id=panaderia_id).filter(
-                Venta.fecha_hora >= _fecha_inicio_dt,
-                Venta.fecha_hora <= _fecha_fin_dt
-            ).all()
-            
-            # Excluir donaciones para el calculo de ingresos reales
-            ventas_normales = [v for v in registros_ventas if not v.es_donacion]
-            total_ingresos = sum(v.total or 0 for v in ventas_normales)
-            
-            # Agrupar por fecha para el detalle diario
-            ingresos_por_dia = {}
-            for v in ventas_normales:
-                fecha_dia = v.fecha_hora.date()
-                ingresos_por_dia[fecha_dia] = ingresos_por_dia.get(fecha_dia, 0) + (v.total or 0)
             
             # 2. OBTENER GASTOS (de PagoIndividual)
             gastos = PagoIndividual.query.filter_by(panaderia_id=panaderia_id).filter(
