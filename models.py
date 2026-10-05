@@ -1406,6 +1406,7 @@ class JornadaVentas(db.Model):
     total_ventas = db.Column(db.Float, default=0)
     total_efectivo = db.Column(db.Float, default=0)
     total_transferencia = db.Column(db.Float, default=0)
+    total_tarjeta = db.Column(db.Float, default=0)  # ✅ DT-38
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     cerrada_at = db.Column(db.DateTime)
