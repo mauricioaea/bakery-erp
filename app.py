@@ -234,9 +234,8 @@ def crear_tablas_en_orden(schema_name):
         CREATE TABLE IF NOT EXISTS {schema_name}.historial_rotacion_producto (
             id SERIAL PRIMARY KEY,
             panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),
-            producto_id INTEGER NOT NULL REFERENCES {schema_name}.productos(id),
-            rotacion FLOAT DEFAULT 0,
-            fecha_calculo TIMESTAMP DEFAULT NOW()
+            producto_id INTEGER NOT NULL REFERENCES {schema_name}.productos(id)
+            
         )
     '''))
     
@@ -247,9 +246,7 @@ def crear_tablas_en_orden(schema_name):
         CREATE TABLE IF NOT EXISTS {schema_name}.control_vida_util (
             id SERIAL PRIMARY KEY,
             panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),
-            producto_id INTEGER NOT NULL REFERENCES {schema_name}.productos(id),
-            dias_restantes INTEGER DEFAULT 0,
-            fecha_control TIMESTAMP DEFAULT NOW()
+            producto_id INTEGER NOT NULL REFERENCES {schema_name}.productos(id)       
         )
     '''))
     
@@ -259,12 +256,8 @@ def crear_tablas_en_orden(schema_name):
     db.session.execute(text(f'''
         CREATE TABLE IF NOT EXISTS {schema_name}.compras (
             id SERIAL PRIMARY KEY,
-            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),
-            proveedor_id INTEGER REFERENCES {schema_name}.proveedor(id),
-            fecha_compra TIMESTAMP DEFAULT NOW(),
-            total FLOAT DEFAULT 0,
-            estado VARCHAR(20) DEFAULT 'pendiente',
-            observaciones TEXT
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),         
+            total FLOAT DEFAULT 0 
         )
     '''))
     
@@ -276,10 +269,8 @@ def crear_tablas_en_orden(schema_name):
             id SERIAL PRIMARY KEY,
             panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),
             compra_id INTEGER NOT NULL REFERENCES {schema_name}.compras(id),
-            producto_id INTEGER NOT NULL REFERENCES {schema_name}.productos(id),
             cantidad INTEGER NOT NULL DEFAULT 0,
-            precio_unitario FLOAT DEFAULT 0,
-            subtotal FLOAT DEFAULT 0
+            precio_unitario FLOAT DEFAULT 0 
         )
     '''))
     
@@ -523,13 +514,7 @@ def crear_tablas_en_orden(schema_name):
     db.session.execute(text(f'''
         CREATE TABLE IF NOT EXISTS {schema_name}.registros_diarios (
             id SERIAL PRIMARY KEY,
-            fecha DATE NOT NULL,
-            total_ventas FLOAT DEFAULT 0,
-            total_gastos FLOAT DEFAULT 0,
-            total_donaciones FLOAT DEFAULT 0,
-            saldo_inicial FLOAT DEFAULT 0,
-            saldo_final FLOAT DEFAULT 0,
-            observaciones TEXT,
+            fecha DATE NOT NULL,         
             panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
         )
     '''))
@@ -760,13 +745,6 @@ def crear_tablas_en_orden(schema_name):
     db.session.execute(text(f'''
         CREATE TABLE IF NOT EXISTS {schema_name}.registros_financieros (
             id SERIAL PRIMARY KEY,
-            fecha DATE NOT NULL,
-            tipo VARCHAR(50) NOT NULL,
-            descripcion TEXT,
-            ingreso FLOAT DEFAULT 0,
-            egreso FLOAT DEFAULT 0,
-            saldo FLOAT DEFAULT 0,
-            usuario_id INTEGER REFERENCES {schema_name}.usuarios(id),
             panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
         )
     '''))
@@ -794,8 +772,6 @@ def crear_tablas_en_orden(schema_name):
             usuario_id INTEGER REFERENCES {schema_name}.usuarios(id),
             accion VARCHAR(100) NOT NULL,
             descripcion TEXT,
-            ip_origen VARCHAR(50),
-            fecha_log TIMESTAMP DEFAULT NOW(),
             panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
         )
     '''))
