@@ -311,7 +311,6 @@ def crear_tablas_en_orden(schema_name):
             categoria VARCHAR(100),
             marca VARCHAR(100),
             proveedor_id INTEGER,
-            proveedor VARCHAR(100),
             panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),
             stock_actual INTEGER DEFAULT 0,
             stock_minimo INTEGER DEFAULT 5,
@@ -622,10 +621,7 @@ def crear_tablas_en_orden(schema_name):
             metodo_deposito VARCHAR(50),
             estado VARCHAR(20) DEFAULT 'REGISTRADO',
             fecha_conciliacion DATE,
-            tipo VARCHAR(50),
-            observaciones TEXT,
             usuario_id INTEGER REFERENCES {schema_name}.usuarios(id),
-            fecha_registro TIMESTAMP DEFAULT NOW(),
             fecha_creacion TIMESTAMP DEFAULT NOW(),
             fecha_actualizacion TIMESTAMP DEFAULT NOW()
         )

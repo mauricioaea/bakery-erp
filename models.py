@@ -249,6 +249,7 @@ class Categoria(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
+    descripcion = db.Column(db.Text, nullable=True)  # ✅ Fase C.3: campo descriptivo
     
     # ✅ NUEVO: Relación con panadería para multicliente
     panaderia_id = db.Column(db.Integer, db.ForeignKey('panaderias.id'), nullable=False)
@@ -1093,10 +1094,13 @@ class OrdenProduccion(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     receta_id = db.Column(db.Integer, db.ForeignKey('recetas.id'), nullable=False)
     cantidad_producir = db.Column(db.Integer, nullable=False)
+    cantidad_real = db.Column(db.Integer, default=0)  # ✅ Fase C.3: cantidad realmente producida
     fecha_produccion = db.Column(db.DateTime, default=datetime.utcnow)
+    fecha_orden = db.Column(db.DateTime, default=datetime.utcnow)  # ✅ Fase C.3: fecha de creación de la orden
     
     estado = db.Column(db.String(20), default='PENDIENTE')
     usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
+    usuario_creacion_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=True)  # ✅ Fase C.3: quién creó la orden
     
     fecha_inicio = db.Column(db.DateTime)
     fecha_fin = db.Column(db.DateTime)
@@ -1109,7 +1113,8 @@ class OrdenProduccion(db.Model):
     
     # RELACIONES
     receta = db.relationship('Receta', backref='ordenes_produccion')
-    usuario = db.relationship('Usuario')
+    usuario = db.relationship('Usuario', foreign_keys=[usuario_id])
+    usuario_creacion = db.relationship('Usuario', foreign_keys=[usuario_creacion_id])
     panaderia = db.relationship('Panaderia', backref=db.backref('ordenes_produccion_list', lazy=True))
     
     def __repr__(self):
@@ -2075,17 +2080,20 @@ class DepositoBancario(db.Model):
     panaderia_id = db.Column(db.Integer, db.ForeignKey('panaderias.id'), nullable=False)
     
     # Información básica del depósito
-    banco = db.Column(db.String(100), nullable=True)  # ✅ AGREGADO (nullable)
+    banco = db.Column(db.String(100), nullable=True)
     fecha_deposito = db.Column(db.Date, nullable=False)
     monto = db.Column(db.Float, nullable=False)
     descripcion = db.Column(db.String(200))
     referencia = db.Column(db.String(50))
     cuenta_bancaria = db.Column(db.String(100))
-    metodo_deposito = db.Column(db.String(50))  # 'efectivo', 'transferencia', 'cheque'
+    metodo_deposito = db.Column(db.String(50))
     
     # Estado del depósito
-    estado = db.Column(db.String(20), default='REGISTRADO')  # REGISTRADO, CONCILIADO, ANULADO
+    estado = db.Column(db.String(20), default='REGISTRADO')
     fecha_conciliacion = db.Column(db.Date)
+    
+    # ✅ Fase C.3: auditoría
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=True)
     
     # Auditoría
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)

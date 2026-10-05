@@ -163,7 +163,6 @@ def run(schema_name, cursor, dry_run=False):
         fecha_deposito = fecha_inicio + timedelta(days=i)
         banco = random.choice(BANCOS)
         monto = random.randint(500000, 2000000)
-        tipo = random.choice(['traslado', 'recaudo', 'ahorro'])
         metodo = random.choice(['ventanilla', 'cajero', 'app'])
 
         if dry_run:
@@ -173,12 +172,12 @@ def run(schema_name, cursor, dry_run=False):
         cursor.execute(f"""
             INSERT INTO {schema_name}.depositos_bancarios
             (panaderia_id, banco, fecha_deposito, monto, descripcion,
-             metodo_deposito, estado, tipo, usuario_id)
-            VALUES (%s, %s, %s, %s, %s, %s, 'REGISTRADO', %s, %s)
+             metodo_deposito, estado, usuario_id)
+            VALUES (%s, %s, %s, %s, %s, %s, 'REGISTRADO', %s)
         """, (
             panaderia_id, banco, fecha_deposito, monto,
-            f'Deposito {tipo} a {banco}',
-            metodo, tipo, USUARIO_ID,
+            f'Deposito a {banco}',
+            metodo, USUARIO_ID,
         ))
         filas += 1
 

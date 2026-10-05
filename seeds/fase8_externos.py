@@ -36,10 +36,11 @@ PRODUCTOS_EXTERNOS = [
 
 PROVEEDORES_EXTERNOS = [
     'Distribuidora El Trigal S.A.S',
-    'Comercializadora La 14',
-    'Distribuidora Postobon',
-    'Distribuidora Ramo',
-    'Distribuidora Corona',
+    'Lácteos La Pradera',
+    'Avícola Los Andes',
+    'Distribuidora La 18',
+    'Café de Nariño',
+    'Insumos Panaderos del Sur',
 ]
 
 MARCAS_PREFIX = 'EXT'
@@ -85,8 +86,9 @@ def run(schema_name, cursor, dry_run=False):
         # Fecha ultima compra: hace 5-30 dias
         fecha_ultima_compra = datetime.now() - timedelta(days=random.randint(5, 30))
 
-        # Proveedor aleatorio
+        # Proveedor aleatorio (resolver a ID via mapeo de Fase 2)
         proveedor_nombre = random.choice(PROVEEDORES_EXTERNOS)
+        proveedor_id = prov_por_nombre.get(proveedor_nombre)
 
         if dry_run:
             filas += 1
@@ -95,7 +97,7 @@ def run(schema_name, cursor, dry_run=False):
         cursor.execute(f"""
             INSERT INTO {schema_name}.productos_externos
             (codigo_barras, nombre, descripcion, categoria, marca,
-             proveedor, panaderia_id, stock_actual, stock_minimo,
+             proveedor_id, panaderia_id, stock_actual, stock_minimo,
              fecha_vencimiento, precio_compra, precio_venta,
              total_ventas, total_ingresos, utilidad_total,
              activo, fecha_ultima_compra)
@@ -106,7 +108,7 @@ def run(schema_name, cursor, dry_run=False):
                     TRUE, %s)
         """, (
             codigo_barras, nombre, f'{marca} - {categoria}', categoria, marca,
-            proveedor_nombre, panaderia_id, stock_inicial,
+            proveedor_id, panaderia_id, stock_inicial,
             fecha_vencimiento, precio_compra, precio_venta,
             fecha_ultima_compra,
         ))
