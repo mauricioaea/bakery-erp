@@ -448,13 +448,8 @@ def crear_tablas_en_orden(schema_name):
             usuario_id INTEGER NOT NULL REFERENCES {schema_name}.usuarios(id),
             fecha_hora TIMESTAMP DEFAULT NOW(),
             total FLOAT NOT NULL DEFAULT 0,
-            total_venta FLOAT DEFAULT 0,
-            total_donacion FLOAT DEFAULT 0,
-            impuesto FLOAT DEFAULT 0,
-            descuento FLOAT DEFAULT 0,
             metodo_pago VARCHAR(50) NOT NULL,
             estado VARCHAR(20) DEFAULT 'completada',
-            consecutivo VARCHAR(20),
             tipo_documento VARCHAR(20) DEFAULT 'POS',
             consecutivo_pos INTEGER,
             cufe VARCHAR(100),
@@ -464,7 +459,6 @@ def crear_tablas_en_orden(schema_name):
             texto_legal TEXT DEFAULT 'Documento equivalente POS – No válido como factura electrónica de venta',
             es_donacion BOOLEAN DEFAULT FALSE,
             motivo_donacion VARCHAR(200),
-            observaciones TEXT,
             panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
         )
     '''))
