@@ -600,7 +600,9 @@ def crear_tablas_en_orden(schema_name):
             descripcion TEXT,
             costo FLOAT DEFAULT 0,
             tipo VARCHAR(50) DEFAULT 'correctivo',
-            realizado_por VARCHAR(100),
+            tecnico VARCHAR(100),
+            notas TEXT,
+            fecha_registro TIMESTAMP DEFAULT NOW(),
             panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
         )
     '''))
@@ -10464,7 +10466,7 @@ def eliminar_mantenimiento(id):
         # ✅ VERIFICAR QUE EL MANTENIMIENTO EXISTE
         check = db.session.execute(
             text(f"""
-                SELECT activo_id FROM {schema_name}.historial_mantenimientos 
+                SELECT activo_fijo_id FROM {schema_name}.historial_mantenimientos 
                 WHERE id = :id AND panaderia_id = :panaderia_id
             """),
             {'id': id, 'panaderia_id': panaderia_id}

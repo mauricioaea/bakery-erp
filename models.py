@@ -2273,7 +2273,7 @@ class HistorialMantenimiento(db.Model):
     __tablename__ = 'historial_mantenimientos'
     
     id = db.Column(db.Integer, primary_key=True)
-    activo_id = db.Column(db.Integer, db.ForeignKey('activos_fijos.id'), nullable=False)
+    activo_fijo_id = db.Column(db.Integer, db.ForeignKey('activos_fijos.id'), nullable=False)  # ✅ DT-38: renombrado desde 'activo_id'
     fecha_mantenimiento = db.Column(db.Date, nullable=False)
     tipo = db.Column(db.String(50), nullable=False)  # PREVENTIVO, CORRECTIVO, REPARACION
     descripcion = db.Column(db.String(500), nullable=False)
@@ -2283,7 +2283,7 @@ class HistorialMantenimiento(db.Model):
     fecha_registro = db.Column(db.DateTime, default=datetime.utcnow)
     panaderia_id = db.Column(db.Integer, nullable=False)
     
-    activo = db.relationship('ActivoFijo', backref='mantenimientos')
+    activo = db.relationship('ActivoFijo', backref='mantenimientos', foreign_keys=[activo_fijo_id])  # ✅ DT-38: foreign_keys explícito
     
     def __repr__(self):
         return f'<HistorialMantenimiento {self.activo.nombre} - {self.tipo} - {self.fecha_mantenimiento}>'
