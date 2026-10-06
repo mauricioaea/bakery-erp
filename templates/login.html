@@ -882,21 +882,17 @@
         }
 
         // ============================================
-        // 3. LOADING EN EL BOTÓN
+        // 3. VALIDACIÓN EN CLIENTE + PREVENCIÓN DOBLE SUBMIT (DT-28)
         // ============================================
+        // Orden de la lógica:
+        //   1. Validar campos (si falla, cancelar submit ANTES de tocar el botón)
+        //   2. Si OK → agregar .loading + disabled (evita segundo click)
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             const btn = document.getElementById('loginBtn');
-            btn.classList.add('loading');
-            btn.querySelector('.btn-text').innerHTML = 'Ingresando...';
-        });
-
-        // ============================================
-        // 4. VALIDACIÓN EN CLIENTE
-        // ============================================
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value.trim();
 
+            // 1. Validar usuario
             if (!username) {
                 e.preventDefault();
                 document.getElementById('username').style.borderColor = '#dc2626';
@@ -904,12 +900,18 @@
                 return;
             }
 
+            // 2. Validar contraseña
             if (!password) {
                 e.preventDefault();
                 document.getElementById('password').style.borderColor = '#dc2626';
                 showFlash('Por favor, ingresa tu contraseña.', 'error');
                 return;
             }
+
+            // 3. Validación OK → bloquear botón + feedback visual (evita doble submit)
+            btn.disabled = true;
+            btn.classList.add('loading');
+            btn.querySelector('.btn-text').innerHTML = 'Ingresando...';
         });
 
         // ============================================
