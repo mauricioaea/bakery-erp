@@ -1950,9 +1950,6 @@ def obtener_panaderia_actual():
 # Ruta para el login - SOLO UNA VEZ
 @app.route('/', methods=['GET', 'POST'])
 def login():
-    # Limpiar mensajes flash antiguos
-    from flask import get_flashed_messages
-    get_flashed_messages()
     """🎯 SISTEMA DE LOGIN PROFESIONAL - ARQUITECTURA EXTENSIBLE"""
     if request.method == 'POST':
         username = request.form['username']
