@@ -1206,7 +1206,10 @@ from multicliente_middleware import (
 basedir = os.path.abspath(os.path.dirname(__file__))
 # 🆕 CREAR APLICACIÓN FLASK
 app = Flask(__name__)
-TenantContext.initialize_app(app)
+# ✅ DT-25: TenantContext.initialize_app() ELIMINADO.
+# Su before_request duplicaba trabajo del @app.before_request de app.py
+# (línea ~1736). La clase TenantContext sigue disponible para
+# get_current_tenant_id(), is_super_admin(), ensure_tenant_context().
 # INICIALIZAR SISTEMA SAAS MULTI-TENANT
 init_tenants_app(app)
 # print("🚀 Middleware SaaS - Sistema multi-tenant activado")
@@ -1731,218 +1734,143 @@ def verificar_y_crear_datos_tenant(tenant_id):
         return False
 
 # =============================================
-# ✅ MIDDLEWARE - SE EJECUTA ANTES DE CADA PETICIÓN
+# ✅ DT-25: MIDDLEWARE ÚNICO - ANTES DE CADA PETICIÓN
 # =============================================
-@app.before_request
-def antes_de_cada_peticion():
-    # =============================================
-    # ✅ B7: Validación global de Origin (mitigación CSRF)
-    # =============================================
-    # Bloquea POST/PUT/DELETE/PATCH con Origin distinto al Host.
-    # Navegadores SIEMPRE envían Origin en POST cross-origin → vector CSRF bloqueado.
-    # Clientes sin Origin (curl, tests, webhooks) son permitidos pero logueados.
-    if request.method in ('POST', 'PUT', 'DELETE', 'PATCH'):
-        from urllib.parse import urlparse
-        _origen = request.headers.get('Origin') or request.headers.get('Referer')
-        if _origen:
-            try:
-                _origen_host = urlparse(_origen).netloc
-                if _origen_host and _origen_host != request.host:
-                    print(f"🚨 CSRF bloqueado: origen={_origen_host} host={request.host} path={request.path}")
-                    return jsonify({
-                        'success': False,
-                        'error': 'Origen no autorizado.'
-                    }), 403
-            except Exception as e:
-                print(f"⚠️ Error validando origen: {e}")
-                return jsonify({
-                    'success': False,
-                    'error': 'Error validando origen.'
-                }), 403
-        else:
-            print(f"⚠️ POST sin Origin/Referer: {request.method} {request.path}")
-    
-    # =============================================
-    # ✅ VERIFICAR SI LA SESIÓN ES VÁLIDA
-    # =============================================
-    if 'tenant_id' in session:
-        tenant_id = session['tenant_id']
-        # Verificar si el tenant existe
-        from models import Tenant
-        tenant_existe = Tenant.query.filter_by(id=tenant_id, activo=True).first()
-        if not tenant_existe:
-            # Si el tenant no existe, limpiar la sesión
-            session.clear()
-            print(f"⚠️ Sesión inválida (tenant {tenant_id} no existe). Sesión limpiada.")
-            
-    # =============================================
-    # 🆕 SAAS - DETECCIÓN MEJORADA DE TENANT
-    # =============================================
-    from middleware_saas import gestor_tenants
-    
-    tenant_detectado = None
-    
-    # PRIMERO: Detección por subdominio (siempre disponible)
-    tenant_detectado = gestor_tenants.obtener_tenant_desde_request()
-    if tenant_detectado:
-        print(f"🔍 Tenant detectado por subdominio: {tenant_detectado['nombre']}")
-    
-    # SEGUNDO: Si hay usuario autenticado, priorizar su tenant
+# Refactor: reemplaza 2 before_request duplicados por uno solo.
+# - Salta rutas públicas (static, login, logout, suscripcion_vencida)
+# - CSRF por Origin (rápido, sin BD)
+# - Detección de tenant por ORM (no psycopg2 raw)
+# - Setea g.tenant + g.panaderia_id (contrato con security_utils)
+# - Configura schema UNA vez
+# - Verifica suscripción
+# =============================================
+
+_RUTAS_PUBLICAS = {'static', 'login', 'logout', 'suscripcion_vencida'}
+
+
+def _validar_origen_csrf():
+    """Valida Origin/Referer para POST/PUT/DELETE/PATCH. Retorna None si OK, response si falla."""
+    from urllib.parse import urlparse
+    _origen = request.headers.get('Origin') or request.headers.get('Referer')
+    if not _origen:
+        print(f"⚠️ POST sin Origin/Referer: {request.method} {request.path}")
+        return None
     try:
-        if hasattr(current_user, 'is_authenticated') and current_user.is_authenticated and hasattr(current_user, 'panaderia_id'):
-            try:
-                import psycopg2
-                conn = psycopg2.connect(
-                    host='localhost',
-                    port=5433,
-                    database='panaderia_master',
-                    user='postgres',
-                    password=os.getenv('DB_PASSWORD')
-                )
-                cursor = conn.cursor()
-                cursor.execute('SELECT id, nombre, subdominio, base_datos FROM tenants WHERE id = %s AND activo = true', (current_user.panaderia_id,))
-                
-                tenant_data = cursor.fetchone()
-                conn.close()
-                
-                if tenant_data:
-                    tenant_detectado = {
-                        'id': tenant_data[0],
-                        'nombre': tenant_data[1],
-                        'subdominio': tenant_data[2],
-                        'base_datos': tenant_data[3]
-                    }
-                    print(f"🔍 Tenant detectado por usuario: {tenant_detectado['nombre']} (panaderia_id: {current_user.panaderia_id})")
-            except Exception as e:
-                print(f"⚠️ Error detectando tenant por usuario: {e}")
+        _origen_host = urlparse(_origen).netloc
+        if _origen_host and _origen_host != request.host:
+            print(f"🚨 CSRF bloqueado: origen={_origen_host} host={request.host} path={request.path}")
+            return jsonify({'success': False, 'error': 'Origen no autorizado.'}), 403
     except Exception as e:
-        print(f"⚠️ current_user no disponible aún: {e}")
-    
-    # =============================================
-    # ✅ AGREGADO: Verificar si hay tenant en sesión
-    # =============================================
-    if 'tenant_id' in session:
-        tenant_id = session['tenant_id']
-        if not tenant_detectado or tenant_detectado.get('id') != tenant_id:
-            try:
-                import psycopg2
-                conn = psycopg2.connect(
-                    host='localhost',
-                    port=5433,
-                    database='panaderia_master',
-                    user='postgres',
-                    password=os.getenv('DB_PASSWORD')
-                )
-                cursor = conn.cursor()
-                cursor.execute('SELECT id, nombre, subdominio, base_datos FROM tenants WHERE id = %s AND activo = true', (tenant_id,))
-                tenant_data = cursor.fetchone()
-                conn.close()
-                
-                if tenant_data:
-                    tenant_detectado = {
-                        'id': tenant_data[0],
-                        'nombre': tenant_data[1],
-                        'subdominio': tenant_data[2],
-                        'base_datos': tenant_data[3]
-                    }
-                    print(f"🔍 Tenant desde sesión: {tenant_detectado['nombre']} (ID: {tenant_id})")
-                else:
-                    tenant_detectado = {
-                        'id': tenant_id,
-                        'nombre': f'Tenant {tenant_id}',
-                        'subdominio': f'tenant_{tenant_id}',
-                        'base_datos': f'tenant_{tenant_id}'
-                    }
-                    print(f"🔍 Tenant desde sesión (fallback): {tenant_detectado['nombre']}")
-            except Exception as e:
-                print(f"⚠️ Error obteniendo tenant de sesión: {e}")
-                tenant_detectado = {
-                    'id': tenant_id,
-                    'nombre': f'Tenant {tenant_id}',
-                    'subdominio': f'tenant_{tenant_id}',
-                    'base_datos': f'tenant_{tenant_id}'
-                }
-                print(f"🔍 Tenant desde sesión (error): {tenant_detectado['nombre']}")
-    
-    # TERCERO: Si no hay tenant detectado, usar principal por defecto
-    if not tenant_detectado:
-        tenant_detectado = {
-            'id': 1,
-            'nombre': 'Panadería Principal',
-            'subdominio': 'principal',
-            'base_datos': 'panaderia_principal.db'
-        }
-        print("🔍 Tenant por defecto: Panadería Principal")
-    
-    # Configurar en contexto global
-    g.tenant = tenant_detectado
+        print(f"⚠️ Error validando origen: {e}")
+        return jsonify({'success': False, 'error': 'Error validando origen.'}), 403
+    return None
 
-    # =============================================
-    # 🗄️ CONFIGURACIÓN PARA TENANT EN POSTGRESQL
-    # =============================================
-    tenant_schema = f"tenant_{tenant_detectado['id']}"
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 
-    # ✅ USAR set_tenant_schema() EN LUGAR DEL CÓDIGO MANUAL
+def _detectar_tenant():
+    """
+    Detecta el tenant del request actual.
+    Orden: current_user > session > subdominio.
+    Retorna dict con {id, nombre, subdominio, base_datos} o None.
+    """
+    from models import Tenant
+    tenant_id = None
+
+    # 1. Usuario autenticado (prioridad máxima)
     try:
-        from app import set_tenant_schema
-        set_tenant_schema(tenant_detectado['id'])
-        print(f"🔧 PostgreSQL - Schema configurado: {tenant_schema}")
-    except Exception as e:
-        print(f"⚠️ Error configurando schema PostgreSQL: {e}")
+        if current_user and current_user.is_authenticated:
+            if hasattr(current_user, 'panaderia_id') and current_user.panaderia_id:
+                tenant_id = current_user.panaderia_id
+    except Exception:
+        pass
 
-    """Middleware global unificado - VERSIÓN MEJORADA"""
-    from multicliente_middleware import obtener_info_usuario
-    obtener_info_usuario()
+    # 2. Sesión
+    if not tenant_id and 'tenant_id' in session:
+        tenant_id = session.get('tenant_id')
 
+    # 3. Subdominio (producción)
+    if not tenant_id:
+        td = gestor_tenants.obtener_tenant_desde_request()
+        if td:
+            return td  # ya es dict completo
+
+    # 4. Sin tenant → None (redirigir a login)
+    if not tenant_id:
+        return None
+
+    # 5. Buscar por ORM (usa pool SQLAlchemy, no psycopg2 raw)
+    tenant = Tenant.query.filter_by(id=tenant_id, activo=True).first()
+    if not tenant:
+        return None
+
+    return {
+        'id': tenant.id,
+        'nombre': tenant.nombre,
+        'subdominio': tenant.subdominio,
+        'base_datos': tenant.base_datos,
+    }
+
+
+def _verificar_suscripcion(tenant_id):
+    """Verifica vigencia de suscripción. Retorna redirect si vencida, None si OK."""
+    from models import obtener_configuracion_panaderia
     try:
-        if hasattr(current_user, 'is_authenticated') and current_user.is_authenticated and hasattr(current_user, 'panaderia_id'):
-            from models import obtener_configuracion_panaderia
-            try:
-                config = obtener_configuracion_panaderia(current_user.panaderia_id)
-                if config is not None:
-                    config.actualizar_estado_suscripcion()
-                    if config.tipo_licencia != 'local' and not config.suscripcion_activa:
-                        rutas_permitidas = ['logout', 'static', 'suscripcion_vencida', 'login']
-                        if request.endpoint and not any(ruta in request.endpoint for ruta in rutas_permitidas):
-                            return redirect(url_for('suscripcion_vencida'))
-            except Exception as e:
-                print(f"⚠️ Error verificando suscripción: {e}")
-                # ✅ CRÍTICO: rollback para evitar PendingRollbackError
-                try:
-                    db.session.rollback()
-                except Exception:
-                    pass
+        config = obtener_configuracion_panaderia(tenant_id)
+        if config is None:
+            return None
+        config.actualizar_estado_suscripcion()
+        if config.tipo_licencia != 'local' and not config.suscripcion_activa:
+            if request.endpoint and request.endpoint not in _RUTAS_PUBLICAS:
+                return redirect(url_for('suscripcion_vencida'))
     except Exception as e:
-        print(f"⚠️ current_user no disponible para verificación de suscripción: {e}")
-        # ✅ Rollback defensivo
+        print(f"⚠️ Error verificando suscripción: {e}")
         try:
             db.session.rollback()
         except Exception:
             pass
+    return None
 
-    # =============================================
-    # ✅ OBTENER tenant_id DE MANERA SEGURA
-    # =============================================
-    tenant_id = None
-    if hasattr(g, 'tenant') and g.tenant:
-        tenant_id = g.tenant.get('id')
-    elif hasattr(current_user, 'panaderia_id') and current_user.panaderia_id:
-        tenant_id = current_user.panaderia_id
-    elif 'tenant_id' in session:
-        tenant_id = session.get('tenant_id')
-    
-    # Si aún no hay tenant_id, usar el de tenant_detectado
-    if not tenant_id and tenant_detectado:
-        tenant_id = tenant_detectado.get('id')
 
-    # ✅ USAR set_tenant_schema() para asegurar el schema correcto
-    if tenant_id:
-        try:
-            set_tenant_schema(tenant_id)
-        except Exception as e:
-            print(f"⚠️ Error configurando schema para tenant {tenant_id}: {e}")
+@app.before_request
+def antes_de_cada_peticion():
+    # 1. Rutas públicas: no requieren tenant ni CSRF
+    if request.endpoint in _RUTAS_PUBLICAS:
+        return
 
+    # 2. CSRF por Origin (solo POST/PUT/DELETE/PATCH)
+    if request.method in ('POST', 'PUT', 'DELETE', 'PATCH'):
+        error_response = _validar_origen_csrf()
+        if error_response is not None:
+            return error_response
+
+    # 3. Detectar tenant
+    tenant = _detectar_tenant()
+    if not tenant:
+        session.clear()
+        print("⚠️ Sin tenant válido en request. Sesión limpiada. Redirigiendo a login.")
+        return redirect(url_for('login'))
+
+    # 4. Setear contexto en g (contrato con security_utils)
+    g.tenant = tenant
+    g.panaderia_id = tenant['id']
+    g.current_tenant = f"tenant_{tenant['id']}"
+
+    # 5. Marcar super admin
+    try:
+        from tenant_decorators import es_super_admin
+        g.es_super_admin = bool(current_user and current_user.is_authenticated and es_super_admin())
+    except Exception:
+        g.es_super_admin = False
+
+    # 6. Configurar schema PostgreSQL (UNA sola vez)
+    try:
+        set_tenant_schema(tenant['id'])
+    except Exception as e:
+        print(f"⚠️ Error configurando schema para tenant {tenant['id']}: {e}")
+
+    # 7. Verificar suscripción
+    response = _verificar_suscripcion(tenant['id'])
+    if response is not None:
+        return response
     
 # =============================================
 # 🆕 RUTA DE SUSCRIPCIÓN VENCIDA
