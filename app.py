@@ -1172,7 +1172,7 @@ def crear_tenant_saas(nombre_panaderia, subdominio, email_contacto=None, max_usu
 # que nadie leía. Los usuarios se crean SOLO en PostgreSQL (schemas por tenant).
 # Eliminada durante la migración completa a PostgreSQL multi-tenant.
 
-from tenant_decorators import tenant_required, with_tenant_context, tenant_query, get_current_tenant_id
+from tenant_decorators import tenant_required, with_tenant_context, tenant_query, get_current_tenant_id, es_super_admin
 from tenant_context import TenantContext
 from security_utils import validate_tenant_access, safe_tenant_query, check_tenant_ownership
 
@@ -1856,7 +1856,6 @@ def antes_de_cada_peticion():
 
     # 5. Marcar super admin
     try:
-        from tenant_decorators import es_super_admin
         g.es_super_admin = bool(current_user and current_user.is_authenticated and es_super_admin())
     except Exception:
         g.es_super_admin = False
@@ -4437,7 +4436,7 @@ def historial_compras(materia_prima_id):
 # =============================================
 # RUTAS DE PRODUCCIÓN Y RECETAS - CORREGIDAS MULTI-TENANT
 # =============================================
-from tenant_decorators import tenant_required  # Asegúrate de importar el decorador
+
 
 @app.route('/recetas')
 @permisos_requeridos('recetas', 'ver')  # Solo uno (eliminé el duplicado)
