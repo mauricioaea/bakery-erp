@@ -1,11 +1,12 @@
 # 🗂️ CONTEXTO MAESTRO — PanaderíaPro (Bakery ERP)
 
 **Última actualización:** 5 de Octubre, 2026 (noche)
-**Último commit:** da8dbeb (fix DT-36: limpieza de 42 tablas huérfanas en public.* + fix endpoint eliminar_cliente)
+**Último commit:** fe6fb0d (fix DT-25: refactor del before_request — unificar 2 middlewares duplicados en uno solo)
 **Sesión 2 Oct:** DT-11, DT-12, DT-13, DT-14, DT-16, DT-26, DT-27, DT-3, DT-4
 **Sesión 3 Oct:** DT-1, DT-6, DT-9, DT-20 Fase C (Tanda 1+2+3), DT-30, DT-31
 **Sesión 4 Oct:** DT-10, DT-22, DT-24, DT-17, DT-33, DT-34, DT-32, DT-18
-**Sesión 5 Oct:** Fase C.3 parcial + DT-38 (4/5 lotes) + **DT-40** + **DT-39** + **DT-36** (todas cerradas)
+**Sesión 5 Oct (mañana):** Fase C.3 parcial + DT-38 (4/5 lotes) + DT-40 + DT-39 + DT-36
+**Sesión 5 Oct (noche):** Borrado tenants 25/26 + DT-35 + DT-5 + DT-5-quater + DT-5-ter + DT-21 + **DT-25 (refactor before_request)** + **DT-29 (resuelta de paso)**
 
 ---
 
@@ -13,9 +14,9 @@
 
 - **Nombre:** PanaderíaPro (bakery-erp)
 - **Repo:** https://github.com/mauricioaea/bakery-erp
-- **Estado:** v1.2.2 — **11/11 módulos completados (100%)** + Demo Fases 1-12 + Endurecimiento de seguridad + **DT-20 al 100%** + **DT-18 reporte tesorería nivel contable** + tenant_1 limpio + **Fase C.3 parcial** + **DT-38 4/5 lotes** + **DT-40 cerrada** + **DT-39 cerrada** + **DT-36 cerrada (public limpio)**
+- **Estado:** v1.3.0 — **11/11 módulos completados (100%)** + Demo Fases 1-12 + Endurecimiento de seguridad + **DT-20 al 100%** + **DT-18 reporte tesorería nivel contable** + tenant_1 limpio + **Fase C.3 cerrada** + **DT-38 4/5 lotes** + **DT-40 cerrada** + **DT-39 cerrada** + **DT-36 cerrada (public limpio)** + **DT-25 cerrada (before_request refactorizado)** + **DT-29 cerrada**
 - **Arquitectura:** Multi-tenant con PostgreSQL (schemas por tenant)
-- **Próximo hito:** deudas medias (DT-5, DT-37, DT-19, DT-21, DT-25, DT-28, DT-29) + Docker + nube
+- **Próximo hito:** DT-28 (doble submit) + DT-37 (i18n) + **DT-CRÉDITOS** (módulo de créditos/fiado)
 
 ---
 
@@ -31,12 +32,13 @@
 - HTML5/CSS3, JavaScript vanilla, Bootstrap 5.1.3, Chart.js, Font Awesome 6
 
 ### Estructura de archivos
-- `app.py` (~12.620 líneas) — aplicación principal
+- `app.py` (~12.500 líneas) — aplicación principal
 - `models.py` (~3.050 líneas) — modelos SQLAlchemy
 - `reportes.py` (~3.400 líneas) — generación PDF
 - `seed_demo.py` (~450 líneas) — seed del Demo
 - `seeds/` — 11 fases del seed
 - `middleware_saas.py`, `tenant_decorators.py`, `tenant_context.py` — multi-tenant
+- `security_utils.py` — utilidades de seguridad multi-tenant
 - `migrations/sql/` — scripts SQL versionados
 - `templates/`, `static/`
 - `.env` (protegido), `.env.example` (plantilla)
@@ -49,19 +51,15 @@
 | ID | Nombre | Subdominio | Plan | Licencia |
 |----|--------|-----------|------|----------|
 | 1 | Panadería Principal | principal | basico | local |
-| 25 | Panadería Test Fase C | panadería_test_fase_ | premium | nube_premium |
-| 26 | Test Audit Fase C.2 | test_audit_fase_c2 | premium | nube_premium |
 | 27 | **Panadería Demo** | panadería_demo | premium | nube_premium |
 
 **Tenant principal del Demo:** `tenant_27` ("Panadería Demo").
 
 **Tenants de producción real:** `tenant_1` (Principal) + `tenant_27` (Demo).
 
-**Tenants de prueba:** `tenant_25`, `tenant_26` (pendientes de borrado en una próxima sesión).
-
 **Estado de `tenant_1`:** ✅ Limpio.
 
-**Estado de `tenant_27`:** ✅ Re-seedeado el 5 Oct post-DT-39 (9.781 filas, EXIT_CODE=0).
+**Estado de `tenant_27`:** ✅ Re-seedeado el 5 Oct post-DT-39 (9.968 filas).
 
 ### 📌 Arquitectura de `public.*` (post-DT-36)
 
@@ -69,9 +67,13 @@
 
 | Tabla | Rol | Filas |
 |---|---|---|
-| `public.tenants` | Maestra de tenants (SELECT/UPDATE/DELETE en arranque, alta, borrado) | 4 |
+| `public.tenants` | Maestra de tenants (SELECT/UPDATE/DELETE en arranque, alta, borrado) | 2 |
 | `public.usuarios` | Fallback de `dev_master` (login) | 3 (`admin`, `dev_master`, `admin_1`, todos `tenant_id=1`) |
 | `public.configuracion_panaderia` | Espejo de config por tenant (SELECT/DELETE en alta/baja) | 1 |
+
+**Columnas reales de `public.tenants` (actualizado 5 Oct):**
+`id`, `nombre`, `subdominio`, `base_datos`, `fecha_creacion`, `activo`, `plan`, `fecha_vencimiento`, `fecha_expiracion`.
+**NO tiene columna `licencia`** (dato que vive en `ConfiguracionSistema` del tenant).
 
 **3 secuencias asociadas:** `tenants_id_seq`, `usuarios_id_seq`, `configuracion_panaderia_id_seq`.
 
@@ -88,10 +90,10 @@
 - **cajero** → solo POS y cierre de caja
 
 ### Usuarios actuales
-- **Tenant 1:** `dev_master` (super_admin), `admin`, `admin_1`
-- **Tenant 25:** `admin_25`, `super_25`, `cajero_25`
-- **Tenant 26:** `admin_26`, `super_26`, `cajero_26`
-- **Tenant 27:** `admin_27`, `super_27`, `cajero_27`
+- **Tenant 1:** `dev_master` (super_admin), `admin`, `admin_1` (los 3 en `public.usuarios` con `tenant_id=1`)
+- **Tenant 27:** `admin_27`, `super_27`, `cajero_27` (viven en `tenant_27.usuarios`)
+
+**⚠️ Password de `admin` (tenant 1):** perdida. Resetear vía dev_master cuando se necesite (DT-44).
 
 ### Contraseña del Demo
 - **Todos los usuarios del tenant_27:** contraseña **`demo2026`**.
@@ -102,9 +104,9 @@
 - **NO se crean usuarios desde el frontend.**
 - Los usuarios se crean al **alta del tenant** en `crear_tenant_saas()`.
 - **Licencia premium:** 3 usuarios (admin, supervisor, cajero).
-- **Licencia básica:** 1 usuario (admin).
+- **Licencia básica:** 1 usuario (admin) — **aunque la generación actual crea los 3 igual.**
 - Los usuarios viven en `tenant_X.usuarios`.
-- **NO se escriben en `public.usuarios`** salvo los 3 del `tenant_1` (que son el fallback para `dev_master`).
+- **NO se escriben en `public.usuarios`** salvo los 3 del `tenant_1`.
 
 ### Datos de facturación (por tenant, personalizables)
 - **Cada tenant** configura sus datos fiscales en `/configuracion/facturacion`.
@@ -134,7 +136,9 @@
 ---
 
 ## 6️⃣ Últimos commits pusheados
-da8dbeb fix(DT-36): limpieza de 42 tablas huérfanas en public.* + fix endpoint eliminar_cliente (DELETE public.usuarios por tenant_id)
+fe6fb0d fix(DT-25): refactor del before_request - unificar 2 middlewares duplicados en uno solo
+7adb546 fix(DT-5-ter): DROP columnas legacy fecha/descripcion en tabla gastos (tenant_1 + tenant_27)
+da8dbeb fix(DT-36): limpieza de 42 tablas huérfanas en public.* + fix endpoint eliminar_cliente
 1e4dbeb docs: HANDOFF v8.1 - DT-39 cerrada (25 columnas SIN FILAS) + reglas 35-36
 d6961a2 fix(DT-39): eliminar 25 columnas SIN FILAS en 7 tablas + DROP en tenant_25/26/27
 f2c5d03 docs: HANDOFF v8.0 - DT-40 cerrada (columnas legacy ventas) + reglas 33-34
@@ -144,36 +148,8 @@ bf31e96 docs: HANDOFF v7.9 - DT-38 cerrada (4/5 lotes) + reglas 31-32
 b656964 fix(DT-38 Lote C): alinear StockProducto con BD
 856392e fix(DT-38 Lote B): alinear Gasto con BD
 2748a70 fix(DT-38 Lote A): agregar JornadaVentas.total_tarjeta al ORM
-e2029a4 docs: HANDOFF v7.8 - Fase C.3 parcial
-cefb33f fix(DT-FaseC.3): alinear ORM y BD
-74a76af docs: HANDOFF v7.7 - DT-18 cerrado
-d8a8afd feat(DT-18): reporte tesoreria nivel contable
-e512c12 feat(DT-18): encabezado fiscal + consecutivo
-272f60d fix(DT-32): eliminar columna panaderia_id redundante en Panaderia
-9d0d026 docs: HANDOFF v7.6 - DT-33 + DT-34
-a417502 docs: HANDOFF v7.5
-08dae2d fix(DT-17): fuente de ingresos en reporte tesoreria
-70e7916 fix(DT-10, DT-22, DT-24)
-9012851 docs(DT-31): versionar script SQL
-e3dd9d4 docs: HANDOFF v7.4 - DT-20 al 100%
-b111005 fix(DT-20 Fase C - Tanda 3)
-82ed869 docs: HANDOFF v7.3
-14de608 fix(DT-20 Fase C - Tanda 2)
-45d011e fix(DT-20 Fase C - Tanda 1)
-0becbf8 fix(DT-1)
-9b29c3b docs: HANDOFF v7.2
-a25505a fix(DT-6, DT-9)
-11662f5 docs: HANDOFF v7.1
-71f6ae1 fix(DT-3, DT-4)
-8bda650 docs: HANDOFF v7
-cafc325 fix(DT-14)
-301bd65 docs(DT-13)
-ffd8e8f fix(DT-16)
-6e260b1 fix(DT-12)
-1e4c120 fix(DT-27)
-a2a2e71 docs: HANDOFF v6
-cbcb76b chore: limpiar .gitignore
-a522e0c fix(DT-11)
+
+text
 
 ---
 
@@ -186,17 +162,17 @@ a522e0c fix(DT-11)
 | 3 | Materias primas | ✅ | 17 |
 | 4 | Recetas y fórmulas | ✅ | 12 recetas / 80 ingredientes |
 | 5 | Productos | ✅ | 12 |
-| 6 | Producción diaria | ✅ | ~2.168 |
-| 7 | Ventas | ✅ | ~7.084 |
+| 6 | Producción diaria | ✅ | ~2.416 |
+| 7 | Ventas | ✅ | ~7.029 |
 | 8 | Productos externos | ✅ | 12 |
-| 9 | Activos fijos | ✅ | ~39 |
-| 10 | Movimientos financieros | ✅ | ~264 |
+| 9 | Activos fijos | ✅ | 36 |
+| 10 | Movimientos financieros | ✅ | 261 |
 | 11 | Cierres diarios | ✅ | 90 |
 | 12 | Reset automatizado | ✅ | — |
 
-**Total aproximado:** ~9.781 filas en tenant_27 (verificado el 5 Oct post-DT-39).
+**Total aproximado:** ~9.968 filas en tenant_27 (verificado el 5 Oct post-DT-5-ter).
 
-**Última re-ejecución:** 5 Oct 2026 (post-DT-39) — `EXIT_CODE=0`.
+**Última re-ejecución:** 5 Oct 2026 (post-DT-5-ter) — `EXIT_CODE=0`.
 
 ---
 
@@ -207,6 +183,8 @@ DATABASE_URL=postgresql://postgres:...@localhost:5433/panaderia_master
 DB_PASSWORD=...
 FLASK_ENV=development
 SECRET_KEY=...
+
+text
 
 - `.env` en `.gitignore`. `.env.example` en el repo.
 - `load_dotenv()` al inicio de `app.py` (línea ~1258).
@@ -230,57 +208,78 @@ SECRET_KEY=...
 
 **✅ RESUELTO AL 100% (3 Oct 2026).** Ningún modelo tiene `default=1` en `panaderia_id`. Si un INSERT olvida pasar `panaderia_id`, falla con `IntegrityError`.
 
+### 🎯 Arquitectura del `before_request` (post-DT-25)
+
+**Un solo `before_request` en `app.py:1736` (`antes_de_cada_peticion`).**
+
+Flujo:
+1. **Rutas públicas** (`static`, `login`, `logout`, `suscripcion_vencida`) → return directo, sin overhead.
+2. **CSRF** por Origin/Referer (solo POST/PUT/DELETE/PATCH).
+3. **Detección de tenant** (`_detectar_tenant()`): current_user > session > subdominio.
+4. **Sin tenant válido** → `session.clear()` + redirect a login (NO fallback a tenant 1).
+5. **Setea `g.tenant` (dict) + `g.panaderia_id` (int) + `g.current_tenant` + `g.es_super_admin`**.
+6. **`set_tenant_schema()`** una sola vez.
+7. **Verificación de suscripción** (`_verificar_suscripcion()`).
+
+**Funciones auxiliares en `app.py`:**
+- `_validar_origen_csrf()` — CSRF por Origin.
+- `_detectar_tenant()` — detección por ORM (NO psycopg2 raw).
+- `_verificar_suscripcion()` — vigencia de suscripción.
+
+**Eliminado:** `TenantContext.initialize_app(app)` (duplicaba el `before_request`).
+
+**Rendimiento:** ~66% menos operaciones BD por request (2 conexiones raw `psycopg2` → 0, 4 queries → 2).
+
 ---
 
 ## 9️⃣ Deuda técnica acumulada
 
-### ✅ RESUELTAS el 5 de Octubre 2026
+### ✅ RESUELTAS el 5 de Octubre 2026 (mañana)
 
 | # | Descripción | Commit |
 |---|-------------|--------|
-| Fase C.3.1-5 | Auditoría columnas huérfanas + alineación ORM↔BD en modelos vivos | `cefb33f` |
+| Fase C.3.1-5 | Auditoría columnas huérfanas + alineación ORM↔BD | `cefb33f` |
 | DT-38 Lote A | `JornadaVentas.total_tarjeta` agregada al ORM | `2748a70` |
 | DT-38 Lote B | `Gasto` alineado con BD | `856392e` |
 | DT-38 Lote C | `StockProducto` alineado con BD | `b656964` |
 | DT-38 Lote D | `HistorialMantenimiento` alineado con BD | `480e9e3` |
-| **DT-40** | **6 columnas legacy de `ventas` eliminadas del CREATE TABLE + DROP en tenant_25/26/27** | **`a003172`** |
-| **DT-39** | **25 columnas SIN FILAS eliminadas en 7 tablas + DROP en tenant_25/26/27** | **`d6961a2`** |
-| **DT-36** | **42 tablas huérfanas en `public.*` dropeadas + fix endpoint `eliminar_cliente` (DELETE `public.usuarios` por `tenant_id`)** | **`da8dbeb`** |
+| DT-40 | 6 columnas legacy de `ventas` eliminadas | `a003172` |
+| DT-39 | 25 columnas SIN FILAS eliminadas en 7 tablas | `d6961a2` |
+| DT-36 | 42 tablas huérfanas en `public.*` dropeadas + fix endpoint `eliminar_cliente` | `da8dbeb` |
 
-### ⚠️ DT-38 — Cerrada con 4 de 5 lotes
+### ✅ RESUELTAS el 5 de Octubre 2026 (noche)
 
-- **Lote A** (`JornadaVentas`): ✅
-- **Lote B** (`Gasto`): ✅
-- **Lote C** (`StockProducto`): ✅
-- **Lote D** (`HistorialMantenimiento`): ✅
-- **Lote E** (`HistorialInventario`): ⏸️ **Diferido.** El endpoint `producir_receta` está huérfano en el frontend. La tabla se usa solo por el seed (Fase 6) por SQL crudo.
-
-### ✅ RESUELTAS en sesiones anteriores (2-4 Oct)
-
-DT-1, DT-3, DT-4, DT-6, DT-9, DT-10, DT-11, DT-12, DT-13, DT-14, DT-15 (aceptada), DT-16, DT-17, DT-18, DT-20 (100%), DT-22, DT-24, DT-26, DT-27, DT-30, DT-31, DT-32, DT-33, DT-34. D1, DT-2, DT-2b, B3, B4 v2, B7.
-
-### 🔴 Críticas pendientes
-**Ninguna.** ✅
+| # | Descripción | Método |
+|---|-------------|--------|
+| **Tenants 25/26** | Borrado vía endpoint (valida DT-36 2ª vez) | UI |
+| **DT-35** | `public.configuracion_sistema` + `pagos_individuales` | Resuelta por DT-36 |
+| **DT-5** | `Gasto` vs `RegistroFinanciero` | "No aplica" — sin solapamiento |
+| **DT-5-quater** | `RegistroFinanciero` vacío en tenant_27 | Funcional (nunca se ejecutó cierre) |
+| **DT-5-ter** | DROP columnas legacy `fecha`/`descripcion` en `gastos` | Script SQL `2026-10-05_drop_gastos_legacy.sql` |
+| **DT-21** | Modal crear cliente POS | "No aplica" — reformulada a DT-CRÉDITOS |
+| **DT-25** | Refactor `before_request` (2 middlewares → 1) | Commit `fe6fb0d` |
+| **DT-29** | Fallback silencioso a tenant 1 | Resuelta de paso por DT-25 |
 
 ### 🟡 Medias pendientes
 
 | # | Ubicación | Descripción |
 |---|-----------|-------------|
-| DT-5 | `models.py:1055 vs 2441` | `Gasto` vs `RegistroFinanciero` posible solapamiento |
+| DT-5-bis | `models.py:1055` | ORM `Gasto` huérfano — nunca instanciado, todo es SQL crudo |
+| DT-5-quater-bis | `app.py:7360-7363` | `return jsonify` con fallback cosmético al crear `RegistroFinanciero` |
+| DT-5-quinquies | `tenant_1.gastos` | Estructura legacy distinta al ORM (8 cols vs 7, `categoria NOT NULL text`) |
 | DT-7 | `models.py` | Inconsistencia FK: 2 modelos con FK a `panaderias.id`, 2 no. **Aceptada (4 Oct).** |
 | DT-19 | global | CSRF completo con `flask-wtf` |
-| DT-21 | POS | Modal de crear cliente sin botón visible |
-| DT-25 | `app.py:1744` | Orden real de `before_request` vs `login_required` |
-| DT-28 | `POST /` | Doble submit detectado |
-| DT-29 | `app.py` (before_request fallback) | Tenant por defecto "Panadería Principal" en usuarios anónimos |
-| DT-35 | `public.configuracion_sistema` + `public.pagos_individuales` | **Ya no aplica** tras DT-36 (tablas dropeadas). Verificar en HANDOFF v8.3. |
+| DT-28 | `POST /` | Doble submit detectado (cosmético, sin daño real) |
 | DT-37 | `reportes.py` | **Soporte multi-idioma (i18n).** Refactor con `Flask-Babel`. |
+| DT-42 | `app.py:1912` y `app.py:1928` | `diagnosticar_recetas()` duplicada. Eliminar la 2da (tiene comentario sospechoso `# ✅✅✅ AGREGA...`). |
+| DT-43 | `tenant_context.py:12` + `tenant_decorators.py:19` | `es_super_admin()` definida 2 veces. Unificar. |
+| DT-44 | tenant_1 | Password de `admin` (tenant 1) perdida. Resetear vía dev_master. |
 
 ### 🟢 Bajas pendientes
 *(ninguna en este momento)*
 
 ### 🚨 Otras deudas
-- **Tenants 25 y 26:** pendientes de borrado (usar el endpoint `/eliminar_cliente` con el fix de DT-36). Prioridad baja.
+- **DT-CRÉDITOS:** Módulo completo de créditos/fiado para POS. **Detalle en sección 1️⃣9️⃣.**
 
 ---
 
@@ -327,55 +326,59 @@ DT-1, DT-3, DT-4, DT-6, DT-9, DT-10, DT-11, DT-12, DT-13, DT-14, DT-15 (aceptada
 38. **Al dropear una tabla referenciada por otra que se CONSERVA, primero soltar la FK explícitamente (`ALTER TABLE ... DROP CONSTRAINT ...` + `DROP COLUMN`) antes del DROP de la tabla destino.**
 39. **Un endpoint de borrado de tenant debe limpiar TODAS las tablas `public.*` que puedan tener datos del tenant. Hoy son: `tenants`, `usuarios` (por `tenant_id`), `configuracion_panaderia` (por `tenant_id`/`panaderia_id`). Verificar tras cada cambio en `public` si el endpoint sigue completo.**
 40. **Al verificar `COUNT(*)` de tablas, NO confiar en `pg_stat_user_tables.n_live_tup` (está desfasado). Usar siempre `COUNT(*)` real.**
+41. **Cuando `powershell -Command "Get-Content ... | Select-Object ..."` corte la salida en un emoji UTF-8 (✅, 🔴, etc.), usar `findstr /n /r /c:"^" archivo.py > _dump.txt` y luego `Select-Object` sobre ese archivo. Evita el truncado por mojibake.**
+42. **Antes de refactorizar un `before_request` o middleware global, mapear TODOS los escritores/lectores de `g.*` (`g.tenant`, `g.panaderia_id`, etc.) con `findstr` para no romper contratos implícitos.**
+43. **En Windows CMD, para `git commit -m "mensaje multilínea"`: crear un archivo `_commit_msg.txt` y usar `git commit --amend -F _commit_msg.txt`. CMD no interpreta bien las comillas multilínea.**
 
 ### Comandos útiles
 
 **Encoding:** `chcp 65001`
 
 **psql:**
-```cmd
 psql -U postgres -p 5433 -h localhost -d panaderia_master
-```
+
+text
 Dentro: `SET client_encoding TO 'UTF8';` Salir: `\q`
 
 **Ver estructura:**
-```cmd
 psql -U postgres -p 5433 -h localhost -d panaderia_master -c "\d tenant_27.nombre_tabla"
-```
+
+text
 
 **Seed Demo:**
-```cmd
 python seed_demo.py --tenant=27 --reset-all
-```
+
+text
 
 **Compilar / Servidor:**
-```cmd
 python -m py_compile app.py
 python app.py
-```
+
+text
 
 **Búsquedas:**
-```cmd
 findstr /n /c:"patrón exacto" archivo.py
 findstr /s /n /c:"patrón" *.py
-findstr /s /n /c:"patrón" templates\*.html
-```
+findstr /s /n /c:"patrón" templates*.html
+
+text
 
 **Extraer líneas (PowerShell):**
-```cmd
 powershell -Command "Get-Content models.py | Select-Object -Skip 246 -First 20"
-```
+
+text
 
 **Backup de BD:**
-```cmd
 pg_dump -U postgres -p 5433 -h localhost -d panaderia_master -F c -f backup_pre_XXX.backup
-```
 
-**Auditoría de columnas (Fase C.3):**
-```cmd
-python audit_columns.py
-python audit_columns_classify_v2.py
-```
+text
+
+**Commit multilínea (Windows CMD):**
+Crear _commit_msg.txt con el mensaje completo
+git commit --amend -F _commit_msg.txt
+del _commit_msg.txt
+
+text
 
 ---
 
@@ -389,12 +392,12 @@ El 5 de Oct, se detectó que la BD (tenant_27) y el ORM estaban desalineados por
 4. Migración automática del ORM.
 
 ### Lo que se hizo
-
 - **Fase C.3 parcial:** alineación de modelos vivos (`cefb33f`).
 - **DT-38:** 4 lotes de modelos muertos (`2748a70`, `856392e`, `b656964`, `480e9e3`).
 - **DT-39:** 25 columnas SIN FILAS en 7 tablas (`d6961a2`).
 - **DT-40:** 6 columnas legacy en `ventas` (`a003172`).
 - **DT-36:** 42 tablas huérfanas en `public` + fix endpoint (`da8dbeb`).
+- **DT-5-ter:** columnas legacy `fecha`/`descripcion` en `gastos` (noche 5 Oct).
 
 **Resultado:** la BD está ahora alineada con el ORM. `public` tiene solo 3 tablas críticas. Los tenants nuevos nacen limpios.
 
@@ -456,28 +459,22 @@ El 5 de Oct, se detectó que la BD (tenant_27) y el ORM estaban desalineados por
 - Paso 5: re-seed OK ✅
 - Paso 6: commit `a003172` ✅
 
-**Descubrimiento:** `tenant_1` **NO tenía** las columnas (schema distinto).
-
 ---
 
 ## 1️⃣7️⃣ DT-39 — Bitácora detallada (5 Oct 2026)
 
 **Contexto:** 25 columnas huérfanas SIN FILAS en 7 tablas vacías.
 
-**Diagnóstico:** cruce ORM↔BD → 25 huérfanas. `findstr` → 0 referencias. 100% ruido.
-
 **Ejecución — 7 sub-lotes:**
-- 39-A: `logs_sistema` (2 cols) ✅
-- 39-B: `control_vida_util` (2 cols) — ⚠️ coma colgante corregida ✅
-- 39-C: `historial_rotacion_producto` (2 cols) ✅
-- 39-D: `detalle_compras` (2 cols) ✅
-- 39-E: `compras` (4 cols) ✅
-- 39-F: `registros_diarios` (6 cols) ✅
-- 39-G: `registros_financieros` (7 cols) ✅
+- 39-A: `logs_sistema` (2 cols)
+- 39-B: `control_vida_util` (2 cols) — coma colgante corregida
+- 39-C: `historial_rotacion_producto` (2 cols)
+- 39-D: `detalle_compras` (2 cols)
+- 39-E: `compras` (4 cols)
+- 39-F: `registros_diarios` (6 cols)
+- 39-G: `registros_financieros` (7 cols)
 - `migrations/sql/2026-10-05_drop_columnas_sin_filas.sql` ✅
 - Re-seed + smoke test + commit `d6961a2` ✅
-
-**Descubrimiento:** `tenant_1` **NO tenía** las columnas.
 
 **Lección (regla 35):** quitar la coma de la línea precedente al eliminar la última columna.
 
@@ -488,53 +485,124 @@ El 5 de Oct, se detectó que la BD (tenant_27) y el ORM estaban desalineados por
 **Contexto:** A lo largo del desarrollo se crearon 50+ tenants de prueba. Al borrarlos, el endpoint `/eliminar_cliente` solo hacía `DROP SCHEMA` + `DELETE` en 3 tablas de `public`, dejando restos acumulados en 42 tablas más.
 
 ### Diagnóstico
-
 - **45 tablas en `public`:** 3 críticas + 30 vacías + 6 con datos huérfanos + 3 backups + 3 residuos.
 - **110 filas huérfanas** en `productos` (37), `categorias` (24), `permisos_usuario` (21), `jornadas_ventas` (18), `panaderias` (9), `proveedor` (1).
-- **44 FKs internas** entre las tablas de `public`.
 - **El código usa SOLO** `public.tenants`, `public.usuarios`, `public.configuracion_panaderia`.
-- **El alta (`crear_tenant_saas`)** escribe solo en `public.tenants` + `tenant_X.*`. NO toca las 42 dropeadas.
-- **El borrado (`/eliminar_cliente`)** limpiaba solo `tenants`, `configuracion_panaderia`, dejando restos en `public.usuarios` (por eso la limpieza era incompleta).
 
 ### Ejecución
+- **Fase A — Backup:** `backup_pre_dt36.backup` (909 KB) ✅
+- **Fase B — Limpieza de `public`:** DROP de 42 tablas ✅
+- **Fase C — Fix del endpoint `/eliminar_cliente`:** Añadido paso 5: `DELETE FROM public.usuarios WHERE tenant_id = :id` ✅
+- **Fase D — Auditoría del alta:** confirmado que `crear_tenant_saas` es limpio ✅
+- **Fase E — Verificación end-to-end:** Ciclo completo tenant_28 → verificar → borrar → verificar ✅
+- **Fase F — Commit:** `da8dbeb` ✅
 
-**Fase A — Backup:** `backup_pre_dt36.backup` (909 KB) ✅
-
-**Fase B — Limpieza de `public`:**
-- Soltar FK `usuarios.sucursal_id` → `sucursales.id` ✅
-- DROP de 42 tablas (con `IF EXISTS` + `CASCADE`) ✅
-- Resultado: `public` con SOLO 3 tablas + 3 secuencias ✅
-- Script: `migrations/sql/2026-10-05_limpieza_public.sql` ✅
-
-**Fase C — Fix del endpoint `/eliminar_cliente`:**
-- Añadido paso 5: `DELETE FROM public.usuarios WHERE tenant_id = :id` ✅
-- Renumerado paso 6 (setval) ✅
-
-**Fase D — Auditoría del alta:** confirmado que `crear_tenant_saas` es limpio ✅
-
-**Fase E — Verificación end-to-end:**
-- Arranque limpio ✅
-- Smoke test 15+ rutas ✅
-- **Ciclo completo:** crear `tenant_28` → verificar en `public.tenants` + `tenant_28` → borrar → verificar que NO queda nada en `public` (5 consultas) ✅
-- Los 3 usuarios originales intactos ✅
-
-**Fase F — Commit:** `da8dbeb` ✅
-
-### Lecciones aprendidas (reglas 37-40)
-- **Regla 37:** verificar FKs antes de DROP masivo.
-- **Regla 38:** soltar FK explícitamente antes de dropear tabla referenciada por otra que se conserva.
-- **Regla 39:** el endpoint de borrado debe limpiar TODAS las tablas `public.*` con datos del tenant.
-- **Regla 40:** no confiar en `pg_stat_user_tables.n_live_tup` (desfasado).
+**Validaciones posteriores:**
+- 5 Oct noche, borrado de tenants 25 y 26 vía UI: ✅
+- 5 Oct noche, borrado del tenant 28 (creado durante DT-25): ✅ 5 acciones completas del endpoint.
 
 ---
 
-## 1️⃣9️⃣ Notas estratégicas
+## 1️⃣9️⃣ DT-25 — Bitácora detallada (5 Oct 2026, noche)
+
+**Contexto original (HANDOFF v8.2):** "Orden real de `before_request` vs `login_required`".
+
+### Diagnóstico
+- **Había 2 `before_request` registrados:**
+  1. `tenant_context.py:46` (`set_tenant_context`) — registrado en `app.py:1209` (`TenantContext.initialize_app`), corre PRIMERO.
+  2. `app.py:1736` (`antes_de_cada_peticion`) — corre SEGUNDO.
+- **El de `app.py` hacía 9+ responsabilidades** en 210 líneas:
+  - CSRF por Origin.
+  - Query BD para verificar tenant en session.
+  - **2 conexiones `psycopg2` raw** por request.
+  - `set_tenant_schema()` **2 veces por request**.
+  - Llamaba a `obtener_info_usuario()` (mock inútil, retornaba siempre datos del tenant 1).
+  - **Fallback silencioso a tenant 1** (DT-29).
+- **El de `tenant_context.py` era un no-op** en la práctica (porque el `hasattr(g, 'panaderia_id')` nunca era True al ser el primero).
+- **Contrato crítico detectado:** `g.panaderia_id` (int) es fuente de verdad para `security_utils.py`, `tenant_decorators.py` y `tenant_context.py`. `g.tenant` (dict) era la fuente para `app.py`.
+
+### Solución aplicada (commit `fe6fb0d`)
+- **Eliminado:** `TenantContext.initialize_app(app)` en `app.py:1209`.
+- **Reemplazado:** el `before_request` completo por versión limpia de 128 líneas.
+- **Nuevas funciones auxiliares:**
+  - `_validar_origen_csrf()`
+  - `_detectar_tenant()` (usa ORM, no psycopg2 raw)
+  - `_verificar_suscripcion()`
+- **Nuevo comportamiento:**
+  - Salta rutas públicas (`static`, `login`, `logout`, `suscripcion_vencida`).
+  - Sin tenant válido → limpia sesión + redirect a login (**elimina DT-29**).
+  - Setea `g.tenant` + `g.panaderia_id` + `g.current_tenant` + `g.es_super_admin`.
+  - `set_tenant_schema()` **1 vez**.
+
+### Validación (test end-to-end)
+1. **Login** admin_27, dev_master → ✅
+2. **Navegación módulos** tenant_27 (POS, Producción, Reportes, Financiera) → ✅
+3. **`/static/css/pos-moderno.css`** → ✅ 304
+4. **Sin sesión → `/punto_venta`** → ✅ 302 → login (DT-29 resuelta)
+5. **Crear tenant_28 "Test DT25"** vía `/gestion_clientes` → ✅
+6. **Verificar BD:** `public.tenants`=3, schema `tenant_28` creado, 3 usuarios, `public.usuarios` limpio → ✅
+7. **Login admin_28** → ✅ detecta `tenant_28` correctamente
+8. **Navegar módulos tenant_28** (vacíos) → ✅
+9. **Borrar tenant_28** vía UI → ✅ 5 acciones del endpoint completas
+10. **Verificar BD post-borrado:** `public.tenants`=2, schemas=`tenant_1`,`tenant_27`, `public.usuarios`=3 → ✅
+
+### Impacto
+- **Eliminadas** 2 conexiones raw `psycopg2` por request.
+- **Eliminado** `set_tenant_schema()` duplicado.
+- **Eliminado** `obtener_info_usuario()` (mock inútil).
+- **Eliminado** fallback silencioso a tenant 1 (**DT-29**).
+- **Rendimiento:** ~66% menos operaciones BD por request.
+
+**Diff:** `app.py | 320 +++++---`, `124 insertions(+), 196 deletions(-)`.
+
+---
+
+## 2️⃣0️⃣ DT-CRÉDITOS — Módulo de créditos/fiado (PENDIENTE — feature)
+
+**Origen:** detectado durante DT-21 (5 Oct 2026, noche). El POS actual tiene 3 modos:
+1. Venta POS (recibo rápido).
+2. Venta electrónica (factura DIAN).
+3. **Falta:** vender a crédito (fiado).
+
+### Alcance MVP
+- **Tablas nuevas:** `creditos`, `credito_detalle`, `abonos`.
+- **POS:** botón "Fiar" + modal simple de cliente (5 campos: nombre, tipo doc, documento, ciudad, teléfono).
+- **Endpoints:** `/fiar_venta` + `/registrar_abono`.
+- **Sección nueva:** "Créditos" con estado de cuenta + CxC.
+
+### Decisiones de negocio pendientes (cuestionario previo)
+- ¿Se descuenta del inventario al fiar o al cobrar?
+- ¿Cupo por cliente?
+- ¿IVA al fiar o al cobrar?
+- ¿Intereses por mora?
+- ¿Cómo manejar cliente que no paga?
+
+### Estimación
+- **MVP:** 6-8 h (1-2 sesiones).
+- **Completo (aging, moras, reportes):** 15-25 h (3-4 sesiones).
+
+### Reutilizable
+- ✅ Tabla `clientes` (solo `nombre`/`documento`/`telefono`).
+- ✅ `POST /registrar_venta` (con flag `es_credito=true`).
+- ✅ Estructura del carrito.
+
+### NO reutilizable
+- ❌ Modal `clienteModal` (11 campos fiscales — overkill).
+- ❌ `/api/guardar-cliente`.
+- ❌ `procesarVentaElectronica()`.
+
+### Prioridad
+**Media-alta.** Después de cerrar todas las DT pendientes.
+
+---
+
+## 2️⃣1️⃣ Notas estratégicas
 
 ### Objetivo del ERP
-ERP SaaS multi-tenant multi-país con: POS, inventario, producción, recetas, activos fijos, reportes con IA, finanzas, multi-país, base para API REST + IA avanzada.
+ERP SaaS multi-tenant multi-país con: POS, inventario, producción, recetas, activos fijos, reportes con IA, finanzas, multi-país, base para API REST + IA avanzada, **módulo de créditos**.
 
 ### 🎁 Tenant Demo (marketing)
-Fases 1-12 completadas (~9.781 filas). Contraseña: `demo2026`. Reset desde `/mi_perfil` con `dev_master`.
+Fases 1-12 completadas (~9.968 filas). Contraseña: `demo2026`. Reset desde `/mi_perfil` con `dev_master`.
 
 ### Mercado objetivo
 - 3.000-5.000 panaderías en Colombia.
@@ -553,12 +621,14 @@ Fases 1-12 completadas (~9.781 filas). Contraseña: `demo2026`. Reset desde `/mi
 ### Estimación de tiempos (5 Oct 2026, noche)
 | Bloque | Estimación |
 |--------|------------|
-| DT-5 (Gasto vs RegistroFinanciero) | ~1-2 h |
+| DT-28 (doble submit) | ~1 h |
 | DT-37 (i18n reportes) | ~8-15 h |
-| DT-19, DT-21, DT-25, DT-28, DT-29 | ~6-10 h |
-| Borrar tenants 25 y 26 con el endpoint | ~15 min |
+| DT-42, DT-43, DT-44 (nuevas bajas) | ~1-2 h |
+| DT-5-bis, DT-5-quater-bis, DT-5-quinquies | ~2-3 h |
+| **DT-CRÉDITOS (MVP)** | **~6-8 h** |
+| DT-CRÉDITOS (completo) | ~15-25 h |
 | Fase 3 (nube + Docker) | ~22-32 h |
-| Fase 4 (seguridad) | ~14-20 h |
+| Fase 4 (seguridad avanzada) | ~14-20 h |
 | Fase 5 (monetización) | ~26-36 h |
 | Fases 6-8 (IA + integraciones) | ~50-85 h |
 
@@ -570,36 +640,41 @@ Al iniciar un nuevo chat, pegar este archivo como contexto inicial.
 
 **Instrucción sugerida para el asistente:**
 
-> "Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el archivo HANDOFF.md v8.2 con el contexto maestro del proyecto. Vamos a continuar desde donde lo dejamos. Por favor actúa como instructor guiando paso a paso, con la metodología de trabajo descrita en el HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/findstr, commit tras cada fix verificado. Al insertar bloques, muéstrame ANTES → DESPUÉS con número de línea exacto. **Antes de cualquier cambio, espera mi LUZ VERDE explícita.**"
+> "Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el archivo HANDOFF.md v8.3 con el contexto maestro del proyecto. Vamos a continuar desde donde lo dejamos. Por favor actúa como instructor guiando paso a paso, con la metodología de trabajo descrita en el HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/findstr, commit tras cada fix verificado. Al insertar bloques, muéstrame ANTES → DESPUÉS con número de línea exacto. **Antes de cualquier cambio, espera mi LUZ VERDE explícita.**"
 
-**Próxima tarea sugerida:** DT-5 (Gasto vs RegistroFinanciero) o borrar tenants 25/26 con el endpoint arreglado.
+**Próxima tarea sugerida:**
+1. **DT-28** (doble submit en login — 1 h).
+2. **DT-42, DT-43, DT-44** (limpiezas rápidas — 1-2 h).
+3. **DT-37** (i18n reportes — sesión dedicada).
+4. **DT-CRÉDITOS** (módulo completo — sesión dedicada).
 
 ---
 
 ## ✅ Última validación
 
-- **Último commit:** `da8dbeb` (DT-36 cerrada, pusheado).
-- **Última sesión:** 5 Oct 2026 — Fase C.3 parcial + DT-38 + DT-40 + DT-39 + DT-36 (todas cerradas).
+- **Último commit:** `fe6fb0d` (DT-25 cerrada, pusheado).
+- **Última sesión:** 5 Oct 2026 (noche) — Borrado tenants 25/26 + DT-35 + DT-5 + DT-5-quater + DT-5-ter + DT-21 + DT-25 + DT-29.
 - **Working tree:** clean.
 - **Servidor:** detenido.
 - **Sistema:** 100% funcional end-to-end.
 - **Módulos:** 11/11 completados (100%).
-- **Demo:** Fases 1-12 completadas, contraseña `demo2026`, ~9.781 filas.
+- **Demo:** Fases 1-12 completadas, contraseña `demo2026`, ~9.968 filas.
 - **Log:** limpio, sin warnings.
 - **DT-20:** ✅ 100% RESUELTO.
-- **DT-17:** ✅ Reporte tesorería funcional.
-- **DT-18:** ✅ Reporte tesorería nivel contable.
-- **DT-32:** ✅ Columna redundante eliminada.
-- **Fase C.3 (modelos vivos):** ✅ Alineada.
-- **DT-38 (5 modelos muertos):** ✅ 4/5 lotes. Lote E diferido.
-- **DT-40 (columnas legacy ventas):** ✅ **RESUELTA.**
-- **DT-39 (25 columnas SIN FILAS):** ✅ **RESUELTA.**
-- **DT-36 (public.* limpio + fix endpoint):** ✅ **RESUELTA.**
+- **DT-25:** ✅ **RESUELTA** (refactor completo del `before_request`).
+- **DT-29:** ✅ **RESUELTA** (de paso por DT-25).
+- **DT-35:** ✅ Cerrada (resuelta por DT-36).
+- **DT-5:** ✅ Cerrada ("no aplica").
+- **DT-5-quater:** ✅ Cerrada (funcional).
+- **DT-5-ter:** ✅ Cerrada (DROP columnas legacy `gastos`).
+- **DT-21:** ✅ Cerrada (reformulada a DT-CRÉDITOS).
 - **`public`: 3 tablas, 3 secuencias** ✅
 - **`tenant_1`:** ✅ Limpio.
+- **`tenant_27`:** ✅ Re-seedeado (9.968 filas).
 - **Deudas críticas pendientes:** ninguna.
-- **Pendientes:** DT-5, DT-37, DT-19, DT-21, DT-25, DT-28, DT-29.
+- **Pendientes:** DT-28, DT-37 + nuevas bajas (DT-5-bis, DT-5-quater-bis, DT-5-quinquies, DT-42, DT-43, DT-44).
+- **Features pendientes:** DT-CRÉDITOS.
 
 ---
 
-**Fin del HANDOFF.md — v8.2**
+**Fin del HANDOFF.md — v8.3**
