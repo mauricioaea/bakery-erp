@@ -7,35 +7,11 @@ from flask import g, session
 from flask_login import current_user
 import logging
 
-logger = logging.getLogger('tenant_context')
+# ✅ DT-43: es_super_admin() se importa de tenant_decorators (definición canónica).
+# Se eliminó la definición local duplicada para evitar inconsistencias futuras.
+from tenant_decorators import es_super_admin
 
-def es_super_admin():
-    """Verifica si el usuario actual es super administrador - VERSIÓN SEGURA"""
-    try:
-        # Verificación EXTRA segura
-        if not current_user or not hasattr(current_user, 'is_authenticated') or not current_user.is_authenticated:
-            return False
-        
-        # Obtener atributos de forma segura
-        user_id = getattr(current_user, 'id', None)
-        username = getattr(current_user, 'username', '')
-        email = getattr(current_user, 'email', '')
-        
-        # Verificar si es super admin por múltiples criterios
-        if user_id == 1:
-            return True
-        
-        if username and username == 'dev_master':
-            return True
-        
-        if email and hasattr(email, 'endswith') and email.endswith('dev_master'):
-            return True
-            
-        return False
-        
-    except Exception as e:
-        logger.error(f"❌ Error en es_super_admin: {str(e)}")
-        return False
+logger = logging.getLogger('tenant_context')
 
 class TenantContext:
     """Gestor centralizado del contexto multi-tenant - COMPATIBLE CON SUPER ADMIN"""

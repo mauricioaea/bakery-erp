@@ -1913,22 +1913,6 @@ def diagnosticar_recetas(panaderia_id):
     """Diagnóstico para ver qué recetas existen"""
     print(f"🔍 DIAGNÓSTICO RECETAS - Panadería {panaderia_id}:")
     
-    todas_recetas = Receta.query.filter_by(panaderia_id=panaderia_id).all()
-    print(f"   Total recetas en BD: {len(todas_recetas)}")
-    
-    for receta in todas_recetas:
-        print(f"   - '{receta.nombre}' (ID: {receta.id}, Activo: {receta.activo})")
-    
-    recetas_activas = Receta.query.filter_by(panaderia_id=panaderia_id, activo=True).all()
-    print(f"   Recetas activas: {len(recetas_activas)}")
-    
-    return len(recetas_activas)
-
-# ✅ ✅ ✅ AGREGA diagnosticar_recetas EXACTAMENTE AQUÍ ✅ ✅ ✅
-def diagnosticar_recetas(panaderia_id):
-    """Diagnóstico para ver qué recetas existen"""
-    print(f"🔍 DIAGNÓSTICO RECETAS - Panadería {panaderia_id}:")
-    
     # Ver todas las recetas de esta panadería
     todas_recetas = Receta.query.filter_by(panaderia_id=panaderia_id).all()
     print(f"   Total recetas en BD: {len(todas_recetas)}")
@@ -1942,11 +1926,12 @@ def diagnosticar_recetas(panaderia_id):
     
     return len(recetas_activas)
 
+
 def obtener_panaderia_actual():
     """Obtener panadería actual del usuario logueado"""
     return session.get('panaderia_id')
 
-# ✅ ✅ ✅ FIN DE diagnosticar_recetas ✅ ✅ ✅
+
 # Ruta para el login - SOLO UNA VEZ
 @app.route('/', methods=['GET', 'POST'])
 def login():
