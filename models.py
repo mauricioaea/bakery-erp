@@ -1051,7 +1051,17 @@ class DetalleCompra(db.Model):
     materia_prima_id = db.Column(db.Integer, db.ForeignKey('materias_primas.id'), nullable=False)
     cantidad = db.Column(db.Float, nullable=False)
     precio_unitario = db.Column(db.Float, nullable=False)
-
+    
+# ⚠️ DT-5-bis: ORM NO USADO actualmente por código activo.
+# Verificado el 7 Oct 2026:
+#   - No hay ningún `from models import Gasto` en app.py, reportes.py, middleware_saas.py ni utilidades/.
+#   - No hay llamadas a `Gasto.query`, `Gasto(...)` ni similar en código activo.
+#   - Templates NO acceden a este ORM (los gastos se manejan vía RegistroFinanciero).
+# SE MANTIENE porque:
+#   1. Documenta la estructura canónica de `gastos` post-DT-38.
+#   2. Se usará como referencia para alinear `tenant_1.gastos` (DT-5-quinquies).
+#   3. Costo de mantenerlo: 0 (no se importa, no se ejecuta).
+# Decisión: reevaluar tras cerrar DT-5-quinquies.
 class Gasto(db.Model):
     __tablename__ = 'gastos'
     panaderia_id = db.Column(db.Integer, nullable=False)
