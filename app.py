@@ -1181,6 +1181,7 @@ from middleware_saas import init_tenants_app, gestor_tenants
 
 from flask_login import LoginManager, login_required, current_user, login_user, logout_user
 from flask_migrate import Migrate
+from flask_wtf.csrf import CSRFProtect
 
 from datetime import datetime, timedelta, date, timezone
 from sqlalchemy import func, extract, text
@@ -1241,6 +1242,13 @@ if not app.secret_key:
 
 app.config['SESSION_PERMANENT'] = False
 app.config['PERMANENT_SESSION_LIFETIME'] = 3600
+
+# =============================================
+# 🛡️ DT-19: PROTECCIÓN CSRF CON FLASK-WTF
+# =============================================
+# Tokens CSRF firmados. Complementa la validación por Origin/Referer
+# existente en _validar_origen_csrf() (defensa en profundidad).
+csrf = CSRFProtect(app)
 
 # =============================================
 # 🗄️ CONFIGURACIÓN DE BASE DE DATOS (POSTGRESQL)
@@ -1827,7 +1835,17 @@ def _verificar_suscripcion(tenant_id):
             db.session.rollback()
         except Exception:
             pass
-    return None
+        return None
+
+
+@app.context_processor
+def inject_csrf_token():
+    """
+    DT-19: Inyecta csrf_token() en el contexto de TODOS los templates.
+    Permite usar {{ csrf_token() }} sin necesidad de importar flask_wtf.
+    """
+    from flask_wtf.csrf import generate_csrf
+    return dict(csrf_token=generate_csrf)
 
 
 @app.before_request

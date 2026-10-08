@@ -1,0 +1,4 @@
+{# DT-19: CSRF - Meta tag + script auto-inyector. #}
+{# Incluir en el <head> de cada template: {% include '_csrf_head.html' %} #}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<script src="{{ url_for('static', filename='js/csrf-auto-inject.js') }}"></script>

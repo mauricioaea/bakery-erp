@@ -705,6 +705,7 @@
             }
         }
     </style>
+    {% include '_csrf_head.html' %}
 </head>
 <body>
 
@@ -789,6 +790,7 @@
                 </div>
 
                 <form method="POST" id="loginForm" class="login-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="form-group">
                         <label for="username">Usuario</label>
                         <div class="input-with-icon">
