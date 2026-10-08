@@ -7340,44 +7340,23 @@ def reporte_cierre_caja():
         usuario_actual = db.session.get(Usuario, session["user_id"])
         panaderia_id = usuario_actual.panaderia_id
         
-        print(f"🔍 DEBUG: Generando reporte para panaderia_id: {panaderia_id}")
-        print(f"📅 Fecha consultada: {fecha_consultada}")
-        print(f"📅 Rango: {inicio_dia} a {fin_dia}")
-        
-        # 🆕 DEBUG: VER TODAS LAS VENTAS EN LA BD (SIN FILTROS)
-        print("🔎 DEBUG - TODAS las ventas en la BD:")
-        panaderia_id = obtener_panaderia_actual()
-        todas_ventas = Venta.query.filter_by(panaderia_id=panaderia_id).all()
-        for v in todas_ventas:
-            print(f"   Venta ID: {v.id}, Fecha: {v.fecha_hora}, Panadería: {v.panaderia_id}, Total: ${v.total}")
-        
         # 🆕 CONSULTAS CON FILTRO MULTICLIENTE
         ventas_dia = Venta.query.filter(
             db.func.date(Venta.fecha_hora) == fecha_consultada,  # 🎯 SOLO POR FECHA
             Venta.panaderia_id == panaderia_id
         ).all()
         
-        print(f"📊 Ventas encontradas con filtros: {len(ventas_dia)}")
-        for v in ventas_dia:
-            print(f"   ✅ Venta encontrada: ID {v.id}, Fecha: {v.fecha_hora}, Total: ${v.total}")
-        
         # 🎁 SEPARAR VENTAS NORMALES VS DONACIONES
         ventas_normales = [v for v in ventas_dia if not v.es_donacion]
         donaciones = [v for v in ventas_dia if v.es_donacion]
         
-        print(f"💰 Ventas normales: {len(ventas_normales)}")
-        print(f"🎁 Donaciones: {len(donaciones)}")
-        
-        # 🎁 CALCULAR MÉTRICAS SEPARADAS
+        # 📊 CALCULAR MÉTRICAS SEPARADAS
         total_ventas_normales = sum(venta.total for venta in ventas_normales)
         total_transacciones = len(ventas_dia)
         
-        print(f"💵 Total ventas normales: ${total_ventas_normales}")
-        print(f"🔢 Total transacciones: {total_transacciones}")
+        
         
         # Calcular métricas por método de pago (SOLO VENTAS NORMALES)
-                # Calcular métricas por método de pago (SOLO VENTAS NORMALES)
-                # Calcular métricas por método de pago (SOLO VENTAS NORMALES)
         ventas_por_metodo = {}
         for venta in ventas_normales:
             metodo = venta.metodo_pago
@@ -7389,8 +7368,7 @@ def reporte_cierre_caja():
                 ventas_por_metodo[metodo] = 0
             ventas_por_metodo[metodo] += venta.total
         
-        print(f"💳 Ventas por método: {ventas_por_metodo}")
-        
+                
         # 🆕 OBTENER COMPARATIVA CON DÍA ANTERIOR
         dia_anterior = fecha_consultada - timedelta(days=1)
         ventas_dia_anterior = Venta.query.filter(
@@ -7407,7 +7385,6 @@ def reporte_cierre_caja():
         else:
             tendencia = 100 if total_ventas_normales > 0 else 0
         
-        print(f"📈 Tendencia: {tendencia}%")
         
         # 🆕 PRODUCTOS MÁS VENDIDOS (INCLUYENDO DONACIONES)
         detalles_dia = DetalleVenta.query.join(Venta).filter(
@@ -7416,7 +7393,6 @@ def reporte_cierre_caja():
             Venta.panaderia_id == panaderia_id  # 🎯 FILTRO MULTICLIENTE
         ).all()
         
-        print(f"📦 Detalles de venta encontrados: {len(detalles_dia)}")
         
         productos_vendidos = {}
         for detalle in detalles_dia:
@@ -7434,8 +7410,7 @@ def reporte_cierre_caja():
         productos_top = sorted(productos_vendidos.items(), key=lambda x: x[1], reverse=True)[:5]
         
         # 🎯 --- INICIO: MÉTRICAS FINANCIERAS CON COSTOS REALES ---
-        print("💰 CALCULANDO MÉTRICAS FINANCIERAS CON COSTOS REALES...")
-        
+                
         # 🎯 1. CALCULAR COSTOS E INGRESOS CON FUENTES REALES
         costo_total_inventario = 0
         ingresos_totales = 0
@@ -7466,7 +7441,6 @@ def reporte_cierre_caja():
                     # 🎯 USAR COSTO UNITARIO REAL DE LA RECETA
                     precio_costo = producto.receta.costo_unitario
                     fuente_costo = "receta.costo_unitario (real)"
-                    print(f"✅ Producto {producto.nombre} - Costo real: ${precio_costo} desde receta")
                     
                 elif hasattr(producto, 'costo_compra') and producto.costo_compra:
                     precio_costo = producto.costo_compra
@@ -7528,13 +7502,7 @@ def reporte_cierre_caja():
                 })
                 # 🆕 CONTAR UNIDADES DONADAS
                 total_unidades_donadas += detalle.cantidad
-            
-            # Debug detallado
-            print(f"   📊 {nombre_producto} - Cant: {detalle.cantidad} - Precio: ${detalle.precio_unitario} - Costo: ${precio_costo} - Fuente: {fuente_costo} - Donación: {es_donacion}")
-
-        print(f"📦 Costo total inventario: ${costo_total_inventario:.0f}")
-        print(f"💰 Ingresos totales: ${ingresos_totales:.0f}")
-        print(f"🎯 Total productos vendidos: {total_productos_vendidos}")
+                          
 
         # 🎯 2. CALCULAR MARGEN PROMEDIO CON COSTOS REALES (SOLO VENTAS NORMALES)
         ingresos_ventas_normales = sum(item['ingresos'] for item in productos_vendidos_lista)
@@ -7561,10 +7529,7 @@ def reporte_cierre_caja():
         else:
             productos_por_venta = 0
 
-        print(f"📈 Margen promedio REAL: {margen_promedio:.1f}%")
-        print(f"💵 Utilidad neta REAL: ${utilidad_neta:.0f}")
-        print(f"🎫 Ticket promedio: ${ticket_promedio:.0f}")
-        print(f"📦 Productos por venta: {productos_por_venta:.1f}")
+        
         
         # 🆕 AGRUPAR PRODUCTOS VENDIDOS POR NOMBRE
         productos_vendidos_agrupados = {}
@@ -7616,22 +7581,12 @@ def reporte_cierre_caja():
         total_unidades_donadas = sum(item['cantidad'] for item in productos_donados_final)
         valor_total_donaciones = sum(item['valor_mercado'] for item in productos_donados_final)
         
-        print(f"🆕 PRODUCTOS VENDIDOS: {len(productos_vendidos_final)} productos únicos")
-        for producto in productos_vendidos_final[:3]:
-            print(f"   💰 {producto['nombre']} - Cant: {producto['cantidad']} - Ingresos: ${producto['ingresos']:.0f} - Utilidad: ${producto['utilidad']:.0f}")
-        
-        print(f"🆕 PRODUCTOS DONADOS: {total_productos_donados_unicos} productos únicos, {total_unidades_donadas} unidades totales")
-        for producto in productos_donados_final[:3]:
-            print(f"   🎁 {producto['nombre']} - Cant: {producto['cantidad']} - Valor: ${producto['valor_mercado']:.0f} - Costo: ${producto['costo_real']:.0f}")
-        
+                
         # 🎁 DATOS DE DONACIONES CORREGIDOS
         total_donaciones = len(donaciones)  # Número de transacciones de donación
         productos_donados = total_unidades_donadas  # Número total de unidades donadas
         
-        print(f"💰 Valor total donaciones: ${valor_total_donaciones}")
-        print(f"🎁 Transacciones de donación: {total_donaciones}")
-        print(f"📦 Unidades donadas totales: {productos_donados}")
-        
+               
         # 🆕 PREPARAR VENTAS DETALLADAS PARA TABLA
         ventas_detalladas = []
         for venta in ventas_dia:
@@ -7644,12 +7599,7 @@ def reporte_cierre_caja():
                 'es_donacion': venta.es_donacion,
                 'cantidad_productos': cantidad_productos
             })
-        
-        print(f"✅ Reporte generado exitosamente")
-        print(f"🎁 Total donaciones (transacciones): {total_donaciones}")
-        print(f"📦 Productos donados (unidades): {productos_donados}")
-        print(f"💰 Valor donaciones: ${valor_total_donaciones}")
-        
+               
         # 🆕 ENVIAR DATOS COMPLETOS AL TEMPLATE
         return render_template('cierre_caja.html',
                             fecha=fecha_consultada,
