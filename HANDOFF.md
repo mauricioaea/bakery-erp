@@ -1,13 +1,14 @@
 # 🗂️ CONTEXTO MAESTRO — PanaderíaPro (Bakery ERP)
 
-**Última actualización:** 6 de Octubre, 2026 (mediodía)
-**Último commit:** f2caa24 (fix DT-42, DT-43: eliminar duplicaciones de código)
+**Última actualización:** 7 de Octubre, 2026 (noche)
+**Último commit:** 93ea142 (fix DT-5-quater-bis: limpiar debug verboso en reporte_cierre_caja)
 **Sesión 2 Oct:** DT-11, DT-12, DT-13, DT-14, DT-16, DT-26, DT-27, DT-3, DT-4
 **Sesión 3 Oct:** DT-1, DT-6, DT-9, DT-20 Fase C (Tanda 1+2+3), DT-30, DT-31
 **Sesión 4 Oct:** DT-10, DT-22, DT-24, DT-17, DT-33, DT-34, DT-32, DT-18
 **Sesión 5 Oct (mañana):** Fase C.3 parcial + DT-38 (4/5 lotes) + DT-40 + DT-39 + DT-36
 **Sesión 5 Oct (noche):** Borrado tenants 25/26 + DT-35 + DT-5 + DT-5-quater + DT-5-ter + DT-21 + DT-25 (refactor before_request) + DT-29
 **Sesión 6 Oct (mediodía):** DT-28 + DT-45 + DT-42 + DT-43 + DT-44 (documentada)
+**Sesión 7 Oct (noche):** DT-46 + DT-5-bis + DT-5-quinquies + DT-5-quater-bis (reformulada) — **Opción Rápida 100%**
 
 ---
 
@@ -15,9 +16,9 @@
 
 - **Nombre:** PanaderíaPro (bakery-erp)
 - **Repo:** https://github.com/mauricioaea/bakery-erp
-- **Estado:** v1.3.1 — **11/11 módulos completados (100%)** + Demo Fases 1-12 + Endurecimiento de seguridad + DT-20 100% + DT-18 reporte tesorería nivel contable + tenant_1 limpio + Fase C.3 cerrada + DT-25 cerrada (before_request refactorizado) + DT-29 cerrada + DT-28/DT-45/DT-42/DT-43 cerradas
+- **Estado:** v1.3.2 — **11/11 módulos completados (100%)** + Demo Fases 1-12 + Endurecimiento de seguridad + DT-20 100% + DT-18 reporte tesorería nivel contable + tenant_1 limpio + Fase C.3 cerrada + DT-25 cerrada (before_request refactorizado) + DT-29 cerrada + DT-28/DT-45/DT-42/DT-43/DT-44/DT-46 cerradas + DT-5-bis/DT-5-quinquies/DT-5-quater-bis cerradas
 - **Arquitectura:** Multi-tenant con PostgreSQL (schemas por tenant)
-- **Próximo hito:** DT-37 (i18n reportes) + DT-CRÉDITOS (módulo de fiado)
+- **Próximo hito:** DT-37 (i18n reportes) + DT-CRÉDITOS (módulo de fiado) + DT-19 (CSRF completo)
 
 ---
 
@@ -28,13 +29,14 @@
 - PostgreSQL 17.10 (puerto 5433)
 - Flask-Login, Werkzeug (pbkdf2:sha256, scrypt), ReportLab, Matplotlib
 - **BD:** `panaderia_master` — credenciales en `.env`
+- **Password postgres:** `PanaderiaPro2026!` (⚠️ NO incluir en HANDOFFs públicos)
 
 ### Frontend
 - HTML5/CSS3, JavaScript vanilla, Bootstrap 5.1.3, Chart.js, Font Awesome 6
 
 ### Estructura de archivos
-- `app.py` (~12.480 líneas) — aplicación principal
-- `models.py` (~3.050 líneas) — modelos SQLAlchemy
+- `app.py` (~12.440 líneas) — aplicación principal
+- `models.py` (~3.060 líneas) — modelos SQLAlchemy
 - `reportes.py` (~3.400 líneas) — generación PDF
 - `seed_demo.py` (~450 líneas) — seed del Demo
 - `seeds/` — 11 fases del seed
@@ -130,8 +132,9 @@
 ---
 
 ## 6️⃣ Últimos commits pusheados
-
-```
+93ea142 fix(DT-5-quater-bis): limpiar debug verboso en reporte_cierre_caja
+ff1d704 fix(DT-5-bis, DT-5-quinquies): documentar ORM Gasto + alinear tenant_1.gastos
+34aad22 fix(DT-46): mover import de es_super_admin al top de app.py
 f2caa24 fix(DT-42, DT-43): eliminar duplicaciones de codigo
 a39eecf fix(DT-45): eliminar get_flashed_messages() preventivo en login() que destruia flashes
 7cda002 fix(DT-28): prevenir doble submit en login (unificar 2 listeners en 1 + btn.disabled)
@@ -140,7 +143,8 @@ fe6fb0d fix(DT-25): refactor del before_request - unificar 2 middlewares duplica
 7adb546 fix(DT-5-ter): DROP columnas legacy fecha/descripcion en tabla gastos (tenant_1 + tenant_27)
 40e74d8 docs: HANDOFF v8.2 - DT-36 cerrada (public limpio + fix endpoint eliminar_cliente) + reglas 37-40
 da8dbeb fix(DT-36): limpieza de 42 tablas huérfanas en public.* + fix endpoint eliminar_cliente
-```
+
+text
 
 ---
 
@@ -168,12 +172,12 @@ da8dbeb fix(DT-36): limpieza de 42 tablas huérfanas en public.* + fix endpoint 
 ## 8️⃣ Configuración crítica
 
 ### Variables de entorno (.env)
-```
 DATABASE_URL=postgresql://postgres:...@localhost:5433/panaderia_master
 DB_PASSWORD=...
 FLASK_ENV=development
 SECRET_KEY=...
-```
+
+text
 
 ### Rutas críticas
 - `/reportes`, `/historial_pagos`, `/historial_depositos`
@@ -214,24 +218,50 @@ Flujo:
 - Los flashes del logout ("Has cerrado sesión") **se muestran correctamente**.
 - Templates con bloque `.flash-messages`: `login.html`, `dashboard.html`, `gestion_clientes.html`, `gestion_usuarios.html`, etc. (28 templates).
 
-### 🎯 `es_super_admin()` (post-DT-43)
+### 🎯 `es_super_admin()` (post-DT-43 y DT-46)
 
 - **Definición canónica única:** `tenant_decorators.py:19`.
 - `tenant_context.py` la **importa**: `from tenant_decorators import es_super_admin`.
-- `app.py` la **importa dentro del `before_request`**: `from tenant_decorators import es_super_admin`.
+- `app.py` la **importa a nivel de módulo**: `from tenant_decorators import tenant_required, with_tenant_context, tenant_query, get_current_tenant_id, es_super_admin` (L1175).
+- **Sin imports locales redundantes** (DT-46 los eliminó).
+
+### 🎯 ORM `Gasto` (post-DT-5-bis)
+
+- Definido en `models.py:1055` pero **NO se usa en código activo**.
+- Documentado con comentario aclaratorio (9 líneas) que explica por qué se mantiene.
+- **NO eliminar** sin antes revisar la nota. Referencia canónica para la tabla `gastos` post-DT-38.
+- **Reevaluar** si en el futuro se decide migrar a logging centralizado o reestructurar el modelo financiero.
+
+### 🎯 `reporte_cierre_caja()` (post-DT-5-quater-bis)
+
+- Ubicada en `app.py:7317-7639` (~322 líneas).
+- **Sin prints de debug.** 35 `print()` eliminados.
+- **Sin query duplicada.** Solo 1 query filtrada a `Venta`.
+- **Sin redefinición de `panaderia_id`.** Solo el asignado desde `usuario_actual.panaderia_id`.
+- Log silencioso en `/reporte/cierre_caja`.
+- **Nota:** El "jsonify cosmético" original del HANDOFF v8.4 ya no existía. Reformulada la DT para atacar el debug verboso real.
 
 ---
 
 ## 9️⃣ Deuda técnica acumulada
 
+### ✅ RESUELTAS el 7 de Octubre 2026 (noche) — Opción Rápida
+
+| # | Descripción | Commit |
+|---|-------------|--------|
+| **DT-46** | Import `es_super_admin` movido al top de `app.py` | `34aad22` |
+| **DT-5-bis** | ORM `Gasto` documentado como huérfano intencional | `ff1d704` |
+| **DT-5-quinquies** | `tenant_1.gastos` alineada con `tenant_27.gastos` (DROP+CREATE) | `ff1d704` |
+| **DT-5-quater-bis (reformulada)** | 35 prints de debug + query duplicada eliminados de `reporte_cierre_caja` | `93ea142` |
+
 ### ✅ RESUELTAS el 6 de Octubre 2026 (mediodía)
 
 | # | Descripción | Commit |
 |---|-------------|--------|
-| **DT-28** | Doble submit en login (unificar 2 listeners + `btn.disabled`) | `7cda002` |
-| **DT-45** | `get_flashed_messages()` preventivo destruía flashes del logout | `a39eecf` |
-| **DT-42** | `diagnosticar_recetas()` duplicada en `app.py` | `f2caa24` |
-| **DT-43** | `es_super_admin()` duplicada en `tenant_context.py` + `tenant_decorators.py` | `f2caa24` |
+| **DT-28** | Doble submit en login | `7cda002` |
+| **DT-45** | Flash messages destruidos por login() | `a39eecf` |
+| **DT-42** | `diagnosticar_recetas()` duplicada | `f2caa24` |
+| **DT-43** | `es_super_admin()` duplicada | `f2caa24` |
 
 ### ⏸️ DT-44 — Documentada (acción pendiente del usuario)
 
@@ -258,13 +288,10 @@ Fase C.3, DT-38 (4/5 lotes), DT-40, DT-39, DT-36.
 
 | # | Ubicación | Descripción |
 |---|-----------|-------------|
-| DT-5-bis | `models.py:1055` | ORM `Gasto` huérfano |
-| DT-5-quater-bis | `app.py:7360-7363` | `return jsonify` con fallback cosmético |
-| DT-5-quinquies | `tenant_1.gastos` | Estructura legacy distinta al ORM |
 | DT-7 | `models.py` | Inconsistencia FK (**Aceptada**) |
 | DT-19 | global | CSRF completo con `flask-wtf` |
 | DT-37 | `reportes.py` | **i18n reportes** (Flask-Babel). ~8-15 h. |
-| DT-46 | `app.py:1859` | `before_request` importa `es_super_admin` dentro de la función. Mover al top del archivo. Baja prioridad. |
+| DT-47 (propuesta) | global | Infraestructura de logging centralizada (`import logging` + `logger`). ~2-3 h. Aparece tras DT-5-quater-bis. |
 
 ### 🟢 Bajas pendientes
 *(ninguna en este momento)*
@@ -322,55 +349,65 @@ Fase C.3, DT-38 (4/5 lotes), DT-40, DT-39, DT-36.
 42. **Antes de refactorizar un `before_request` o middleware global, mapear TODOS los escritores/lectores de `g.*`.**
 43. **En Windows CMD, para `git commit -m "mensaje multilínea"`: crear un archivo `_commit_msg.txt` y usar `git commit --amend -F _commit_msg.txt`.**
 44. **Antes de duplicar código defensivamente, verificar si el framework (Flask/Bootstrap/etc.) ya maneja el caso nativamente. Ejemplo: HTML5 `required` ya bloquea envíos con campos vacíos.**
+45. **Nunca confiar en el output de CMD para diagnosticar código con emojis o caracteres no-ASCII: el mojibake (UTF-8 → Latin-1) puede simular errores de sintaxis que no existen. Verificar SIEMPRE con el editor o con `Get-Content` de PowerShell.**
+46. **Antes de proponer un "fix urgente" basado en sospechas, confirmar el bug con evidencia directa (imagen del editor, `cat -A`, hexdump). Un falso positivo puede llevar a "arreglar" código que está sano.**
+47. **Al aplicar cambios en cadena (Tanda 1, Tanda 2, ...), usar los TEXTOS (comentarios, prints, strings únicos) como referencia de ubicación, no los números de línea. Los números se desfasan con cada cambio.**
+48. **En PowerShell, `Select-String` con regex `:7[3-9][0-9][0-9]:` NO matchea porque el output de `findstr /n` ya tiene los dos puntos. Usar `'^7[3-9][0-9][0-9]:'` (inicio de línea) en su lugar.**
+49. **Para eliminar un bloque `for` que contiene solo un `print`, eliminar el `for` completo (no solo el print): Python no permite `for` sin cuerpo.**
 
 ### Comandos útiles
 
 **Encoding:** `chcp 65001`
 
 **psql:**
-```
 psql -U postgres -p 5433 -h localhost -d panaderia_master
-```
+
+text
 
 **Ver estructura:**
-```
 psql -U postgres -p 5433 -h localhost -d panaderia_master -c "\d tenant_27.nombre_tabla"
-```
+
+text
 
 **Seed Demo:**
-```
 python seed_demo.py --tenant=27 --reset-all
-```
+
+text
 
 **Compilar / Servidor:**
-```
 python -m py_compile app.py
 python app.py
-```
+
+text
 
 **Búsquedas:**
-```
 findstr /n /c:"patrón exacto" archivo.py
 findstr /s /n /c:"patrón" *.py
-findstr /s /n /c:"patrón" templates\*.html
-```
+findstr /s /n /c:"patrón" templates*.html
+
+text
 
 **Extraer líneas (PowerShell):**
-```
 powershell -Command "Get-Content models.py | Select-Object -Skip 246 -First 20"
-```
+
+text
 
 **Backup de BD:**
-```
 pg_dump -U postgres -p 5433 -h localhost -d panaderia_master -F c -f backup_pre_XXX.backup
-```
+
+text
 
 **Commit multilínea (Windows CMD):**
-```
-# Crear _commit_msg.txt con el mensaje completo
-git commit --amend -F _commit_msg.txt
+Crear _commit_msg.txt con el mensaje completo
+git commit -F _commit_msg.txt
 del _commit_msg.txt
-```
+
+text
+
+**Ver rama con tracking:**
+git branch -vv
+
+text
 
 ---
 
@@ -383,6 +420,7 @@ Auditoría del 5 Oct, alineación ORM↔BD:
 - **DT-40:** 6 columnas legacy en `ventas`.
 - **DT-36:** 42 tablas huérfanas en `public`.
 - **DT-5-ter:** columnas legacy en `gastos`.
+- **DT-5-quinquies:** alineación estructural `tenant_1.gastos` con `tenant_27.gastos` (7 Oct).
 
 ---
 
@@ -454,7 +492,74 @@ Auditoría del 5 Oct, alineación ORM↔BD:
 
 ---
 
-## 1️⃣6️⃣ DT-CRÉDITOS — Módulo de créditos/fiado (PENDIENTE — feature)
+## 1️⃣6️⃣ DT-46 — Bitácora (7 Oct 2026)
+
+**Bug:** `before_request` importaba `es_super_admin` localmente en L1859, cuando ya existía un import a nivel de módulo en L1175. Además, había otro import local redundante de `tenant_required` en L4440.
+
+**Fix:**
+- Agregar `es_super_admin` al import de `tenant_decorators` en L1175.
+- Eliminar import local en L1859.
+- Eliminar import local en L4440 (bonus).
+
+**Verificación:** smoke test (dev_master → `/gestion_clientes` ✅, admin_27 → `/gestion_clientes` ⛔ 403 ✅).
+
+**Commit:** `34aad22`.
+
+---
+
+## 1️⃣7️⃣ DT-5-bis + DT-5-quinquies — Bitácora (7 Oct 2026)
+
+### DT-5-bis — ORM `Gasto` documentado
+
+**Diagnóstico:** ORM `Gasto` (`models.py:1055`) nunca se importa ni se usa en código activo. Templates no acceden a él. `reportes.py` usa `RegistroFinanciero`.
+
+**Decisión:** NO eliminar. Documentar como huérfano intencional. Se mantiene como referencia canónica para la tabla `gastos` post-DT-38.
+
+**Fix:** 9 líneas de comentario antes de `class Gasto`.
+
+### DT-5-quinquies — `tenant_1.gastos` alineada
+
+**Diagnóstico:** `tenant_1.gastos` tenía estructura legacy:
+- `categoria` = `text NOT NULL` (debe ser `varchar(50) nullable`).
+- `concepto` = nullable (debe ser `NOT NULL`).
+- Sin FKs a `panaderias(id)` ni `usuarios(id)`.
+- **Tabla vacía (0 filas).**
+
+**Fix:** `DROP + CREATE` con la estructura de `tenant_27.gastos`.
+
+**Archivo:** `migrations/sql/2026-10-07_align_tenant_1_gastos.sql`.
+
+**Verificación:** `\d tenant_1.gastos` idéntico a `\d tenant_27.gastos`. Smoke test OK.
+
+**Commit:** `ff1d704`.
+
+---
+
+## 1️⃣8️⃣ DT-5-quater-bis (reformulada) — Bitácora (7 Oct 2026)
+
+**Descripción original del HANDOFF v8.4:** "`return jsonify` con fallback cosmético (`app.py:7360-7363`)".
+
+**Realidad encontrada:** El `jsonify` original ya no existía. En su lugar había un **bloque de debug verboso** en `reporte_cierre_caja()`:
+- Query duplicada a `Venta` (`todas_ventas` sin filtro) → performance.
+- **35 prints de debug** → log spam.
+- Comentario triplicado (artefacto de copy/paste).
+- Redefinición de `panaderia_id` (asignado 2 veces).
+
+**Fix (4 tandas):**
+1. **Tanda 1:** Eliminar prints de inicio + bloque "TODAS las ventas" (query duplicada) + prints de "ventas encontradas".
+2. **Tanda 2:** Eliminar prints de debug detallado + prints de cálculo (margen, utilidad, etc.).
+3. **Tanda 3:** Eliminar prints de productos vendidos/donados.
+4. **Tanda 4:** Eliminar prints finales de "reporte generado" + bloques de valor.
+
+**Resultado:** 35 prints eliminados, 50 líneas netas menos, log silencioso en `/reporte/cierre_caja`.
+
+**Falso positivo detectado:** Se creyó ver un bug estructural en el `except` de `reporte_cierre_caja` (string sin cerrar). Fue **artefacto de mojibake** (UTF-8 → Latin-1 en CMD). El código siempre estuvo sano. Confirmado con imagen del editor.
+
+**Commit:** `93ea142`.
+
+---
+
+## 1️⃣9️⃣ DT-CRÉDITOS — Módulo de créditos/fiado (PENDIENTE — feature)
 
 **Origen:** detectado durante DT-21 (5 Oct 2026). El POS tiene 3 modos:
 1. Venta POS.
@@ -488,11 +593,11 @@ Auditoría del 5 Oct, alineación ORM↔BD:
 - ❌ `/api/guardar-cliente`.
 - ❌ `procesarVentaElectronica()`.
 
-**Prioridad:** Media-alta, después de cerrar DT-37.
+**Prioridad:** Media-alta, después de cerrar DT-37 y DT-19.
 
 ---
 
-## 1️⃣7️⃣ DT-37 — i18n reportes (PENDIENTE)
+## 2️⃣0️⃣ DT-37 — i18n reportes (PENDIENTE)
 
 **Alcance:** `reportes.py` (~3.400 líneas) genera PDFs con texto hardcodeado en español. Objetivo: multi-idioma con `Flask-Babel`.
 
@@ -509,7 +614,17 @@ Auditoría del 5 Oct, alineación ORM↔BD:
 
 ---
 
-## 1️⃣8️⃣ Notas estratégicas
+## 2️⃣1️⃣ DT-19 — CSRF completo con flask-wtf (PENDIENTE)
+
+**Alcance:** Migrar el CSRF manual actual (validación por Origin/Referer en `before_request`) a `flask-wtf` con tokens firmados.
+
+**Estimación:** ~2-3 h.
+
+**Prioridad:** Media-alta.
+
+---
+
+## 2️⃣2️⃣ Notas estratégicas
 
 ### Objetivo del ERP
 ERP SaaS multi-tenant multi-país con: POS, inventario, producción, recetas, activos fijos, reportes con IA, finanzas, multi-país, base para API REST + IA avanzada, **módulo de créditos**.
@@ -526,12 +641,11 @@ Fases 1-12 completadas (~9.968 filas). Contraseña: `demo2026`.
 - Premium: 3 usuarios.
 - Básica: 1 usuario.
 
-### Estimación de tiempos (6 Oct 2026)
+### Estimación de tiempos (7 Oct 2026)
 | Bloque | Estimación |
 |--------|------------|
 | DT-37 (i18n) | ~8-15 h |
-| DT-46 (mover import) | ~5 min |
-| DT-5-bis, DT-5-quater-bis, DT-5-quinquies | ~2-3 h |
+| DT-47 (logging centralizado) | ~2-3 h |
 | DT-19 (CSRF) | ~2-3 h |
 | DT-CRÉDITOS (MVP) | ~6-8 h |
 | DT-CRÉDITOS (completo) | ~15-25 h |
@@ -548,11 +662,11 @@ Al iniciar un nuevo chat, pegar este archivo como contexto inicial.
 
 **Instrucción sugerida:**
 
-> "Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el archivo HANDOFF.md v8.4 con el contexto maestro. Vamos a continuar desde donde lo dejamos. Por favor actúa como instructor guiando paso a paso, con la metodología de trabajo descrita en el HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/findstr, commit tras cada fix verificado. Al insertar bloques, muéstrame ANTES → DESPUÉS con número de línea exacto. **Tú me das LUZ VERDE cuando los cambios estén 100% validados. Yo aplico los cambios en mi editor.**"
+> "Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el archivo HANDOFF.md v8.5 con el contexto maestro. Vamos a continuar desde donde lo dejamos. Por favor actúa como instructor guiando paso a paso, con la metodología de trabajo descrita en el HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/findstr, commit tras cada fix verificado. Al insertar bloques, muéstrame ANTES → DESPUÉS con número de línea exacto. **Tú me das LUZ VERDE cuando los cambios estén 100% validados. Yo aplico los cambios en mi editor.**"
 
 **Próxima tarea sugerida:**
-1. **DT-46** (mover import `es_super_admin` al top) — 5 min.
-2. **DT-5-bis, DT-5-quater-bis, DT-5-quinquies** — 2-3 h (limpiezas rápidas).
+1. **DT-19** (CSRF completo con flask-wtf) — ~2-3 h.
+2. **DT-47** (logging centralizado) — ~2-3 h (nueva, opcional).
 3. **DT-37** (i18n) — sesión dedicada.
 4. **DT-CRÉDITOS** — sesión dedicada con cuestionario previo.
 
@@ -560,23 +674,27 @@ Al iniciar un nuevo chat, pegar este archivo como contexto inicial.
 
 ## ✅ Última validación
 
-- **Último commit:** `f2caa24` (DT-42 + DT-43, pusheado).
-- **Última sesión:** 6 Oct 2026 (mediodía) — DT-28, DT-45, DT-42, DT-43, DT-44 (documentada).
+- **Último commit:** `93ea142` (DT-5-quater-bis, pusheado).
+- **Última sesión:** 7 Oct 2026 (noche) — DT-46, DT-5-bis, DT-5-quinquies, DT-5-quater-bis (reformulada). **Opción Rápida 100%.**
 - **Working tree:** clean.
-- **Servidor:** detenido.
+- **Servidor:** detenido (o detener con Ctrl+C).
 - **Sistema:** 100% funcional end-to-end.
 - **Módulos:** 11/11 completados.
 - **Demo:** ~9.968 filas.
-- **DT-25:** ✅ Resuelta (before_request refactorizado).
-- **DT-28:** ✅ Resuelta (doble submit login).
-- **DT-29:** ✅ Resuelta (fallback tenant 1).
-- **DT-42:** ✅ Resuelta (`diagnosticar_recetas` única).
-- **DT-43:** ✅ Resuelta (`es_super_admin` única).
+- **DT-25:** ✅ Resuelta.
+- **DT-28:** ✅ Resuelta.
+- **DT-29:** ✅ Resuelta.
+- **DT-42:** ✅ Resuelta.
+- **DT-43:** ✅ Resuelta.
 - **DT-44:** ⏸️ Documentada (acción pendiente del usuario).
-- **DT-45:** ✅ Resuelta (flash messages).
-- **Pendientes:** DT-37, DT-46, DT-5-bis, DT-5-quater-bis, DT-5-quinquies, DT-19, DT-CRÉDITOS.
+- **DT-45:** ✅ Resuelta.
+- **DT-46:** ✅ Resuelta.
+- **DT-5-bis:** ✅ Resuelta (documentada).
+- **DT-5-quinquies:** ✅ Resuelta (BD alineada).
+- **DT-5-quater-bis:** ✅ Resuelta (reformulada).
+- **Pendientes:** DT-37, DT-19, DT-CRÉDITOS, DT-47 (propuesta).
 - **Deudas críticas:** ninguna.
 
 ---
 
-**Fin del HANDOFF.md — v8.4**
+**Fin del HANDOFF.md — v8.5**
