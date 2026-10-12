@@ -1,6 +1,8 @@
 import os
 import uuid
 import json
+import logging
+from logging.handlers import RotatingFileHandler
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, Response, make_response, g
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -12,7 +14,7 @@ def crear_tablas_en_orden(schema_name):
     """
     from sqlalchemy import text
     
-    print(f"   📝 Creando tablas en orden para {schema_name}...")
+    logger.info(f"   📝 Creando tablas en orden para {schema_name}...")
     
     # =============================================
     # 1. panaderias (no depende de nadie)
@@ -845,7 +847,7 @@ def crear_tablas_en_orden(schema_name):
     '''))
     
     db.session.commit()
-    print(f"   ✅ Tablas creadas en {schema_name}")
+    logger.info(f"   ✅ Tablas creadas en {schema_name}")
     
 
 # =============================================
@@ -899,7 +901,7 @@ def obtener_configuracion_panaderia_segura(panaderia_id):
         
     except Exception as e:
         # ✅ Silenciar errores para evitar mensajes en inicio
-        print(f"⚠️ Error en obtener_configuracion_panaderia_segura: {e}")
+        logger.warning(f"⚠️ Error en obtener_configuracion_panaderia_segura: {e}")
         return None
 # =============================================
 # 🆕 FUNCIÓN SAAS - CREAR TENANT AUTOMÁTICAMENTE
@@ -944,7 +946,7 @@ def crear_tenant_saas(nombre_panaderia, subdominio, email_contacto=None, max_usu
         
         
         # 4. CREAR LAS TABLAS DENTRO DEL SCHEMA
-        print(f"   📝 Creando tablas en schema {schema_name}...")
+        logger.info(f"   📝 Creando tablas en schema {schema_name}...")
 
         # ✅ FORZAR LA CREACIÓN DE TABLAS EN EL SCHEMA
         db.session.execute(text(f"SET search_path TO {schema_name}"))
@@ -958,11 +960,11 @@ def crear_tenant_saas(nombre_panaderia, subdominio, email_contacto=None, max_usu
         try:
             columnas_agregadas, errores = _sincronizar_columnas_tenant(schema_name)
             if columnas_agregadas > 0:
-                print(f"   ✅ {columnas_agregadas} columnas sincronizadas en {schema_name}")
+                logger.info(f"   ✅ {columnas_agregadas} columnas sincronizadas en {schema_name}")
             if errores > 0:
-                print(f"   ⚠️ {errores} errores al sincronizar {schema_name}")
+                logger.warning(f"   ⚠️ {errores} errores al sincronizar {schema_name}")
         except Exception as e:
-            print(f"   ⚠️ Error sincronizando columnas de {schema_name}: {e}")
+            logger.warning(f"   ⚠️ Error sincronizando columnas de {schema_name}: {e}")
             import traceback
             traceback.print_exc()
             # NO relanzar: la creación del tenant debe continuar
@@ -970,7 +972,7 @@ def crear_tenant_saas(nombre_panaderia, subdominio, email_contacto=None, max_usu
         db.session.execute(text(f"SET search_path TO public"))
         db.session.commit()
 
-        print(f"   ✅ Tablas creadas en schema {schema_name}")
+        logger.info(f"   ✅ Tablas creadas en schema {schema_name}")
         
         # 5. USAR CONTRASEÑA RECIBIDA
         if not contrasena_temp:
@@ -978,7 +980,7 @@ def crear_tenant_saas(nombre_panaderia, subdominio, email_contacto=None, max_usu
             caracteres = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%"
             contrasena_temp = ''.join(secrets.choice(caracteres) for _ in range(10))
         else:
-            print(f"   🔑 Usando contraseña proporcionada: {contrasena_temp}")
+            logger.info(f"   🔑 Usando contraseña proporcionada: {contrasena_temp}")
         
         # Configurar el schema para la sesión
         db.session.execute(text(f"SET search_path TO {schema_name}"))
@@ -1003,7 +1005,7 @@ def crear_tenant_saas(nombre_panaderia, subdominio, email_contacto=None, max_usu
                 'activa': True
             }
         )
-        print(f"   ✅ Panadería creada en schema para tenant_id: {tenant_id}")
+        logger.info(f"   ✅ Panadería creada en schema para tenant_id: {tenant_id}")
         
         # =============================================
         # ✅ PASO 7: CREAR CONFIGURACIÓN EN EL SCHEMA CON TIPO DE LICENCIA
@@ -1022,7 +1024,7 @@ def crear_tenant_saas(nombre_panaderia, subdominio, email_contacto=None, max_usu
                 'tipo_licencia': tipo_licencia  # ✅ AGREGADO
             }
         )
-        print(f"   ✅ Configuración en schema creada para tenant_id: {tenant_id} (Licencia: {tipo_licencia})")
+        logger.info(f"   ✅ Configuración en schema creada para tenant_id: {tenant_id} (Licencia: {tipo_licencia})")
         
         # =============================================
         # ✅ PASO 8: CREAR USUARIOS EN EL SCHEMA
@@ -1080,7 +1082,7 @@ def crear_tenant_saas(nombre_panaderia, subdominio, email_contacto=None, max_usu
             }
         )
         
-        print(f"   ✅ Usuarios creados en schema para tenant_id: {tenant_id}")
+        logger.info(f"   ✅ Usuarios creados en schema para tenant_id: {tenant_id}")
         
         # =============================================
         # ✅ PASO 9: CONFIGURAR CONSECUTIVO POS
@@ -1096,7 +1098,7 @@ def crear_tenant_saas(nombre_panaderia, subdominio, email_contacto=None, max_usu
                 'numero_actual': 0
             }
         )
-        print(f"   ✅ Consecutivo POS creado para tenant_id: {tenant_id}")
+        logger.info(f"   ✅ Consecutivo POS creado para tenant_id: {tenant_id}")
         
         # =============================================
         # ✅ PASO 10: CREAR CATEGORÍAS Y PRODUCTOS DE PRUEBA
@@ -1117,7 +1119,7 @@ def crear_tenant_saas(nombre_panaderia, subdominio, email_contacto=None, max_usu
                 """),
                 {'panaderia_id': tenant_id}
             )
-            print(f"   ✅ Categorías creadas para tenant_id: {tenant_id}")
+            logger.info(f"   ✅ Categorías creadas para tenant_id: {tenant_id}")
             
             # Obtener IDs de las categorías recién creadas
             categorias = db.session.execute(
@@ -1136,10 +1138,10 @@ def crear_tenant_saas(nombre_panaderia, subdominio, email_contacto=None, max_usu
             # ✅ NUEVO: NO crear productos de prueba automáticamente
             # Los productos se crean cuando el usuario los registra
             db.session.commit()
-            print(f"   ✅ Categorías creadas para tenant_id: {tenant_id} (sin productos de prueba)")
+            logger.info(f"   ✅ Categorías creadas para tenant_id: {tenant_id} (sin productos de prueba)")
             
         except Exception as e:
-            print(f"   ⚠️ Error creando categorías/productos: {e}")
+            logger.warning(f"   ⚠️ Error creando categorías/productos: {e}")
             # No fallar, solo mostrar advertencia
         
         # =============================================
@@ -1147,12 +1149,12 @@ def crear_tenant_saas(nombre_panaderia, subdominio, email_contacto=None, max_usu
         # =============================================
         db.session.commit()
         
-        print(f"🎉 Nuevo tenant SaaS creado: {nombre_panaderia} (ID: {tenant_id})")
-        print(f"   📁 Schema: {schema_name}")
-        print(f"   🔑 Contraseña temporal: {contrasena_temp}")
-        print(f"   👤 Usuarios: admin_{tenant_id}, super_{tenant_id}, cajero_{tenant_id}")
-        print(f"   📅 Fecha expiración: {fecha_expiracion}")
-        print(f"   🏷️  Tipo Licencia: {tipo_licencia}")
+        logger.info(f"🎉 Nuevo tenant SaaS creado: {nombre_panaderia} (ID: {tenant_id})")
+        logger.info(f"   📁 Schema: {schema_name}")
+        logger.info(f"   🔑 Contraseña temporal: {contrasena_temp}")
+        logger.info(f"   👤 Usuarios: admin_{tenant_id}, super_{tenant_id}, cajero_{tenant_id}")
+        logger.info(f"   📅 Fecha expiración: {fecha_expiracion}")
+        logger.info(f"   🏷️  Tipo Licencia: {tipo_licencia}")
                 
         
         
@@ -1160,7 +1162,7 @@ def crear_tenant_saas(nombre_panaderia, subdominio, email_contacto=None, max_usu
         
     except Exception as e:
         db.session.rollback()
-        print(f"❌ Error creando tenant SaaS: {e}")
+        logger.error(f"❌ Error creando tenant SaaS: {e}")
         import traceback
         traceback.print_exc()
         return False, f"Error creando tenant: {str(e)}", None
@@ -1249,6 +1251,46 @@ app.config['PERMANENT_SESSION_LIFETIME'] = 3600
 # Tokens CSRF firmados. Complementa la validación por Origin/Referer
 # existente en _validar_origen_csrf() (defensa en profundidad).
 csrf = CSRFProtect(app)
+
+# =============================================
+# 📝 DT-47: CONFIGURACIÓN DE LOGGING CENTRALIZADO
+# =============================================
+# Nivel: DEBUG en desarrollo, INFO en producción.
+# Salida: consola + archivo rotativo (logs/panaderia.log).
+# El archivo rota al alcanzar 5MB, conservando hasta 5 backups.
+_log_level = logging.DEBUG if os.getenv('FLASK_ENV') == 'development' else logging.INFO
+
+logger = logging.getLogger('panaderia')
+logger.setLevel(_log_level)
+
+# Evitar handlers duplicados (Flask debug reload ejecuta el módulo 2 veces)
+if not logger.handlers:
+    _formatter = logging.Formatter(
+        '[%(asctime)s] %(levelname)s [%(name)s] %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+    
+    # Handler 1: consola
+    _console_handler = logging.StreamHandler()
+    _console_handler.setLevel(_log_level)
+    _console_handler.setFormatter(_formatter)
+    logger.addHandler(_console_handler)
+    
+    # Handler 2: archivo rotativo
+    try:
+        os.makedirs('logs', exist_ok=True)
+        _file_handler = RotatingFileHandler(
+            'logs/panaderia.log',
+            maxBytes=5 * 1024 * 1024,  # 5 MB
+            backupCount=5,
+            encoding='utf-8'
+        )
+        _file_handler.setLevel(_log_level)
+        _file_handler.setFormatter(_formatter)
+        logger.addHandler(_file_handler)
+    except Exception as e:
+        # Si no se puede crear el archivo, al menos funciona la consola
+        logger.warning(f"⚠️ No se pudo crear el archivo de log: {e}")
 
 # =============================================
 # 🗄️ CONFIGURACIÓN DE BASE DE DATOS (POSTGRESQL)
@@ -1365,7 +1407,7 @@ def configurar_search_path_en_checkout(dbapi_connection, connection_record, conn
 
     except Exception as e:
         # Silenciar errores para no romper requests
-        print(f"⚠️ [EVENT] Error configurando search_path en checkout: {e}")
+        logger.warning(f"⚠️ [EVENT] Error configurando search_path en checkout: {e}")
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -1458,7 +1500,7 @@ def load_user(user_id):
             db.session.rollback()
         except Exception:
             pass
-        print(f"⚠️ Error en user_loader: {e}")
+        logger.warning(f"⚠️ Error en user_loader: {e}")
 
     # ✅ Guardar en cache del request (incluso si es None, para no reintentar)
     g._load_user_cache = user
@@ -1670,7 +1712,7 @@ def set_tenant_schema(tenant_id):
         # print(f"🔧 PostgreSQL - Schema configurado: {schema_name}")
         return True
     except Exception as e:
-        print(f"❌ Error cambiando a schema {schema_name}: {e}")
+        logger.error(f"❌ Error cambiando a schema {schema_name}: {e}")
         # ✅ Fallback al schema public
         try:
             db.session.execute(text('SET search_path TO public'))
@@ -1703,14 +1745,14 @@ def verificar_y_crear_datos_tenant(tenant_id):
             )
             db.session.add(panaderia)
             db.session.commit()
-            print(f"✅ Panadería creada para tenant {tenant_id}")
+            logger.info(f"✅ Panadería creada para tenant {tenant_id}")
         
         # ✅ Verificar categorías - FORZAR RECARGA
         categorias = Categoria.query.filter_by(panaderia_id=tenant_id).all()
         
         
         if not categorias:
-            print(f"⚠️ No se encontraron categorías para tenant {tenant_id}. Creando...")
+            logger.warning(f"⚠️ No se encontraron categorías para tenant {tenant_id}. Creando...")
             
             categorias_default = [
                 Categoria(nombre="Panadería", panaderia_id=tenant_id),
@@ -1725,19 +1767,19 @@ def verificar_y_crear_datos_tenant(tenant_id):
             
             # ✅ REFRESCAR: Obtener IDs de las categorías recién creadas
             categorias = Categoria.query.filter_by(panaderia_id=tenant_id).all()
-            print(f"   ✅ Categorías creadas para tenant {tenant_id}")
+            logger.info(f"   ✅ Categorías creadas para tenant {tenant_id}")
         
             
         
                 # ✅ NUEVO: NO crear productos de prueba automáticamente
         # Los productos se crean cuando el usuario los registra
-        print(f"   ℹ️ Tenant {tenant_id}: Sin productos de prueba (se crearán por el usuario)")
+        logger.info(f"   ℹ️ Tenant {tenant_id}: Sin productos de prueba (se crearán por el usuario)")
         
         
         return True
         
     except Exception as e:
-        print(f"❌ Error en verificar_y_crear_datos_tenant para tenant {tenant_id}: {e}")
+        logger.error(f"❌ Error en verificar_y_crear_datos_tenant para tenant {tenant_id}: {e}")
         db.session.rollback()
         return False
 
@@ -1761,15 +1803,15 @@ def _validar_origen_csrf():
     from urllib.parse import urlparse
     _origen = request.headers.get('Origin') or request.headers.get('Referer')
     if not _origen:
-        print(f"⚠️ POST sin Origin/Referer: {request.method} {request.path}")
+        logger.warning(f"⚠️ POST sin Origin/Referer: {request.method} {request.path}")
         return None
     try:
         _origen_host = urlparse(_origen).netloc
         if _origen_host and _origen_host != request.host:
-            print(f"🚨 CSRF bloqueado: origen={_origen_host} host={request.host} path={request.path}")
+            logger.info(f"🚨 CSRF bloqueado: origen={_origen_host} host={request.host} path={request.path}")
             return jsonify({'success': False, 'error': 'Origen no autorizado.'}), 403
     except Exception as e:
-        print(f"⚠️ Error validando origen: {e}")
+        logger.warning(f"⚠️ Error validando origen: {e}")
         return jsonify({'success': False, 'error': 'Error validando origen.'}), 403
     return None
 
@@ -1830,7 +1872,7 @@ def _verificar_suscripcion(tenant_id):
             if request.endpoint and request.endpoint not in _RUTAS_PUBLICAS:
                 return redirect(url_for('suscripcion_vencida'))
     except Exception as e:
-        print(f"⚠️ Error verificando suscripción: {e}")
+        logger.warning(f"⚠️ Error verificando suscripción: {e}")
         try:
             db.session.rollback()
         except Exception:
@@ -1864,7 +1906,7 @@ def antes_de_cada_peticion():
     tenant = _detectar_tenant()
     if not tenant:
         session.clear()
-        print("⚠️ Sin tenant válido en request. Sesión limpiada. Redirigiendo a login.")
+        logger.warning("⚠️ Sin tenant válido en request. Sesión limpiada. Redirigiendo a login.")
         return redirect(url_for('login'))
 
     # 4. Setear contexto en g (contrato con security_utils)
@@ -1882,7 +1924,7 @@ def antes_de_cada_peticion():
     try:
         set_tenant_schema(tenant['id'])
     except Exception as e:
-        print(f"⚠️ Error configurando schema para tenant {tenant['id']}: {e}")
+        logger.warning(f"⚠️ Error configurando schema para tenant {tenant['id']}: {e}")
 
     # 7. Verificar suscripción
     response = _verificar_suscripcion(tenant['id'])
@@ -1928,18 +1970,18 @@ def es_super_usuario():
 
 def diagnosticar_recetas(panaderia_id):
     """Diagnóstico para ver qué recetas existen"""
-    print(f"🔍 DIAGNÓSTICO RECETAS - Panadería {panaderia_id}:")
+    logger.debug(f"🔍 DIAGNÓSTICO RECETAS - Panadería {panaderia_id}:")
     
     # Ver todas las recetas de esta panadería
     todas_recetas = Receta.query.filter_by(panaderia_id=panaderia_id).all()
-    print(f"   Total recetas en BD: {len(todas_recetas)}")
+    logger.info(f"   Total recetas en BD: {len(todas_recetas)}")
     
     for receta in todas_recetas:
-        print(f"   - '{receta.nombre}' (ID: {receta.id}, Activo: {receta.activo})")
+        logger.info(f"   - '{receta.nombre}' (ID: {receta.id}, Activo: {receta.activo})")
     
     # Ver recetas activas
     recetas_activas = Receta.query.filter_by(panaderia_id=panaderia_id, activo=True).all()
-    print(f"   Recetas activas: {len(recetas_activas)}")
+    logger.info(f"   Recetas activas: {len(recetas_activas)}")
     
     return len(recetas_activas)
 
@@ -1957,12 +1999,12 @@ def login():
         username = request.form['username']
         password = request.form['password']
         
-        print(f"🔍 [LOGIN] Buscando usuario: {username}")
+        logger.debug(f"🔍 [LOGIN] Buscando usuario: {username}")
         # ✅ DT-16 fix: no imprimir la URI completa (contiene password).
         # Mostrar solo el host y el nombre de la BD para diagnóstico.
         _uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
         _uri_safe = _uri.split('@')[-1] if '@' in _uri else _uri
-        print(f"🔍 [LOGIN] BD destino: ...@{_uri_safe}")
+        logger.debug(f"🔍 [LOGIN] BD destino: ...@{_uri_safe}")
         
         # 🔧 CORREGIDO: Buscar usuario en PostgreSQL usando SQLAlchemy
         from sqlalchemy import text
@@ -1999,10 +2041,10 @@ def login():
                     user_data = result.fetchone()
                     if user_data:
                         schema_actual = schema  # ✅ Guardar el schema
-                        print(f"✅ [LOGIN] Usuario encontrado en schema: {schema}")
+                        logger.info(f"✅ [LOGIN] Usuario encontrado en schema: {schema}")
                         break
         except Exception as e:
-            print(f"⚠️ Error buscando en schemas: {e}")
+            logger.warning(f"⚠️ Error buscando en schemas: {e}")
         
         # 2. Si no se encontró en schemas, buscar en public (para dev_master y otros)
         if not user_data:
@@ -2016,9 +2058,9 @@ def login():
                 
                 if user_data:
                     schema_actual = 'public'  # ✅ Guardar schema
-                    print(f"✅ [LOGIN] Usuario encontrado en public")
+                    logger.info(f"✅ [LOGIN] Usuario encontrado en public")
             except Exception as e:
-                print(f"⚠️ Error en consulta PostgreSQL: {e}")
+                logger.warning(f"⚠️ Error en consulta PostgreSQL: {e}")
                 user_data = None
         
         if user_data:
@@ -2039,14 +2081,14 @@ def login():
                 match = re.search(r'tenant_(\d+)', schema_actual)
                 if match:
                     tenant_id = int(match.group(1))
-                    print(f"🏪 [LOGIN] Tenant ID extraído del schema: {tenant_id}")
+                    logger.info(f"🏪 [LOGIN] Tenant ID extraído del schema: {tenant_id}")
             
             user.tenant_id = tenant_id
             
-            print(f"✅ [LOGIN] USUARIO ENCONTRADO: {user.username}")
-            print(f"📦 [LOGIN] Hash en BD: {user.password_hash}")
-            print(f"🏪 [LOGIN] Panadería ID: {user.panaderia_id}")
-            print(f"🏪 [LOGIN] Tenant ID: {user.tenant_id}")
+            logger.info(f"✅ [LOGIN] USUARIO ENCONTRADO: {user.username}")
+            logger.info(f"📦 [LOGIN] Hash en BD: {user.password_hash}")
+            logger.info(f"🏪 [LOGIN] Panadería ID: {user.panaderia_id}")
+            logger.info(f"🏪 [LOGIN] Tenant ID: {user.tenant_id}")
             
             # =============================================
             # ✅ CORREGIDO: Guardar tenant en sesión usando tenant_id REAL
@@ -2054,13 +2096,13 @@ def login():
             schema_name = f"tenant_{tenant_id}"
             session['tenant_id'] = tenant_id
             session['tenant_schema'] = schema_name
-            print(f"🏪 [LOGIN] Tenant asignado: {schema_name} (tenant_id: {tenant_id})")
+            logger.info(f"🏪 [LOGIN] Tenant asignado: {schema_name} (tenant_id: {tenant_id})")
             
             # 🎯 ARQUITECTURA PROFESIONAL - MÚLTIPLES MÉTODOS DE VERIFICACIÓN
             login_exitoso, metodo_usado = verificar_credenciales(user, password)
             
             if login_exitoso:
-                print(f"✅ [LOGIN] Verificación exitosa con método: {metodo_usado}")
+                logger.info(f"✅ [LOGIN] Verificación exitosa con método: {metodo_usado}")
                 
                 # 🔐 REGISTRO DE ACTIVIDAD (PREPARACIÓN PARA AUDITORÍA)
                 registrar_intento_login(user.id, True, metodo_usado)
@@ -2116,21 +2158,21 @@ def login():
                 session['rol'] = user.rol
                 session['panaderia_id'] = user.panaderia_id
                 
-                print(f"✅ [LOGIN] Login exitoso: {username}")
+                logger.info(f"✅ [LOGIN] Login exitoso: {username}")
                 flash('Inicio de sesión exitoso!', 'success')
                 return redirect(url_for('dashboard'))
             else:
                 # 🔐 REGISTRO DE INTENTO FALLIDO
                 registrar_intento_login(user.id, False, 'fallido')
-                print(f"❌ [LOGIN] Todas las verificaciones fallaron")
+                logger.error(f"❌ [LOGIN] Todas las verificaciones fallaron")
         
         else:
-            print(f"❌ [LOGIN] USUARIO NO ENCONTRADO en PostgreSQL")
+            logger.error(f"❌ [LOGIN] USUARIO NO ENCONTRADO en PostgreSQL")
             # 🔐 REGISTRO DE INTENTO FALLIDO (usuario no existe)
             registrar_intento_login(None, False, 'usuario_no_existe')
         
         flash('Usuario o contraseña incorrectos', 'error')
-        print(f"❌ [LOGIN] Login fallido para: {username}")
+        logger.error(f"❌ [LOGIN] Login fallido para: {username}")
     
     # =============================================
     # 🔍 OBTENER TENANT PARA MOSTRAR EN EL LOGIN
@@ -2148,7 +2190,7 @@ def login():
             if tenant:
                 tenant_actual = tenant.nombre
         except Exception as e:
-            print(f"⚠️ Error obteniendo tenant para login: {e}")
+            logger.warning(f"⚠️ Error obteniendo tenant para login: {e}")
     
     # Si el usuario está autenticado, usar su panadería
     if hasattr(current_user, 'is_authenticated') and current_user.is_authenticated:
@@ -2161,7 +2203,7 @@ def login():
                     tenant_actual = tenant.nombre
                     tenant_id = current_user.panaderia_id
         except Exception as e:
-            print(f"⚠️ Error obteniendo tenant del usuario: {e}")
+            logger.warning(f"⚠️ Error obteniendo tenant del usuario: {e}")
     
     return render_template('login.html', 
                          tenant_actual=tenant_actual,
@@ -2179,10 +2221,10 @@ def verificar_credenciales(user, password):
         if check_password_hash(user.password_hash, password):
             return True, 'hash_seguro'
         else:
-            print(f"❌ [VERIFICACIÓN] Hash no coincide")
+            logger.error(f"❌ [VERIFICACIÓN] Hash no coincide")
             return False, 'fallido'
     except Exception as e:
-        print(f"⚠️ [VERIFICACIÓN] Error: {e}")
+        logger.warning(f"⚠️ [VERIFICACIÓN] Error: {e}")
         return False, 'error'
     
     # 🆕 ESPACIO RESERVADO PARA MÉTODOS FUTUROS
@@ -2198,7 +2240,7 @@ def registrar_intento_login(user_id, exitoso, metodo):
     """
     try:
         # 📊 LOG TEMPORAL - EN FASE 2 SE MIGRA A BASE DE DATOS
-        print(f"📊 [AUDITORÍA] Login - UserID: {user_id}, Exitoso: {exitoso}, Método: {metodo}")
+        logger.info(f"📊 [AUDITORÍA] Login - UserID: {user_id}, Exitoso: {exitoso}, Método: {metodo}")
         
         # 🆕 CÓDIGO PREPARADO PARA FASE 2 (ACTUALMENTE COMENTADO)
         # from datetime import datetime
@@ -2216,7 +2258,7 @@ def registrar_intento_login(user_id, exitoso, metodo):
         # db.session.commit()
         
     except Exception as e:
-        print(f"⚠️ [AUDITORÍA] Error registrando intento: {e}")
+        logger.warning(f"⚠️ [AUDITORÍA] Error registrando intento: {e}")
 
 # Ruta de fallback segura
 @app.route('/acceso_denegado')
@@ -2239,11 +2281,11 @@ def dashboard():
     # ✅ VERIFICACIÓN SEGURA
     try:
         if hasattr(current_user, 'is_authenticated') and current_user.is_authenticated:
-            print(f"🔍 [DEBUG] Usuario: {current_user.username}, Rol: {current_user.rol}, Authenticated: {current_user.is_authenticated}")
+            logger.debug(f"🔍 [DEBUG] Usuario: {current_user.username}, Rol: {current_user.rol}, Authenticated: {current_user.is_authenticated}")
         else:
-            print("🔍 [DEBUG] Usuario: No autenticado")
+            logger.debug("🔍 [DEBUG] Usuario: No autenticado")
     except Exception as e:
-        print(f"🔍 [DEBUG] Error obteniendo usuario: {e}")
+        logger.debug(f"🔍 [DEBUG] Error obteniendo usuario: {e}")
     return render_template('dashboard.html', username=session.get('username', 'Usuario'))
 
 @app.route('/recuperar_password')
@@ -2285,10 +2327,10 @@ def punto_venta():
     clientes = Cliente.query.filter_by(activo=True, panaderia_id=current_user.panaderia_id).all()
     
     # Debug temporal para verificar
-    print(f"DEBUG PUNTO VENTA: Panadería {panaderia_actual}")
-    print(f"DEBUG: {len(productos_internos)} productos internos")
-    print(f"DEBUG: {len(productos_externos)} productos externos")
-    print(f"DEBUG: {len(categorias)} categorías")
+    logger.debug(f"DEBUG PUNTO VENTA: Panadería {panaderia_actual}")
+    logger.debug(f"DEBUG: {len(productos_internos)} productos internos")
+    logger.debug(f"DEBUG: {len(productos_externos)} productos externos")
+    logger.debug(f"DEBUG: {len(categorias)} categorías")
     
     return render_template('punto_venta.html',
                          productos_internos=productos_internos,
@@ -2363,32 +2405,32 @@ def buscar_producto():
         # 🔍 DIAGNÓSTICO COMPLETO
     user_id = session.get('user_id')
     panaderia_id = obtener_panaderia_actual()
-    print(f"🔍 DIAGNÓSTICO buscar_producto:")
-    print(f"   👤 User ID: {user_id}")
-    print(f"   🏪 Panadería ID: {panaderia_id}")
-    print(f"   👑 Es super usuario: {es_super_usuario()}")
-    print(f"   🔍 Query: '{query}'")
+    logger.debug(f"🔍 DIAGNÓSTICO buscar_producto:")
+    logger.info(f"   👤 User ID: {user_id}")
+    logger.info(f"   🏪 Panadería ID: {panaderia_id}")
+    logger.info(f"   👑 Es super usuario: {es_super_usuario()}")
+    logger.debug(f"   🔍 Query: '{query}'")
     
     # ✅ ✅ ✅ NUEVO: BLOQUE SUPER USUARIO (AGREGA ESTO) ✅ ✅ ✅
     if es_super_usuario():
-        print("🔍 Super usuario realizando búsqueda - retornando vacío")
+        logger.debug("🔍 Super usuario realizando búsqueda - retornando vacío")
         return jsonify([])  # Super usuario no ve productos en búsqueda
     # ✅ ✅ ✅ FIN BLOQUE SUPER USUARIO ✅ ✅ ✅
     
     try:
         resultados = []
         
-        print(f"🔍 Iniciando búsqueda con query: '{query}'")
+        logger.debug(f"🔍 Iniciando búsqueda con query: '{query}'")
         
         # PRODUCTOS DE PANADERÍA
         from utilidades.consultas_filtradas import productos_activos_con_stock
         productos_panaderia = productos_activos_con_stock().all()
-        print(f"🍞 Productos panadería encontrados: {len(productos_panaderia)}")
+        logger.info(f"🍞 Productos panadería encontrados: {len(productos_panaderia)}")
         
         # PRODUCTOS EXTERNOS
         from utilidades.consultas_filtradas import productos_externos_activos_con_stock
         productos_externos = productos_externos_activos_con_stock().all()
-        print(f"🥤 Productos externos encontrados: {len(productos_externos)}")
+        logger.info(f"🥤 Productos externos encontrados: {len(productos_externos)}")
         
         # AGREGAR PRODUCTOS DE PANADERÍA
         for producto in productos_panaderia:
@@ -2403,7 +2445,7 @@ def buscar_producto():
                     'tipo_producto': getattr(producto, 'tipo_producto', 'produccion'),
                     'es_externo': False
                 })
-                print(f"✅ Agregado panadería: {producto.nombre}")
+                logger.info(f"✅ Agregado panadería: {producto.nombre}")
         
         # AGREGAR PRODUCTOS EXTERNOS
         for producto in productos_externos:
@@ -2419,18 +2461,18 @@ def buscar_producto():
                     'es_externo': True,
                     'producto_externo_id': producto.id
                 })
-                print(f"✅ Agregado externo: {producto.nombre}")
+                logger.info(f"✅ Agregado externo: {producto.nombre}")
         
-        print(f"🎯 Total resultados: {len(resultados)}")
+        logger.info(f"🎯 Total resultados: {len(resultados)}")
         
         # DEBUG: Mostrar primeros resultados
         for i, r in enumerate(resultados[:3]):
-            print(f"  {i+1}. {r['nombre']} (ID: {r['id']}, Precio: {r['precio']})")
+            logger.info(f"  {i+1}. {r['nombre']} (ID: {r['id']}, Precio: {r['precio']})")
         
         return jsonify(resultados)
         
     except Exception as e:
-        print(f"❌ Error en búsqueda de productos: {e}")
+        logger.error(f"❌ Error en búsqueda de productos: {e}")
         import traceback
         traceback.print_exc()
         return jsonify([])
@@ -2471,7 +2513,7 @@ def obtener_consecutivo_pos():
         # 1. Obtener panaderia_id
         panaderia_id = current_user.panaderia_id
         schema_name = f"tenant_{panaderia_id}"
-        print(f"🔢 [CONSECUTIVO] Panadería ID: {panaderia_id} (schema: {schema_name})")
+        logger.info(f"🔢 [CONSECUTIVO] Panadería ID: {panaderia_id} (schema: {schema_name})")
         
         # 2. Verificar si existe la tabla consecutivos_pos en el schema
         check_table = db.session.execute(
@@ -2486,7 +2528,7 @@ def obtener_consecutivo_pos():
         
         # 3. Crear tabla si no existe
         if not check_table:
-            print(f"📝 Creando tabla consecutivos_pos en {schema_name}...")
+            logger.info(f"📝 Creando tabla consecutivos_pos en {schema_name}...")
             db.session.execute(sql_text(f"""
                 CREATE TABLE IF NOT EXISTS {schema_name}.consecutivos_pos (
                     id SERIAL PRIMARY KEY,
@@ -2531,12 +2573,12 @@ def obtener_consecutivo_pos():
             )
         
         db.session.commit()
-        print(f"✅ [CONSECUTIVO] Nuevo: {nuevo_numero}")
+        logger.info(f"✅ [CONSECUTIVO] Nuevo: {nuevo_numero}")
         return nuevo_numero
         
     except Exception as e:
         db.session.rollback()
-        print(f"❌ [CONSECUTIVO] Error: {e}")
+        logger.error(f"❌ [CONSECUTIVO] Error: {e}")
         import traceback
         traceback.print_exc()
         return 1  # Fallback seguro
@@ -2561,7 +2603,7 @@ def obtener_configuracion_sistema():
         try:
             db.session.execute(sql_text(f'SET search_path TO {schema_name}, public'))
         except Exception as e:
-            print(f"⚠️ [CONFIG] No se pudo configurar search_path a {schema_name}: {e}")
+            logger.warning(f"⚠️ [CONFIG] No se pudo configurar search_path a {schema_name}: {e}")
         
         config = ConfiguracionSistema.query.filter_by(panaderia_id=panaderia_id).first()
         
@@ -2589,9 +2631,9 @@ def obtener_configuracion_sistema():
                     nit_real = result[1] or ''
                     direccion_real = result[2] or ''
                     telefono_real = result[3] or ''
-                    print(f"✅ [CONFIG] Datos obtenidos: {nombre_real}")
+                    logger.info(f"✅ [CONFIG] Datos obtenidos: {nombre_real}")
             except Exception as e:
-                print(f"⚠️ [CONFIG] No se pudo obtener configuracion_panaderia: {e}")
+                logger.warning(f"⚠️ [CONFIG] No se pudo obtener configuracion_panaderia: {e}")
             
             config = ConfiguracionSistema(
                 panaderia_id=panaderia_id,
@@ -2605,12 +2647,12 @@ def obtener_configuracion_sistema():
             )
             db.session.add(config)
             db.session.commit()
-            print(f"✅ Configuración creada para panadería {panaderia_id}")
+            logger.info(f"✅ Configuración creada para panadería {panaderia_id}")
         
         return config
         
     except Exception as e:
-        print(f"Error obteniendo configuración: {e}")
+        logger.info(f"Error obteniendo configuración: {e}")
         # Retornar objeto por defecto en caso de error
         return type('ConfigDefault', (), {
             'panaderia_id': 1,
@@ -2659,7 +2701,7 @@ def obtener_configuracion_moneda():
             'pais': MONEDAS.get(moneda_code, MONEDAS['COP'])['pais']
         }
     except Exception as e:
-        print(f"⚠️ Error obteniendo config moneda: {e}")
+        logger.warning(f"⚠️ Error obteniendo config moneda: {e}")
         return {
             'moneda': 'COP',
             'usa_centavos': False,
@@ -2677,10 +2719,10 @@ def reiniciar_consecutivo_pos():
         if consecutivo:
             consecutivo.numero_actual = 0
             db.session.commit()
-            print("✅ Consecutivo POS reiniciado a 0")
+            logger.info("✅ Consecutivo POS reiniciado a 0")
         return True
     except Exception as e:
-        print(f"❌ Error reiniciando consecutivo: {e}")
+        logger.error(f"❌ Error reiniciando consecutivo: {e}")
         return False
     
 # =============================================
@@ -2756,7 +2798,7 @@ def api_consecutivo_pos_estado():
             })
         
     except Exception as e:
-        print(f"❌ Error obteniendo estado consecutivo: {e}")
+        logger.error(f"❌ Error obteniendo estado consecutivo: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -2831,7 +2873,7 @@ def api_consecutivo_pos_reiniciar():
             )
         
         db.session.commit()
-        print(f"✅ [CONSECUTIVO] Reiniciado a 0 para panadería {panaderia_id}")
+        logger.info(f"✅ [CONSECUTIVO] Reiniciado a 0 para panadería {panaderia_id}")
         
         return jsonify({
             'success': True,
@@ -2840,7 +2882,7 @@ def api_consecutivo_pos_reiniciar():
         
     except Exception as e:
         db.session.rollback()
-        print(f"❌ Error reiniciando consecutivo: {e}")
+        logger.error(f"❌ Error reiniciando consecutivo: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -2893,7 +2935,7 @@ def api_dashboard_metricas_hoy():
         })
         
     except Exception as e:
-        print(f"❌ Error obteniendo métricas del dashboard: {e}")
+        logger.error(f"❌ Error obteniendo métricas del dashboard: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({
@@ -2912,8 +2954,8 @@ def api_dashboard_metricas_hoy():
 @tenant_required
 def registrar_venta():
     """Registrar venta - VERSIÓN CORREGIDA MULTI-TENANT (PostgreSQL)"""
-    print("🛒 DEBUG - INICIANDO REGISTRO DE VENTA")
-    print(f"👤 User ID en sesión: {session.get('user_id')}")
+    logger.debug("🛒 DEBUG - INICIANDO REGISTRO DE VENTA")
+    logger.info(f"👤 User ID en sesión: {session.get('user_id')}")
     
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'No autorizado'})
@@ -2922,7 +2964,7 @@ def registrar_venta():
         # 🎯 OBTENER USUARIO ACTUAL PARA panaderia_id
         usuario_actual = db.session.get(Usuario, session["user_id"])
         panaderia_id = usuario_actual.panaderia_id
-        print(f"🏪 DEBUG - Panadería ID del usuario: {panaderia_id}")
+        logger.debug(f"🏪 DEBUG - Panadería ID del usuario: {panaderia_id}")
         
         data = request.get_json()
         carrito = data.get('carrito', [])
@@ -2934,7 +2976,7 @@ def registrar_venta():
         es_donacion = data.get('es_donacion', False)
         motivo_donacion = data.get('motivo_donacion', '')
         
-        print(f'🛒 Datos de venta recibidos - Cliente: {cliente_id}, Tipo: {tipo_documento_solicitado}, Donación: {es_donacion}')
+        logger.info(f'🛒 Datos de venta recibidos - Cliente: {cliente_id}, Tipo: {tipo_documento_solicitado}, Donación: {es_donacion}')
         
         # 🆕 OBTENER CONFIGURACIÓN DEL SISTEMA
         config = obtener_configuracion_sistema()
@@ -2981,7 +3023,7 @@ def registrar_venta():
                         total_venta += cantidad * producto.precio_venta
         else:
             total_venta = 0
-            print(f"🎁 REGISTRANDO DONACIÓN - Motivo: {motivo_donacion}")
+            logger.info(f"🎁 REGISTRANDO DONACIÓN - Motivo: {motivo_donacion}")
         
         # 🎯 FECHA/HORA CON TIMEZONE CORRECTO (Colombia UTC-5)
         tz_colombia = timezone(timedelta(hours=-5))
@@ -3004,8 +3046,8 @@ def registrar_venta():
         db.session.add(nueva_venta)
         db.session.flush()
         
-        print(f"✅ Venta creada con panaderia_id: {nueva_venta.panaderia_id}")
-        print(f"📅 Fecha registrada: {fecha_hora}")
+        logger.info(f"✅ Venta creada con panaderia_id: {nueva_venta.panaderia_id}")
+        logger.info(f"📅 Fecha registrada: {fecha_hora}")
         
         # ⭐⭐⭐ CORRECCIÓN: OBTENER DATOS DE PANADERÍA DESDE POSTGRESQL ⭐⭐⭐
         nombre_panaderia = f"Panadería {panaderia_id}"
@@ -3036,12 +3078,12 @@ def registrar_venta():
                 nit_panaderia = result[1] or "NIT_NO_REGISTRADO"
                 direccion_panaderia = result[2] or "Dirección no registrada"
                 telefono_panaderia = result[3] or "Teléfono no registrado"
-                print(f"🏪 Datos obtenidos desde PostgreSQL: {nombre_panaderia}")
+                logger.info(f"🏪 Datos obtenidos desde PostgreSQL: {nombre_panaderia}")
             else:
-                print(f"⚠️ No hay configuración para panadería_id {panaderia_id}")
+                logger.warning(f"⚠️ No hay configuración para panadería_id {panaderia_id}")
                 
         except Exception as e:
-            print(f"⚠️ Error obteniendo datos del tenant: {e}")
+            logger.warning(f"⚠️ Error obteniendo datos del tenant: {e}")
         
         detalles_venta = []
         
@@ -3125,7 +3167,7 @@ def registrar_venta():
         
         # ✅ GUARDAR VENTA Y DETALLES EN POSTGRESQL
         db.session.commit()
-        print(f"✅ Venta guardada en PostgreSQL - ID: {nueva_venta.id}")
+        logger.info(f"✅ Venta guardada en PostgreSQL - ID: {nueva_venta.id}")
         
         # ✅ CREAR RESPUESTA (sin tabla facturas separada, ya está en Venta)
         respuesta = {
@@ -3150,22 +3192,22 @@ def registrar_venta():
             cliente = Cliente.query.filter_by(id=cliente_id, panaderia_id=current_user.panaderia_id).first()
             if cliente:
                 respuesta['cliente'] = cliente.to_dict()
-                print(f'✅ Cliente incluido: {cliente.nombre}')
+                logger.info(f'✅ Cliente incluido: {cliente.nombre}')
         
         if 'carrito' in session:
             session.pop('carrito')
             session.modified = True
         
         if es_donacion:
-            print(f'🎁 DONACIÓN REGISTRADA - ID: {nueva_venta.id}')
+            logger.info(f'🎁 DONACIÓN REGISTRADA - ID: {nueva_venta.id}')
         else:
-            print(f'✅ Venta registrada - ID: {nueva_venta.id}, Total: ${total_venta}')
+            logger.info(f'✅ Venta registrada - ID: {nueva_venta.id}, Total: ${total_venta}')
         
         return jsonify(respuesta)
         
     except Exception as e:
         db.session.rollback()
-        print(f"❌ Error al registrar venta: {e}")
+        logger.error(f"❌ Error al registrar venta: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)})
@@ -3182,7 +3224,7 @@ def guardar_cliente():
     """
     try:
         data = request.get_json()
-        print('📝 Datos del cliente recibidos:', data)
+        logger.info('📝 Datos del cliente recibidos:', data)
         
         # ✅ VALIDAR DATOS OBLIGATORIOS
         if not data.get('documento') or not data.get('nombre'):
@@ -3233,7 +3275,7 @@ def guardar_cliente():
         
         db.session.commit()
         
-        print(f'✅ Cliente {accion} exitosamente:', cliente.id)
+        logger.info(f'✅ Cliente {accion} exitosamente:', cliente.id)
         
         return jsonify({
             'success': True,
@@ -3243,7 +3285,7 @@ def guardar_cliente():
         
     except Exception as e:
         db.session.rollback()
-        print(f'❌ Error guardando cliente: {str(e)}')
+        logger.error(f'❌ Error guardando cliente: {str(e)}')
         return jsonify({
             'success': False,
             'error': f'Error al guardar cliente: {str(e)}'
@@ -3265,12 +3307,12 @@ def obtener_clientes_recientes():
         
         clientes_data = [cliente.to_dict() for cliente in clientes]
         
-        print(f'✅ Clientes recientes encontrados: {len(clientes_data)}')
+        logger.info(f'✅ Clientes recientes encontrados: {len(clientes_data)}')
         
         return jsonify(clientes_data)
         
     except Exception as e:
-        print(f'❌ Error obteniendo clientes recientes: {str(e)}')
+        logger.error(f'❌ Error obteniendo clientes recientes: {str(e)}')
         return jsonify([])
 
 @app.route('/api/buscar-cliente/<string:documento>', methods=['GET'])
@@ -3295,7 +3337,7 @@ def buscar_cliente(documento):
             })
             
     except Exception as e:
-        print(f'❌ Error buscando cliente: {str(e)}')
+        logger.error(f'❌ Error buscando cliente: {str(e)}')
         return jsonify({
             'success': False,
             'error': str(e)
@@ -3318,7 +3360,7 @@ def obtener_configuracion_sistema_api():
         })
         
     except Exception as e:
-        print(f'❌ Error obteniendo configuración: {str(e)}')
+        logger.error(f'❌ Error obteniendo configuración: {str(e)}')
         return jsonify({
             'tipo_facturacion': 'POS',
             'nombre_empresa': 'Mi Empresa',
@@ -3368,7 +3410,7 @@ def api_cargar_datos_panaderia():
             })
             
     except Exception as e:
-        print(f"❌ Error cargando datos de panadería: {e}")
+        logger.error(f"❌ Error cargando datos de panadería: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -3523,12 +3565,12 @@ def imprimir_factura_electronica(venta_id):
         config = obtener_configuracion_sistema()
         
         # 🆕 DEBUG: Verificar datos del cliente
-        print(f"🔍 DEBUG Factura Electrónica - Venta ID: {venta_id}")
-        print(f"🔍 DEBUG Cliente ID: {venta.cliente_id}")
+        logger.debug(f"🔍 DEBUG Factura Electrónica - Venta ID: {venta_id}")
+        logger.debug(f"🔍 DEBUG Cliente ID: {venta.cliente_id}")
         if venta.cliente:
-            print(f"🔍 DEBUG Datos Cliente: {venta.cliente.nombre}, {venta.cliente.documento}")
+            logger.debug(f"🔍 DEBUG Datos Cliente: {venta.cliente.nombre}, {venta.cliente.documento}")
         else:
-            print("🔍 DEBUG: No hay cliente asociado a esta venta")
+            logger.debug("🔍 DEBUG: No hay cliente asociado a esta venta")
         
         # Verificar si es factura electrónica
         if venta.tipo_documento != 'ELECTRONICA':
@@ -3558,8 +3600,8 @@ def recibo_pos(venta_id):
         from datetime import datetime
         
         panaderia_id = current_user.panaderia_id
-        print(f"🔍 [RECIBO] Panadería ID: {panaderia_id}")
-        print(f"🔍 [RECIBO] Venta ID: {venta_id}")
+        logger.debug(f"🔍 [RECIBO] Panadería ID: {panaderia_id}")
+        logger.debug(f"🔍 [RECIBO] Venta ID: {venta_id}")
         
         # ✅ BUSCAR VENTA EN POSTGRESQL (multi-tenant automático)
         venta = Venta.query.filter_by(
@@ -3568,16 +3610,16 @@ def recibo_pos(venta_id):
         ).first()
         
         if not venta:
-            print(f"❌ [RECIBO] Venta {venta_id} no encontrada")
+            logger.error(f"❌ [RECIBO] Venta {venta_id} no encontrada")
             flash('Venta no encontrada', 'error')
             return redirect(url_for('punto_venta'))
         
-        print(f"✅ [RECIBO] Venta encontrada - Total: ${venta.total}")
+        logger.info(f"✅ [RECIBO] Venta encontrada - Total: ${venta.total}")
         
         # ✅ OBTENER DETALLES DE LA VENTA
         detalles = DetalleVenta.query.filter_by(venta_id=venta_id).all()
         
-        print(f"📋 [RECIBO] Detalles encontrados: {len(detalles)}")
+        logger.info(f"📋 [RECIBO] Detalles encontrados: {len(detalles)}")
         
         # ✅ OBTENER CONFIGURACIÓN
         config = obtener_configuracion_sistema()
@@ -3588,7 +3630,7 @@ def recibo_pos(venta_id):
                              config=config)
                              
     except Exception as e:
-        print(f"❌ [RECIBO] Error: {e}")
+        logger.error(f"❌ [RECIBO] Error: {e}")
         import traceback
         traceback.print_exc()
         flash(f'Error al generar recibo: {str(e)}', 'error')
@@ -3624,7 +3666,7 @@ def agregar_al_carrito():
         session['carrito'] = carrito
         session.modified = True
         
-        print(f"Carrito actualizado: {session['carrito']}")  # Para debug
+        logger.debug(f"Carrito actualizado: {session['carrito']}")  # Para debug
         
         return jsonify({
             'success': True, 
@@ -3633,7 +3675,7 @@ def agregar_al_carrito():
         })
     
     except Exception as e:
-        print(f"Error: {e}")  # Para debug
+        logger.warning(f"Error: {e}")  # Para debug
         return jsonify({'success': False, 'message': 'Error interno del servidor'})
 
 # Ruta para cerrar sesión
@@ -3861,7 +3903,7 @@ def crear_producto_externo():
     
     except Exception as e:
         db.session.rollback()
-        print(f"❌ Error creando producto externo: {e}")
+        logger.error(f"❌ Error creando producto externo: {e}")
         import traceback
         traceback.print_exc()
         flash(f'❌ Error al crear producto: {str(e)}', 'error')
@@ -4006,9 +4048,9 @@ def registrar_compra_externa():
                 if result:
                     proveedor_id_final = proveedor_id_int
                 else:
-                    print(f"⚠️ Proveedor {proveedor_id_int} no encontrado, se guardará NULL")
+                    logger.warning(f"⚠️ Proveedor {proveedor_id_int} no encontrado, se guardará NULL")
             except (ValueError, TypeError) as e:
-                print(f"⚠️ Error convirtiendo proveedor_id: {e}")
+                logger.warning(f"⚠️ Error convirtiendo proveedor_id: {e}")
         
         # ✅ Registrar la compra con los nombres CORRECTOS de columnas
         compra = CompraExterna(
@@ -4037,7 +4079,7 @@ def registrar_compra_externa():
         
     except Exception as e:
         db.session.rollback()
-        print(f"❌ Error al registrar compra externa: {e}")
+        logger.error(f"❌ Error al registrar compra externa: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'message': f'Error: {str(e)}'})
@@ -4161,14 +4203,14 @@ def agregar_materia_prima():
             # =============================================
             # 🔍 INVESTIGACIÓN: LOGS DE DEPURACIÓN
             # =============================================
-            print("=" * 70)
-            print("🔍 [INVESTIGACIÓN] AGREGAR MATERIA PRIMA")
-            print("=" * 70)
+            logger.info("=" * 70)
+            logger.debug("🔍 [INVESTIGACIÓN] AGREGAR MATERIA PRIMA")
+            logger.info("=" * 70)
             
             # 1. Verificar el ID del proveedor recibido
-            print(f"📌 proveedor_id recibido: {proveedor_id}")
-            print(f"📌 panaderia_id actual: {current_user.panaderia_id}")
-            print(f"📌 session['user_id']: {session.get('user_id')}")
+            logger.info(f"📌 proveedor_id recibido: {proveedor_id}")
+            logger.info(f"📌 panaderia_id actual: {current_user.panaderia_id}")
+            logger.info(f"📌 session['user_id']: {session.get('user_id')}")
             
             # 2. Verificar si el proveedor existe en la base de datos
             from sqlalchemy import text
@@ -4178,34 +4220,34 @@ def agregar_materia_prima():
             ).fetchone()
             
             if proveedor_check:
-                print(f"✅ [DB] Proveedor encontrado en BD:")
-                print(f"   - ID: {proveedor_check[0]}")
-                print(f"   - Nombre: {proveedor_check[1]}")
-                print(f"   - Activo: {proveedor_check[2]}")
-                print(f"   - panaderia_id: {proveedor_check[3]}")
+                logger.info(f"✅ [DB] Proveedor encontrado en BD:")
+                logger.info(f"   - ID: {proveedor_check[0]}")
+                logger.info(f"   - Nombre: {proveedor_check[1]}")
+                logger.info(f"   - Activo: {proveedor_check[2]}")
+                logger.info(f"   - panaderia_id: {proveedor_check[3]}")
             else:
-                print(f"❌ [DB] Proveedor NO encontrado en BD con ID: {proveedor_id}")
+                logger.error(f"❌ [DB] Proveedor NO encontrado en BD con ID: {proveedor_id}")
             
             # 3. Verificar el objeto Proveedor en la sesión de SQLAlchemy
             try:
                 proveedor_obj = Proveedor.query.get(proveedor_id)
                 if proveedor_obj:
-                    print(f"✅ [ORM] Proveedor encontrado en ORM:")
-                    print(f"   - ID: {proveedor_obj.id}")
-                    print(f"   - Nombre: {proveedor_obj.nombre}")
-                    print(f"   - ¿Está en sesión? {db.session.object_session(proveedor_obj) is not None}")
+                    logger.info(f"✅ [ORM] Proveedor encontrado en ORM:")
+                    logger.info(f"   - ID: {proveedor_obj.id}")
+                    logger.info(f"   - Nombre: {proveedor_obj.nombre}")
+                    logger.info(f"   - ¿Está en sesión? {db.session.object_session(proveedor_obj) is not None}")
                 else:
-                    print(f"❌ [ORM] Proveedor NO encontrado en ORM con ID: {proveedor_id}")
+                    logger.error(f"❌ [ORM] Proveedor NO encontrado en ORM con ID: {proveedor_id}")
             except Exception as e:
-                print(f"⚠️ [ORM] Error al obtener proveedor: {e}")
+                logger.warning(f"⚠️ [ORM] Error al obtener proveedor: {e}")
             
             # 4. Verificar el estado de la sesión
-            print(f"📌 Estado de la sesión: {db.session.is_active}")
+            logger.info(f"📌 Estado de la sesión: {db.session.is_active}")
             # 4. Verificar el estado de la sesión
-            print(f"📌 Estado de la sesión: {db.session.is_active}")
-            print(f"📌 Transacción activa: {db.session.is_active}")  # ✅ CORREGIDO
+            logger.info(f"📌 Estado de la sesión: {db.session.is_active}")
+            logger.debug(f"📌 Transacción activa: {db.session.is_active}")  # ✅ CORREGIDO
             
-            print("=" * 70)
+            logger.info("=" * 70)
             # =============================================
             # FIN DE LOGS DE DEPURACIÓN
             # =============================================
@@ -4392,7 +4434,7 @@ def editar_materia_prima(id):
             return redirect(url_for('editar_materia_prima', id=id))
         except Exception as e:
             db.session.rollback()
-            print(f"❌ Error en editar_materia_prima: {e}")
+            logger.error(f"❌ Error en editar_materia_prima: {e}")
             import traceback
             traceback.print_exc()
             flash(f'Error inesperado al actualizar la materia prima: {str(e)}', 'error')
@@ -4466,7 +4508,7 @@ def recetas():
     
     # ✅ CORREGIDO: Usar current_user.panaderia_id en lugar de función personalizada
     panaderia_actual = current_user.panaderia_id
-    print(f"🔍 DEBUG RECETAS: Panadería actual: {panaderia_actual}")
+    logger.debug(f"🔍 DEBUG RECETAS: Panadería actual: {panaderia_actual}")
     
     # ✅ BLOQUE SUPER USUARIO: redirigir a gestión de clientes
     if es_super_usuario():
@@ -4498,10 +4540,10 @@ def recetas():
     total_activas = Receta.query.filter_by(panaderia_id=panaderia_actual, activo=True).count()
     total_inactivas = Receta.query.filter_by(panaderia_id=panaderia_actual, activo=False).count()
     
-    print(f"🔍 DEBUG RECETAS: Recetas encontradas para panadería {panaderia_actual}: {len(recetas_panaderia)}")
-    print(f"   - Activas: {total_activas}, Inactivas: {total_inactivas}, Filtro: {estado}")
+    logger.debug(f"🔍 DEBUG RECETAS: Recetas encontradas para panadería {panaderia_actual}: {len(recetas_panaderia)}")
+    logger.info(f"   - Activas: {total_activas}, Inactivas: {total_inactivas}, Filtro: {estado}")
     for receta in recetas_panaderia:
-        print(f"   - {receta.nombre} (ID: {receta.id}, Activo: {receta.activo})")
+        logger.info(f"   - {receta.nombre} (ID: {receta.id}, Activo: {receta.activo})")
     
     # 🆕 PASAR TODAS LAS VARIABLES AL TEMPLATE (ACTUALIZADO)
     return render_template(
@@ -4822,12 +4864,12 @@ def crear_receta():
     
     # ✅ DEBUG PARA CONFIRMAR PANADERÍA
     panaderia_actual = current_user.panaderia_id
-    print(f"🔍 DEBUG CREAR_RECETA: Panadería actual: {panaderia_actual}")
-    print(f"🔍 DEBUG CREAR_RECETA: User ID: {session.get('user_id')}")
+    logger.debug(f"🔍 DEBUG CREAR_RECETA: Panadería actual: {panaderia_actual}")
+    logger.debug(f"🔍 DEBUG CREAR_RECETA: User ID: {session.get('user_id')}")
     
     # ✅ CORREGIDO: Filtrar materias primas por tenant
     materias_primas = MateriaPrima.query.filter_by(activo=True, panaderia_id=panaderia_actual).all()
-    print(f"🔍 Materias primas encontradas: {len(materias_primas)}")
+    logger.debug(f"🔍 Materias primas encontradas: {len(materias_primas)}")
     
     if request.method == 'POST':
         try:
@@ -4999,7 +5041,7 @@ def obtener_categoria_id(nombre_categoria, panaderia_id):
         categoria = Categoria(nombre=nombre_categoria, panaderia_id=panaderia_id)
         db.session.add(categoria)
         db.session.commit()
-        print(f"✅ Nueva categoría creada: {nombre_categoria} para panadería {panaderia_id}")
+        logger.info(f"✅ Nueva categoría creada: {nombre_categoria} para panadería {panaderia_id}")
     
     return categoria.id
 
@@ -5316,7 +5358,7 @@ def produccion_diaria():
     # ✅ FILTRO CLAVE: Solo datos de ESTA panadería (CON ACCESO REMOTO)
     panaderia_actual = obtener_panaderia_actual()  # ← ÚNICO CAMBIO EN FILTRO
     
-    print(f"🔍 DEBUG: Panadería actual: {panaderia_actual}")
+    logger.debug(f"🔍 DEBUG: Panadería actual: {panaderia_actual}")
     
         # ✅ BLOQUE SUPER USUARIO: redirigir a gestión de clientes
     if es_super_usuario():
@@ -5327,7 +5369,7 @@ def produccion_diaria():
     hay_recetas = diagnosticar_recetas(panaderia_actual)
     
     if not hay_recetas:
-        print("⚠️  NO hay recetas activas. Debes crearlas en el módulo 'Fórmulas y Recetas'")
+        logger.warning("⚠️  NO hay recetas activas. Debes crearlas en el módulo 'Fórmulas y Recetas'")
         flash("No hay recetas disponibles. Crea recetas en el módulo 'Fórmulas y Recetas' primero.", "warning")
     
     
@@ -5338,7 +5380,7 @@ def produccion_diaria():
         panaderia_id=panaderia_actual
     ).all()
     
-    print(f"🔍 DEBUG: Recetas activas encontradas: {len(recetas_activas)}")
+    logger.debug(f"🔍 DEBUG: Recetas activas encontradas: {len(recetas_activas)}")
     
     recetas_con_stock = []
     alertas = []
@@ -5426,9 +5468,9 @@ def produccion_diaria():
         OrdenProduccion.panaderia_id == panaderia_actual  # ← FILTRO MULTICLIENTE
     ).all()
     
-    print(f"🔍 DEBUG: Recetas con stock procesadas: {len(recetas_con_stock)}")
-    print(f"🔍 DEBUG: Alertas generadas: {len(alertas)}")
-    print(f"🔍 DEBUG: Órdenes activas: {len(ordenes_activas)}")
+    logger.debug(f"🔍 DEBUG: Recetas con stock procesadas: {len(recetas_con_stock)}")
+    logger.debug(f"🔍 DEBUG: Alertas generadas: {len(alertas)}")
+    logger.debug(f"🔍 DEBUG: Órdenes activas: {len(ordenes_activas)}")
     
     return render_template('produccion_diaria.html',
                          recetas_con_stock=recetas_con_stock,
@@ -5503,7 +5545,7 @@ def calcular_ventas_ultima_semana(nombre_receta):
         
         return ventas_semana
     except Exception as e:
-        print(f"Error calculando ventas semana: {e}")
+        logger.info(f"Error calculando ventas semana: {e}")
         return 0
     
 # ✅ NUEVO: Ruta para configurar stock mínimo por receta
@@ -5734,7 +5776,7 @@ def calcular_rotacion_automatica(producto_id, dias_historial=30):
         
         return round(rotacion_promedio, 2)
     except Exception as e:
-        print(f"❌ Error calculando rotación automática: {e}")
+        logger.error(f"❌ Error calculando rotación automática: {e}")
         return 10.0  # Valor por defecto
 
 def actualizar_rotaciones_automaticas():
@@ -5765,11 +5807,11 @@ def actualizar_rotaciones_automaticas():
                         db.session.add(historial)
         
         db.session.commit()
-        print(f"✅ Rotaciones automáticas actualizadas: {actualizaciones} productos")
+        logger.info(f"✅ Rotaciones automáticas actualizadas: {actualizaciones} productos")
         return actualizaciones
     except Exception as e:
         db.session.rollback()
-        print(f"❌ Error actualizando rotaciones automáticas: {e}")
+        logger.error(f"❌ Error actualizando rotaciones automáticas: {e}")
         return 0
 
 def actualizar_control_vida_util():
@@ -5820,10 +5862,10 @@ def actualizar_control_vida_util():
                     control.estado = 'FRESCO'
         
         db.session.commit()
-        print(f"✅ Control de vida útil actualizado para {len(productos_pan)} productos")
+        logger.info(f"✅ Control de vida útil actualizado para {len(productos_pan)} productos")
     except Exception as e:
         db.session.rollback()
-        print(f"❌ Error actualizando control vida útil: {e}")
+        logger.error(f"❌ Error actualizando control vida útil: {e}")
         
         
 # FUNCIONES AUXILIARES PARA CÁLCULOS
@@ -5831,12 +5873,12 @@ def calcular_stock_vitrina(receta_id):
     """Calcular stock actual en vitrina para una receta"""
     try:
         receta = Receta.query.filter_by(id=receta_id, panaderia_id=current_user.panaderia_id).first()
-        print(f"🔍 DEBUG calcular_stock_vitrina: Receta: {receta.nombre if receta else 'N/A'}")
+        logger.debug(f"🔍 DEBUG calcular_stock_vitrina: Receta: {receta.nombre if receta else 'N/A'}")
         
         # Si la receta tiene producto asociado, usar el stock del producto
         if receta and receta.producto:
             stock = receta.producto.stock_actual
-            print(f"🔍 DEBUG: Usando stock del producto: {stock} unidades")
+            logger.debug(f"🔍 DEBUG: Usando stock del producto: {stock} unidades")
             return stock
         
         # Método antiguo (backup)
@@ -5854,12 +5896,12 @@ def calcular_stock_vitrina(receta_id):
         ).scalar() or 0
         
         stock_calculado = max(0, produccion_total - ventas_totales)
-        print(f"🔍 DEBUG: Stock calculado (método antiguo): {stock_calculado}")
+        logger.debug(f"🔍 DEBUG: Stock calculado (método antiguo): {stock_calculado}")
         
         return stock_calculado
         
     except Exception as e:
-        print(f"❌ Error calculando stock: {e}")
+        logger.error(f"❌ Error calculando stock: {e}")
         return 0
 
 def calcular_ventas_hoy(nombre_receta, fecha):
@@ -5879,7 +5921,7 @@ def calcular_ventas_hoy(nombre_receta, fecha):
         return ventas_hoy
         
     except Exception as e:
-        print(f"Error calculando ventas hoy: {e}")
+        logger.info(f"Error calculando ventas hoy: {e}")
         return 0
     
     
@@ -6129,7 +6171,7 @@ def buscar_por_codigo_barras(codigo):
         
         # ✅ OBTENER TENANT ACTUAL
         panaderia_id = current_user.panaderia_id
-        print(f"🔍 Buscando código {codigo} en tenant {panaderia_id}")
+        logger.debug(f"🔍 Buscando código {codigo} en tenant {panaderia_id}")
         
         # ✅ FILTRO MULTI-TENANT
         producto = ProductoExterno.query.filter_by(
@@ -6139,7 +6181,7 @@ def buscar_por_codigo_barras(codigo):
         ).first()
         
         if producto:
-            print(f"✅ Producto encontrado: {producto.nombre}")
+            logger.info(f"✅ Producto encontrado: {producto.nombre}")
             return jsonify({
                 'success': True,
                 'producto': {
@@ -6152,14 +6194,14 @@ def buscar_por_codigo_barras(codigo):
                 }
             })
         else:
-            print(f"❌ Producto no encontrado para código {codigo} en tenant {panaderia_id}")
+            logger.error(f"❌ Producto no encontrado para código {codigo} en tenant {panaderia_id}")
             return jsonify({
                 'success': False,
                 'message': 'Producto no encontrado'
             }), 404
             
     except Exception as e:
-        print(f"❌ Error: {str(e)}")
+        logger.error(f"❌ Error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 @app.route('/api/verificar_stock/<int:producto_id>')
 @login_required
@@ -6329,7 +6371,7 @@ def agregar_producto_externo():
         return jsonify({'success': False, 'message': '❌ Error en los datos numéricos. Verifique los valores ingresados'})
     except Exception as e:
         db.session.rollback()
-        print(f"Error: {e}")
+        logger.info(f"Error: {e}")
         return jsonify({'success': False, 'message': '❌ Error al agregar el producto. Intente nuevamente'})
     
 
@@ -6794,7 +6836,7 @@ def format_currency(value, config_moneda=None):
         
         return f"{simbolo}{formato}"
     except (ValueError, TypeError) as e:
-        print(f"⚠️ Error formateando moneda: {e}")
+        logger.warning(f"⚠️ Error formateando moneda: {e}")
         return f"${value}"
 
 # Filtro para formatear números con 2 decimales
@@ -7293,7 +7335,7 @@ def realizar_cierre():
         
     except Exception as e:
         db.session.rollback()
-        print(f"Error en realizar_cierre: {str(e)}")
+        logger.info(f"Error en realizar_cierre: {str(e)}")
         import traceback
         traceback.print_exc()
         return jsonify({
@@ -7330,7 +7372,7 @@ def obtener_ventas_dia(fecha, panaderia_id=None):
         return ventas
         
     except Exception as e:
-        print(f"Error en obtener_ventas_dia: {str(e)}")
+        logger.info(f"Error en obtener_ventas_dia: {str(e)}")
         return []
 
 @app.route('/reporte/cierre_caja')
@@ -7651,7 +7693,7 @@ def reporte_cierre_caja():
                             
     
     except Exception as e:
-        print(f"❌ ERROR en reporte_cierre_caja: {str(e)}")
+        logger.error(f"❌ ERROR en reporte_cierre_caja: {str(e)}")
         flash(f'Error generando reporte: {str(e)}', 'error')
         return redirect(url_for('dashboard'))
     
@@ -7956,10 +7998,10 @@ def reporte_ventas_avanzado():
     else:
         # Si no tiene tenant_id, usar panaderia_id como fallback
         tenant_id = panaderia_id
-        print(f"⚠️ [VENTAS_AVANZADO] Usuario sin tenant_id, usando panaderia_id: {tenant_id}")
+        logger.warning(f"⚠️ [VENTAS_AVANZADO] Usuario sin tenant_id, usando panaderia_id: {tenant_id}")
 
-    print(f"🔍 [VENTAS_AVANZADO] Usuario: {usuario_actual.username}, Panadería: {panaderia_id}, Tenant: {tenant_id}")
-    print(f"📅 Período: {fecha_inicio} a {fecha_fin}")
+    logger.debug(f"🔍 [VENTAS_AVANZADO] Usuario: {usuario_actual.username}, Panadería: {panaderia_id}, Tenant: {tenant_id}")
+    logger.info(f"📅 Período: {fecha_inicio} a {fecha_fin}")
     
     # =====================================================================
     # 📊 SECCIÓN 1: DATOS DE VENTAS REALES
@@ -7988,7 +8030,7 @@ def reporte_ventas_avanzado():
     total_donaciones = len(donaciones)
     productos_donados = sum(len(v.detalles) for v in donaciones)
     
-    print(f"💰 Ventas: ${total_ventas_normales:.2f}, Transacciones: {total_transacciones}")
+    logger.info(f"💰 Ventas: ${total_ventas_normales:.2f}, Transacciones: {total_transacciones}")
     
     # =====================================================================
     # 📈 NUEVOS CÁLCULOS PARA GRÁFICOS Y DATOS REALES
@@ -8008,7 +8050,7 @@ def reporte_ventas_avanzado():
                     'categoria': getattr(item.producto, 'categoria', 'Sin Categoría')
                 })
             else:
-                print(f"⚠️  DetalleVenta {item.id} tiene producto None, omitiendo...")
+                logger.warning(f"⚠️  DetalleVenta {item.id} tiene producto None, omitiendo...")
     
     # Contar productos más vendidos
     contador_productos = Counter()
@@ -8074,17 +8116,17 @@ def reporte_ventas_avanzado():
     # 🎯 TENDENCIA (usando tu función existente)
     try:
         tendencia_ml = calcular_tendencia_ventas(fecha_inicio, fecha_fin)
-        print(f"📈 Tendencia ML: {tendencia_ml:.1f}%")
+        logger.info(f"📈 Tendencia ML: {tendencia_ml:.1f}%")
     except Exception as e:
-        print(f"⚠️  Error en tendencia ML: {e}")
+        logger.warning(f"⚠️  Error en tendencia ML: {e}")
         tendencia_ml = tendencia_porcentaje  # Usar cálculo alternativo
     
     # 🎯 ALERTAS INTELIGENTES
     try:
         alertas = generar_alertas_inteligentes(panaderia_id)
-        print(f"🔔 Alertas: {len(alertas)}")
+        logger.info(f"🔔 Alertas: {len(alertas)}")
     except Exception as e:
-        print(f"⚠️  Error en alertas: {e}")
+        logger.warning(f"⚠️  Error en alertas: {e}")
         import traceback
         traceback.print_exc()
         alertas = []
@@ -8098,9 +8140,9 @@ def reporte_ventas_avanzado():
         ).all()
         
         productos_analisis = analizar_productos_periodo(detalles_periodo)
-        print(f"📦 Productos analizados: {len(productos_analisis)}")
+        logger.info(f"📦 Productos analizados: {len(productos_analisis)}")
     except Exception as e:
-        print(f"⚠️  Error en análisis productos: {e}")
+        logger.warning(f"⚠️  Error en análisis productos: {e}")
         productos_analisis = {}
     
     # 🎯 PROYECCIONES ML (POR AHORA VACÍO)
@@ -8126,8 +8168,8 @@ def reporte_ventas_avanzado():
             hora_pico = ventas_por_hora.most_common(1)[0][0]
             recomendaciones.append(f"Optimizar personal para horario pico: {hora_pico}:00")
     
-    print(f"✅ [VENTAS_AVANZADO] Reporte generado exitosamente")
-    print(f"📊 Productos en top: {len(top_productos_labels)}, Categorías: {len(categorias_labels)}")
+    logger.info(f"✅ [VENTAS_AVANZADO] Reporte generado exitosamente")
+    logger.info(f"📊 Productos en top: {len(top_productos_labels)}, Categorías: {len(categorias_labels)}")
     
     # =====================================================================
     # 🎯 RENDERIZAR TEMPLATE UNIFICADO CON TODOS LOS DATOS
@@ -8146,7 +8188,7 @@ def reporte_ventas_avanzado():
     ).distinct().count()
 
     dias_actividad = dias_con_ventas
-    print(f"📅 Días con datos: {dias_actividad}")
+    logger.info(f"📅 Días con datos: {dias_actividad}")
         
         # =============================================
     # 📊 ANÁLISIS DE TENDENCIAS (NIVEL 2)
@@ -8247,7 +8289,7 @@ def obtener_ventas_del_dia(fecha):
         return total_ventas
         
     except Exception as e:
-        print(f"Error al obtener ventas: {e}")
+        logger.info(f"Error al obtener ventas: {e}")
         return 0
 
 def actualizar_saldo_automatico(panaderia_id, efectivo=0, transferencias=0, pagos=0, accion_efectivo="depositar"):
@@ -8299,7 +8341,7 @@ def actualizar_saldo_automatico(panaderia_id, efectivo=0, transferencias=0, pago
         return nuevo_saldo
         
     except Exception as e:
-        print(f"Error al actualizar saldo: {e}")
+        logger.info(f"Error al actualizar saldo: {e}")
         return saldo_actual
 
 def sanitizar_numero(valor, default=0.0):
@@ -9091,14 +9133,14 @@ def generar_reporte_conciliacion():
         fecha_corte = datetime.strptime(fecha_corte, '%Y-%m-%d').date()
         saldo_extracto = float(saldo_extracto_str) if saldo_extracto_str else 0
         
-        print(f"🔍 Generando conciliación para fecha: {fecha_corte}, saldo: {saldo_extracto}")
+        logger.debug(f"🔍 Generando conciliación para fecha: {fecha_corte}, saldo: {saldo_extracto}")
         
         generador = GeneradorReportes()
         pdf_buffer = generador.generar_reporte_conciliacion_bancaria(fecha_corte, saldo_extracto)
         
         # Verificar que el buffer no esté vacío
         buffer_size = pdf_buffer.getbuffer().nbytes
-        print(f"📊 Tamaño del buffer PDF: {buffer_size} bytes")
+        logger.info(f"📊 Tamaño del buffer PDF: {buffer_size} bytes")
         
         if buffer_size == 0:
             raise Exception("El PDF generado está vacío")
@@ -9117,7 +9159,7 @@ def generar_reporte_conciliacion():
         )
         
     except Exception as e:
-        print(f"❌ Error detallado en generación de conciliación: {str(e)}")
+        logger.error(f"❌ Error detallado en generación de conciliación: {str(e)}")
         import traceback
         traceback.print_exc()
         flash(f'❌ Error al generar conciliación: {str(e)}', 'error')
@@ -9180,7 +9222,7 @@ def generar_reporte_analisis_gastos():
         )
         
     except Exception as e:
-        print(f"Error al generar análisis de gastos: {str(e)}")
+        logger.info(f"Error al generar análisis de gastos: {str(e)}")
         import traceback
         traceback.print_exc()
         flash(f'❌ Error al generar análisis de gastos: {str(e)}', 'error')
@@ -9234,7 +9276,7 @@ def generar_reporte_tendencia_ventas():
         )
         
     except Exception as e:
-        print(f"Error al generar tendencia de ventas: {str(e)}")
+        logger.info(f"Error al generar tendencia de ventas: {str(e)}")
         flash(f'❌ Error al generar tendencia de ventas: {str(e)}', 'error')
         return redirect(url_for('reportes'))
     
@@ -9288,7 +9330,7 @@ def generar_reporte_ia_predictivo():
         )
         
     except Exception as e:
-        print(f"Error al generar reporte de IA: {str(e)}")
+        logger.info(f"Error al generar reporte de IA: {str(e)}")
         flash(f'❌ Error al generar análisis de IA: {str(e)}', 'error')
         return redirect(url_for('reportes'))
     
@@ -9343,7 +9385,7 @@ def generar_reporte_analisis_inventarios():
         )
         
     except Exception as e:
-        print(f"Error al generar análisis de inventarios: {str(e)}")
+        logger.info(f"Error al generar análisis de inventarios: {str(e)}")
         flash(f'❌ Error al generar análisis de inventarios: {str(e)}', 'error')
         return redirect(url_for('reportes'))
 
@@ -9399,7 +9441,7 @@ def generar_reporte_tesoreria_unificado():
         )
         
     except Exception as e:
-        print(f"Error al generar reporte de tesorería unificado: {str(e)}")
+        logger.info(f"Error al generar reporte de tesorería unificado: {str(e)}")
         import traceback
         traceback.print_exc()
         flash(f'❌ Error al generar reporte: {str(e)}', 'error')
@@ -9469,7 +9511,7 @@ def exportar_historial_pagos():
         )
 
     except Exception as e:
-        print(f"Error exportando historial de pagos: {e}")
+        logger.info(f"Error exportando historial de pagos: {e}")
         flash(f'Error al generar el PDF: {str(e)}', 'error')
         return redirect(url_for('historial_pagos'))
 
@@ -9531,7 +9573,7 @@ def exportar_historial_depositos():
         )
 
     except Exception as e:
-        print(f"Error exportando historial de depósitos: {e}")
+        logger.info(f"Error exportando historial de depósitos: {e}")
         flash(f'Error al generar el PDF: {str(e)}', 'error')
         return redirect(url_for('historial_depositos'))
     
@@ -9668,7 +9710,7 @@ def crear_deposito_bancario():
                 'estado': request.form.get('estado', 'REGISTRADO')
             }
 
-        print(f"📝 Datos recibidos: {data}")  # Debug
+        logger.debug(f"📝 Datos recibidos: {data}")  # Debug
 
         # Validar campos obligatorios
         if not data.get('fecha_deposito'):
@@ -9719,7 +9761,7 @@ def crear_deposito_bancario():
         db.session.add(nuevo_deposito)
         db.session.commit()
 
-        print(f"✅ Depósito creado exitosamente: ID {nuevo_deposito.id}")
+        logger.info(f"✅ Depósito creado exitosamente: ID {nuevo_deposito.id}")
 
         return jsonify({
             'success': True,
@@ -9729,7 +9771,7 @@ def crear_deposito_bancario():
 
     except Exception as e:
         db.session.rollback()
-        print(f"❌ Error al crear depósito: {str(e)}")
+        logger.error(f"❌ Error al crear depósito: {str(e)}")
         import traceback
         traceback.print_exc()
         return jsonify({
@@ -9960,7 +10002,7 @@ def activos_fijos():
                              proxima_depreciacion=0,
                              categorias=CATEGORIAS_ACTIVOS)
     except Exception as e:
-        print(f"❌ Error en activos_fijos: {e}")
+        logger.error(f"❌ Error en activos_fijos: {e}")
         flash('Error al cargar activos fijos', 'error')
         return redirect(url_for('dashboard'))
 
@@ -10098,7 +10140,7 @@ def eliminar_activo(id):
         
     except Exception as e:
         db.session.rollback()
-        print(f"❌ Error en eliminar_activo: {e}")
+        logger.error(f"❌ Error en eliminar_activo: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -10138,7 +10180,7 @@ def reactivar_activo(id):
         
     except Exception as e:
         db.session.rollback()
-        print(f"❌ Error en reactivar_activo: {e}")
+        logger.error(f"❌ Error en reactivar_activo: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -10202,7 +10244,7 @@ def listar_mantenimientos(activo_id):
                              mantenimientos=mantenimientos)
         
     except Exception as e:
-        print(f"❌ Error en listar_mantenimientos: {e}")
+        logger.error(f"❌ Error en listar_mantenimientos: {e}")
         import traceback
         traceback.print_exc()
         flash('Error al cargar los mantenimientos', 'error')
@@ -10291,7 +10333,7 @@ def nuevo_mantenimiento(activo_id):
         
     except Exception as e:
         db.session.rollback()
-        print(f"❌ Error en nuevo_mantenimiento: {e}")
+        logger.error(f"❌ Error en nuevo_mantenimiento: {e}")
         import traceback
         traceback.print_exc()
         flash(f'Error al registrar mantenimiento: {str(e)}', 'error')
@@ -10341,7 +10383,7 @@ def eliminar_mantenimiento(id):
         
     except Exception as e:
         db.session.rollback()
-        print(f"❌ Error en eliminar_mantenimiento: {e}")
+        logger.error(f"❌ Error en eliminar_mantenimiento: {e}")
         flash('Error al eliminar mantenimiento', 'error')
         return redirect(url_for('activos_fijos'))
 
@@ -10401,7 +10443,7 @@ def detalle_mantenimiento(id):
         return render_template('detalle_mantenimiento.html', mantenimiento=mantenimiento)
         
     except Exception as e:
-        print(f"❌ Error en detalle_mantenimiento: {e}")
+        logger.error(f"❌ Error en detalle_mantenimiento: {e}")
         import traceback
         traceback.print_exc()
         flash('Error al cargar detalle del mantenimiento', 'error')
@@ -10421,7 +10463,7 @@ def lista_activos():
         activos = ActivoFijo.query.filter_by(panaderia_id=current_user.panaderia_id).order_by(ActivoFijo.fecha_compra.desc()).all()
         return render_template('lista_activos.html', activos=activos, categorias=CATEGORIAS_ACTIVOS)
     except Exception as e:
-        print(f"❌ Error en lista_activos: {e}")
+        logger.error(f"❌ Error en lista_activos: {e}")
         flash('Error al cargar la lista de activos', 'error')
         return redirect(url_for('activos_fijos'))
 
@@ -10498,7 +10540,7 @@ def reporte_activos():
                 plt.close()
                 
             except Exception as e:
-                print(f"Error generando gráficos: {e}")
+                logger.info(f"Error generando gráficos: {e}")
                 graph_path = None
         
         return render_template('reporte_activos.html',
@@ -10511,7 +10553,7 @@ def reporte_activos():
                              now=datetime.now(),
                              categorias=CATEGORIAS_ACTIVOS)
     except Exception as e:
-        print(f"❌ Error en reporte_activos: {e}")
+        logger.error(f"❌ Error en reporte_activos: {e}")
         flash('Error al generar reporte de activos', 'error')
         return redirect(url_for('activos_fijos'))
 
@@ -10533,7 +10575,7 @@ def api_activos_metrics():
         
         return jsonify(metrics)
     except Exception as e:
-        print(f"❌ Error en api_activos_metrics: {e}")
+        logger.error(f"❌ Error en api_activos_metrics: {e}")
         return jsonify({'error': str(e)}), 500
 
 #========================================= 🆕 RUTAS PARA GESTIÓN DE USUARIOS==================================================
@@ -10667,7 +10709,7 @@ def gestion_usuarios():
                              
     except Exception as e:
         db.session.rollback()
-        print(f"❌ ERROR en gestión_usuarios: {e}")
+        logger.error(f"❌ ERROR en gestión_usuarios: {e}")
         import traceback
         traceback.print_exc()
         flash('Error interno del servidor', 'error')
@@ -10819,7 +10861,7 @@ def guardar_permisos(usuario_id):
     except Exception as e:
         db.session.rollback()
         flash(f'❌ Error al guardar permisos: {str(e)}', 'error')
-        print(f"Error guardando permisos: {e}")
+        logger.info(f"Error guardando permisos: {e}")
     
     return redirect(url_for('gestion_usuarios'))
 
@@ -10848,7 +10890,7 @@ def gestion_clientes():
             dias = (fecha_exp - date.today()).days
             return max(0, dias)
         except Exception as e:
-            print(f"⚠️ Error calculando días: {e}")
+            logger.warning(f"⚠️ Error calculando días: {e}")
             return None
     
     # ✅ Obtener todos los tenants
@@ -10877,10 +10919,10 @@ def gestion_clientes():
                 max_usuarios = result[4] if result[4] else 3
                 fecha_expiracion = result[5]
                 
-                print(f"✅ Tenant {tenant.id}: {tenant.nombre} - Licencia: {tipo_licencia}")
+                logger.info(f"✅ Tenant {tenant.id}: {tenant.nombre} - Licencia: {tipo_licencia}")
             else:
                 # ⚠️ No hay configuración en el schema del tenant
-                print(f"⚠️ Tenant {tenant.id}: {tenant.nombre} - SIN CONFIGURACIÓN")
+                logger.warning(f"⚠️ Tenant {tenant.id}: {tenant.nombre} - SIN CONFIGURACIÓN")
                 tipo_licencia = 'local'
                 max_usuarios = 3
                 fecha_expiracion = None
@@ -10899,7 +10941,7 @@ def gestion_clientes():
             })
             
         except Exception as e:
-            print(f"   ❌ Error obteniendo configuración para tenant {tenant.id}: {e}")
+            logger.error(f"   ❌ Error obteniendo configuración para tenant {tenant.id}: {e}")
             # Fallback: usar datos por defecto
             configuraciones.append({
                 'id': tenant.id,
@@ -10983,7 +11025,7 @@ def crear_cliente():
             flash(f'❌ Error al crear tenant SaaS: {mensaje}', 'error')
             return redirect(url_for('gestion_clientes'))
         
-        print(f"✅ SaaS: {mensaje} (ID: {tenant_id})")
+        logger.info(f"✅ SaaS: {mensaje} (ID: {tenant_id})")
         
        # =============================================
         # ✅ PASO 2: OBTENER CONFIGURACIÓN DEL SCHEMA DEL TENANT
@@ -10995,7 +11037,7 @@ def crear_cliente():
             return redirect(url_for('gestion_clientes'))
 
         panaderia_id = config_existente.panaderia_id  # ✅ FIX: usar panaderia_id del objeto, no el id (PK de la tabla)
-        print(f"✅ Configuración existente encontrada: panaderia_id={panaderia_id} (tenant_id={tenant_id})")
+        logger.info(f"✅ Configuración existente encontrada: panaderia_id={panaderia_id} (tenant_id={tenant_id})")
         
         # =============================================
         # PASO 3: CREAR USUARIOS AUTOMÁTICAMENTE
@@ -11034,7 +11076,7 @@ def crear_cliente():
         # =============================================
         # NOTA: crear_tenant_saas() YA creó los usuarios en el schema del tenant.
         # Este bloque es defensivo: verifica e inserta solo si faltan (ON CONFLICT DO NOTHING).
-        print(f"📝 Verificando usuarios en PostgreSQL (schema tenant_{tenant_id})...")
+        logger.info(f"📝 Verificando usuarios en PostgreSQL (schema tenant_{tenant_id})...")
         schema_name = f"tenant_{tenant_id}"
         
         for user_data in usuarios_base:
@@ -11058,14 +11100,14 @@ def crear_cliente():
                     }
                 )
                 if result.rowcount > 0:
-                    print(f"   ✅ Usuario creado en PostgreSQL: {user_data['username']}")
+                    logger.info(f"   ✅ Usuario creado en PostgreSQL: {user_data['username']}")
                 else:
-                    print(f"   ℹ️ Usuario ya existía en PostgreSQL: {user_data['username']}")
+                    logger.info(f"   ℹ️ Usuario ya existía en PostgreSQL: {user_data['username']}")
             except Exception as e:
-                print(f"   ⚠️ Error creando usuario {user_data['username']} en PostgreSQL: {e}")
+                logger.warning(f"   ⚠️ Error creando usuario {user_data['username']} en PostgreSQL: {e}")
         
         db.session.commit()
-        print(f"✅ Usuarios verificados en PostgreSQL para tenant {tenant_id}")
+        logger.info(f"✅ Usuarios verificados en PostgreSQL para tenant {tenant_id}")
         
         # =============================================
         # ⚠️ COMENTADO: PASO 6 - VERIFICAR EN BD PRINCIPAL
@@ -11089,13 +11131,13 @@ def crear_cliente():
     except Exception as e:
         db.session.rollback()
         flash(f'❌ Error al crear cliente: {str(e)}', 'error')
-        print(f"❌ Error en crear_cliente: {e}")
+        logger.error(f"❌ Error en crear_cliente: {e}")
         import traceback
         traceback.print_exc()
     
     return redirect(url_for('gestion_clientes'))
 
-print("✅ Ruta /cambiar_licencia registrada")
+logger.info("✅ Ruta /cambiar_licencia registrada")
 # =============================================
 # 🆕 CAMBIAR LICENCIA DE UN TENANT
 # =============================================
@@ -11146,7 +11188,7 @@ def cambiar_licencia(tenant_id):
         old_tipo = result[3]
         max_usuarios = result[4]
         
-        print(f"✅ Configuración encontrada: {nombre_panaderia} (Licencia: {old_tipo})")
+        logger.info(f"✅ Configuración encontrada: {nombre_panaderia} (Licencia: {old_tipo})")
         
         # ✅ Actualizar tipo de licencia y max_usuarios
         nuevo_max_usuarios = 3 if nuevo_tipo in ['nube_premium', 'premium'] else 1
@@ -11161,10 +11203,10 @@ def cambiar_licencia(tenant_id):
         ).fetchone()
         
         if not check:
-            print(f"❌ No se encontró configuración para tenant {tenant_id}")
+            logger.error(f"❌ No se encontró configuración para tenant {tenant_id}")
             return jsonify({'success': False, 'error': 'Configuración no encontrada'}), 404
         
-        print(f"✅ Registro encontrado. Actualizando licencia de {old_tipo} a {nuevo_tipo}...")
+        logger.info(f"✅ Registro encontrado. Actualizando licencia de {old_tipo} a {nuevo_tipo}...")
         
         # ✅ Ejecutar UPDATE
         result = db.session.execute(
@@ -11186,10 +11228,10 @@ def cambiar_licencia(tenant_id):
         # ✅ Verificar que se actualizó al menos una fila
         updated = result.fetchone()
         if not updated:
-            print(f"❌ No se pudo actualizar la configuración para tenant {tenant_id}")
+            logger.error(f"❌ No se pudo actualizar la configuración para tenant {tenant_id}")
             return jsonify({'success': False, 'error': 'Error al actualizar configuración'}), 500
         
-        print(f"✅ Configuración actualizada correctamente (ID: {updated[0]})")
+        logger.info(f"✅ Configuración actualizada correctamente (ID: {updated[0]})")
         
         # ✅ Sincronizar public.tenants.plan (espejo para el panel maestro dev_master)
         plan_publico = 'premium' if nuevo_tipo in ['nube_premium', 'premium'] else 'basico'
@@ -11201,7 +11243,7 @@ def cambiar_licencia(tenant_id):
             """),
             {'plan': plan_publico, 'tenant_id': tenant_id}
         )
-        print(f"✅ public.tenants.plan sincronizado: {plan_publico}")
+        logger.info(f"✅ public.tenants.plan sincronizado: {plan_publico}")
         
         mensaje_extra = ""
         contrasena_temp = None
@@ -11225,11 +11267,11 @@ def cambiar_licencia(tenant_id):
                 caracteres = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%"
                 contrasena_temp = ''.join(secrets.choice(caracteres) for _ in range(10))
                 hashed_password = generate_password_hash(contrasena_temp)
-                print(f"   🔑 Contraseña temporal generada: {contrasena_temp}")
+                logger.info(f"   🔑 Contraseña temporal generada: {contrasena_temp}")
             else:
                 contrasena_temp = None
                 hashed_password = None
-                print(f"   ℹ️ Usuarios super_{tenant_id} y cajero_{tenant_id} ya existen. No se genera contraseña.")
+                logger.info(f"   ℹ️ Usuarios super_{tenant_id} y cajero_{tenant_id} ya existen. No se genera contraseña.")
             
             # ✅ Crear o actualizar Supervisor
             if not super_existe:
@@ -11248,7 +11290,7 @@ def cambiar_licencia(tenant_id):
                         'tenant_id': tenant_id
                     }
                 )
-                print(f"✅ Usuario super_{tenant_id} creado")
+                logger.info(f"✅ Usuario super_{tenant_id} creado")
             else:
                 # ✅ Si ya existe, actualizar contraseña SOLO si se generó una nueva
                 if hashed_password:
@@ -11264,9 +11306,9 @@ def cambiar_licencia(tenant_id):
                             'panaderia_id': tenant_id
                         }
                     )
-                    print(f"✅ Contraseña de super_{tenant_id} actualizada")
+                    logger.info(f"✅ Contraseña de super_{tenant_id} actualizada")
                 else:
-                    print(f"   ⏭️ super_{tenant_id} ya existe, mantiene su contraseña")
+                    logger.info(f"   ⏭️ super_{tenant_id} ya existe, mantiene su contraseña")
             
             # ✅ Crear o actualizar Cajero
             if not cajero_existe:
@@ -11285,7 +11327,7 @@ def cambiar_licencia(tenant_id):
                         'tenant_id': tenant_id
                     }
                 )
-                print(f"✅ Usuario cajero_{tenant_id} creado")
+                logger.info(f"✅ Usuario cajero_{tenant_id} creado")
             else:
                 # ✅ Si ya existe, actualizar contraseña SOLO si se generó una nueva
                 if hashed_password:
@@ -11301,9 +11343,9 @@ def cambiar_licencia(tenant_id):
                             'panaderia_id': tenant_id
                         }
                     )
-                    print(f"✅ Contraseña de cajero_{tenant_id} actualizada")
+                    logger.info(f"✅ Contraseña de cajero_{tenant_id} actualizada")
                 else:
-                    print(f"   ⏭️ cajero_{tenant_id} ya existe, mantiene su contraseña")
+                    logger.info(f"   ⏭️ cajero_{tenant_id} ya existe, mantiene su contraseña")
             
             if contrasena_temp:
                 mensaje_extra = f" Usuarios creados/actualizados (super_{tenant_id} y cajero_{tenant_id}). La contraseña de admin_{tenant_id} no cambia. Los nuevos usuarios pueden usar la contraseña temporal: {contrasena_temp}"
@@ -11321,7 +11363,7 @@ def cambiar_licencia(tenant_id):
         
     except Exception as e:
         db.session.rollback()
-        print(f"❌ Error cambiando licencia: {e}")
+        logger.error(f"❌ Error cambiando licencia: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -11354,10 +11396,10 @@ def resetear_password(usuario_id):
         panaderia_id = data.get('panaderia_id') if data else None
         
         if not panaderia_id:
-            print("❌ [RESETEO] Panadería no especificada")
+            logger.error("❌ [RESETEO] Panadería no especificada")
             return jsonify({'success': False, 'error': 'Panadería no especificada'}), 400
         
-        print(f"🔍 [RESETEO] Resetear usuario ID: {usuario_id} en panadería: {panaderia_id}")
+        logger.debug(f"🔍 [RESETEO] Resetear usuario ID: {usuario_id} en panadería: {panaderia_id}")
         
         # ✅ Si es admin_cliente, verificar que pertenece a su tenant
         if current_user.rol == 'admin_cliente':
@@ -11376,11 +11418,11 @@ def resetear_password(usuario_id):
         ).fetchone()
         
         if not result:
-            print(f"❌ [RESETEO] Usuario ID {usuario_id} no encontrado en {schema_name}")
+            logger.error(f"❌ [RESETEO] Usuario ID {usuario_id} no encontrado en {schema_name}")
             return jsonify({'success': False, 'error': 'Usuario no encontrado'}), 404
         
         username = result[1]
-        print(f"✅ [RESETEO] Usuario encontrado: {username} en {schema_name}")
+        logger.info(f"✅ [RESETEO] Usuario encontrado: {username} en {schema_name}")
         
         # 🎯 GENERAR NUEVA CONTRASEÑA
         nueva_password = generar_contrasena_segura()
@@ -11393,7 +11435,7 @@ def resetear_password(usuario_id):
             salt_length=16
         )
         
-        print(f"🔑 [RESETEO] Nueva contraseña generada: {nueva_password}")
+        logger.info(f"🔑 [RESETEO] Nueva contraseña generada: {nueva_password}")
         
         # ✅ ACTUALIZAR CONTRASEÑA USANDO username (MÁS CONFIABLE)
         update_result = db.session.execute(
@@ -11411,15 +11453,15 @@ def resetear_password(usuario_id):
         
         # ✅ VERIFICAR CUÁNTAS FILAS SE ACTUALIZARON
         filas_afectadas = update_result.rowcount
-        print(f"📊 [RESETEO] Filas actualizadas: {filas_afectadas}")
+        logger.info(f"📊 [RESETEO] Filas actualizadas: {filas_afectadas}")
         
         if filas_afectadas == 0:
-            print(f"❌ [RESETEO] No se actualizó ninguna fila para {username}")
+            logger.error(f"❌ [RESETEO] No se actualizó ninguna fila para {username}")
             return jsonify({'success': False, 'error': 'Error al actualizar contraseña'}), 500
         
         # 🔥 MEJORA 2: FORZAR COMMIT explícito
         db.session.commit()
-        print(f"✅ [RESETEO] Commit ejecutado correctamente")
+        logger.info(f"✅ [RESETEO] Commit ejecutado correctamente")
         
         # 🔥 MEJORA 3: VERIFICACIÓN POST-COMMIT con check_password_hash
         verify = db.session.execute(
@@ -11429,18 +11471,18 @@ def resetear_password(usuario_id):
         
         if verify:
             stored_hash = verify[0]
-            print(f"✅ [VERIFICACIÓN] Hash en BD post-commit: {stored_hash[:50]}...")
+            logger.info(f"✅ [VERIFICACIÓN] Hash en BD post-commit: {stored_hash[:50]}...")
             
             # ✅ Verificar que el hash funciona correctamente
             from werkzeug.security import check_password_hash
             test_verify = check_password_hash(stored_hash, nueva_password)
-            print(f"✅ [PRUEBA] check_password_hash: {test_verify}")
+            logger.info(f"✅ [PRUEBA] check_password_hash: {test_verify}")
             
             if not test_verify:
-                print("❌ [ALERTA] El hash guardado NO es válido!")
+                logger.error("❌ [ALERTA] El hash guardado NO es válido!")
                 return jsonify({'success': False, 'error': 'Error de verificación del hash'}), 500
         else:
-            print("❌ [RESETEO] No se pudo verificar el hash actualizado")
+            logger.error("❌ [RESETEO] No se pudo verificar el hash actualizado")
         
         return jsonify({
             'success': True,
@@ -11451,7 +11493,7 @@ def resetear_password(usuario_id):
         
     except Exception as e:
         db.session.rollback()
-        print(f"❌ [RESETEO] Error: {e}")
+        logger.error(f"❌ [RESETEO] Error: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({
@@ -11483,12 +11525,12 @@ def generar_contrasena_segura():
         tiene_simbolo = any(c in "!@#$%" for c in password)
 
         if all([tiene_minuscula, tiene_mayuscula, tiene_numero, tiene_simbolo]):
-            print(f"✅ [GENERADOR] Contraseña segura generada en intento {intento + 1}: {password}")
+            logger.info(f"✅ [GENERADOR] Contraseña segura generada en intento {intento + 1}: {password}")
             return password
 
     # 🎯 FALLBACK
     password_fallback = ''.join(secrets.choice(caracteres_seguros) for _ in range(longitud))
-    print(f"⚠️ [GENERADOR] Usando fallback: {password_fallback}")
+    logger.warning(f"⚠️ [GENERADOR] Usando fallback: {password_fallback}")
     return password_fallback
 
 def todas(condiciones):
@@ -11502,7 +11544,7 @@ def registrar_reseteo_password(usuario_id, administrador_id):
     """
     try:
         # 📊 LOG TEMPORAL
-        print(f"📊 [AUDITORÍA] Reseteo - Usuario: {usuario_id}, Admin: {administrador_id}")
+        logger.info(f"📊 [AUDITORÍA] Reseteo - Usuario: {usuario_id}, Admin: {administrador_id}")
         
         # 🆕 CÓDIGO PREPARADO PARA FASE 2 (ACTUALMENTE COMENTADO)
         # from datetime import datetime
@@ -11521,7 +11563,7 @@ def registrar_reseteo_password(usuario_id, administrador_id):
         # db.session.commit()
         
     except Exception as e:
-        print(f"⚠️ [AUDITORÍA] Error registrando reseteo: {e}")
+        logger.warning(f"⚠️ [AUDITORÍA] Error registrando reseteo: {e}")
         
         
 @app.route('/obtener_usuarios_panaderia/<int:panaderia_id>')
@@ -11538,12 +11580,12 @@ def obtener_usuarios_panaderia(panaderia_id):
         if not hasattr(current_user, 'rol') or current_user.rol != 'super_admin':
             return jsonify({'error': 'No autorizado'}), 403
     except Exception as e:
-        print(f"🔍 DEBUG obtener_usuarios_panaderia - Error autenticación: {e}")
+        logger.debug(f"🔍 DEBUG obtener_usuarios_panaderia - Error autenticación: {e}")
         return jsonify({'error': 'Error de autenticación'}), 401
     
     try:
         # 🐛 DEBUG: Ver qué tenant está buscando
-        print(f"🔍 DEBUG obtener_usuarios_panaderia - Buscando usuarios para tenant: {panaderia_id}")
+        logger.debug(f"🔍 DEBUG obtener_usuarios_panaderia - Buscando usuarios para tenant: {panaderia_id}")
         
         # Buscar en el schema del tenant
         schema_name = f"tenant_{panaderia_id}"
@@ -11555,10 +11597,10 @@ def obtener_usuarios_panaderia(panaderia_id):
         ).fetchone()
         
         if not result:
-            print(f"⚠️ DEBUG obtener_usuarios_panaderia - Schema {schema_name} NO existe")
+            logger.debug(f"⚠️ DEBUG obtener_usuarios_panaderia - Schema {schema_name} NO existe")
             return jsonify({'error': 'Panadería no encontrada'}), 404
         
-        print(f"✅ DEBUG obtener_usuarios_panaderia - Schema {schema_name} existe")
+        logger.debug(f"✅ DEBUG obtener_usuarios_panaderia - Schema {schema_name} existe")
         
         # ✅ Obtener usuarios del schema INCLUYENDO panaderia_id
         usuarios = db.session.execute(
@@ -11571,7 +11613,7 @@ def obtener_usuarios_panaderia(panaderia_id):
         ).fetchall()
         
         # 🐛 DEBUG: Ver cuántos usuarios encontró
-        print(f"✅ DEBUG obtener_usuarios_panaderia - Encontrados {len(usuarios)} usuarios")
+        logger.debug(f"✅ DEBUG obtener_usuarios_panaderia - Encontrados {len(usuarios)} usuarios")
         
         usuarios_list = []
         for row in usuarios:
@@ -11584,11 +11626,11 @@ def obtener_usuarios_panaderia(panaderia_id):
                 'panaderia_id': row[5]  # ✅ INCLUIR EL PANADERIA_ID
             })
         
-        print(f"✅ DEBUG obtener_usuarios_panaderia - Devolviendo {len(usuarios_list)} usuarios con panaderia_id")
+        logger.debug(f"✅ DEBUG obtener_usuarios_panaderia - Devolviendo {len(usuarios_list)} usuarios con panaderia_id")
         return jsonify({'usuarios': usuarios_list})
         
     except Exception as e:
-        print(f"❌ Error obteniendo usuarios: {e}")
+        logger.error(f"❌ Error obteniendo usuarios: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
@@ -11604,7 +11646,7 @@ def obtener_usuarios_panaderia(panaderia_id):
 @permisos_requeridos('clientes', 'ver')
 def obtener_datos_cliente_super(cliente_id):
     """Obtener datos de un cliente específico para edición (SUPER ADMIN) - SQL DIRECTO CALIFICADO"""
-    print(f"🔍🔍🔍 DEBUG obtener_datos_cliente_super: cliente_id={cliente_id}")
+    logger.debug(f"🔍🔍🔍 DEBUG obtener_datos_cliente_super: cliente_id={cliente_id}")
     if current_user.rol != 'super_admin':
         return jsonify({'success': False, 'error': 'No autorizado'})
     
@@ -11661,7 +11703,7 @@ def obtener_datos_cliente_super(cliente_id):
             }
         })
     except Exception as e:
-        print(f"❌ Error en obtener_datos_cliente_super: {e}")
+        logger.error(f"❌ Error en obtener_datos_cliente_super: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)})
@@ -11679,7 +11721,7 @@ def editar_cliente_super():
         from sqlalchemy import text
         
         cliente_id = request.form.get('cliente_id')
-        print(f"🔍🔍🔍 DEBUG editar_cliente_super: cliente_id={cliente_id}")
+        logger.debug(f"🔍🔍🔍 DEBUG editar_cliente_super: cliente_id={cliente_id}")
         if not cliente_id:
             return jsonify({'success': False, 'error': 'ID de cliente no proporcionado'})
         
@@ -11749,7 +11791,7 @@ def editar_cliente_super():
         
     except Exception as e:
         db.session.rollback()
-        print(f"❌ Error en editar_cliente_super: {e}")
+        logger.error(f"❌ Error en editar_cliente_super: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)})
@@ -11763,19 +11805,19 @@ def renovar_suscripcion_super():
     from datetime import datetime, timedelta
     
     try:
-        print("🔍 [RENOVAR] Iniciando renovación de suscripción...")
+        logger.debug("🔍 [RENOVAR] Iniciando renovación de suscripción...")
         
         # ✅ Verificar permisos
         if not hasattr(current_user, 'is_authenticated') or not current_user.is_authenticated:
-            print("❌ [RENOVAR] Usuario no autenticado")
+            logger.error("❌ [RENOVAR] Usuario no autenticado")
             return jsonify({'success': False, 'error': 'No autenticado'}), 401
             
         if not hasattr(current_user, 'rol') or current_user.rol != 'super_admin':
-            print(f"❌ [RENOVAR] Usuario no autorizado: {current_user.rol}")
+            logger.error(f"❌ [RENOVAR] Usuario no autorizado: {current_user.rol}")
             return jsonify({'success': False, 'error': 'No autorizado'}), 403
         
         # ✅ Obtener datos del formulario
-        print("🔍 [RENOVAR] Obteniendo datos del formulario...")
+        logger.debug("🔍 [RENOVAR] Obteniendo datos del formulario...")
         cliente_id = request.form.get('cliente_id')
         tipo_licencia = request.form.get('tipo_licencia')
         max_usuarios = int(request.form.get('max_usuarios', 3))
@@ -11783,54 +11825,54 @@ def renovar_suscripcion_super():
         periodo = request.form.get('periodo')
         dias_personalizados = request.form.get('dias_personalizados')
         
-        print(f"   📌 cliente_id: {cliente_id}")
-        print(f"   📌 tipo_licencia: {tipo_licencia}")
-        print(f"   📌 max_usuarios: {max_usuarios}")
-        print(f"   📌 nueva_fecha_expiracion: {nueva_fecha_expiracion}")
-        print(f"   📌 periodo: {periodo}")
-        print(f"   📌 dias_personalizados: {dias_personalizados}")
+        logger.info(f"   📌 cliente_id: {cliente_id}")
+        logger.info(f"   📌 tipo_licencia: {tipo_licencia}")
+        logger.info(f"   📌 max_usuarios: {max_usuarios}")
+        logger.info(f"   📌 nueva_fecha_expiracion: {nueva_fecha_expiracion}")
+        logger.info(f"   📌 periodo: {periodo}")
+        logger.info(f"   📌 dias_personalizados: {dias_personalizados}")
         
         if not cliente_id:
-            print("❌ [RENOVAR] ID de cliente no proporcionado")
+            logger.error("❌ [RENOVAR] ID de cliente no proporcionado")
             return jsonify({'success': False, 'error': 'ID de cliente no proporcionado'}), 400
         
         # ✅ Usar SQL DIRECTO en el schema del tenant
         schema_name = f"tenant_{cliente_id}"
-        print(f"🔍 [RENOVAR] Schema: {schema_name}")
+        logger.debug(f"🔍 [RENOVAR] Schema: {schema_name}")
         
         # ✅ Verificar que el tenant existe
-        print("🔍 [RENOVAR] Verificando existencia del tenant...")
+        logger.debug("🔍 [RENOVAR] Verificando existencia del tenant...")
         check = db.session.execute(
             text(f"SELECT id FROM {schema_name}.configuracion_panaderia WHERE panaderia_id = :pid"),
             {'pid': cliente_id}
         ).fetchone()
         
         if not check:
-            print(f"❌ [RENOVAR] Tenant {cliente_id} no encontrado")
+            logger.error(f"❌ [RENOVAR] Tenant {cliente_id} no encontrado")
             return jsonify({'success': False, 'error': f'Tenant {cliente_id} no encontrado'}), 404
         
-        print(f"✅ [RENOVAR] Tenant {cliente_id} encontrado")
+        logger.info(f"✅ [RENOVAR] Tenant {cliente_id} encontrado")
         
         # ✅ Si no se proporcionó fecha, calcularla según el período
         if not nueva_fecha_expiracion:
-            print("🔍 [RENOVAR] No se proporcionó fecha, calculando...")
+            logger.debug("🔍 [RENOVAR] No se proporcionó fecha, calculando...")
             hoy = datetime.now().date()
             if periodo and periodo != 'custom':
                 dias = int(periodo)
                 nueva_fecha_expiracion = (hoy + timedelta(days=dias)).strftime('%Y-%m-%d')
-                print(f"   📌 Calculado por período: {dias} días → {nueva_fecha_expiracion}")
+                logger.info(f"   📌 Calculado por período: {dias} días → {nueva_fecha_expiracion}")
             elif dias_personalizados:
                 dias = int(dias_personalizados)
                 nueva_fecha_expiracion = (hoy + timedelta(days=dias)).strftime('%Y-%m-%d')
-                print(f"   📌 Calculado por días personalizados: {dias} días → {nueva_fecha_expiracion}")
+                logger.info(f"   📌 Calculado por días personalizados: {dias} días → {nueva_fecha_expiracion}")
             else:
                 nueva_fecha_expiracion = (hoy + timedelta(days=30)).strftime('%Y-%m-%d')
-                print(f"   📌 Calculado por defecto: 30 días → {nueva_fecha_expiracion}")
+                logger.info(f"   📌 Calculado por defecto: 30 días → {nueva_fecha_expiracion}")
         
-        print(f"✅ [RENOVAR] Fecha final: {nueva_fecha_expiracion}")
+        logger.info(f"✅ [RENOVAR] Fecha final: {nueva_fecha_expiracion}")
         
         # ✅ Actualizar configuración en el schema del tenant
-        print("🔍 [RENOVAR] Actualizando configuración...")
+        logger.debug("🔍 [RENOVAR] Actualizando configuración...")
         result = db.session.execute(
             text(f"""
                 UPDATE {schema_name}.configuracion_panaderia 
@@ -11851,11 +11893,11 @@ def renovar_suscripcion_super():
         
         updated = result.fetchone()
         if not updated:
-            print("❌ [RENOVAR] No se pudo actualizar la configuración")
+            logger.error("❌ [RENOVAR] No se pudo actualizar la configuración")
             return jsonify({'success': False, 'error': 'Error al actualizar configuración'}), 500
         
         db.session.commit()
-        print(f"✅ [RENOVAR] Configuración actualizada correctamente (ID: {updated[0]})")
+        logger.info(f"✅ [RENOVAR] Configuración actualizada correctamente (ID: {updated[0]})")
         
         return jsonify({
             'success': True, 
@@ -11864,7 +11906,7 @@ def renovar_suscripcion_super():
         
     except Exception as e:
         db.session.rollback()
-        print(f"❌ [RENOVAR] Error renovando suscripción: {e}")
+        logger.error(f"❌ [RENOVAR] Error renovando suscripción: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -11888,7 +11930,7 @@ def eliminar_cliente(tenant_id):
     from sqlalchemy import text
     import os
     
-    print(f"🔍 [ELIMINAR] Iniciando eliminación del tenant ID: {tenant_id}")
+    logger.debug(f"🔍 [ELIMINAR] Iniciando eliminación del tenant ID: {tenant_id}")
     try:
         # ✅ VERIFICACIÓN SEGURA
         if not hasattr(current_user, 'is_authenticated') or not current_user.is_authenticated:
@@ -11910,7 +11952,7 @@ def eliminar_cliente(tenant_id):
         
         tenant_nombre = tenant[1]
         tenant_subdominio = tenant[2]
-        print(f"✅ [ELIMINAR] Encontrado tenant: {tenant_nombre} (subdominio: {tenant_subdominio})")
+        logger.info(f"✅ [ELIMINAR] Encontrado tenant: {tenant_nombre} (subdominio: {tenant_subdominio})")
         
         if tenant_id == 1:
             return jsonify({'success': False, 'error': 'No se puede eliminar el principal'}), 403
@@ -11921,7 +11963,7 @@ def eliminar_cliente(tenant_id):
         schema_name = f"tenant_{tenant_id}"
         db.session.execute(text(f"DROP SCHEMA IF EXISTS {schema_name} CASCADE"))
         db.session.commit()
-        print(f"✅ [ELIMINAR] Schema {schema_name} eliminado")
+        logger.info(f"✅ [ELIMINAR] Schema {schema_name} eliminado")
         
         # =============================================
         # 3. ELIMINAR TENANT DE LA TABLA MAESTRA
@@ -11931,7 +11973,7 @@ def eliminar_cliente(tenant_id):
             {'id': tenant_id}
         )
         db.session.commit()
-        print(f"✅ [ELIMINAR] Tenant {tenant_nombre} eliminado de public.tenants")
+        logger.info(f"✅ [ELIMINAR] Tenant {tenant_nombre} eliminado de public.tenants")
         
         # =============================================
         # 4. ELIMINAR CONFIGURACIÓN HUÉRFANA
@@ -11941,7 +11983,7 @@ def eliminar_cliente(tenant_id):
             {'id': tenant_id}
         )
         db.session.commit()
-        print(f"✅ [ELIMINAR] Configuración huérfana eliminada")
+        logger.info(f"✅ [ELIMINAR] Configuración huérfana eliminada")
         
         # =============================================
         # 5. ELIMINAR USUARIOS DEL TENANT EN PUBLIC (DT-36)
@@ -11954,20 +11996,20 @@ def eliminar_cliente(tenant_id):
             {'id': tenant_id}
         )
         db.session.commit()
-        print(f"✅ [ELIMINAR] Usuarios huérfanos del tenant {tenant_id} eliminados de public.usuarios")
+        logger.info(f"✅ [ELIMINAR] Usuarios huérfanos del tenant {tenant_id} eliminados de public.usuarios")
         
         # =============================================
         # 6. REPARAR SECUENCIA
         # =============================================
         db.session.execute(text("SELECT setval('tenants_id_seq', (SELECT COALESCE(MAX(id), 1) FROM public.tenants))"))
         db.session.commit()
-        print(f"✅ [ELIMINAR] Secuencia reparada")
+        logger.info(f"✅ [ELIMINAR] Secuencia reparada")
         
         return jsonify({'success': True, 'message': f'Cliente "{tenant_nombre}" eliminado exitosamente'})
         
     except Exception as e:
         db.session.rollback()
-        print(f"❌ [ELIMINAR] Error: {str(e)}")
+        logger.error(f"❌ [ELIMINAR] Error: {str(e)}")
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -11989,7 +12031,7 @@ def toggle_cliente(tenant_id):
         if not hasattr(current_user, 'rol') or current_user.rol != 'super_admin':
             return jsonify({'success': False, 'error': 'No tienes permiso'}), 403
         
-        print(f"🔍 [TOGGLE] Iniciando toggle del tenant ID: {tenant_id}")
+        logger.debug(f"🔍 [TOGGLE] Iniciando toggle del tenant ID: {tenant_id}")
         
         # 1. OBTENER ESTADO ACTUAL EN POSTGRESQL
         resultado = db.session.execute(
@@ -12003,7 +12045,7 @@ def toggle_cliente(tenant_id):
         estado_actual = resultado[0] if resultado[0] is not None else True
         nuevo_estado = not estado_actual   
         
-        print(f"📊 Estado actual: {estado_actual} → Nuevo estado: {nuevo_estado}")
+        logger.info(f"📊 Estado actual: {estado_actual} → Nuevo estado: {nuevo_estado}")
         
         # 2. ACTUALIZAR TENANT EN POSTGRESQL
         db.session.execute(
@@ -12011,7 +12053,7 @@ def toggle_cliente(tenant_id):
             {'activo': nuevo_estado, 'id': tenant_id}
         )
         db.session.commit()
-        print(f"✅ Tenant actualizado en public.tenants")
+        logger.info(f"✅ Tenant actualizado en public.tenants")
         
         # 3. ACTUALIZAR CONFIGURACIÓN
         db.session.execute(
@@ -12019,10 +12061,10 @@ def toggle_cliente(tenant_id):
             {'activo': nuevo_estado, 'id': tenant_id}   # (ahora nuevo_estado es bool)
         )
         db.session.commit()
-        print(f"✅ Configuración actualizada en public.configuracion_panaderia")
+        logger.info(f"✅ Configuración actualizada en public.configuracion_panaderia")
         
         estado_texto = "ACTIVADO" if nuevo_estado else "DESACTIVADO"
-        print(f"✅ Cliente ID {tenant_id} {estado_texto}")
+        logger.info(f"✅ Cliente ID {tenant_id} {estado_texto}")
         
         return jsonify({
             'success': True,
@@ -12032,7 +12074,7 @@ def toggle_cliente(tenant_id):
         
     except Exception as e:
         db.session.rollback()
-        print(f"❌ Error en toggle_cliente: {e}")
+        logger.error(f"❌ Error en toggle_cliente: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -12127,13 +12169,13 @@ def _sincronizar_columnas_tenant(schema_name):
                     columnas_agregadas += 1
                     
                 except Exception as e:
-                    print(f"      ⚠️ No se pudo agregar {table_name}.{column.name}: {e}")
+                    logger.warning(f"      ⚠️ No se pudo agregar {table_name}.{column.name}: {e}")
                     errores += 1
         
         db.session.commit()
         
     except Exception as e:
-        print(f"      ❌ Error en _sincronizar_columnas_tenant: {e}")
+        logger.error(f"      ❌ Error en _sincronizar_columnas_tenant: {e}")
         db.session.rollback()
         errores += 1
     
@@ -12151,9 +12193,9 @@ def inicializar_al_arranque():
     from sqlalchemy import text
     from models import Tenant
     
-    print("=" * 60)
-    print("🚀 INICIALIZANDO TENANTS AL ARRANQUE")
-    print("=" * 60)
+    logger.info("=" * 60)
+    logger.info("🚀 INICIALIZANDO TENANTS AL ARRANQUE")
+    logger.info("=" * 60)
     
     with app.app_context():
         try:
@@ -12161,10 +12203,10 @@ def inicializar_al_arranque():
             tenants_activos = Tenant.query.filter_by(activo=True).all()
             
             if not tenants_activos:
-                print("⚠️ No hay tenants activos para inicializar")
+                logger.warning("⚠️ No hay tenants activos para inicializar")
                 return
             
-            print(f"📋 Encontrados {len(tenants_activos)} tenants activos")
+            logger.info(f"📋 Encontrados {len(tenants_activos)} tenants activos")
             
             total_columnas_agregadas = 0
             total_errores = 0
@@ -12181,7 +12223,7 @@ def inicializar_al_arranque():
                     ).fetchone()
                     
                     if not result:
-                        print(f"   ⚠️ Tenant {tenant_id}: schema {schema_name} NO existe. Saltando.")
+                        logger.warning(f"   ⚠️ Tenant {tenant_id}: schema {schema_name} NO existe. Saltando.")
                         continue
                     
                     # 2. Configurar search_path
@@ -12200,24 +12242,24 @@ def inicializar_al_arranque():
                     
                     # Imprimir resultado del tenant
                     if columnas_agregadas > 0:
-                        print(f"   ✅ Tenant {tenant_id} ({tenant.nombre}) - {columnas_agregadas} columnas sincronizadas")
+                        logger.info(f"   ✅ Tenant {tenant_id} ({tenant.nombre}) - {columnas_agregadas} columnas sincronizadas")
                     else:
-                        print(f"   ✅ Tenant {tenant_id} ({tenant.nombre}) inicializado")
+                        logger.info(f"   ✅ Tenant {tenant_id} ({tenant.nombre}) inicializado")
                     
                 except Exception as e:
-                    print(f"   ❌ Error inicializando tenant {tenant_id}: {e}")
+                    logger.error(f"   ❌ Error inicializando tenant {tenant_id}: {e}")
                     db.session.rollback()
                     continue
             
-            print("=" * 60)
-            print(f"✅ INICIALIZACIÓN COMPLETA")
-            print(f"   📊 Columnas agregadas: {total_columnas_agregadas}")
+            logger.info("=" * 60)
+            logger.info(f"✅ INICIALIZACIÓN COMPLETA")
+            logger.info(f"   📊 Columnas agregadas: {total_columnas_agregadas}")
             if total_errores > 0:
-                print(f"   ⚠️ Errores: {total_errores}")
-            print("=" * 60)
+                logger.warning(f"   ⚠️ Errores: {total_errores}")
+            logger.info("=" * 60)
             
         except Exception as e:
-            print(f"❌ Error crítico en inicializar_al_arranque: {e}")
+            logger.error(f"❌ Error crítico en inicializar_al_arranque: {e}")
             import traceback
             traceback.print_exc()
 
@@ -12582,10 +12624,10 @@ def api_stock_vitrina_actualizado():
 # INICIAR APLICACIÓN
 # ============================================
 if __name__ == '__main__':
-    print("🚀 Iniciando Servidor...")
-    print("📂 Sistema Multi-Tenant para Panaderías")
-    print("🌐 http://localhost:5000")
-    print("=" * 50)
+    logger.info("🚀 Iniciando Servidor...")
+    logger.info("📂 Sistema Multi-Tenant para Panaderías")
+    logger.info("🌐 http://localhost:5000")
+    logger.info("=" * 50)
     
     # ✅ NUEVO: Inicializar tenants UNA SOLA VEZ al arrancar
     inicializar_al_arranque()
