@@ -3463,6 +3463,9 @@ def configuracion_facturacion():
             config.moneda = request.form.get('moneda', 'COP')
             config.usa_centavos = request.form.get('usa_centavos', 'false').lower() == 'true'
             
+            # 🆕 GUARDAR CONFIGURACIÓN DE IDIOMA (DT-37)
+            config.idioma = request.form.get('idioma', 'es')
+            
             # ✅ Actualizar símbolo según moneda
             simbolos = {
                 'COP': '$', 'MXN': '$', 'USD': '$', 'EUR': '€',

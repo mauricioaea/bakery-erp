@@ -257,6 +257,23 @@
                                 </div>
                             </div>
 
+                            <!-- 🆕 CONFIGURACIÓN DE IDIOMA (DT-37) -->
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="idioma" class="form-label">
+                                        🌐 Idioma del Sistema
+                                    </label>
+                                    <select class="form-select" id="idioma" name="idioma">
+                                        <option value="es" {{ 'selected' if config.idioma == 'es' or not config.idioma }}>🇨🇴 Español (Colombia)</option>
+                                        <option value="en" {{ 'selected' if config.idioma == 'en' }}>🇺🇸 English (United States)</option>
+                                        <option value="pt" {{ 'selected' if config.idioma == 'pt' }}>🇧🇷 Português (Brasil)</option>
+                                    </select>
+                                    <small class="text-muted">
+                                        Idioma en el que se generan los reportes PDF y documentos.
+                                    </small>
+                                </div>
+                            </div>
+
                             <!-- Botones de Acción -->
                             <div class="d-flex justify-content-between mt-4">
                                 <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">

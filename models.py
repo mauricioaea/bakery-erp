@@ -2329,6 +2329,9 @@ class ConfiguracionSistema(db.Model):
     usa_centavos = db.Column(db.Boolean, default=False)  # False = enteros, True = 2 decimales
     simbolo_moneda = db.Column(db.String(5), default='$')  # $, €, R$, S/, ƒ
     
+    # 🆕 CONFIGURACIÓN DE IDIOMA (DT-37 - i18n reportes)
+    idioma = db.Column(db.String(5), default='es', nullable=False)  # es, en, pt
+    
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     def __repr__(self):
