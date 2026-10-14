@@ -1253,6 +1253,19 @@ app.config['PERMANENT_SESSION_LIFETIME'] = 3600
 csrf = CSRFProtect(app)
 
 # =============================================
+# 🌐 DT-37: FLASK-BABEL (i18n reportes)
+# =============================================
+# Soporte multi-idioma. El locale se resuelve por request
+# a partir de g.idioma_tenant (cargado en antes_de_cada_peticion).
+from flask_babel import Babel
+
+def _get_locale():
+    """Devuelve el idioma del tenant actual (fallback: 'es')."""
+    return getattr(g, 'idioma_tenant', None) or 'es'
+
+babel = Babel(app, locale_selector=_get_locale)
+
+# =============================================
 # 📝 DT-47: CONFIGURACIÓN DE LOGGING CENTRALIZADO
 # =============================================
 # Nivel: DEBUG en desarrollo, INFO en producción.
@@ -1920,11 +1933,22 @@ def antes_de_cada_peticion():
     except Exception:
         g.es_super_admin = False
 
-    # 6. Configurar schema PostgreSQL (UNA sola vez)
+        # 6. Configurar schema PostgreSQL (UNA sola vez)
     try:
         set_tenant_schema(tenant['id'])
     except Exception as e:
         logger.warning(f"⚠️ Error configurando schema para tenant {tenant['id']}: {e}")
+
+    # 6b. 🌐 DT-37: Cargar idioma del tenant (para Flask-Babel)
+    try:
+        from models import ConfiguracionSistema
+        _config_idioma = ConfiguracionSistema.query.filter_by(
+            panaderia_id=tenant['id']
+        ).first()
+        g.idioma_tenant = (_config_idioma.idioma if _config_idioma else None) or 'es'
+    except Exception as e:
+        logger.warning(f"⚠️ Error leyendo idioma del tenant {tenant['id']}: {e}")
+        g.idioma_tenant = 'es'  # Fallback seguro
 
     # 7. Verificar suscripción
     response = _verificar_suscripcion(tenant['id'])
