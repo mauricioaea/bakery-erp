@@ -15,6 +15,9 @@ from sqlalchemy import func, extract
 # Importación para multi-tenant
 from flask_login import current_user
 
+# 🌐 DT-37: i18n — alias estándar `_` para traducciones
+from flask_babel import gettext as _
+
 # Agrega al inicio del archivo, después de las otras importaciones
 try:
     from models import db
@@ -1221,15 +1224,18 @@ class GeneradorReportes:
             elements = []
 
             elements.append(Paragraph(self.nombre_empresa, self.estilo_titulo))
-            elements.append(Paragraph("ANÁLISIS DE TENDENCIA DE VENTAS", self.estilo_titulo))
-            elements.append(Paragraph(f"Período: {fecha_inicio} a {fecha_fin}", self.styles['Normal']))
+            elements.append(Paragraph(_("ANÁLISIS DE TENDENCIA DE VENTAS"), self.estilo_titulo))
+            elements.append(Paragraph(
+                _("Período: %(inicio)s a %(fin)s") % {'inicio': fecha_inicio, 'fin': fecha_fin},
+                self.styles['Normal']
+            ))
             elements.append(Spacer(1, 10))
 
             # ✅ FILTRAR POR TENANT
             datos_ventas = self._obtener_datos_tendencia_ventas(panaderia_id, fecha_inicio, fecha_fin)
             
             if not datos_ventas:
-                elements.append(Paragraph("No hay datos de ventas para el período seleccionado.", self.styles['Normal']))
+                elements.append(Paragraph(_("No hay datos de ventas para el período seleccionado."), self.styles['Normal']))
                 doc.build(elements)
                 buffer.seek(0)
                 return buffer
@@ -1254,11 +1260,11 @@ class GeneradorReportes:
                 if len(ventas_diarias) > 1:
                     z = np.polyfit(range(len(ventas_diarias)), ventas_diarias, 1)
                     p = np.poly1d(z)
-                    ax1.plot(fechas, p(range(len(ventas_diarias))), "r--", alpha=0.8, linewidth=1, label='Tendencia')
+                    ax1.plot(fechas, p(range(len(ventas_diarias))), "r--", alpha=0.8, linewidth=1, label=_('Tendencia'))
                     ax1.legend(fontsize=8)
                 
-                ax1.set_title('Evolución de Ventas Diarias', fontsize=12, fontweight='bold', pad=10)
-                ax1.set_ylabel('Ventas ($)', fontweight='bold', fontsize=9)
+                ax1.set_title(_('Evolución de Ventas Diarias'), fontsize=12, fontweight='bold', pad=10)
+                ax1.set_ylabel(_('Ventas ($)'), fontweight='bold', fontsize=9)
                 ax1.grid(True, alpha=0.3)
                 ax1.tick_params(axis='x', rotation=45, labelsize=8)
                 ax1.tick_params(axis='y', labelsize=8)
@@ -1267,8 +1273,8 @@ class GeneradorReportes:
                 ax2.plot(fechas, ventas_acumuladas, color='#27ae60', linewidth=2)
                 ax2.fill_between(fechas, ventas_acumuladas, alpha=0.3, color='#27ae60')
                 
-                ax2.set_title('Ventas Acumuladas', fontsize=12, fontweight='bold', pad=10)
-                ax2.set_ylabel('Ventas Acumuladas ($)', fontweight='bold', fontsize=9)
+                ax2.set_title(_('Ventas Acumuladas'), fontsize=12, fontweight='bold', pad=10)
+                ax2.set_ylabel(_('Ventas Acumuladas ($)'), fontweight='bold', fontsize=9)
                 ax2.grid(True, alpha=0.3)
                 ax2.tick_params(axis='x', rotation=45, labelsize=8)
                 ax2.tick_params(axis='y', labelsize=8)
@@ -1281,7 +1287,7 @@ class GeneradorReportes:
                     df_ventas['dia_semana'] = df_ventas['fecha'].dt.day_name()
                     
                     dias_orden = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-                    dias_esp = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
+                    dias_esp = [_('Lun'), _('Mar'), _('Mié'), _('Jue'), _('Vie'), _('Sáb'), _('Dom')]
                     
                     ventas_por_dia = df_ventas.groupby('dia_semana')['venta_total'].mean().reindex(dias_orden)
                     
@@ -1289,8 +1295,8 @@ class GeneradorReportes:
                                 color=plt.cm.viridis(np.linspace(0, 1, 7)),
                                 alpha=0.8)
                     
-                    ax3.set_title('Promedio de Ventas por Día', fontsize=12, fontweight='bold', pad=10)
-                    ax3.set_ylabel('Ventas Promedio ($)', fontweight='bold', fontsize=9)
+                    ax3.set_title(_('Promedio de Ventas por Día'), fontsize=12, fontweight='bold', pad=10)
+                    ax3.set_ylabel(_('Ventas Promedio ($)'), fontweight='bold', fontsize=9)
                     ax3.grid(True, alpha=0.3, axis='y')
                     ax3.tick_params(axis='both', labelsize=8)
                     
@@ -1299,10 +1305,10 @@ class GeneradorReportes:
                         ax3.text(bar.get_x() + bar.get_width()/2., height + (max(ventas_por_dia.values) * 0.005),
                                 f'${valor:,.0f}', ha='center', va='bottom', fontsize=7, fontweight='bold')
                 else:
-                    ax3.text(0.5, 0.5, 'Se necesitan más datos\npara análisis semanal', 
+                    ax3.text(0.5, 0.5, _('Se necesitan más datos\npara análisis semanal'), 
                             ha='center', va='center', transform=ax3.transAxes, fontsize=10,
                             bbox=dict(boxstyle="round,pad=0.2", facecolor="lightgray"))
-                    ax3.set_title('Análisis Semanal (Datos Insuficientes)', fontsize=12, fontweight='bold', pad=10)
+                    ax3.set_title(_('Análisis Semanal (Datos Insuficientes)'), fontsize=12, fontweight='bold', pad=10)
                 
                 fig.tight_layout(pad=2.0)
                 
@@ -1312,7 +1318,7 @@ class GeneradorReportes:
                 graphic_buffer.seek(0)
                 
                 from reportlab.platypus import Image
-                elements.append(Paragraph("ANÁLISIS VISUAL DE TENDENCIAS", self.estilo_subtitulo))
+                elements.append(Paragraph(_("ANÁLISIS VISUAL DE TENDENCIAS"), self.estilo_subtitulo))
                 elements.append(Image(graphic_buffer, width=6*inch, height=6*inch))
                 elements.append(Spacer(1, 10))
                 
@@ -1324,7 +1330,7 @@ class GeneradorReportes:
                 print(f"⚠️ Error al generar gráficos de tendencia: {e}. Continuando sin gráficos.")
 
             # Estadísticas
-            elements.append(Paragraph("ESTADÍSTICAS PRINCIPALES", self.estilo_subtitulo))
+            elements.append(Paragraph(_("ESTADÍSTICAS PRINCIPALES"), self.estilo_subtitulo))
             
             ventas_totales = sum(item['venta_total'] for item in datos_ventas)
             venta_promedio = np.mean([item['venta_total'] for item in datos_ventas]) if datos_ventas else 0
@@ -1335,11 +1341,23 @@ class GeneradorReportes:
             mejor_dia = max(datos_ventas, key=lambda x: x['venta_total']) if datos_ventas else None
             peor_dia = min(datos_ventas, key=lambda x: x['venta_total']) if datos_ventas else None
             
-            estadisticas_texto = f"""
-            <b>Período Analizado:</b> {dias_analizados} días | <b>Ventas Totales:</b> ${ventas_totales:,.0f}<br/>
-            <b>Venta Promedio:</b> ${venta_promedio:,.0f} | <b>Venta Máxima:</b> ${venta_maxima:,.0f} {f"({mejor_dia['fecha'].strftime('%d/%m')})" if mejor_dia else ""}<br/>
-            <b>Venta Mínima:</b> ${venta_minima:,.0f} {f"({peor_dia['fecha'].strftime('%d/%m')})" if peor_dia else ""} | <b>Variabilidad:</b> ${venta_maxima - venta_minima:,.0f}
-            """
+            _fecha_mejor = mejor_dia['fecha'].strftime('%d/%m') if mejor_dia else ""
+            _fecha_peor = peor_dia['fecha'].strftime('%d/%m') if peor_dia else ""
+            
+            estadisticas_texto = _(
+                "<b>Período Analizado:</b> %(dias)s días | <b>Ventas Totales:</b> $%(total)s<br/>"
+                "<b>Venta Promedio:</b> $%(promedio)s | <b>Venta Máxima:</b> $%(maxima)s %(fecha_mejor)s<br/>"
+                "<b>Venta Mínima:</b> $%(minima)s %(fecha_peor)s | <b>Variabilidad:</b> $%(variabilidad)s"
+            ) % {
+                'dias': dias_analizados,
+                'total': f"{ventas_totales:,.0f}",
+                'promedio': f"{venta_promedio:,.0f}",
+                'maxima': f"{venta_maxima:,.0f}",
+                'fecha_mejor': f"({_fecha_mejor})" if _fecha_mejor else "",
+                'minima': f"{venta_minima:,.0f}",
+                'fecha_peor': f"({_fecha_peor})" if _fecha_peor else "",
+                'variabilidad': f"{venta_maxima - venta_minima:,.0f}",
+            }
             
             estilo_compacto = ParagraphStyle(
                 'Compacto',
@@ -1353,7 +1371,7 @@ class GeneradorReportes:
             elements.append(Spacer(1, 12))
 
             # Patrones
-            elements.append(Paragraph("DETECCIÓN DE PATRONES", self.estilo_subtitulo))
+            elements.append(Paragraph(_("DETECCIÓN DE PATRONES"), self.estilo_subtitulo))
             
             patrones = self._analizar_patrones_ventas(datos_ventas)
             for patron in patrones:
@@ -1362,7 +1380,7 @@ class GeneradorReportes:
             elements.append(Spacer(1, 10))
 
             # Proyecciones
-            elements.append(Paragraph("PROYECCIÓN Y RECOMENDACIONES", self.estilo_subtitulo))
+            elements.append(Paragraph(_("PROYECCIÓN Y RECOMENDACIONES"), self.estilo_subtitulo))
             
             proyecciones = self._generar_proyecciones_ventas(datos_ventas)
             for proyeccion in proyecciones:
@@ -1370,8 +1388,10 @@ class GeneradorReportes:
 
             elements.append(Spacer(1, 15))
             from reportlab.lib import colors as rl_colors
-            elements.append(Paragraph(f"Generado el: {datetime.now().strftime('%d/%m/%Y %H:%M')}", 
-                                    ParagraphStyle('Footer', parent=self.styles['Normal'], fontSize=7, textColor=rl_colors.gray)))
+            elements.append(Paragraph(
+                _("Generado el: %(fecha)s") % {'fecha': datetime.now().strftime('%d/%m/%Y %H:%M')},
+                ParagraphStyle('Footer', parent=self.styles['Normal'], fontSize=7, textColor=rl_colors.gray)
+            ))
 
             doc.build(elements)
             buffer.seek(0)
@@ -1385,7 +1405,7 @@ class GeneradorReportes:
             
             error_buffer = BytesIO()
             c = canvas.Canvas(error_buffer, pagesize=A4)
-            c.drawString(100, 800, "ERROR AL GENERAR REPORTE DE TENDENCIA")
+            c.drawString(100, 800, _("ERROR AL GENERAR REPORTE DE TENDENCIA"))
             c.drawString(100, 780, f"Error: {str(e)}")
             c.showPage()
             c.save()
@@ -1432,7 +1452,7 @@ class GeneradorReportes:
         patrones = []
         
         if len(datos_ventas) < 7:
-            return ["Se necesitan más datos (mínimo 7 días) para detectar patrones significativos."]
+            return [_("Se necesitan más datos (mínimo 7 días) para detectar patrones significativos.")]
         
         try:
             import pandas as pd
@@ -1447,29 +1467,29 @@ class GeneradorReportes:
             crecimiento = ((ventas[-1] - ventas[0]) / ventas[0] * 100) if ventas[0] > 0 else 0
             
             if crecimiento > 10:
-                patrones.append(f"Tendencia creciente fuerte: +{crecimiento:.1f}% en el período")
+                patrones.append(_("Tendencia creciente fuerte: +%(pct).1f%% en el período") % {'pct': crecimiento})
             elif crecimiento > 0:
-                patrones.append(f"Ligera tendencia creciente: +{crecimiento:.1f}% en el período")
+                patrones.append(_("Ligera tendencia creciente: +%(pct).1f%% en el período") % {'pct': crecimiento})
             elif crecimiento < -10:
-                patrones.append(f"Tendencia decreciente preocupante: {crecimiento:.1f}% en el período")
+                patrones.append(_("Tendencia decreciente preocupante: %(pct).1f%% en el período") % {'pct': crecimiento})
             elif crecimiento < 0:
-                patrones.append(f"Ligera tendencia decreciente: {crecimiento:.1f}% en el período")
+                patrones.append(_("Ligera tendencia decreciente: %(pct).1f%% en el período") % {'pct': crecimiento})
             else:
-                patrones.append("Ventas estables sin crecimiento significativo")
+                patrones.append(_("Ventas estables sin crecimiento significativo"))
             
             # Análisis de días de la semana
             ventas_por_dia = df.groupby('dia_semana')['venta_total'].mean()
             mejor_dia = ventas_por_dia.idxmax()
             peor_dia = ventas_por_dia.idxmin()
             
-            # Traducir días al español
+            # Traducir días (los valores son traducibles)
             dias_traduccion = {
-                'Monday': 'Lunes', 'Tuesday': 'Martes', 'Wednesday': 'Miércoles',
-                'Thursday': 'Jueves', 'Friday': 'Viernes', 'Saturday': 'Sábado', 'Sunday': 'Domingo'
+                'Monday': _('Lunes'), 'Tuesday': _('Martes'), 'Wednesday': _('Miércoles'),
+                'Thursday': _('Jueves'), 'Friday': _('Viernes'), 'Saturday': _('Sábado'), 'Sunday': _('Domingo')
             }
             
-            patrones.append(f"Día más fuerte: {dias_traduccion.get(mejor_dia, mejor_dia)}")
-            patrones.append(f"Día más débil: {dias_traduccion.get(peor_dia, peor_dia)}")
+            patrones.append(_("Día más fuerte: %(dia)s") % {'dia': dias_traduccion.get(mejor_dia, mejor_dia)})
+            patrones.append(_("Día más débil: %(dia)s") % {'dia': dias_traduccion.get(peor_dia, peor_dia)})
             
             # Detectar outliers (valores atípicos)
             Q1 = np.percentile(ventas, 25)
@@ -1478,20 +1498,20 @@ class GeneradorReportes:
             outliers = [v for v in ventas if v < (Q1 - 1.5 * IQR) or v > (Q3 + 1.5 * IQR)]
             
             if outliers:
-                patrones.append(f"Se detectaron {len(outliers)} días con ventas atípicas (fuera del rango normal)")
+                patrones.append(_("Se detectaron %(n)s días con ventas atípicas (fuera del rango normal)") % {'n': len(outliers)})
             
             return patrones[:5]  # Máximo 5 patrones
             
         except Exception as e:
             print(f"Error en análisis de patrones: {e}")
-            return ["Análisis de patrones no disponible por error técnico"]
+            return [_("Análisis de patrones no disponible por error técnico")]
 
     def _generar_proyecciones_ventas(self, datos_ventas):
         """Genera proyecciones basadas en tendencias históricas"""
         proyecciones = []
         
         if len(datos_ventas) < 14:
-            return ["Se necesitan más datos históricos (mínimo 14 días) para proyecciones confiables."]
+            return [_("Se necesitan más datos históricos (mínimo 14 días) para proyecciones confiables.")]
         
         try:
             import numpy as np
@@ -1503,24 +1523,24 @@ class GeneradorReportes:
             # Proyección simple
             crecimiento_semanal = ((venta_ultima_semana - np.mean(ventas[:-7])) / np.mean(ventas[:-7]) * 100) if len(ventas) >= 14 else 0
             
-            proyecciones.append(f"Venta promedio actual: ${venta_promedio:,.0f}")
-            proyecciones.append(f"Venta promedio última semana: ${venta_ultima_semana:,.0f}")
+            proyecciones.append(_("Venta promedio actual: $%(monto)s") % {'monto': f"{venta_promedio:,.0f}"})
+            proyecciones.append(_("Venta promedio última semana: $%(monto)s") % {'monto': f"{venta_ultima_semana:,.0f}"})
             
             if crecimiento_semanal > 5:
-                proyecciones.append(f"Tendencia positiva: las ventas de la última semana son {crecimiento_semanal:.1f}% mayores")
-                proyecciones.append("Recomendación: Mantener estrategias actuales y considerar expansión")
+                proyecciones.append(_("Tendencia positiva: las ventas de la última semana son %(pct).1f%% mayores") % {'pct': crecimiento_semanal})
+                proyecciones.append(_("Recomendación: Mantener estrategias actuales y considerar expansión"))
             elif crecimiento_semanal < -5:
-                proyecciones.append(f"Alerta: las ventas de la última semana son {abs(crecimiento_semanal):.1f}% menores")
-                proyecciones.append("Recomendación: Revisar estrategias de marketing y promociones")
+                proyecciones.append(_("Alerta: las ventas de la última semana son %(pct).1f%% menores") % {'pct': abs(crecimiento_semanal)})
+                proyecciones.append(_("Recomendación: Revisar estrategias de marketing y promociones"))
             else:
-                proyecciones.append("Ventas estables: sin cambios significativos en la última semana")
-                proyecciones.append("Recomendación: Enfocarse en retención de clientes y eficiencia operativa")
+                proyecciones.append(_("Ventas estables: sin cambios significativos en la última semana"))
+                proyecciones.append(_("Recomendación: Enfocarse en retención de clientes y eficiencia operativa"))
             
             return proyecciones
             
         except Exception as e:
             print(f"Error en generación de proyecciones: {e}")
-            return ["Proyecciones no disponibles por error técnico"]
+            return [_("Proyecciones no disponibles por error técnico")]
 
 # ===============================================Recomendaciones con IA===========================================================
 
