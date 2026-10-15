@@ -1,7 +1,7 @@
 # 🗂️ CONTEXTO MAESTRO — PanaderíaPro (Bakery ERP)
 
-**Última actualización:** 12 de Octubre, 2026
-**Último commit:** 92f2d0d (feat DT-47: logging centralizado con logger en lugar de print)
+**Última actualización:** 15 de Octubre, 2026
+**Último commit:** 93a1e82 (feat DT-37 Papiamento: soporte Papiamentu de Curazao)
 **Sesión 2 Oct:** DT-11, DT-12, DT-13, DT-14, DT-16, DT-26, DT-27, DT-3, DT-4
 **Sesión 3 Oct:** DT-1, DT-6, DT-9, DT-20 Fase C (Tanda 1+2+3), DT-30, DT-31
 **Sesión 4 Oct:** DT-10, DT-22, DT-24, DT-17, DT-33, DT-34, DT-32, DT-18
@@ -11,6 +11,7 @@
 **Sesión 7 Oct (noche):** DT-46 + DT-5-bis + DT-5-quinquies + DT-5-quater-bis (reformulada) — **Opción Rápida 100%**
 **Sesión 8 Oct (tarde):** DT-19 (CSRF completo con flask-wtf) — **Producción-ready en seguridad**
 **Sesión 12 Oct (mañana):** DT-47 (logging centralizado) — **Producción-ready en observabilidad**
+**Sesión 15 Oct (tarde):** DT-37 F0 + F1 + F2 + F3 (reporte piloto) + Papiamento — **Pipeline i18n funcional (es/en/pap)**
 
 ---
 
@@ -18,11 +19,12 @@
 
 - **Nombre:** PanaderíaPro (bakery-erp)
 - **Repo:** https://github.com/mauricioaea/bakery-erp
-- **Estado:** v1.5.0 — **11/11 módulos completados (100%)** + Demo Fases 1-12 + Endurecimiento de seguridad + DT-20 100% + DT-18 reporte tesorería nivel contable + tenant_1 limpio + Fase C.3 cerrada + DT-25 cerrada + DT-29 cerrada + DT-28/DT-45/DT-42/DT-43/DT-46 cerradas + DT-5-bis/DT-5-quinquies/DT-5-quater-bis cerradas + DT-19 cerrada (CSRF completo) + **DT-47 cerrada (logging centralizado)**
+- **Estado:** v1.6.0 — **11/11 módulos completados (100%)** + Demo Fases 1-12 + Endurecimiento de seguridad + DT-20 100% + DT-18 reporte tesorería nivel contable + tenant_1 limpio + Fase C.3 cerrada + DT-25 cerrada + DT-29 cerrada + DT-28/DT-45/DT-42/DT-43/DT-46 cerradas + DT-5-bis/DT-5-quinquies/DT-5-quater-bis cerradas + DT-19 cerrada + DT-47 cerrada + **DT-37 EN PROGRESO (~60%: F0-F3 + Papiamento completadas)**
 - **Arquitectura:** Multi-tenant con PostgreSQL (schemas por tenant)
-- **Próximo hito:** **Dockerización (Fase 3)** + DT-CRÉDITOS (módulo de fiado)
+- **Próximo hito:** DT-37 F4 (13 reportes restantes) + Dockerización (Fase 3) + DT-CRÉDITOS
 - **Seguridad:** Producción-ready (CSRF con tokens firmados + Origin/Referer + logging centralizado)
 - **Observabilidad:** Producción-ready (logger con rotación de archivos, niveles configurables)
+- **i18n:** Operativo para reportes PDF en **es/en/pap** (1 de 14 reportes migrado)
 
 ---
 
@@ -32,6 +34,7 @@
 - Python 3.10+, Flask 3.1.2, SQLAlchemy 2.0
 - PostgreSQL 17.10 (puerto 5433)
 - Flask-Login, Flask-WTF, Werkzeug (pbkdf2:sha256, scrypt), ReportLab, Matplotlib
+- **Flask-Babel 4.0.0** + **Babel 2.18.0** (nuevo, DT-37)
 - **Logging:** `logging` + `RotatingFileHandler` (built-in, sin dependencias)
 - **BD:** `panaderia_master` — credenciales en `.env`
 - **Password postgres (local):** `PanaderiaPro2026!` (⚠️ NO incluir en HANDOFFs públicos)
@@ -40,7 +43,7 @@
 - HTML5/CSS3, JavaScript vanilla, Bootstrap 5.1.3, Chart.js, Font Awesome 6
 
 ### Estructura de archivos
-- `app.py` (~12.600 líneas) — aplicación principal
+- `app.py` (~12.700 líneas) — aplicación principal
 - `models.py` (~3.060 líneas) — modelos SQLAlchemy
 - `reportes.py` (~3.400 líneas) — generación PDF
 - `seed_demo.py` (~450 líneas) — seed del Demo
@@ -48,11 +51,17 @@
 - `middleware_saas.py`, `tenant_decorators.py`, `tenant_context.py` — multi-tenant
 - `security_utils.py` — utilidades de seguridad multi-tenant
 - `migrations/sql/` — scripts SQL versionados
+- **`babel.cfg`** (NUEVO DT-37) — config de extracción de strings
+- **`locales/`** (NUEVO DT-37) — catálogos de traducción
+  - `locales/messages.pot` — plantilla (54 msgids)
+  - `locales/es/LC_MESSAGES/messages.{po,mo}` — español (0 traducidos, fallback)
+  - `locales/en/LC_MESSAGES/messages.{po,mo}` — inglés (53 traducidos)
+  - `locales/pap/LC_MESSAGES/messages.{po,mo}` — papiamentu Curazao (53 traducidos)
 - `templates/` (54 templates + `_csrf_head.html` partial + subcarpetas `secciones/`)
 - `static/js/` — incluye `csrf-auto-inject.js`
 - `logs/` — archivo rotativo `panaderia.log` (ignorado por git)
 - `.env` (protegido), `.env.example` (plantilla)
-- `requirements.txt` — incluye `Flask-WTF==1.3.0`, `WTForms==3.2.2`
+- `requirements.txt` — incluye `Flask-WTF==1.3.0`, `WTForms==3.2.2`, `Flask-Babel==4.0.0`, `Babel==2.18.0`
 - `HANDOFF.md` — este archivo
 
 ---
@@ -70,7 +79,7 @@
 
 **Estado de `tenant_1`:** ✅ Limpio.
 
-**Estado de `tenant_27`:** ✅ Re-seedeado el 5 Oct (9.968 filas) + ventas acumuladas del smoke test (IDs 2777-2780).
+**Estado de `tenant_27`:** ✅ Re-seedeado el 5 Oct (9.968 filas) + ventas acumuladas del smoke test (IDs 2777-2780). `idioma = pap` (para pruebas de i18n).
 
 ### 📌 Arquitectura de `public.*` (post-DT-36)
 
@@ -85,6 +94,15 @@
 **Columnas reales de `public.tenants`:**
 `id`, `nombre`, `subdominio`, `base_datos`, `fecha_creacion`, `activo`, `plan`, `fecha_vencimiento`, `fecha_expiracion`.
 **NO tiene columna `licencia`.**
+
+### 📌 Arquitectura del campo `idioma` (post-DT-37 F0)
+
+- Vive en `tenant_X.configuracion_sistema` (dentro del schema del tenant).
+- Tipo: `VARCHAR(5) NOT NULL DEFAULT 'es'`.
+- Valores soportados: `es`, `en`, `pap` (Papiamentu Curazao), `pt` (futuro).
+- Migración: `migrations/sql/2026-10-12_add_idioma_configuracion_sistema.sql`.
+
+**⚠️ Nota:** `tenant_1.configuracion_sistema` tiene **6 filas** con `panaderia_id` = 1, 5, 22, 24, 27, 28 (posible data legacy). No bloquea.
 
 ---
 
@@ -118,6 +136,7 @@
 - Configurables en `/configuracion/facturacion`.
 - Se guardan en `ConfiguracionSistema` (dentro del schema del tenant).
 - Fallback: `ConfiguracionPanaderia` (legacy).
+- Incluye: tipo_facturacion, nombre_empresa, moneda, usa_centavos, simbolo_moneda, **idioma** (DT-37).
 
 ---
 
@@ -135,23 +154,30 @@
 | 8 | Activos Fijos | ✅ COMPLETO |
 | 9 | Gestión de Usuarios + Mi Perfil | ✅ COMPLETO |
 | 10 | Gestión Financiera | ✅ COMPLETO |
-| 11 | Reportes Profesionales | ✅ COMPLETO |
+| 11 | Reportes Profesionales | ✅ COMPLETO (i18n en progreso: 1/14 reportes migrados) |
 
 ---
 
 ## 6️⃣ Últimos commits pusheados
+
+```
+93a1e82 feat(DT-37 Papiamento): agregar soporte Papiamentu de Curacao (pap)
+5860fdf fix(DT-37 F3.3 + F3.7 + F3.8): fix Babel translation_directories + cleanup
+9490e97 feat(DT-37 F3.2): migrar reporte tendencia_ventas a i18n con _()
+fbea5d8 feat(DT-37 F1+F2): integrar Flask-Babel con localeselector por tenant
+85f8cf5 feat(DT-37 F0): agregar campo idioma en configuracion_sistema
+c59124e docs: HANDOFF v8.7 - DT-47 cerrada (logging centralizado) + DT-7/DT-44 eliminadas
 92f2d0d feat(DT-47): logging centralizado con logger en lugar de print
 76d6009 docs: HANDOFF v8.6 - DT-19 cerrada (CSRF completo con flask-wtf)
 ad2b876 feat(DT-19): proteccion CSRF completa con flask-wtf
-09b67e8 docs: HANDOFF v8.5 - DT-46/DT-5-bis/DT-5-quinquies/DT-5-quater-bis cerradas (Opcion Rapida 100%)
+09b67e8 docs: HANDOFF v8.5 - DT-46/DT-5-bis/DT-5-quinquies/DT-5-quater-bis cerradas
 93ea142 fix(DT-5-quater-bis): limpiar debug verboso en reporte_cierre_caja
 ff1d704 fix(DT-5-bis, DT-5-quinquies): documentar ORM Gasto + alinear tenant_1.gastos
 34aad22 fix(DT-46): mover import de es_super_admin al top de app.py
 f2caa24 fix(DT-42, DT-43): eliminar duplicaciones de codigo
-a39eecf fix(DT-45): eliminar get_flashed_messages() preventivo en login() que destruia flashes
-7cda002 fix(DT-28): prevenir doble submit en login (unificar 2 listeners en 1 + btn.disabled)
-
-text
+a39eecf fix(DT-45): eliminar get_flashed_messages() preventivo en login()
+7cda002 fix(DT-28): prevenir doble submit en login
+```
 
 ---
 
@@ -179,12 +205,13 @@ text
 ## 8️⃣ Configuración crítica
 
 ### Variables de entorno (.env)
+
+```
 DATABASE_URL=postgresql://postgres:...@localhost:5433/panaderia_master
 DB_PASSWORD=...
 FLASK_ENV=development
 SECRET_KEY=...
-
-text
+```
 
 **⚠️ Importante:** `SECRET_KEY` es **crítica** para:
 - Sesiones de Flask.
@@ -203,10 +230,11 @@ text
 - `/crear_cliente`, `/editar_cliente_super`, `/renovar_suscripcion_super`, `/eliminar_cliente/<id>`, `/gestion_clientes`
 - `/configuracion/facturacion`
 - `/resetear_password/<id>` (POST)
+- `/generar_reporte_tendencia_ventas` (✅ i18n es/en/pap)
 
-### 🎯 Arquitectura del `before_request` (post-DT-25)
+### 🎯 Arquitectura del `before_request` (post-DT-25 + DT-37)
 
-**Un solo `before_request` en `app.py:1841` (`antes_de_cada_peticion`).**
+**Un solo `before_request` en `app.py:1892` (`antes_de_cada_peticion`).**
 
 Flujo:
 1. **Rutas públicas** (`static`, `login`, `logout`, `suscripcion_vencida`) → return directo.
@@ -215,7 +243,8 @@ Flujo:
 4. **Sin tenant válido** → `session.clear()` + redirect a login (NO fallback a tenant 1).
 5. **Setea `g.tenant` + `g.panaderia_id` + `g.current_tenant` + `g.es_super_admin`**.
 6. **`set_tenant_schema()`** una sola vez.
-7. **Verificación de suscripción**.
+7. **🆕 DT-37: Carga `g.idioma_tenant`** desde `ConfiguracionSistema.idioma` (fallback `'es'`).
+8. **Verificación de suscripción**.
 
 **Funciones auxiliares en `app.py`:**
 - `_validar_origen_csrf()` (L1751)
@@ -230,7 +259,7 @@ Flujo:
 
 **Arquitectura de protección CSRF:**
 
-1. **`CSRFProtect(app)`** inicializado en `app.py:1251`.
+1. **`CSRFProtect(app)`** inicializado en `app.py:1253`.
 2. **Context processor `inject_csrf_token()`** (`app.py:1842`).
 3. **Partial `templates/_csrf_head.html`** con meta tag + script. Incluido en 53 templates vía `{% include %}`.
 4. **Script `static/js/csrf-auto-inject.js`** que:
@@ -248,558 +277,667 @@ Flujo:
    ```python
    import logging
    from logging.handlers import RotatingFileHandler
-Configuración en app.py:1263-1290:
+   ```
 
-logger = logging.getLogger('panaderia')
+2. **Configuración en `app.py:1263-1290`:**
+   - `logger = logging.getLogger('panaderia')`
+   - Nivel auto: DEBUG en development, INFO en prod.
+   - Handler 1: consola (StreamHandler).
+   - Handler 2: archivo rotativo `logs/panaderia.log` (5 MB × 5 backups).
 
-Nivel auto: DEBUG en development, INFO en prod.
+3. **Formato de logs:**
+   ```
+   [2026-10-12 10:20:42] INFO [panaderia] ✅ Venta registrada - ID: 2779
+   ```
 
-Handler 1: consola (StreamHandler).
+4. **Niveles utilizados:**
+   - info: 182 eventos (login, ventas, tenants, arranque).
+   - debug: 57 eventos (búsquedas, payloads, trazas).
+   - warning: 43 eventos (excepciones recuperables).
+   - error: 71 eventos (excepciones críticas).
 
-Handler 2: archivo rotativo logs/panaderia.log (5 MB × 5 backups).
+5. **Cero print() activos.** Los 6 restantes son comentados o dentro de strings.
 
-Formato de logs:
+6. **Rotación:** cuando `panaderia.log` supera 5 MB, se crea `panaderia.log.1`, y así hasta `.5`.
 
-text
-[2026-10-12 10:20:42] INFO [panaderia] ✅ Venta registrada - ID: 2779
-Niveles utilizados:
+7. **`.gitignore`:** `logs/` y `*.log` ya están excluidos.
 
-info: 182 eventos (login, ventas, tenants, arranque).
+### 🆕 🎯 i18n con Flask-Babel (post-DT-37 F3)
 
-debug: 57 eventos (búsquedas, payloads, trazas).
+**Arquitectura de i18n:**
 
-warning: 43 eventos (excepciones recuperables).
+1. **Inicialización** en `app.py:~1256`:
+   ```python
+   from flask_babel import Babel
 
-error: 71 eventos (excepciones críticas).
+   def _get_locale():
+       return getattr(g, 'idioma_tenant', None) or 'es'
 
-Cero print() activos. Los 6 restantes son comentados o dentro de strings.
+   babel = Babel(
+       app,
+       locale_selector=_get_locale,
+       default_translation_directories=os.path.join(app.root_path, 'locales')
+   )
+   ```
 
-Rotación: cuando panaderia.log supera 5 MB, se crea panaderia.log.1, y así hasta .5.
+2. **⚠️ Lección clave:** `app.config['BABEL_TRANSLATION_DIRECTORIES']` aplicado **después** de `Babel(app)` es **demasiado tarde** → Babel ya leyó el default (`translations/`). **Pasar `default_translation_directories` al constructor.**
 
-.gitignore: logs/ y *.log ya están excluidos.
+3. **`_get_locale()`** resuelve el locale por request, leyendo `g.idioma_tenant` (cargado en el `before_request`).
 
-🎯 Flash messages (post-DT-45)
-El handler login() ya NO consume get_flashed_messages() preventivamente.
+4. **Pipeline i18n (comandos):**
+   ```cmd
+   # 1. Marcar strings en código con _()
+   # 2. Extraer strings (SOLO archivos específicos, NO '.'):
+   pybabel extract -F babel.cfg -o locales/messages.pot app.py models.py reportes.py
 
-Los flashes del logout ("Has cerrado sesión") se muestran correctamente.
+   # 3. Actualizar catálogos existentes (después de agregar nuevos strings):
+   pybabel update -i locales/messages.pot -d locales
 
-🎯 es_super_admin() (post-DT-43 y DT-46)
-Definición canónica única: tenant_decorators.py:19.
+   # 4. Traducir los msgstr en cada .po (es/, en/, pap/)
+   # 5. Compilar .po -> .mo:
+   pybabel compile -d locales --statistics
+   ```
 
-tenant_context.py la importa.
+5. **Idiomas soportados:** `es` (base/fallback), `en`, `pap` (Papiamentu Curazao).
 
-app.py la importa a nivel de módulo (app.py:1175).
+6. **Cómo funciona el fallback:**
+   - `es.po` tiene 0 traducciones → Babel devuelve el `msgid` original (que ya está en español).
+   - `en.po` y `pap.po` tienen 53 traducciones cada uno.
 
-🎯 ORM Gasto (post-DT-5-bis)
-Definido en models.py:1055 pero NO se usa en código activo.
+7. **⚠️ Lecciones aprendidas:**
+   - `pybabel extract ... .` escanea **TODO** (incluido `venv/`) → usar lista explícita de archivos.
+   - `jinja2.ext.autoescape` y `jinja2.ext.with_` **NO existen en Jinja2 3.x** → solo declarar `encoding` en `babel.cfg`.
+   - Los archivos `.mo` **deben commitearse** al repo (Flask-Babel no los genera en runtime).
+   - Verificar el locale NO es suficiente con `get_locale()`. Hay que verificar que `gettext()` **efectivamente traduzca**.
 
-Documentado con comentario aclaratorio.
+8. **Días en Papiamentu Curazao:**
 
-🎯 reporte_cierre_caja() (post-DT-5-quater-bis)
-Ubicada en app.py:7317-7639.
+   | ES | PAP Curazao |
+   |---|---|
+   | Lunes | djaluna |
+   | Martes | djamars |
+   | Miércoles | djárason |
+   | Jueves | djaweps |
+   | Viernes | djabièrnè |
+   | Sábado | djasabra |
+   | Domingo | djadumingu |
 
-Sin prints, sin query duplicada, sin comentario triplicado.
+   **Nota:** Papiamentu de **Aruba** usa ortografía distinta → si en el futuro se necesita, usar catálogo `pap_AW` separado.
 
-🎯 tenant_1.gastos (post-DT-5-quinquies)
-Alineada con tenant_27.gastos.
+### 🎯 Flash messages (post-DT-45)
 
-Migration: migrations/sql/2026-10-07_align_tenant_1_gastos.sql.
+- El handler `login()` ya **NO** consume `get_flashed_messages()` preventivamente.
+- Los flashes del logout ("Has cerrado sesión") se muestran correctamente.
 
-9️⃣ Deuda técnica acumulada
-✅ RESUELTAS el 12 de Octubre 2026 — DT-47
-#	Descripción	Commit
-DT-47	Logging centralizado (355 prints → logger)	92f2d0d
-✅ RESUELTAS el 8 de Octubre 2026 — DT-19
-#	Descripción	Commit
-DT-19	CSRF completo con flask-wtf	ad2b876
-✅ RESUELTAS el 7 de Octubre 2026 — Opción Rápida
-#	Descripción	Commit
-DT-46	Import es_super_admin al top	34aad22
-DT-5-bis	ORM Gasto documentado	ff1d704
-DT-5-quinquies	tenant_1.gastos alineada	ff1d704
-DT-5-quater-bis (reformulada)	Debug verboso eliminado	93ea142
-✅ RESUELTAS el 6 de Octubre 2026 (mediodía)
-#	Descripción	Commit
-DT-28	Doble submit en login	7cda002
-DT-45	Flash messages destruidos por login()	a39eecf
-DT-42	diagnosticar_recetas() duplicada	f2caa24
-DT-43	es_super_admin() duplicada	f2caa24
-❌ ELIMINADAS en v8.7
-#	Motivo
-DT-7	Inconsistencia FK aceptada — no afecta la aplicación.
-DT-44	Password del admin del tenant 1 resoluble desde el frontend (endpoint /resetear_password/<id>).
-✅ RESUELTAS el 5 de Octubre 2026 (noche)
+### 🎯 es_super_admin() (post-DT-43 y DT-46)
+
+- Definición canónica única: `tenant_decorators.py:19`.
+- `tenant_context.py` la importa.
+- `app.py` la importa a nivel de módulo (`app.py:1175`).
+
+### 🎯 ORM Gasto (post-DT-5-bis)
+
+- Definido en `models.py:1055` pero NO se usa en código activo.
+- Documentado con comentario aclaratorio.
+
+### 🎯 reporte_cierre_caja() (post-DT-5-quater-bis)
+
+- Ubicada en `app.py:7317-7639`.
+- Sin prints, sin query duplicada, sin comentario triplicado.
+
+### 🎯 tenant_1.gastos (post-DT-5-quinquies)
+
+- Alineada con `tenant_27.gastos`.
+- Migration: `migrations/sql/2026-10-07_align_tenant_1_gastos.sql`.
+
+---
+
+## 9️⃣ Deuda técnica acumulada
+
+### ✅ RESUELTAS el 15 de Octubre 2026 — DT-37 (parcial)
+
+| # | Descripción | Commit |
+|---|---|---|
+| DT-37 F0 | Campo `idioma` en `ConfiguracionSistema` + migración BD + UI | `85f8cf5` |
+| DT-37 F1 | Instalación Flask-Babel + Babel | `fbea5d8` |
+| DT-37 F2 | `Babel(app)` + `_get_locale()` + hook en before_request | `fbea5d8` |
+| DT-37 F3 | Reporte piloto (`tendencia_ventas`) migrado a i18n | `9490e97` + `5860fdf` |
+| DT-37 Papiamento | Catálogo pap completo (53 traducciones) | `93a1e82` |
+
+### ✅ RESUELTAS el 12 de Octubre 2026 — DT-47
+
+| # | Descripción | Commit |
+|---|---|---|
+| DT-47 | Logging centralizado (355 prints → logger) | `92f2d0d` |
+
+### ✅ RESUELTAS el 8 de Octubre 2026 — DT-19
+
+| # | Descripción | Commit |
+|---|---|---|
+| DT-19 | CSRF completo con flask-wtf | `ad2b876` |
+
+### ✅ RESUELTAS el 7 de Octubre 2026 — Opción Rápida
+
+| # | Descripción | Commit |
+|---|---|---|
+| DT-46 | Import es_super_admin al top | `34aad22` |
+| DT-5-bis | ORM Gasto documentado | `ff1d704` |
+| DT-5-quinquies | tenant_1.gastos alineada | `ff1d704` |
+| DT-5-quater-bis (reformulada) | Debug verboso eliminado | `93ea142` |
+
+### ✅ RESUELTAS el 6 de Octubre 2026 (mediodía)
+
+| # | Descripción | Commit |
+|---|---|---|
+| DT-28 | Doble submit en login | `7cda002` |
+| DT-45 | Flash messages destruidos por login() | `a39eecf` |
+| DT-42 | `diagnosticar_recetas()` duplicada | `f2caa24` |
+| DT-43 | `es_super_admin()` duplicada | `f2caa24` |
+
+### ❌ ELIMINADAS en v8.7
+
+| # | Motivo |
+|---|---|
+| DT-7 | Inconsistencia FK aceptada — no afecta la aplicación. |
+| DT-44 | Password del admin del tenant 1 resoluble desde el frontend. |
+
+### ✅ RESUELTAS el 5 de Octubre 2026 (noche)
+
 DT-25, DT-29, DT-35, DT-5, DT-5-quater, DT-5-ter, DT-21.
 
-✅ RESUELTAS el 5 de Octubre 2026 (mañana)
+### ✅ RESUELTAS el 5 de Octubre 2026 (mañana)
+
 Fase C.3, DT-38, DT-40, DT-39, DT-36.
 
-🟡 Medias pendientes
-#	Ubicación	Descripción
-DT-37	reportes.py	i18n reportes (Flask-Babel). ~8-15 h.
-🟢 Bajas pendientes
-(ninguna en este momento)
+### 🟡 Medias pendientes
+
+| # | Ubicación | Descripción |
+|---|---|---|
+| DT-37 | `reportes.py` | i18n reportes — **F4 pendiente: 13 reportes restantes**. ~6-8 h. |
+| **DT-NUEVA-1** | `migrations/sql/` | **Sincronizar `CREATE TABLE` con `idioma`** para tenants nuevos (obligatorio antes del próximo tenant). |
+| **DT-nueva** | `reportes.py` | **Error `'ingreso'` en `generar_reporte_ia_predictivo`** (detectado F3.2, no bloquea). PDF muestra "Las recomendaciones no están disponibles temporalmente por error técnico". |
+| **DT-nueva** | `app.py` | **Reducir logs verbosos de productos por tenant**: `✅ Agregado panadería: Milhojas` × cada producto × cada request. Con 500 tenants, los logs se llenan. Considerar bajar a debug o eliminar. |
+
+### 🟢 Bajas pendientes
+
+| # | Descripción |
+|---|---|
+| DT-nueva | `tenant_1.configuracion_sistema` tiene 6 filas con `panaderia_id` = 1, 5, 22, 24, 27, 28 (posible data legacy). |
+| DT-nueva | Imports redundantes de `os` en `app.py` (líneas 1225, 10519, 11009, 11958, 12323, 12429). |
+
+### 🚨 Features pendientes
+
+- **DT-CRÉDITOS:** Módulo completo de créditos/fiado. Detalle en sección 2️⃣0️⃣.
+- **Dockerización (Fase 3):** ~22-32 h.
+
+---
+
+## 🔟 Metodología de trabajo
+
+### Reglas de oro
+
+1. Un paso a la vez con confirmación antes de continuar.
+2. Diagnóstico ANTES de modificar.
+3. Soluciones de raíz (no parches).
+4. TODO debe funcionar para futuros tenants.
+5. Verificación con psql/findstr antes de avanzar.
+6. Commit después de cada fix verificado.
+7. Backup antes de cada cambio grande.
+8. Siempre verificar git status antes de commitear.
+9. Push después del commit.
+10. Detener servidor antes de reiniciar.
+11. Insertar bloques: mostrar ANTES → DESPUÉS con número de línea exacto.
+12. Verificar ubicación y compilar tras cada inserción.
+13. Al detectar deuda técnica: anotarla (no tocarla), priorizarla, decidir después.
+14. Al insertar código a nivel de módulo: ubicarlo junto a sus hermanos temáticos.
+15. Al pedir un test, incluir TODAS las verificaciones previas necesarias.
+16. Cuando el punto de inserción esté justo debajo de un decorador, incluir el decorador en el ANTES → DESPUÉS.
+17. Antes de proponer un fix de concurrencia, medir impacto en el pool de SQLAlchemy.
+18. Nunca usar `echo texto >> archivo` en Windows para modificar archivos de texto.
+19. Nunca acceder a `current_user` desde event listeners de SQLAlchemy.
+20. En Windows, usar `findstr /c:"patrón"` para búsquedas literales.
+21. Antes de aplicar un fix según el HANDOFF, verificar el estado actual del archivo.
+22. Al eliminar código huérfano, verificar PRIMERO que no haya referencias activas (incluye templates HTML y JS).
+23. Al auditar modelos con `default=N`: verificar TODOS los INSERTs (ORM + SQL directo).
+24. Al eliminar una columna de un modelo, verificar SIEMPRE primero: (a) si hay lecturas en el código, (b) si hay datos inconsistentes en la BD, (c) si hay usuarios/registros que apunten a valores huérfanos.
+25. Al hacer DELETE masivos en la BD, verificar SIEMPRE: (a) backup previo, (b) que no haya FKs apuntando a los registros, (c) que no sean tenants reales en `public.tenants`.
+26. Al modificar un método de `reportes.py` que genera PDF, verificar SIEMPRE el orden de las secciones y que todas las variables estén definidas ANTES de usarse.
+27. Nunca asumir que el esquema de la BD coincide con el modelo ORM. Verificar con `information_schema.columns` ANTES de usar un ORM en un contexto nuevo.
+28. Al auditar columnas (Fase C.3), usar `COUNT(DISTINCT col)` en lugar de `COUNT(col)` para evitar falsos positivos.
+29. Al agregar una segunda FK a una tabla, SQLAlchemy requiere `foreign_keys=[...]` explícito.
+30. Al alinear `CREATE TABLE` con el ORM, actualizar también los seeds.
+31. Al arrancar la app, se ejecuta una migración automática que agrega columnas del ORM que falten en la BD. Verificar siempre con `information_schema.columns`.
+32. Al alinear ORM↔BD, revisar TODOS los usos del modelo en templates HTML, JavaScript y CSS.
+33. Al hacer `DROP COLUMN`, verificar SIEMPRE primero con `information_schema.columns` en QUÉ schemas existe. Ejecutar el DROP por transacción individual.
+34. Al hacer cambios destructivos en BD, tomar un backup FRESCO con `pg_dump -F c` inmediatamente antes.
+35. Al quitar columnas del `CREATE TABLE`, verificar SIEMPRE si la columna eliminada era la ÚLTIMA del bloque. Si lo era, hay que quitar la coma de la línea precedente.
+36. Antes de hacer commit de un `CREATE TABLE` modificado, revisar el `git diff` línea por línea.
+37. Antes de hacer DROP masivos, verificar SIEMPRE las FKs internas con `information_schema.table_constraints`.
+38. Al dropear una tabla referenciada por otra que se CONSERVA, primero soltar la FK explícitamente.
+39. Un endpoint de borrado de tenant debe limpiar TODAS las tablas `public.*` que puedan tener datos del tenant.
+40. Al verificar `COUNT(*)` de tablas, NO confiar en `pg_stat_user_tables.n_live_tup`. Usar siempre `COUNT(*)` real.
+41. Cuando `powershell -Command "Get-Content ... | Select-Object ..."` corte la salida en un emoji UTF-8, usar `findstr /n /r /c:"^" archivo.py > _dump.txt` y luego `Select-Object` sobre ese archivo.
+42. Antes de refactorizar un `before_request` o middleware global, mapear TODOS los escritores/lectores de `g.*`.
+43. En Windows CMD, para `git commit -m "mensaje multilínea"`: crear un archivo `_commit_msg.txt` y usar `git commit -F _commit_msg.txt`.
+44. Antes de duplicar código defensivamente, verificar si el framework (Flask/Bootstrap/etc.) ya maneja el caso nativamente. Ejemplo: HTML5 `required` ya bloquea envíos con campos vacíos.
+45. Nunca confiar en el output de CMD para diagnosticar código con emojis o caracteres no-ASCII: el mojibake (UTF-8 → Latin-1) puede simular errores de sintaxis que no existen. Verificar SIEMPRE con el editor o con `Get-Content` de PowerShell.
+46. Antes de proponer un "fix urgente" basado en sospechas, confirmar el bug con evidencia directa (imagen del editor, `cat -A`, `hexdump`). Un falso positivo puede llevar a "arreglar" código que está sano.
+47. Al aplicar cambios en cadena (Tanda 1, Tanda 2, ...), usar los TEXTOS (comentarios, prints, strings únicos) como referencia de ubicación, no los números de línea. Los números se desfasan con cada cambio.
+48. En PowerShell, `Select-String` con regex `:7[3-9][0-9][0-9]:` NO matchea porque el output de `findstr /n` ya tiene los dos puntos. Usar `'^7[3-9][0-9][0-9]:'` (inicio de línea) en su lugar.
+49. Para eliminar un bloque `for` que contiene solo un `print`, eliminar el `for` completo (no solo el print): Python no permite `for` sin cuerpo.
+50. Nunca pasar scripts PowerShell multilínea desde CMD. Los here-strings (`@'...'@`), los `%`, `$`, `<`, `>` se escapan mal. Usar Python (script `.py` creado en editor) o crear el `.ps1` manualmente y ejecutarlo con `powershell -ExecutionPolicy Bypass -File script.ps1`.
+51. Para migrar CSRF (o cualquier cambio transversal) en apps con muchos templates: usar "1 partial + 1 script JS" en lugar de editar 30+ formularios manualmente. Mucho más rápido y consistente.
+52. `login.html` (crítico) SIEMPRE debe tener el token CSRF manual en el `<form>`, NO depender de JS. Los usuarios podrían tener JS bloqueado.
+53. Los templates que extienden `base.html` heredan automáticamente los `{% include %}` del padre. No hay que editarlos si `base.html` ya tiene el include.
+54. Al inicializar `CSRFProtect(app)` en Flask, verificar SIEMPRE la ubicación: debe ir DESPUÉS de `app.secret_key`. Sin `SECRET_KEY`, los tokens no se pueden firmar.
+55. Antes de migrar `print()` a `logger`, verificar si hay `print()` a nivel de módulo ANTES de la definición del logger. Los `print()` dentro de funciones son seguros. Los `print()` a nivel de módulo se ejecutan al importar, ANTES de que el logger exista → `NameError`.
+56. En `RotatingFileHandler`, siempre configurar `encoding='utf-8'` para evitar problemas con caracteres especiales y emojis.
+57. Al configurar un logger en Flask debug mode, evitar handlers duplicados. Flask debug ejecuta el módulo dos veces (por el reloader), lo que agrega dos veces los handlers. Solución: `if not logger.handlers:` antes de configurar.
+58. `findstr /c:"texto con tilde"` puede fallar por encoding. Usar fragmentos sin tildes o PowerShell con `Get-Content -Encoding UTF8`.
+59. Antes de reemplazar masivamente `print()` por `logger.*()` con un script, hacer dry-run con muestras de cada categoría. Verificar que la clasificación sea correcta antes de aplicar.
+60. Los scripts de diagnóstico y reemplazo deben crear su propio backup con timestamp (`app.py.bak_reemplazo_<DT>_<YYYYMMDD_HHMMSS>`). No sobreescribir el backup principal.
+61. **🆕 En Flask-Babel 4.0, `default_translation_directories` DEBE pasarse al constructor `Babel(app, ...)`.** Aplicar `app.config['BABEL_TRANSLATION_DIRECTORIES']` después de `Babel(app)` es demasiado tarde.
+62. **🆕 `pybabel extract` con `.` escanea TODO el proyecto (incluido `venv/`).** Usar lista explícita: `app.py models.py reportes.py`.
+63. **🆕 Jinja2 3.x eliminó `jinja2.ext.autoescape` y `jinja2.ext.with_`.** NO declararlas en `babel.cfg`.
+64. **🆕 Los archivos `.mo` deben commitearse al repo** — no se generan automáticamente en runtime.
+65. **🆕 Verificar el locale NO es suficiente con `get_locale()`.** Hay que verificar que `gettext()` **efectivamente traduzca**.
+66. **🆕 Antes de agregar un idioma nuevo, verificar el código ISO 639-2/3.** Papiamentu = `pap`.
+67. **🆕 Días en Papiamentu Curazao llevan prefijo `dja-`** (djaluna, djamars, etc.). El Papiamentu de Aruba usa ortografía distinta → si se agrega, usar `pap_AW`.
+68. **🆕 Los scripts de diagnóstico temporales se crean en archivo `.py`** (no con `python -c "..."`): Python no permite `with` después de `;`.
+
+### Comandos útiles
+
+- **Encoding:** `chcp 65001`
+
+- **psql:**
+  ```
+  psql -U postgres -p 5433 -h localhost -d panaderia_master
+  ```
+
+- **Ver estructura:**
+  ```
+  psql -U postgres -p 5433 -h localhost -d panaderia_master -c "\d tenant_27.nombre_tabla"
+  ```
+
+- **Seed Demo:**
+  ```
+  python seed_demo.py --tenant=27 --reset-all
+  ```
+
+- **Compilar / Servidor:**
+  ```
+  python -m py_compile app.py
+  python app.py
+  ```
+
+- **Búsquedas:**
+  ```
+  findstr /n /c:"patrón exacto" archivo.py
+  findstr /s /n /c:"patrón" *.py
+  findstr /s /n /c:"patrón" templates\*.html
+  ```
+
+- **Extraer líneas (PowerShell):**
+  ```
+  powershell -Command "Get-Content models.py | Select-Object -Skip 246 -First 20"
+  ```
+
+- **Backup de BD:**
+  ```
+  pg_dump -U postgres -p 5433 -h localhost -d panaderia_master -F c -f backup_pre_XXX.backup
+  ```
+
+- **Commit multilínea (Windows CMD):**
+  ```
+  # Crear _commit_msg.txt con el mensaje completo
+  git commit -F _commit_msg.txt
+  del _commit_msg.txt
+  ```
+
+- **Ver rama con tracking:**
+  ```
+  git branch -vv
+  ```
+
+- **Leer logs con encoding correcto:**
+  ```
+  powershell -Command "Get-Content logs\panaderia.log -Encoding UTF8 | Select-Object -First 50"
+  ```
+
+- **Script Python de un solo uso:**
+  1. Crear `_script_temporal.py` en el editor.
+  2. `python _script_temporal.py`
+  3. `del _script_temporal.py` al terminar.
+
+- **🆕 Pipeline i18n (DT-37):**
+  ```
+  # Extraer strings (SOLO archivos específicos):
+  pybabel extract -F babel.cfg -o locales/messages.pot app.py models.py reportes.py
+
+  # Actualizar catálogos después de agregar nuevos strings:
+  pybabel update -i locales/messages.pot -d locales
+
+  # Compilar .po -> .mo:
+  pybabel compile -d locales --statistics
+  ```
+
+---
+
+## 1️⃣1️⃣ Fase C.3 — Auditoría de columnas huérfanas (cerrada)
 
-🚨 Features pendientes
-DT-CRÉDITOS: Módulo completo de créditos/fiado. Detalle en sección 2️⃣0️⃣.
-
-🔟 Metodología de trabajo
-Reglas de oro
-Un paso a la vez con confirmación antes de continuar.
-
-Diagnóstico ANTES de modificar.
-
-Soluciones de raíz (no parches).
-
-TODO debe funcionar para futuros tenants.
-
-Verificación con psql/findstr antes de avanzar.
-
-Commit después de cada fix verificado.
-
-Backup antes de cada cambio grande.
-
-Siempre verificar git status antes de commitear.
-
-Push después del commit.
-
-Detener servidor antes de reiniciar.
-
-Insertar bloques: mostrar ANTES → DESPUÉS con número de línea exacto.
-
-Verificar ubicación y compilar tras cada inserción.
-
-Al detectar deuda técnica: anotarla (no tocarla), priorizarla, decidir después.
-
-Al insertar código a nivel de módulo: ubicarlo junto a sus hermanos temáticos.
-
-Al pedir un test, incluir TODAS las verificaciones previas necesarias.
-
-Cuando el punto de inserción esté justo debajo de un decorador, incluir el decorador en el ANTES → DESPUÉS.
-
-Antes de proponer un fix de concurrencia, medir impacto en el pool de SQLAlchemy.
-
-Nunca usar echo texto >> archivo en Windows para modificar archivos de texto.
-
-Nunca acceder a current_user desde event listeners de SQLAlchemy.
-
-En Windows, usar findstr /c:"patrón" para búsquedas literales.
-
-Antes de aplicar un fix según el HANDOFF, verificar el estado actual del archivo.
-
-Al eliminar código huérfano, verificar PRIMERO que no haya referencias activas (incluye templates HTML y JS).
-
-Al auditar modelos con default=N: verificar TODOS los INSERTs (ORM + SQL directo).
-
-Al eliminar una columna de un modelo, verificar SIEMPRE primero: (a) si hay lecturas en el código, (b) si hay datos inconsistentes en la BD, (c) si hay usuarios/registros que apunten a valores huérfanos.
-
-Al hacer DELETE masivos en la BD, verificar SIEMPRE: (a) backup previo, (b) que no haya FKs apuntando a los registros, (c) que no sean tenants reales en public.tenants.
-
-Al modificar un método de reportes.py que genera PDF, verificar SIEMPRE el orden de las secciones y que todas las variables estén definidas ANTES de usarse.
-
-Nunca asumir que el esquema de la BD coincide con el modelo ORM. Verificar con information_schema.columns ANTES de usar un ORM en un contexto nuevo.
-
-Al auditar columnas (Fase C.3), usar COUNT(DISTINCT col) en lugar de COUNT(col) para evitar falsos positivos.
-
-Al agregar una segunda FK a una tabla, SQLAlchemy requiere foreign_keys=[...] explícito.
-
-Al alinear CREATE TABLE con el ORM, actualizar también los seeds.
-
-Al arrancar la app, se ejecuta una migración automática que agrega columnas del ORM que falten en la BD. Verificar siempre con information_schema.columns.
-
-Al alinear ORM↔BD, revisar TODOS los usos del modelo en templates HTML, JavaScript y CSS.
-
-Al hacer DROP COLUMN, verificar SIEMPRE primero con information_schema.columns en QUÉ schemas existe. Ejecutar el DROP por transacción individual.
-
-Al hacer cambios destructivos en BD, tomar un backup FRESCO con pg_dump -F c inmediatamente antes.
-
-Al quitar columnas del CREATE TABLE, verificar SIEMPRE si la columna eliminada era la ÚLTIMA del bloque. Si lo era, hay que quitar la coma de la línea precedente.
-
-Antes de hacer commit de un CREATE TABLE modificado, revisar el git diff línea por línea.
-
-Antes de hacer DROP masivos, verificar SIEMPRE las FKs internas con information_schema.table_constraints.
-
-Al dropear una tabla referenciada por otra que se CONSERVA, primero soltar la FK explícitamente.
-
-Un endpoint de borrado de tenant debe limpiar TODAS las tablas public.* que puedan tener datos del tenant.
-
-Al verificar COUNT(*) de tablas, NO confiar en pg_stat_user_tables.n_live_tup. Usar siempre COUNT(*) real.
-
-Cuando powershell -Command "Get-Content ... | Select-Object ..." corte la salida en un emoji UTF-8, usar findstr /n /r /c:"^" archivo.py > _dump.txt y luego Select-Object sobre ese archivo.
-
-Antes de refactorizar un before_request o middleware global, mapear TODOS los escritores/lectores de g.*.
-
-En Windows CMD, para git commit -m "mensaje multilínea": crear un archivo _commit_msg.txt y usar git commit -F _commit_msg.txt.
-
-Antes de duplicar código defensivamente, verificar si el framework (Flask/Bootstrap/etc.) ya maneja el caso nativamente. Ejemplo: HTML5 required ya bloquea envíos con campos vacíos.
-
-Nunca confiar en el output de CMD para diagnosticar código con emojis o caracteres no-ASCII: el mojibake (UTF-8 → Latin-1) puede simular errores de sintaxis que no existen. Verificar SIEMPRE con el editor o con Get-Content de PowerShell.
-
-Antes de proponer un "fix urgente" basado en sospechas, confirmar el bug con evidencia directa (imagen del editor, cat -A, hexdump). Un falso positivo puede llevar a "arreglar" código que está sano.
-
-Al aplicar cambios en cadena (Tanda 1, Tanda 2, ...), usar los TEXTOS (comentarios, prints, strings únicos) como referencia de ubicación, no los números de línea. Los números se desfasan con cada cambio.
-
-En PowerShell, Select-String con regex :7[3-9][0-9][0-9]: NO matchea porque el output de findstr /n ya tiene los dos puntos. Usar '^7[3-9][0-9][0-9]:' (inicio de línea) en su lugar.
-
-Para eliminar un bloque for que contiene solo un print, eliminar el for completo (no solo el print): Python no permite for sin cuerpo.
-
-Nunca pasar scripts PowerShell multilínea desde CMD. Los here-strings (@'...'@), los %, $, <, > se escapan mal. Usar Python (script .py creado en editor) o crear el .ps1 manualmente y ejecutarlo con powershell -ExecutionPolicy Bypass -File script.ps1.
-
-Para migrar CSRF (o cualquier cambio transversal) en apps con muchos templates: usar "1 partial + 1 script JS" en lugar de editar 30+ formularios manualmente. Mucho más rápido y consistente.
-
-login.html (crítico) SIEMPRE debe tener el token CSRF manual en el <form>, NO depender de JS. Los usuarios podrían tener JS bloqueado.
-
-Los templates que extienden base.html heredan automáticamente los {% include %} del padre. No hay que editarlos si base.html ya tiene el include.
-
-Al inicializar CSRFProtect(app) en Flask, verificar SIEMPRE la ubicación: debe ir DESPUÉS de app.secret_key. Sin SECRET_KEY, los tokens no se pueden firmar.
-
-Antes de migrar print() a logger, verificar si hay print() a nivel de módulo ANTES de la definición del logger. Los print() dentro de funciones son seguros (se ejecutan en runtime, después de que el logger esté configurado). Los print() a nivel de módulo se ejecutan al importar, ANTES de que el logger exista → NameError.
-
-En RotatingFileHandler, siempre configurar encoding='utf-8' para evitar problemas con caracteres especiales y emojis.
-
-Al configurar un logger en Flask debug mode, evitar handlers duplicados. Flask debug ejecuta el módulo dos veces (por el reloader), lo que agrega dos veces los handlers. Solución: if not logger.handlers: antes de configurar.
-
-findstr /c:"texto con tilde" puede fallar por encoding. Usar fragmentos sin tildes o PowerShell con Get-Content -Encoding UTF8.
-
-Antes de reemplazar masivamente print() por logger.*() con un script, hacer dry-run con muestras de cada categoría. Verificar que la clasificación sea correcta antes de aplicar.
-
-Los scripts de diagnóstico y reemplazo deben crear su propio backup con timestamp (app.py.bak_reemplazo_<DT>_<YYYYMMDD_HHMMSS>). No sobreescribir el backup principal.
-
-Comandos útiles
-Encoding: chcp 65001
-
-psql:
-
-text
-psql -U postgres -p 5433 -h localhost -d panaderia_master
-Ver estructura:
-
-text
-psql -U postgres -p 5433 -h localhost -d panaderia_master -c "\d tenant_27.nombre_tabla"
-Seed Demo:
-
-text
-python seed_demo.py --tenant=27 --reset-all
-Compilar / Servidor:
-
-text
-python -m py_compile app.py
-python app.py
-Búsquedas:
-
-text
-findstr /n /c:"patrón exacto" archivo.py
-findstr /s /n /c:"patrón" *.py
-findstr /s /n /c:"patrón" templates\*.html
-Extraer líneas (PowerShell):
-
-text
-powershell -Command "Get-Content models.py | Select-Object -Skip 246 -First 20"
-Backup de BD:
-
-text
-pg_dump -U postgres -p 5433 -h localhost -d panaderia_master -F c -f backup_pre_XXX.backup
-Commit multilínea (Windows CMD):
-
-text
-# Crear _commit_msg.txt con el mensaje completo
-git commit -F _commit_msg.txt
-del _commit_msg.txt
-Ver rama con tracking:
-
-text
-git branch -vv
-Leer logs con encoding correcto:
-
-text
-powershell -Command "Get-Content logs\panaderia.log -Encoding UTF8 | Select-Object -First 50"
-Script Python de un solo uso:
-
-Crear _script_temporal.py en el editor.
-
-python _script_temporal.py
-
-del _script_temporal.py al terminar.
-
-1️⃣1️⃣ Fase C.3 — Auditoría de columnas huérfanas (cerrada)
 Auditoría del 5 Oct, alineación ORM↔BD:
 
-Fase C.3 parcial: modelos vivos (cefb33f).
+- Fase C.3 parcial: modelos vivos (`cefb33f`).
+- DT-38: 4 lotes de modelos muertos.
+- DT-39: 25 columnas SIN FILAS.
+- DT-40: 6 columnas legacy en ventas.
+- DT-36: 42 tablas huérfanas en public.
+- DT-5-ter: columnas legacy en gastos.
+- DT-5-quinquies: alineación estructural `tenant_1.gastos` con `tenant_27.gastos` (7 Oct).
 
-DT-38: 4 lotes de modelos muertos.
+---
 
-DT-39: 25 columnas SIN FILAS.
+## 1️⃣2️⃣ DT-25 — Bitácora detallada (5 Oct 2026)
 
-DT-40: 6 columnas legacy en ventas.
+**Contexto:** 2 `before_request` registrados → trabajo duplicado, 2 conexiones psycopg2 raw por request, `set_tenant_schema()` 2 veces, mock inútil, fallback a tenant 1.
 
-DT-36: 42 tablas huérfanas en public.
+**Solución:**
+- Eliminado `TenantContext.initialize_app(app)`.
+- Nuevo `before_request` único (128 líneas) con funciones auxiliares.
+- Rutas públicas sin overhead.
+- Sin fallback a tenant 1 (DT-29).
 
-DT-5-ter: columnas legacy en gastos.
+**Commit:** `fe6fb0d`.
 
-DT-5-quinquies: alineación estructural tenant_1.gastos con tenant_27.gastos (7 Oct).
+---
 
-1️⃣2️⃣ DT-25 — Bitácora detallada (5 Oct 2026)
-Contexto: 2 before_request registrados → trabajo duplicado, 2 conexiones psycopg2 raw por request, set_tenant_schema() 2 veces, mock inútil, fallback a tenant 1.
+## 1️⃣3️⃣ DT-28 / DT-45 — Bitácora (6 Oct 2026)
 
-Solución:
+### DT-28 — Doble submit en login
+**Fix:** Unificar los 2 listeners en 1. Orden: validar → si OK → `btn.disabled = true` + `.loading`.
+**Commit:** `7cda002`.
 
-Eliminado TenantContext.initialize_app(app).
+### DT-45 — Flash messages destruidos
+**Fix:** Eliminar `get_flashed_messages()` preventivo en `login()` + reordenar docstring.
+**Commit:** `a39eecf`.
 
-Nuevo before_request único (128 líneas) con funciones auxiliares.
+---
 
-Rutas públicas sin overhead.
+## 1️⃣4️⃣ DT-42 / DT-43 — Bitácora (6 Oct 2026)
 
-Sin fallback a tenant 1 (DT-29).
+### DT-42 — `diagnosticar_recetas()` duplicada
+**Fix:** Eliminar la 1ra (huérfana).
 
-Commit: fe6fb0d.
+### DT-43 — `es_super_admin()` duplicada
+**Fix:** Mantener la canónica en `tenant_decorators.py`.
 
-1️⃣3️⃣ DT-28 / DT-45 — Bitácora (6 Oct 2026)
-DT-28 — Doble submit en login
-Fix: Unificar los 2 listeners en 1. Orden: validar → si OK → btn.disabled = true + .loading.
+**Commit:** `f2caa24`.
 
-Commit: 7cda002.
+---
 
-DT-45 — Flash messages destruidos
-Fix: Eliminar get_flashed_messages() preventivo en login() + reordenar docstring.
+## 1️⃣5️⃣ DT-46 — Bitácora (7 Oct 2026)
 
-Commit: a39eecf.
+**Fix:** Mover import de `es_super_admin` al top de `app.py`. Eliminar imports locales redundantes.
 
-1️⃣4️⃣ DT-42 / DT-43 — Bitácora (6 Oct 2026)
-DT-42 — diagnosticar_recetas() duplicada
-Fix: Eliminar la 1ra (huérfana).
+**Commit:** `34aad22`.
 
-DT-43 — es_super_admin() duplicada
-Fix: Mantener la canónica en tenant_decorators.py.
+---
 
-Commit: f2caa24.
+## 1️⃣6️⃣ DT-5-bis + DT-5-quinquies — Bitácora (7 Oct 2026)
 
-1️⃣5️⃣ DT-46 — Bitácora (7 Oct 2026)
-Fix: Mover import de es_super_admin al top de app.py. Eliminar imports locales redundantes.
+### DT-5-bis — ORM Gasto documentado
+**Fix:** 9 líneas de comentario antes de `class Gasto`.
 
-Commit: 34aad22.
+### DT-5-quinquies — `tenant_1.gastos` alineada
+**Fix:** DROP + CREATE con la estructura de `tenant_27.gastos`.
+**Archivo:** `migrations/sql/2026-10-07_align_tenant_1_gastos.sql`.
 
-1️⃣6️⃣ DT-5-bis + DT-5-quinquies — Bitácora (7 Oct 2026)
-DT-5-bis — ORM Gasto documentado
-Fix: 9 líneas de comentario antes de class Gasto.
+**Commit:** `ff1d704`.
 
-DT-5-quinquies — tenant_1.gastos alineada
-Fix: DROP + CREATE con la estructura de tenant_27.gastos.
+---
 
-Archivo: migrations/sql/2026-10-07_align_tenant_1_gastos.sql.
+## 1️⃣7️⃣ DT-5-quater-bis (reformulada) — Bitácora (7 Oct 2026)
 
-Commit: ff1d704.
+**Fix (4 tandas):** Eliminación progresiva de prints + bloque de debug + comentario triplicado.
 
-1️⃣7️⃣ DT-5-quater-bis (reformulada) — Bitácora (7 Oct 2026)
-Fix (4 tandas): Eliminación progresiva de prints + bloque de debug + comentario triplicado.
+**Resultado:** 35 prints eliminados, 50 líneas netas menos.
 
-Resultado: 35 prints eliminados, 50 líneas netas menos.
+**Falso positivo detectado:** Bug estructural en `except` → artefacto de mojibake. El código siempre estuvo sano.
 
-Falso positivo detectado: Bug estructural en except → artefacto de mojibake. El código siempre estuvo sano.
+**Commit:** `93ea142`.
 
-Commit: 93ea142.
+---
 
-1️⃣8️⃣ DT-19 — CSRF completo con flask-wtf (8 Oct 2026)
-Enfoque: Plan C híbrido (manual en login, auto-inyección JS para el resto).
+## 1️⃣8️⃣ DT-19 — CSRF completo con flask-wtf (8 Oct 2026)
 
-Fases: Backups → Instalar flask-wtf → CSRFProtect → Context processor → Script + partial → 53 templates → AJAX wrapper → login manual → Smoke test → Commit.
+**Enfoque:** Plan C híbrido (manual en login, auto-inyección JS para el resto).
 
-Smoke test validado: login, formularios, AJAX POST, todas las rutas críticas.
+**Fases:** Backups → Instalar flask-wtf → CSRFProtect → Context processor → Script + partial → 53 templates → AJAX wrapper → login manual → Smoke test → Commit.
 
-Commit: ad2b876.
+**Smoke test validado:** login, formularios, AJAX POST, todas las rutas críticas.
 
-1️⃣9️⃣ DT-47 — Logging centralizado (12 Oct 2026)
-Enfoque: Script Python de diagnóstico + script de reemplazo + edición manual de 4 casos especiales.
+**Commit:** `ad2b876`.
 
-Fases: Backup → Diagnóstico (350 prints) → Configurar logger → Dry-run del reemplazo → Aplicar (355 reemplazos) → Migrar 4 prints con comentario inline → Smoke test → Commit.
+---
 
-Resultado:
+## 1️⃣9️⃣ DT-47 — Logging centralizado (12 Oct 2026)
 
-355 print() → logger.info/debug/warning/error.
+**Enfoque:** Script Python de diagnóstico + script de reemplazo + edición manual de 4 casos especiales.
 
-Cero prints activos en código ejecutable.
+**Fases:** Backup → Diagnóstico (350 prints) → Configurar logger → Dry-run del reemplazo → Aplicar (355 reemplazos) → Migrar 4 prints con comentario inline → Smoke test → Commit.
 
-Logger con rotación de archivo (5 MB × 5).
+**Resultado:**
+- 355 `print()` → `logger.info/debug/warning/error`.
+- Cero prints activos en código ejecutable.
+- Logger con rotación de archivo (5 MB × 5).
+- Smoke test OK.
 
-Smoke test OK.
+**Commit:** `92f2d0d`.
 
-Commit: 92f2d0d.
+---
 
-2️⃣0️⃣ DT-CRÉDITOS — Módulo de créditos/fiado (PENDIENTE — feature)
-Origen: detectado durante DT-21 (5 Oct 2026). El POS tiene 3 modos:
+## 2️⃣0️⃣ DT-37 — i18n reportes (EN PROGRESO ~60%)
 
-Venta POS.
+**Alcance:** `reportes.py` (~3.400 líneas) genera PDFs con texto hardcodeado en español. Objetivo: multi-idioma con Flask-Babel.
 
-Venta electrónica.
+**Estado:** F0-F3 + Papiamento completadas. F4 pendiente (13 reportes restantes). F5 pendiente (smoke test final + HANDOFF).
 
-Falta: vender a crédito (fiado).
+### F0 — Campo `idioma` (15 Oct, commit `85f8cf5`)
 
-Alcance MVP
-Tablas nuevas: creditos, credito_detalle, abonos.
+- `models.py`: `idioma = db.Column(db.String(5), default='es', nullable=False)` en `ConfiguracionSistema`.
+- Migración SQL: `migrations/sql/2026-10-12_add_idioma_configuracion_sistema.sql`.
+- `app.py`: `configuracion_facturacion()` guarda `config.idioma` desde `request.form`.
+- `templates/configuracion_facturacion.html`: nuevo `<select>` con es/en.
 
-POS: botón "Fiar" + modal simple de cliente.
+### F1+F2 — Flask-Babel (15 Oct, commit `fbea5d8`)
 
-Endpoints: /fiar_venta + /registrar_abono.
+- `requirements.txt`: `Flask-Babel==4.0.0`, `Babel==2.18.0`.
+- `app.py`: `Babel(app, locale_selector=_get_locale)` + `_get_locale()` + hook en `before_request`.
 
-Sección nueva: "Créditos" con estado de cuenta + CxC.
+### F3 — Reporte piloto + pipeline i18n (15 Oct, commits `9490e97` + `5860fdf`)
 
-Decisiones de negocio pendientes (cuestionario previo)
-¿Inventario al fiar o al cobrar?
+- `babel.cfg`: config de extracción.
+- `reportes.py`: ~44 strings migrados con `_()` en `generar_reporte_tendencia_ventas`.
+- `locales/messages.pot`: plantilla (54 msgids).
+- `locales/es/LC_MESSAGES/messages.po`: 0 traducidos (fallback al msgid).
+- `locales/en/LC_MESSAGES/messages.po`: 53 traducidos.
+- **F3.3 fix:** eliminar `extensions = jinja2.ext.autoescape,jinja2.ext.with_` del `babel.cfg`.
+- **F3.7-fix + F3.8:** causa raíz del bug de idioma → `default_translation_directories` al constructor.
 
-¿Cupo por cliente?
+### Papiamento (15 Oct, commit `93a1e82`)
 
-¿IVA al fiar o al cobrar?
+- `templates/configuracion_facturacion.html`: nueva opción `pap`.
+- `locales/pap/LC_MESSAGES/messages.{po,mo}`: 53 traducidos.
+- Días Curazao con prefijo `dja-`.
 
-¿Intereses por mora?
+### F4 — Reportes restantes (PENDIENTE)
 
-¿Cómo manejar cliente que no paga?
+**13 reportes pendientes de migrar a `_()`:**
 
-Estimación
-MVP: 6-8 h (1-2 sesiones).
+1. `generar_reporte_estado_resultados` (línea 77) — ~165 líneas
+2. `generar_reporte_flujo_caja` (línea 242)
+3. `generar_reporte_libro_diario` (línea 465)
+4. `generar_reporte_conciliacion_bancaria` (línea 645)
+5. `generar_reporte_analisis_gastos` (línea 956)
+6. ~~`generar_reporte_tendencia_ventas`~~ ✅ (piloto)
+7. `generar_reporte_ia_predictivo` (línea 1529)
+8. `generar_reporte_analisis_inventarios` (línea 1955)
+9. `generar_reporte_tesoreria_unificado` (línea 2741) — Muy alta (~450 líneas)
+10. `generar_reporte_historial_pagos` (línea 3190)
+11. `generar_reporte_historial_depositos` (línea 3361)
 
-Completo: 15-25 h (3-4 sesiones).
+**+ 3 helpers:** `_generar_reporte_error`, `_agregar_*_tesoreria`.
 
-Reutilizable
-✅ Tabla clientes.
+**Estimación F4:** ~6-8 h.
 
-✅ POST /registrar_venta (con flag es_credito=true).
+### F5 — Smoke test final + HANDOFF (PENDIENTE)
 
-✅ Estructura del carrito.
+- Smoke test completo: 14 reportes ES/EN/PAP.
+- Actualización HANDOFF a v8.9.
+- Commit final.
 
-NO reutilizable
-❌ Modal clienteModal (11 campos fiscales).
+---
 
-❌ /api/guardar-cliente.
+## 2️⃣1️⃣ DT-CRÉDITOS — Módulo de créditos/fiado (PENDIENTE — feature)
 
-❌ procesarVentaElectronica().
+**Origen:** detectado durante DT-21 (5 Oct 2026). El POS tiene 3 modos:
+1. Venta POS.
+2. Venta electrónica.
+3. **Falta:** vender a crédito (fiado).
 
-Prioridad: Media-alta, después de Dockerización.
+### Alcance MVP
 
-2️⃣1️⃣ DT-37 — i18n reportes (PENDIENTE)
-Alcance: reportes.py (~3.400 líneas) genera PDFs con texto hardcodeado en español. Objetivo: multi-idioma con Flask-Babel.
+- Tablas nuevas: `creditos`, `credito_detalle`, `abonos`.
+- POS: botón "Fiar" + modal simple de cliente.
+- Endpoints: `/fiar_venta` + `/registrar_abono`.
+- Sección nueva: "Créditos" con estado de cuenta + CxC.
 
-Estimación: ~8-15 h (sesión dedicada).
+### Decisiones de negocio pendientes (cuestionario previo)
 
-Prioridad: Media.
+- ¿Inventario al fiar o al cobrar?
+- ¿Cupo por cliente?
+- ¿IVA al fiar o al cobrar?
+- ¿Intereses por mora?
+- ¿Cómo manejar cliente que no paga?
 
-Requiere:
+### Estimación
 
-Instalar Flask-Babel.
+- MVP: 6-8 h (1-2 sesiones).
+- Completo: 15-25 h (3-4 sesiones).
 
-Configurar babel.cfg.
+### Reutilizable
 
-Extraer strings de reportes.py a .po/.mo.
+- ✅ Tabla `clientes`.
+- ✅ `POST /registrar_venta` (con flag `es_credito=true`).
+- ✅ Estructura del carrito.
 
-Soporte en config por tenant (idioma).
+### NO reutilizable
 
-Probar 11+ reportes.
+- ❌ Modal `clienteModal` (11 campos fiscales).
+- ❌ `/api/guardar-cliente`.
+- ❌ `procesarVentaElectronica()`.
 
-2️⃣2️⃣ Notas estratégicas
-Objetivo del ERP
-ERP SaaS multi-tenant multi-país con: POS, inventario, producción, recetas, activos fijos, reportes con IA, finanzas, multi-país, base para API REST + IA avanzada, módulo de créditos.
+**Prioridad:** Media-alta, después de Dockerización.
 
-🎁 Tenant Demo
-Fases 1-12 completadas (~9.972 filas). Contraseña: demo2026.
+---
 
-Mercado objetivo
-3.000-5.000 panaderías en Colombia.
+## 2️⃣2️⃣ Notas estratégicas
 
-10.000-30.000 en LATAM.
+### Objetivo del ERP
 
-Precio: $60k-$600k COP/mes.
+ERP SaaS multi-tenant multi-país con: POS, inventario, producción, recetas, activos fijos, reportes con IA, finanzas, **i18n multi-idioma (es/en/pap)**, **multi-país**, base para API REST + IA avanzada, módulo de créditos.
 
-Modelo de licencias
-Premium: 3 usuarios.
+### 🎁 Tenant Demo
 
-Básica: 1 usuario.
+Fases 1-12 completadas (~9.972 filas). Contraseña: `demo2026`. `idioma = pap`.
 
-Estimación de tiempos (12 Oct 2026)
-Bloque	Estimación
-Fase 3 (Dockerización)	~22-32 h
-DT-37 (i18n)	~8-15 h
-DT-CRÉDITOS (MVP)	~6-8 h
-DT-CRÉDITOS (completo)	~15-25 h
-Fase 4 (seguridad adicional)	~14-20 h
-Fase 5 (monetización)	~26-36 h
-Fases 6-8 (IA + integraciones)	~50-85 h
-🐳 Preparación para Dockerización
-El sistema está listo para Docker gracias a las DT cerradas en esta fase:
+### Mercado objetivo
 
-✅ CSRF con SECRET_KEY (portable entre entornos).
+- **3.000-5.000 panaderías** en Colombia.
+- **10.000-30.000** en LATAM.
+- **🆕 Clientes internacionales:** Curazao-Antillas Holandesas (Papiamentu).
+- Precio: $60k-$600k COP/mes.
 
-✅ Logs a archivo + consola (compatible con docker logs).
+### Modelo de licencias
 
-✅ Logs con rotación (evita llenar disco).
+- Premium: 3 usuarios.
+- Básica: 1 usuario.
 
-✅ Sin dependencias de red específicas.
+### Estimación de tiempos (15 Oct 2026)
 
-✅ requirements.txt actualizado.
+| Bloque | Estimación |
+|---|---|
+| **DT-37 F4** (13 reportes) | ~6-8 h |
+| Dockerización (Fase 3) | ~22-32 h |
+| DT-CRÉDITOS (MVP) | ~6-8 h |
+| DT-CRÉDITOS (completo) | ~15-25 h |
+| Fase 4 (seguridad adicional) | ~14-20 h |
+| Fase 5 (monetización) | ~26-36 h |
+| Fases 6-8 (IA + integraciones) | ~50-85 h |
 
-Próximo paso natural: crear Dockerfile + docker-compose.yml con PostgreSQL.
+---
 
-📞 Cómo continuar en un chat nuevo
-Al iniciar un nuevo chat, pegar este archivo como contexto inicial.
+## 🐳 Preparación para Dockerización
 
-Instrucción sugerida:
+El sistema está listo para Docker gracias a las DT cerradas:
 
-"Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el archivo HANDOFF.md v8.7 con el contexto maestro. Vamos a continuar desde donde lo dejamos. Por favor actúa como instructor guiando paso a paso, con la metodología de trabajo descrita en el HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/findstr, commit tras cada fix verificado. Al insertar bloques, muéstrame ANTES → DESPUÉS con número de línea exacto. Tú me das LUZ VERDE cuando los cambios estén 100% validados. Yo aplico los cambios en mi editor."
+- ✅ CSRF con SECRET_KEY (portable entre entornos).
+- ✅ Logs a archivo + consola (compatible con `docker logs`).
+- ✅ Logs con rotación (evita llenar disco).
+- ✅ Sin dependencias de red específicas.
+- ✅ `requirements.txt` actualizado.
+- **🆕 ✅ i18n con `locales/` (portable, los `.mo` van en el repo).**
 
-Próxima tarea sugerida:
+**Próximo paso natural:** crear `Dockerfile` + `docker-compose.yml` con PostgreSQL.
 
-Dockerización (Fase 3) — sesión dedicada. ~22-32 h total, dividido en sub-fases.
+---
 
-DT-CRÉDITOS — sesión dedicada con cuestionario previo.
+## 📞 Cómo continuar en un chat nuevo
 
-DT-37 (i18n) — sesión grande.
+**Al iniciar un nuevo chat, pegar este archivo como contexto inicial.**
 
-✅ Última validación
-Último commit: 92f2d0d (DT-47, pusheado).
+**Instrucción sugerida:**
 
-Última sesión: 12 Oct 2026 (mañana) — DT-47 completa.
+> "Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el archivo HANDOFF.md v8.8 con el contexto maestro. Vamos a continuar desde donde lo dejamos. Por favor actúa como instructor guiando paso a paso, con la metodología de trabajo descrita en el HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/findstr, commit tras cada fix verificado. Al insertar bloques, muéstrame ANTES → DESPUÉS con número de línea exacto. Tú me das LUZ VERDE cuando los cambios estén 100% validados. Yo aplico los cambios en mi editor."
 
-Working tree: clean.
+**Próxima tarea sugerida:**
 
-Servidor: detenido.
+- **DT-37 F4** — Migrar los 13 reportes restantes a i18n. Empezar por `generar_reporte_estado_resultados` (línea 77).
+- **Dockerización (Fase 3)** — Sesión dedicada. ~22-32 h.
+- **DT-CRÉDITOS** — Sesión dedicada con cuestionario previo.
 
-Sistema: 100% funcional end-to-end.
+---
 
-Módulos: 11/11 completados.
+## ✅ Última validación
 
-Demo: ~9.972 filas.
+- **Último commit:** `93a1e82` (Papiamento, pusheado).
+- **Última sesión:** 15 Oct 2026 (tarde) — DT-37 F0-F3 + Papiamento completadas.
+- **Working tree:** clean.
+- **Servidor:** detenido.
+- **Sistema:** 100% funcional end-to-end.
+- **Módulos:** 11/11 completados.
+- **Demo:** ~9.972 filas. `idioma = pap` en tenant_27.
+- **Seguridad:** Producción-ready (CSRF con tokens firmados).
+- **Observabilidad:** Producción-ready (logger con rotación).
+- **i18n:** 3 idiomas (es/en/pap), 1/14 reportes migrados.
+- **DT-19:** ✅ Resuelta.
+- **DT-25:** ✅ Resuelta.
+- **DT-28:** ✅ Resuelta.
+- **DT-29:** ✅ Resuelta.
+- **DT-42:** ✅ Resuelta.
+- **DT-43:** ✅ Resuelta.
+- **DT-45:** ✅ Resuelta.
+- **DT-46:** ✅ Resuelta.
+- **DT-47:** ✅ Resuelta.
+- **DT-5-bis:** ✅ Resuelta.
+- **DT-5-quinquies:** ✅ Resuelta.
+- **DT-5-quater-bis:** ✅ Resuelta.
+- **DT-7:** ❌ Eliminada.
+- **DT-44:** ❌ Eliminada.
+- **DT-37:** 🟡 EN PROGRESO (F0-F3 + Papiamento ✅ | F4-F5 🔜).
+- **Pendientes:** DT-37 F4-F5, DT-NUEVA-1, Dockerización (Fase 3), DT-CRÉDITOS.
+- **Deudas críticas:** ninguna.
 
-Seguridad: Producción-ready (CSRF con tokens firmados).
+---
 
-Observabilidad: Producción-ready (logger con rotación).
-
-DT-19: ✅ Resuelta.
-
-DT-25: ✅ Resuelta.
-
-DT-28: ✅ Resuelta.
-
-DT-29: ✅ Resuelta.
-
-DT-42: ✅ Resuelta.
-
-DT-43: ✅ Resuelta.
-
-DT-45: ✅ Resuelta.
-
-DT-46: ✅ Resuelta.
-
-DT-47: ✅ Resuelta.
-
-DT-5-bis: ✅ Resuelta.
-
-DT-5-quinquies: ✅ Resuelta.
-
-DT-5-quater-bis: ✅ Resuelta.
-
-DT-7: ❌ Eliminada.
-
-DT-44: ❌ Eliminada.
-
-Pendientes: Dockerización (Fase 3), DT-37, DT-CRÉDITOS.
-
-Deudas críticas: ninguna.
-
-Fin del HANDOFF.md — v8.7
+**Fin del HANDOFF.md — v8.8**
