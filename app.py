@@ -1253,17 +1253,25 @@ app.config['PERMANENT_SESSION_LIFETIME'] = 3600
 csrf = CSRFProtect(app)
 
 # =============================================
+# =============================================
 # 🌐 DT-37: FLASK-BABEL (i18n reportes)
 # =============================================
 # Soporte multi-idioma. El locale se resuelve por request
 # a partir de g.idioma_tenant (cargado en antes_de_cada_peticion).
+# La carpeta de traducciones se pasa DIRECTAMENTE al constructor
+# (aplicar app.config['BABEL_TRANSLATION_DIRECTORIES'] después
+# de Babel(app) es demasiado tarde: Babel ya leyó la config).
 from flask_babel import Babel
 
 def _get_locale():
     """Devuelve el idioma del tenant actual (fallback: 'es')."""
     return getattr(g, 'idioma_tenant', None) or 'es'
 
-babel = Babel(app, locale_selector=_get_locale)
+babel = Babel(
+    app,
+    locale_selector=_get_locale,
+    default_translation_directories=os.path.join(app.root_path, 'locales')
+)
 
 # =============================================
 # 📝 DT-47: CONFIGURACIÓN DE LOGGING CENTRALIZADO
@@ -1948,7 +1956,7 @@ def antes_de_cada_peticion():
         g.idioma_tenant = (_config_idioma.idioma if _config_idioma else None) or 'es'
     except Exception as e:
         logger.warning(f"⚠️ Error leyendo idioma del tenant {tenant['id']}: {e}")
-        g.idioma_tenant = 'es'  # Fallback seguro
+        g.idioma_tenant = 'es'
 
     # 7. Verificar suscripción
     response = _verificar_suscripcion(tenant['id'])

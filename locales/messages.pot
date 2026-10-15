@@ -1,0 +1,255 @@
+# Translations template for PROJECT.
+# Copyright (C) 2026 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-10-15 10:33-0500\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: reportes.py:1227
+msgid "ANÁLISIS DE TENDENCIA DE VENTAS"
+msgstr ""
+
+#: reportes.py:1229
+#, python-format
+msgid "Período: %(inicio)s a %(fin)s"
+msgstr ""
+
+#: reportes.py:1238
+msgid "No hay datos de ventas para el período seleccionado."
+msgstr ""
+
+#: reportes.py:1263
+msgid "Tendencia"
+msgstr ""
+
+#: reportes.py:1266
+msgid "Evolución de Ventas Diarias"
+msgstr ""
+
+#: reportes.py:1267
+msgid "Ventas ($)"
+msgstr ""
+
+#: reportes.py:1276
+msgid "Ventas Acumuladas"
+msgstr ""
+
+#: reportes.py:1277
+msgid "Ventas Acumuladas ($)"
+msgstr ""
+
+#: reportes.py:1290
+msgid "Lun"
+msgstr ""
+
+#: reportes.py:1290
+msgid "Mar"
+msgstr ""
+
+#: reportes.py:1290
+msgid "Mié"
+msgstr ""
+
+#: reportes.py:1290
+msgid "Jue"
+msgstr ""
+
+#: reportes.py:1290
+msgid "Vie"
+msgstr ""
+
+#: reportes.py:1290
+msgid "Sáb"
+msgstr ""
+
+#: reportes.py:1290
+msgid "Dom"
+msgstr ""
+
+#: reportes.py:1298
+msgid "Promedio de Ventas por Día"
+msgstr ""
+
+#: reportes.py:1299
+msgid "Ventas Promedio ($)"
+msgstr ""
+
+#: reportes.py:1308
+msgid ""
+"Se necesitan más datos\n"
+"para análisis semanal"
+msgstr ""
+
+#: reportes.py:1311
+msgid "Análisis Semanal (Datos Insuficientes)"
+msgstr ""
+
+#: reportes.py:1321
+msgid "ANÁLISIS VISUAL DE TENDENCIAS"
+msgstr ""
+
+#: reportes.py:1333
+msgid "ESTADÍSTICAS PRINCIPALES"
+msgstr ""
+
+#: reportes.py:1348
+#, python-format
+msgid ""
+"<b>Período Analizado:</b> %(dias)s días | <b>Ventas Totales:</b> "
+"$%(total)s<br/><b>Venta Promedio:</b> $%(promedio)s | <b>Venta "
+"Máxima:</b> $%(maxima)s %(fecha_mejor)s<br/><b>Venta Mínima:</b> "
+"$%(minima)s %(fecha_peor)s | <b>Variabilidad:</b> $%(variabilidad)s"
+msgstr ""
+
+#: reportes.py:1374
+msgid "DETECCIÓN DE PATRONES"
+msgstr ""
+
+#: reportes.py:1383
+msgid "PROYECCIÓN Y RECOMENDACIONES"
+msgstr ""
+
+#: reportes.py:1392
+#, python-format
+msgid "Generado el: %(fecha)s"
+msgstr ""
+
+#: reportes.py:1408
+msgid "ERROR AL GENERAR REPORTE DE TENDENCIA"
+msgstr ""
+
+#: reportes.py:1455
+msgid ""
+"Se necesitan más datos (mínimo 7 días) para detectar patrones "
+"significativos."
+msgstr ""
+
+#: reportes.py:1470
+#, python-format
+msgid "Tendencia creciente fuerte: +%(pct).1f%% en el período"
+msgstr ""
+
+#: reportes.py:1472
+#, python-format
+msgid "Ligera tendencia creciente: +%(pct).1f%% en el período"
+msgstr ""
+
+#: reportes.py:1474
+#, python-format
+msgid "Tendencia decreciente preocupante: %(pct).1f%% en el período"
+msgstr ""
+
+#: reportes.py:1476
+#, python-format
+msgid "Ligera tendencia decreciente: %(pct).1f%% en el período"
+msgstr ""
+
+#: reportes.py:1478
+msgid "Ventas estables sin crecimiento significativo"
+msgstr ""
+
+#: reportes.py:1487
+msgid "Lunes"
+msgstr ""
+
+#: reportes.py:1487
+msgid "Martes"
+msgstr ""
+
+#: reportes.py:1487
+msgid "Miércoles"
+msgstr ""
+
+#: reportes.py:1488
+msgid "Jueves"
+msgstr ""
+
+#: reportes.py:1488
+msgid "Viernes"
+msgstr ""
+
+#: reportes.py:1488
+msgid "Sábado"
+msgstr ""
+
+#: reportes.py:1488
+msgid "Domingo"
+msgstr ""
+
+#: reportes.py:1491
+#, python-format
+msgid "Día más fuerte: %(dia)s"
+msgstr ""
+
+#: reportes.py:1492
+#, python-format
+msgid "Día más débil: %(dia)s"
+msgstr ""
+
+#: reportes.py:1501
+#, python-format
+msgid "Se detectaron %(n)s días con ventas atípicas (fuera del rango normal)"
+msgstr ""
+
+#: reportes.py:1507
+msgid "Análisis de patrones no disponible por error técnico"
+msgstr ""
+
+#: reportes.py:1514
+msgid ""
+"Se necesitan más datos históricos (mínimo 14 días) para proyecciones "
+"confiables."
+msgstr ""
+
+#: reportes.py:1526
+#, python-format
+msgid "Venta promedio actual: $%(monto)s"
+msgstr ""
+
+#: reportes.py:1527
+#, python-format
+msgid "Venta promedio última semana: $%(monto)s"
+msgstr ""
+
+#: reportes.py:1530
+#, python-format
+msgid "Tendencia positiva: las ventas de la última semana son %(pct).1f%% mayores"
+msgstr ""
+
+#: reportes.py:1531
+msgid "Recomendación: Mantener estrategias actuales y considerar expansión"
+msgstr ""
+
+#: reportes.py:1533
+#, python-format
+msgid "Alerta: las ventas de la última semana son %(pct).1f%% menores"
+msgstr ""
+
+#: reportes.py:1534
+msgid "Recomendación: Revisar estrategias de marketing y promociones"
+msgstr ""
+
+#: reportes.py:1536
+msgid "Ventas estables: sin cambios significativos en la última semana"
+msgstr ""
+
+#: reportes.py:1537
+msgid "Recomendación: Enfocarse en retención de clientes y eficiencia operativa"
+msgstr ""
+
+#: reportes.py:1543
+msgid "Proyecciones no disponibles por error técnico"
+msgstr ""
+
