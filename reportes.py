@@ -1011,15 +1011,15 @@ class GeneradorReportes:
 
             # Encabezado
             elements.append(Paragraph(self.nombre_empresa, self.estilo_titulo))
-            elements.append(Paragraph("ANÁLISIS DE GASTOS POR CATEGORÍA", self.estilo_titulo))
-            elements.append(Paragraph(f"Período: {fecha_inicio} a {fecha_fin}", self.styles['Normal']))
+            elements.append(Paragraph(_("ANÁLISIS DE GASTOS POR CATEGORÍA"), self.estilo_titulo))
+            elements.append(Paragraph(_("Período: %(inicio)s a %(fin)s") % {'inicio': fecha_inicio, 'fin': fecha_fin}, self.styles['Normal']))
             elements.append(Spacer(1, 20))
 
             # ✅ FILTRAR POR TENANT
             gastos_por_categoria = self._obtener_gastos_por_categoria(panaderia_id, fecha_inicio, fecha_fin)
             
             if not gastos_por_categoria:
-                elements.append(Paragraph("No hay datos de gastos para el período seleccionado.", self.styles['Normal']))
+                elements.append(Paragraph(_("No hay datos de gastos para el período seleccionado."), self.styles['Normal']))
                 doc.build(elements)
                 buffer.seek(0)
                 return buffer
@@ -1039,7 +1039,7 @@ class GeneradorReportes:
                 if len(categorias_ordenadas) > 6:
                     top_categorias = categorias_ordenadas[:6]
                     otros_monto = sum(monto for _, monto in categorias_ordenadas[6:])
-                    labels = [cat[0].replace('_', ' ').title() for cat in top_categorias] + ['Otros']
+                    labels = [cat[0].replace('_', ' ').title() for cat in top_categorias] + [_('Otros')]
                     valores = [cat[1] for cat in top_categorias] + [otros_monto]
                     explode = [0.05] * len(top_categorias) + [0]
                 else:
@@ -1058,7 +1058,7 @@ class GeneradorReportes:
                     colors=colors_plt,
                     shadow=True
                 )
-                ax1.set_title('Distribución de Gastos por Categoría', fontsize=14, fontweight='bold', pad=20)
+                ax1.set_title(_('Distribución de Gastos por Categoría'), fontsize=14, fontweight='bold', pad=20)
                 
                 for autotext in autotexts:
                     autotext.set_color('darkblue')
@@ -1075,8 +1075,8 @@ class GeneradorReportes:
                 bars = ax2.barh(y_pos, montos_barras, color=colors_barras)
                 ax2.set_yticks(y_pos)
                 ax2.set_yticklabels(categorias_barras, fontsize=9)
-                ax2.set_xlabel('Monto ($)', fontweight='bold')
-                ax2.set_title('Top 10 Categorías por Monto Gastado', fontsize=12, fontweight='bold', pad=10)
+                ax2.set_xlabel(_('Monto ($)'), fontweight='bold')
+                ax2.set_title(_('Top 10 Categorías por Monto Gastado'), fontsize=12, fontweight='bold', pad=10)
                 
                 for bar, monto in zip(bars, montos_barras):
                     width = bar.get_width()
@@ -1091,7 +1091,7 @@ class GeneradorReportes:
                 graphic_buffer.seek(0)
                 
                 from reportlab.platypus import Image
-                elements.append(Paragraph("ANÁLISIS VISUAL DE GASTOS", self.estilo_subtitulo))
+                elements.append(Paragraph(_("ANÁLISIS VISUAL DE GASTOS"), self.estilo_subtitulo))
                 elements.append(Image(graphic_buffer, width=6.5*inch, height=5*inch))
                 elements.append(Spacer(1, 15))
                 
@@ -1103,9 +1103,9 @@ class GeneradorReportes:
                 print(f"⚠️ Error al generar gráfico: {e}. Continuando sin gráfico.")
 
             # Tabla detallada
-            elements.append(Paragraph("DISTRIBUCIÓN DETALLADA DE GASTOS", self.estilo_subtitulo))
+            elements.append(Paragraph(_("DISTRIBUCIÓN DETALLADA DE GASTOS"), self.estilo_subtitulo))
             
-            data_gastos = [['Categoría', 'Monto', 'Porcentaje']]
+            data_gastos = [[_('Categoría'), _('Monto'), _('Porcentaje')]]
             
             for categoria, monto in categorias_ordenadas:
                 porcentaje = (monto / total_gastos * 100) if total_gastos > 0 else 0
@@ -1116,7 +1116,7 @@ class GeneradorReportes:
                 ])
             
             data_gastos.append([
-                'TOTAL GASTOS',
+                _('TOTAL GASTOS'),
                 f"${total_gastos:,.0f}",
                 '100%'
             ])
@@ -1141,7 +1141,7 @@ class GeneradorReportes:
             elements.append(Spacer(1, 20))
 
             # Análisis detallado
-            elements.append(Paragraph("ANÁLISIS DETALLADO", self.estilo_subtitulo))
+            elements.append(Paragraph(_("ANÁLISIS DETALLADO"), self.estilo_subtitulo))
             
             categoria_mayor = categorias_ordenadas[0] if categorias_ordenadas else ('N/A', 0)
             top_3 = categorias_ordenadas[:3]
@@ -1150,26 +1150,35 @@ class GeneradorReportes:
             gasto_promedio = total_gastos / len(gastos_por_categoria) if gastos_por_categoria else 0
             porcentaje_mayor = (categoria_mayor[1] / total_gastos * 100) if total_gastos > 0 else 0
             
+            # ── i18n: labels extraídos de la f-string (DT-37 F4 parte 4) ──
+            lbl_total_gastos = _('Total de Gastos Analizados:')
+            lbl_cat_mayor = _('Categoría con Mayor Gasto:')
+            lbl_dominancia = _('Dominancia de Categoría Principal:')
+            lbl_del_total = _('del total')
+            lbl_top3 = _('Porcentaje de Top 3 Categorías:')
+            lbl_num_cat = _('Número de Categorías:')
+            lbl_gasto_prom = _('Gasto Promedio por Categoría:')
+            
             analisis_texto = f"""
-            <b>Total de Gastos Analizados:</b> ${total_gastos:,.0f}<br/>
-            <b>Categoría con Mayor Gasto:</b> {categoria_mayor[0].replace('_', ' ').title()} (${categoria_mayor[1]:,.0f})<br/>
-            <b>Dominancia de Categoría Principal:</b> {porcentaje_mayor:.1f}% del total<br/>
-            <b>Porcentaje de Top 3 Categorías:</b> {porcentaje_top_3:.1f}% del total<br/>
-            <b>Número de Categorías:</b> {len(gastos_por_categoria)}<br/>
-            <b>Gasto Promedio por Categoría:</b> ${gasto_promedio:,.0f}
+            <b>{lbl_total_gastos}</b> ${total_gastos:,.0f}<br/>
+            <b>{lbl_cat_mayor}</b> {categoria_mayor[0].replace('_', ' ').title()} (${categoria_mayor[1]:,.0f})<br/>
+            <b>{lbl_dominancia}</b> {porcentaje_mayor:.1f}% {lbl_del_total}<br/>
+            <b>{lbl_top3}</b> {porcentaje_top_3:.1f}% {lbl_del_total}<br/>
+            <b>{lbl_num_cat}</b> {len(gastos_por_categoria)}<br/>
+            <b>{lbl_gasto_prom}</b> ${gasto_promedio:,.0f}
             """
             elements.append(Paragraph(analisis_texto, self.styles['Normal']))
             elements.append(Spacer(1, 15))
 
             # Recomendaciones
-            elements.append(Paragraph("RECOMENDACIONES ESTRATÉGICAS", self.estilo_subtitulo))
+            elements.append(Paragraph(_("RECOMENDACIONES ESTRATÉGICAS"), self.estilo_subtitulo))
             
             recomendaciones = self._generar_recomendaciones_gastos(gastos_por_categoria, total_gastos)
             for recomendacion in recomendaciones:
                 elements.append(Paragraph(f"• {recomendacion}", self.styles['Normal']))
 
             elements.append(Spacer(1, 30))
-            elements.append(Paragraph(f"Generado el: {datetime.now().strftime('%d/%m/%Y %H:%M')}", 
+            elements.append(Paragraph(_("Generado el: %(fecha)s") % {'fecha': datetime.now().strftime('%d/%m/%Y %H:%M')}, 
                                     ParagraphStyle('Footer', parent=self.styles['Normal'], fontSize=8, textColor=rl_colors.gray)))
 
             doc.build(elements)
@@ -1184,8 +1193,8 @@ class GeneradorReportes:
             
             error_buffer = BytesIO()
             c = canvas.Canvas(error_buffer, pagesize=A4)
-            c.drawString(100, 800, "ERROR AL GENERAR REPORTE DE GASTOS")
-            c.drawString(100, 780, f"Error: {str(e)}")
+            c.drawString(100, 800, _("ERROR AL GENERAR REPORTE DE GASTOS"))
+            c.drawString(100, 780, _("Error: %(error)s") % {'error': str(e)})
             c.showPage()
             c.save()
             error_buffer.seek(0)
@@ -1217,7 +1226,7 @@ class GeneradorReportes:
             recomendaciones = []
             
             if not gastos_por_categoria:
-                return ["No hay suficientes datos para generar recomendaciones."]
+                return [_("No hay suficientes datos para generar recomendaciones.")]
             
             # Encontrar la categoría con mayor gasto
             categoria_mayor = max(gastos_por_categoria.items(), key=lambda x: x[1])
@@ -1225,25 +1234,25 @@ class GeneradorReportes:
             
             # Recomendación basada en la categoría con mayor gasto
             if porcentaje_mayor > 50:
-                recomendaciones.append(f"La categoría '{categoria_mayor[0].replace('_', ' ').title()}' representa el {porcentaje_mayor:.1f}% de tus gastos totales. Considera optimizar esta área.")
+                recomendaciones.append(_("La categoría '%(cat)s' representa el %(pct).1f%% de tus gastos totales. Considera optimizar esta área.") % {'cat': categoria_mayor[0].replace('_', ' ').title(), 'pct': porcentaje_mayor})
             
             # Recomendación si hay muchas categorías con montos similares
             if len(gastos_por_categoria) >= 5:
-                recomendaciones.append("Tus gastos están distribuidos en múltiples categorías. Esto indica una buena diversificación.")
+                recomendaciones.append(_("Tus gastos están distribuidos en múltiples categorías. Esto indica una buena diversificación."))
             
             # Recomendación general de análisis
             if total_gastos > 1000000:  # Si los gastos superan 1 millón
-                recomendaciones.append("Tus gastos totales son significativos. Recomendamos revisar contratos y negociar mejores términos con proveedores.")
+                recomendaciones.append(_("Tus gastos totales son significativos. Recomendamos revisar contratos y negociar mejores términos con proveedores."))
             
             # Recomendación de categorías específicas
             categorias_altas = {cat: monto for cat, monto in gastos_por_categoria.items() if monto > total_gastos * 0.2}
             for cat, monto in categorias_altas.items():
                 if cat not in [categoria_mayor[0]]:
                     porcentaje = (monto / total_gastos * 100)
-                    recomendaciones.append(f"La categoría '{cat.replace('_', ' ').title()}' representa el {porcentaje:.1f}% de tus gastos. Vale la pena revisarla.")
+                    recomendaciones.append(_("La categoría '%(cat)s' representa el %(pct).1f%% de tus gastos. Vale la pena revisarla.") % {'cat': cat.replace('_', ' ').title(), 'pct': porcentaje})
             
             if not recomendaciones:
-                recomendaciones.append("Tus gastos parecen estar bien distribuidos. Continúa con el monitoreo regular.")
+                recomendaciones.append(_("Tus gastos parecen estar bien distribuidos. Continúa con el monitoreo regular."))
             
             return recomendaciones[:4]  # Máximo 4 recomendaciones
         
