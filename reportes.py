@@ -2041,8 +2041,8 @@ class GeneradorReportes:
             elements = []
 
             elements.append(Paragraph(self.nombre_empresa, self.estilo_titulo))
-            elements.append(Paragraph("📦 ANÁLISIS DE INVENTARIOS Y GESTIÓN DE STOCK", self.estilo_titulo))
-            elements.append(Paragraph(f"Período de análisis: {fecha_inicio} a {fecha_fin}", self.styles['Normal']))
+            elements.append(Paragraph("📦 " + _('ANÁLISIS DE INVENTARIOS Y GESTIÓN DE STOCK'), self.estilo_titulo))
+            elements.append(Paragraph(_("Período de análisis: %(inicio)s a %(fin)s") % {'inicio': fecha_inicio, 'fin': fecha_fin}, self.styles['Normal']))
             elements.append(Spacer(1, 10))
 
             # ✅ FILTRAR POR TENANT
@@ -2050,7 +2050,7 @@ class GeneradorReportes:
             datos_rotacion = self._obtener_datos_rotacion_reales(panaderia_id, fecha_inicio, fecha_fin)
             
             if not datos_inventarios:
-                elements.append(Paragraph("No hay datos de inventarios disponibles para análisis.", self.styles['Normal']))
+                elements.append(Paragraph(_("No hay datos de inventarios disponibles para análisis."), self.styles['Normal']))
                 doc.build(elements)
                 buffer.seek(0)
                 return buffer
@@ -2076,18 +2076,18 @@ class GeneradorReportes:
                 productos_cortos = [p[:15] + '...' if len(p) > 15 else p for p in productos]
                 
                 bars1 = ax1.bar(x_pos - ancho, stock_actual, ancho, 
-                            label='Stock Actual', alpha=0.8, color='#3498db')
+                            label=_('Stock Actual'), alpha=0.8, color='#3498db')
                 bars2 = ax1.bar(x_pos, stock_minimo, ancho, 
-                            label='Stock Mínimo', alpha=0.8, color='#e74c3c')
+                            label=_('Stock Mínimo'), alpha=0.8, color='#e74c3c')
                 bars3 = ax1.bar(x_pos + ancho, stock_maximo, ancho, 
-                            label='Stock Máximo', alpha=0.8, color='#27ae60')
+                            label=_('Stock Máximo'), alpha=0.8, color='#27ae60')
                 
                 for i, (actual, minimo) in enumerate(zip(stock_actual, stock_minimo)):
                     if actual <= minimo:
                         ax1.axvline(x=i, color='red', alpha=0.3, linestyle='--')
                 
-                ax1.set_title('Niveles de Stock por Producto', fontsize=11, fontweight='bold', pad=8)
-                ax1.set_ylabel('Cantidad en Stock', fontsize=9)
+                ax1.set_title(_('Niveles de Stock por Producto'), fontsize=11, fontweight='bold', pad=8)
+                ax1.set_ylabel(_('Cantidad en Stock'), fontsize=9)
                 ax1.set_xticks(x_pos)
                 ax1.set_xticklabels(productos_cortos, rotation=45, ha='right', fontsize=7)
                 ax1.legend(fontsize=7)
@@ -2106,20 +2106,20 @@ class GeneradorReportes:
                 porcentaje_acumulado = (acumulado / total_valor * 100) if total_valor > 0 else [0]
                 
                 bars = ax2.bar(range(len(valores_ordenados)), valores_ordenados, 
-                            color='skyblue', alpha=0.7, label='Valor Inventario')
+                            color='skyblue', alpha=0.7, label=_('Valor Inventario'))
                 line = ax2.plot(range(len(valores_ordenados)), porcentaje_acumulado, 
-                            color='red', marker='o', linewidth=2, label='% Acumulado')
+                            color='red', marker='o', linewidth=2, label=_('% Acumulado'))
                 
-                ax2.set_title('Análisis ABC - Valor de Inventario', fontsize=11, fontweight='bold', pad=8)
-                ax2.set_ylabel('Valor del Inventario ($)', fontsize=9)
-                ax2.set_xlabel('Productos (ordenados por valor)', fontsize=8)
+                ax2.set_title(_('Análisis ABC - Valor de Inventario'), fontsize=11, fontweight='bold', pad=8)
+                ax2.set_ylabel(_('Valor del Inventario ($)'), fontsize=9)
+                ax2.set_xlabel(_('Productos (ordenados por valor)'), fontsize=8)
                 ax2.grid(True, alpha=0.3)
                 ax2.legend(fontsize=7)
                 ax2.tick_params(axis='x', labelsize=6)
                 ax2.tick_params(axis='y', labelsize=7)
                 
-                ax2.axhline(y=80, color='orange', linestyle='--', alpha=0.7, label='Límite A/B (80%)')
-                ax2.axhline(y=95, color='green', linestyle='--', alpha=0.7, label='Límite B/C (95%)')
+                ax2.axhline(y=80, color='orange', linestyle='--', alpha=0.7, label=_('Límite A/B (80%)'))
+                ax2.axhline(y=95, color='green', linestyle='--', alpha=0.7, label=_('Límite B/C (95%)'))
                 
                 ax3 = fig.add_subplot(223)
                 
@@ -2139,20 +2139,20 @@ class GeneradorReportes:
                     productos_rot_cortos = [p[:12] + '...' if len(p) > 12 else p for p in productos_rot]
                     bars = ax3.bar(productos_rot_cortos, rotacion, color=colores, alpha=0.8)
                     
-                    ax3.set_title('Índice de Rotación de Inventario', fontsize=11, fontweight='bold', pad=8)
-                    ax3.set_ylabel('Rotación (veces/año)', fontsize=9)
+                    ax3.set_title(_('Índice de Rotación de Inventario'), fontsize=11, fontweight='bold', pad=8)
+                    ax3.set_ylabel(_('Rotación (veces/año)'), fontsize=9)
                     ax3.tick_params(axis='x', rotation=45, labelsize=7)
                     ax3.tick_params(axis='y', labelsize=7)
                     ax3.grid(True, alpha=0.3, axis='y')
                     
-                    ax3.axhline(y=12, color='green', linestyle='--', alpha=0.5, label='Alta Rotación')
-                    ax3.axhline(y=6, color='orange', linestyle='--', alpha=0.5, label='Media Rotación')
+                    ax3.axhline(y=12, color='green', linestyle='--', alpha=0.5, label=_('Alta Rotación'))
+                    ax3.axhline(y=6, color='orange', linestyle='--', alpha=0.5, label=_('Media Rotación'))
                     ax3.legend(fontsize=7)
                 else:
-                    ax3.text(0.5, 0.5, 'Datos de rotación\nno disponibles', 
+                    ax3.text(0.5, 0.5, _('Datos de rotación\nno disponibles'), 
                             ha='center', va='center', transform=ax3.transAxes, fontsize=10,
                             bbox=dict(boxstyle="round,pad=0.2", facecolor="lightgray"))
-                    ax3.set_title('Índice de Rotación', fontsize=11, fontweight='bold', pad=8)
+                    ax3.set_title(_('Índice de Rotación'), fontsize=11, fontweight='bold', pad=8)
                 
                 ax4 = fig.add_subplot(224)
                 
@@ -2178,14 +2178,14 @@ class GeneradorReportes:
                 
                 bars = ax4.bar(productos_cortos_dias, dias_stock, color=colores_dias, alpha=0.8)
                 
-                ax4.set_title('Días de Stock Disponible', fontsize=11, fontweight='bold', pad=8)
-                ax4.set_ylabel('Días de Stock', fontsize=9)
+                ax4.set_title(_('Días de Stock Disponible'), fontsize=11, fontweight='bold', pad=8)
+                ax4.set_ylabel(_('Días de Stock'), fontsize=9)
                 ax4.tick_params(axis='x', rotation=45, labelsize=6)
                 ax4.tick_params(axis='y', labelsize=7)
                 ax4.grid(True, alpha=0.3, axis='y')
                 
-                ax4.axhline(y=7, color='red', linestyle='--', alpha=0.7, label='Límite Crítico (7 días)')
-                ax4.axhline(y=14, color='orange', linestyle='--', alpha=0.7, label='Límite Alerta (14 días)')
+                ax4.axhline(y=7, color='red', linestyle='--', alpha=0.7, label=_('Límite Crítico (7 días)'))
+                ax4.axhline(y=14, color='orange', linestyle='--', alpha=0.7, label=_('Límite Alerta (14 días)'))
                 ax4.legend(fontsize=6)
                 
                 fig.tight_layout(pad=2.0)
@@ -2196,7 +2196,7 @@ class GeneradorReportes:
                 graphic_buffer.seek(0)
                 
                 from reportlab.platypus import Image
-                elements.append(Paragraph("ANÁLISIS VISUAL DE INVENTARIOS", self.estilo_subtitulo))
+                elements.append(Paragraph(_("ANÁLISIS VISUAL DE INVENTARIOS"), self.estilo_subtitulo))
                 elements.append(Image(graphic_buffer, width=6*inch, height=6*inch))
                 elements.append(Spacer(1, 10))
                 
@@ -2208,7 +2208,7 @@ class GeneradorReportes:
                 print(f"⚠️ Error al generar gráficos de inventario: {e}. Continuando sin gráficos.")
 
             # Resumen Ejecutivo
-            elements.append(Paragraph("📊 RESUMEN EJECUTIVO DE INVENTARIOS", self.estilo_subtitulo))
+            elements.append(Paragraph("📊 " + _('RESUMEN EJECUTIVO DE INVENTARIOS'), self.estilo_subtitulo))
             
             resumen = self._generar_resumen_inventarios(datos_inventarios)
             
@@ -2226,7 +2226,7 @@ class GeneradorReportes:
             elements.append(Spacer(1, 12))
 
             # Alertas
-            elements.append(Paragraph("🚨 ALERTAS DE INVENTARIO", self.estilo_subtitulo))
+            elements.append(Paragraph("🚨 " + _('ALERTAS DE INVENTARIO'), self.estilo_subtitulo))
             
             alertas = self._generar_alertas_inventarios(datos_inventarios)
             
@@ -2236,7 +2236,7 @@ class GeneradorReportes:
             elements.append(Spacer(1, 12))
 
             # Recomendaciones
-            elements.append(Paragraph("💡 RECOMENDACIONES DE OPTIMIZACIÓN", self.estilo_subtitulo))
+            elements.append(Paragraph("💡 " + _('RECOMENDACIONES DE OPTIMIZACIÓN'), self.estilo_subtitulo))
             
             recomendaciones = self._generar_recomendaciones_inventarios(datos_inventarios, datos_rotacion)
             
@@ -2246,17 +2246,17 @@ class GeneradorReportes:
             elements.append(Spacer(1, 10))
 
             # Tabla de Puntos de Reorden
-            elements.append(Paragraph("📋 PUNTOS DE REORDEN SUGERIDOS", self.estilo_subtitulo))
+            elements.append(Paragraph("📋 " + _('PUNTOS DE REORDEN SUGERIDOS'), self.estilo_subtitulo))
             
             from reportlab.platypus import Table, TableStyle
             from reportlab.lib import colors
             
-            datos_tabla = [['Producto', 'Stock Actual', 'Mínimo', 'Reorden', 'Estado', 'Valor']]
+            datos_tabla = [[_('Producto'), _('Stock Actual'), _('Mínimo'), _('Reorden'), _('Estado'), _('Valor')]]
             
             for item in datos_inventarios[:8]:
                 stock_actual = item['stock_actual']
                 stock_min = item['stock_minimo']
-                estado = "✅ OK" if stock_actual > stock_min else "🚨 BAJO"
+                estado = "✅ " + _('OK') if stock_actual > stock_min else "🚨 " + _('BAJO')
                 punto_reorden = max(stock_min, int(stock_min * 1.2))
                 
                 datos_tabla.append([
@@ -2284,7 +2284,7 @@ class GeneradorReportes:
 
             elements.append(Spacer(1, 15))
             from reportlab.lib import colors as rl_colors
-            elements.append(Paragraph(f"📦 Generado el: {datetime.now().strftime('%d/%m/%Y %H:%M')}", 
+            elements.append(Paragraph("📦 " + (_('Generado el: %(fecha)s') % {'fecha': datetime.now().strftime('%d/%m/%Y %H:%M')}), 
                                     ParagraphStyle('Footer', parent=self.styles['Normal'], fontSize=7, textColor=rl_colors.gray)))
 
             doc.build(elements)
@@ -2299,8 +2299,8 @@ class GeneradorReportes:
             
             error_buffer = BytesIO()
             c = canvas.Canvas(error_buffer, pagesize=A4)
-            c.drawString(100, 800, "ERROR AL GENERAR REPORTE DE INVENTARIOS")
-            c.drawString(100, 780, f"Error: {str(e)}")
+            c.drawString(100, 800, _("ERROR AL GENERAR REPORTE DE INVENTARIOS"))
+            c.drawString(100, 780, _("Error: %(error)s") % {'error': str(e)})
             c.showPage()
             c.save()
             error_buffer.seek(0)
@@ -2566,18 +2566,18 @@ class GeneradorReportes:
             # Stock promedio
             stock_promedio = sum(item['stock_actual'] for item in datos_inventarios) / total_productos if total_productos > 0 else 0
             
-            resumen.append(f"Total de productos en inventario: {total_productos}")
-            resumen.append(f"Valor total del inventario: ${valor_total_inventario:,.0f}")
-            resumen.append(f"Productos con stock bajo: {productos_bajo_stock} ({productos_bajo_stock/total_productos*100:.1f}%)")
-            resumen.append(f"Productos sobre stock máximo: {productos_sobre_stock} ({productos_sobre_stock/total_productos*100:.1f}%)")
-            resumen.append(f"Stock promedio por producto: {stock_promedio:.1f} unidades")
-            resumen.append(f"Eficiencia general de inventario: {(total_productos - productos_bajo_stock) / total_productos * 100:.1f}%")
+            resumen.append(_("Total de productos en inventario: %(total)s") % {'total': total_productos})
+            resumen.append(_("Valor total del inventario: $%(valor)s") % {'valor': f"{valor_total_inventario:,.0f}"})
+            resumen.append(_("Productos con stock bajo: %(n)s (%(pct).1f%%)") % {'n': productos_bajo_stock, 'pct': productos_bajo_stock/total_productos*100})
+            resumen.append(_("Productos sobre stock máximo: %(n)s (%(pct).1f%%)") % {'n': productos_sobre_stock, 'pct': productos_sobre_stock/total_productos*100})
+            resumen.append(_("Stock promedio por producto: %(avg).1f unidades") % {'avg': stock_promedio})
+            resumen.append(_("Eficiencia general de inventario: %(pct).1f%%") % {'pct': (total_productos - productos_bajo_stock) / total_productos * 100})
             
             return resumen
             
         except Exception as e:
             print(f"Error en generación de resumen: {e}")
-            return ["Resumen no disponible temporalmente"]
+            return [_("Resumen no disponible temporalmente")]
 
     def _generar_alertas_inventarios(self, datos_inventarios):
         """Genera alertas de inventario críticas"""
@@ -2588,27 +2588,27 @@ class GeneradorReportes:
             productos_criticos = [item for item in datos_inventarios if item['stock_actual'] <= item['stock_minimo']]
             
             for producto in productos_criticos[:3]:  # Máximo 3 alertas críticas
-                alertas.append(f"STOCK CRÍTICO: {producto['nombre']} - Solo {producto['stock_actual']} unidades (mínimo: {producto['stock_minimo']})")
+                alertas.append(_("STOCK CRÍTICO: %(nombre)s - Solo %(stock)s unidades (mínimo: %(min)s)") % {'nombre': producto['nombre'], 'stock': producto['stock_actual'], 'min': producto['stock_minimo']})
             
             # Productos con exceso de stock
             productos_exceso = [item for item in datos_inventarios if item['stock_actual'] > item['stock_maximo']]
             
             for producto in productos_exceso[:2]:  # Máximo 2 alertas de exceso
-                alertas.append(f"EXCESO DE STOCK: {producto['nombre']} - {producto['stock_actual']} unidades (máximo: {producto['stock_maximo']})")
+                alertas.append(_("EXCESO DE STOCK: %(nombre)s - %(stock)s unidades (máximo: %(max)s)") % {'nombre': producto['nombre'], 'stock': producto['stock_actual'], 'max': producto['stock_maximo']})
             
             # Alertas de productos con movimiento lento
             productos_lentos = [item for item in datos_inventarios if item['demanda_promedio'] < 2 and item['stock_actual'] > 10]
             
             for producto in productos_lentos[:2]:
-                alertas.append(f"MOVIMIENTO LENTO: {producto['nombre']} - Demanda baja con stock alto")
+                alertas.append(_("MOVIMIENTO LENTO: %(nombre)s - Demanda baja con stock alto") % {'nombre': producto['nombre']})
             
             if not alertas:
-                alertas.append("✅ No hay alertas críticas - Inventario en estado óptimo")
+                alertas.append("✅ " + _('No hay alertas críticas - Inventario en estado óptimo'))
             
             return alertas[:5]  # Máximo 5 alertas
             
         except Exception as e:
-            return ["Sistema de alertas no disponible temporalmente"]
+            return [_("Sistema de alertas no disponible temporalmente")]
 
     def _generar_recomendaciones_inventarios(self, datos_inventarios, datos_rotacion):
         """Genera recomendaciones de optimización de inventarios"""
@@ -2623,35 +2623,35 @@ class GeneradorReportes:
             productos_a = productos_ordenados[:int(len(productos_ordenados) * 0.2)]  # Top 20%
             
             if productos_a:
-                recomendaciones.append(f"ENFOQUE EN PRODUCTOS A: {len(productos_a)} productos representan el 80% del valor del inventario")
-                recomendaciones.append("CONTROL ESTRICTO: Implementar conteos cíclicos frecuentes para productos de alto valor")
+                recomendaciones.append(_("ENFOQUE EN PRODUCTOS A: %(n)s productos representan el 80%% del valor del inventario") % {'n': len(productos_a)})
+                recomendaciones.append(_("CONTROL ESTRICTO: Implementar conteos cíclicos frecuentes para productos de alto valor"))
             
             # Recomendaciones basadas en rotación
             if datos_rotacion:
                 baja_rotacion = [item for item in datos_rotacion if item['indice_rotacion'] < 6]
                 if baja_rotacion:
-                    recomendaciones.append(f"OPTIMIZAR: {len(baja_rotacion)} productos con baja rotación (<6 veces/año)")
-                    recomendaciones.append("ACCIÓN: Reducir compras y considerar promociones para estos productos")
+                    recomendaciones.append(_("OPTIMIZAR: %(n)s productos con baja rotación (<6 veces/año)") % {'n': len(baja_rotacion)})
+                    recomendaciones.append(_("ACCIÓN: Reducir compras y considerar promociones para estos productos"))
             
             # Recomendaciones generales
             total_valor = sum(item['stock_actual'] * item['costo_unitario'] for item in datos_inventarios)
             if total_valor > 5000000:  # Si el inventario vale más de 5 millones
-                recomendaciones.append("OPTIMIZACIÓN FINANCIERA: Considerar reducir inventario para liberar capital de trabajo")
+                recomendaciones.append(_("OPTIMIZACIÓN FINANCIERA: Considerar reducir inventario para liberar capital de trabajo"))
             
             # Recomendaciones de compras
             productos_reorden = [item for item in datos_inventarios if item['stock_actual'] <= item['stock_minimo'] * 1.5]
             if productos_reorden:
-                recomendaciones.append(f"COMPRAS PENDIENTES: {len(productos_reorden)} productos requieren reabastecimiento urgente")
+                recomendaciones.append(_("COMPRAS PENDIENTES: %(n)s productos requieren reabastecimiento urgente") % {'n': len(productos_reorden)})
             
             # Mejoras de proceso
-            recomendaciones.append("MEJORA CONTINUA: Establecer revisiones periódicas de puntos de reorden")
-            recomendaciones.append("TECNOLOGÍA: Considerar sistema de código de barras para conteos más eficientes")
+            recomendaciones.append(_("MEJORA CONTINUA: Establecer revisiones periódicas de puntos de reorden"))
+            recomendaciones.append(_("TECNOLOGÍA: Considerar sistema de código de barras para conteos más eficientes"))
             
             return recomendaciones[:8]  # Máximo 8 recomendaciones
             
         except Exception as e:
             print(f"Error en generación de recomendaciones: {e}")
-            return ["Recomendaciones no disponibles temporalmente"]
+            return [_("Recomendaciones no disponibles temporalmente")]
         
     def _agregar_analisis_flujo_tesoreria(self, elements, datos):
         """Agrega el análisis de flujo al reporte"""

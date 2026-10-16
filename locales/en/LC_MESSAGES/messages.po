@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-16 15:31-0500\n"
+"POT-Creation-Date: 2026-10-16 17:10-0500\n"
 "PO-Revision-Date: 2026-10-15 10:38-0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -34,7 +34,7 @@ msgid ""
 msgstr "No income or expense records were found for the selected dates."
 
 #: reportes.py:109 reportes.py:263 reportes.py:354 reportes.py:1181
-#: reportes.py:1444
+#: reportes.py:1444 reportes.py:2287
 #, python-format
 msgid "Generado el: %(fecha)s"
 msgstr "Generated on: %(fecha)s"
@@ -402,7 +402,7 @@ msgstr "STRATEGIC RECOMMENDATIONS"
 msgid "ERROR AL GENERAR REPORTE DE GASTOS"
 msgstr "ERROR GENERATING EXPENSE REPORT"
 
-#: reportes.py:1197
+#: reportes.py:1197 reportes.py:2303
 #, python-format
 msgid "Error: %(error)s"
 msgstr "Error: %(error)s"
@@ -416,26 +416,34 @@ msgstr "Not enough data to generate recommendations."
 msgid ""
 "La categoría '%(cat)s' representa el %(pct).1f%% de tus gastos totales. "
 "Considera optimizar esta área."
-msgstr "The '%(cat)s' category represents %(pct).1f%% of your total expenses. Consider optimizing this area."
+msgstr ""
+"The '%(cat)s' category represents %(pct).1f%% of your total expenses. "
+"Consider optimizing this area."
 
 #: reportes.py:1241
 msgid ""
 "Tus gastos están distribuidos en múltiples categorías. Esto indica una "
 "buena diversificación."
-msgstr "Your expenses are distributed across multiple categories. This indicates good diversification."
+msgstr ""
+"Your expenses are distributed across multiple categories. This indicates "
+"good diversification."
 
 #: reportes.py:1245
 msgid ""
 "Tus gastos totales son significativos. Recomendamos revisar contratos y "
 "negociar mejores términos con proveedores."
-msgstr "Your total expenses are significant. We recommend reviewing contracts and negotiating better terms with suppliers."
+msgstr ""
+"Your total expenses are significant. We recommend reviewing contracts and"
+" negotiating better terms with suppliers."
 
 #: reportes.py:1252
 #, python-format
 msgid ""
 "La categoría '%(cat)s' representa el %(pct).1f%% de tus gastos. Vale la "
 "pena revisarla."
-msgstr "The '%(cat)s' category represents %(pct).1f%% of your expenses. It's worth reviewing."
+msgstr ""
+"The '%(cat)s' category represents %(pct).1f%% of your expenses. It's "
+"worth reviewing."
 
 #: reportes.py:1255
 msgid ""
@@ -674,4 +682,267 @@ msgstr "Recommendation: Focus on customer retention and operational efficiency"
 #: reportes.py:1595
 msgid "Proyecciones no disponibles por error técnico"
 msgstr "Forecasts not available due to technical error"
+
+#: reportes.py:2044
+msgid "ANÁLISIS DE INVENTARIOS Y GESTIÓN DE STOCK"
+msgstr "INVENTORY ANALYSIS AND STOCK MANAGEMENT"
+
+#: reportes.py:2045
+#, python-format
+msgid "Período de análisis: %(inicio)s a %(fin)s"
+msgstr "Analysis period: %(inicio)s to %(fin)s"
+
+#: reportes.py:2053
+msgid "No hay datos de inventarios disponibles para análisis."
+msgstr "No inventory data available for analysis."
+
+#: reportes.py:2079 reportes.py:2254
+msgid "Stock Actual"
+msgstr "Current Stock"
+
+#: reportes.py:2081
+msgid "Stock Mínimo"
+msgstr "Minimum Stock"
+
+#: reportes.py:2083
+msgid "Stock Máximo"
+msgstr "Maximum Stock"
+
+#: reportes.py:2089
+msgid "Niveles de Stock por Producto"
+msgstr "Stock Levels by Product"
+
+#: reportes.py:2090
+msgid "Cantidad en Stock"
+msgstr "Stock Quantity"
+
+#: reportes.py:2109
+msgid "Valor Inventario"
+msgstr "Inventory Value"
+
+#: reportes.py:2111
+msgid "% Acumulado"
+msgstr "% Accumulated"
+
+#: reportes.py:2113
+msgid "Análisis ABC - Valor de Inventario"
+msgstr "ABC Analysis - Inventory Value"
+
+#: reportes.py:2114
+msgid "Valor del Inventario ($)"
+msgstr "Inventory Value ($)"
+
+#: reportes.py:2115
+msgid "Productos (ordenados por valor)"
+msgstr "Products (sorted by value)"
+
+#: reportes.py:2121
+msgid "Límite A/B (80%)"
+msgstr "A/B Limit (80%)"
+
+#: reportes.py:2122
+msgid "Límite B/C (95%)"
+msgstr "B/C Limit (95%)"
+
+#: reportes.py:2142
+msgid "Índice de Rotación de Inventario"
+msgstr "Inventory Turnover Ratio"
+
+#: reportes.py:2143
+msgid "Rotación (veces/año)"
+msgstr "Turnover (times/year)"
+
+#: reportes.py:2148
+msgid "Alta Rotación"
+msgstr "High Turnover"
+
+#: reportes.py:2149
+msgid "Media Rotación"
+msgstr "Medium Turnover"
+
+#: reportes.py:2152
+msgid ""
+"Datos de rotación\n"
+"no disponibles"
+msgstr ""
+"Rotation data\n"
+"not available"
+
+#: reportes.py:2155
+msgid "Índice de Rotación"
+msgstr "Turnover Ratio"
+
+#: reportes.py:2181
+msgid "Días de Stock Disponible"
+msgstr "Days of Stock Available"
+
+#: reportes.py:2182
+msgid "Días de Stock"
+msgstr "Days of Stock"
+
+#: reportes.py:2187
+msgid "Límite Crítico (7 días)"
+msgstr "Critical Limit (7 days)"
+
+#: reportes.py:2188
+msgid "Límite Alerta (14 días)"
+msgstr "Alert Limit (14 days)"
+
+#: reportes.py:2199
+msgid "ANÁLISIS VISUAL DE INVENTARIOS"
+msgstr "VISUAL INVENTORY ANALYSIS"
+
+#: reportes.py:2211
+msgid "RESUMEN EJECUTIVO DE INVENTARIOS"
+msgstr "EXECUTIVE SUMMARY OF INVENTORIES"
+
+#: reportes.py:2229
+msgid "ALERTAS DE INVENTARIO"
+msgstr "INVENTORY ALERTS"
+
+#: reportes.py:2239
+msgid "RECOMENDACIONES DE OPTIMIZACIÓN"
+msgstr "OPTIMIZATION RECOMMENDATIONS"
+
+#: reportes.py:2249
+msgid "PUNTOS DE REORDEN SUGERIDOS"
+msgstr "SUGGESTED REORDER POINTS"
+
+#: reportes.py:2254
+msgid "Producto"
+msgstr "Product"
+
+#: reportes.py:2254
+msgid "Mínimo"
+msgstr "Minimum"
+
+#: reportes.py:2254
+msgid "Reorden"
+msgstr "Reorder"
+
+#: reportes.py:2254
+msgid "Estado"
+msgstr "Status"
+
+#: reportes.py:2254
+msgid "Valor"
+msgstr "Value"
+
+#: reportes.py:2259
+msgid "OK"
+msgstr "OK"
+
+#: reportes.py:2259
+msgid "BAJO"
+msgstr "LOW"
+
+#: reportes.py:2302
+msgid "ERROR AL GENERAR REPORTE DE INVENTARIOS"
+msgstr "ERROR GENERATING INVENTORY REPORT"
+
+#: reportes.py:2569
+#, python-format
+msgid "Total de productos en inventario: %(total)s"
+msgstr "Total products in inventory: %(total)s"
+
+#: reportes.py:2570
+#, python-format
+msgid "Valor total del inventario: $%(valor)s"
+msgstr "Total inventory value: $%(valor)s"
+
+#: reportes.py:2571
+#, python-format
+msgid "Productos con stock bajo: %(n)s (%(pct).1f%%)"
+msgstr "Products with low stock: %(n)s (%(pct).1f%%)"
+
+#: reportes.py:2572
+#, python-format
+msgid "Productos sobre stock máximo: %(n)s (%(pct).1f%%)"
+msgstr "Products over maximum stock: %(n)s (%(pct).1f%%)"
+
+#: reportes.py:2573
+#, python-format
+msgid "Stock promedio por producto: %(avg).1f unidades"
+msgstr "Average stock per product: %(avg).1f units"
+
+#: reportes.py:2574
+#, python-format
+msgid "Eficiencia general de inventario: %(pct).1f%%"
+msgstr "Overall inventory efficiency: %(pct).1f%%"
+
+#: reportes.py:2580
+msgid "Resumen no disponible temporalmente"
+msgstr "Summary temporarily unavailable"
+
+#: reportes.py:2591
+#, python-format
+msgid "STOCK CRÍTICO: %(nombre)s - Solo %(stock)s unidades (mínimo: %(min)s)"
+msgstr "CRITICAL STOCK: %(nombre)s - Only %(stock)s units (minimum: %(min)s)"
+
+#: reportes.py:2597
+#, python-format
+msgid "EXCESO DE STOCK: %(nombre)s - %(stock)s unidades (máximo: %(max)s)"
+msgstr "OVERSTOCK: %(nombre)s - %(stock)s units (maximum: %(max)s)"
+
+#: reportes.py:2603
+#, python-format
+msgid "MOVIMIENTO LENTO: %(nombre)s - Demanda baja con stock alto"
+msgstr "SLOW MOVEMENT: %(nombre)s - Low demand with high stock"
+
+#: reportes.py:2606
+msgid "No hay alertas críticas - Inventario en estado óptimo"
+msgstr "No critical alerts - Inventory in optimal state"
+
+#: reportes.py:2611
+msgid "Sistema de alertas no disponible temporalmente"
+msgstr "Alert system temporarily unavailable"
+
+#: reportes.py:2626
+#, python-format
+msgid ""
+"ENFOQUE EN PRODUCTOS A: %(n)s productos representan el 80%% del valor del"
+" inventario"
+msgstr "FOCUS ON A PRODUCTS: %(n)s products represent 80%% of inventory value"
+
+#: reportes.py:2627
+msgid ""
+"CONTROL ESTRICTO: Implementar conteos cíclicos frecuentes para productos "
+"de alto valor"
+msgstr "STRICT CONTROL: Implement frequent cycle counts for high-value products"
+
+#: reportes.py:2633
+#, python-format
+msgid "OPTIMIZAR: %(n)s productos con baja rotación (<6 veces/año)"
+msgstr "OPTIMIZE: %(n)s products with low turnover (<6 times/year)"
+
+#: reportes.py:2634
+msgid "ACCIÓN: Reducir compras y considerar promociones para estos productos"
+msgstr "ACTION: Reduce purchases and consider promotions for these products"
+
+#: reportes.py:2639
+msgid ""
+"OPTIMIZACIÓN FINANCIERA: Considerar reducir inventario para liberar "
+"capital de trabajo"
+msgstr ""
+"FINANCIAL OPTIMIZATION: Consider reducing inventory to free working "
+"capital"
+
+#: reportes.py:2644
+#, python-format
+msgid "COMPRAS PENDIENTES: %(n)s productos requieren reabastecimiento urgente"
+msgstr "PENDING PURCHASES: %(n)s products require urgent restocking"
+
+#: reportes.py:2647
+msgid "MEJORA CONTINUA: Establecer revisiones periódicas de puntos de reorden"
+msgstr "CONTINUOUS IMPROVEMENT: Establish periodic reorder point reviews"
+
+#: reportes.py:2648
+msgid ""
+"TECNOLOGÍA: Considerar sistema de código de barras para conteos más "
+"eficientes"
+msgstr "TECHNOLOGY: Consider a barcode system for more efficient counts"
+
+#: reportes.py:2654
+msgid "Recomendaciones no disponibles temporalmente"
+msgstr "Recommendations temporarily unavailable"
 

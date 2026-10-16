@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-16 15:31-0500\n"
+"POT-Creation-Date: 2026-10-16 17:10-0500\n"
 "PO-Revision-Date: 2026-10-15 16:08-0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: pap\n"
@@ -34,7 +34,7 @@ msgid ""
 msgstr "No a haña registronan di entrada òf gastu pa e fechanan skohí."
 
 #: reportes.py:109 reportes.py:263 reportes.py:354 reportes.py:1181
-#: reportes.py:1444
+#: reportes.py:1444 reportes.py:2287
 #, python-format
 msgid "Generado el: %(fecha)s"
 msgstr "Generá na: %(fecha)s"
@@ -402,7 +402,7 @@ msgstr "REKOMENDASHONNAN ESTRATÉGIKO"
 msgid "ERROR AL GENERAR REPORTE DE GASTOS"
 msgstr "ERROR NA GENERÁ REPORTE DI GASTUNAN"
 
-#: reportes.py:1197
+#: reportes.py:1197 reportes.py:2303
 #, python-format
 msgid "Error: %(error)s"
 msgstr "Error: %(error)s"
@@ -416,26 +416,34 @@ msgstr "No tin sufisiente datonan pa generá rekomendashonan."
 msgid ""
 "La categoría '%(cat)s' representa el %(pct).1f%% de tus gastos totales. "
 "Considera optimizar esta área."
-msgstr "E kategoria '%(cat)s' ta representá %(pct).1f%% di bo gastunan total. Konsiderá optimisá e área aki."
+msgstr ""
+"E kategoria '%(cat)s' ta representá %(pct).1f%% di bo gastunan total. "
+"Konsiderá optimisá e área aki."
 
 #: reportes.py:1241
 msgid ""
 "Tus gastos están distribuidos en múltiples categorías. Esto indica una "
 "buena diversificación."
-msgstr "Bo gastunan ta distribuí den múltiple kategorianan. Esaki ta indiká un bon diversifikashon."
+msgstr ""
+"Bo gastunan ta distribuí den múltiple kategorianan. Esaki ta indiká un "
+"bon diversifikashon."
 
 #: reportes.py:1245
 msgid ""
 "Tus gastos totales son significativos. Recomendamos revisar contratos y "
 "negociar mejores términos con proveedores."
-msgstr "Bo gastunan total ta signifikante. Nos ta rekomendá revisá kontratonan i negoshá mihó término ku proveedornan."
+msgstr ""
+"Bo gastunan total ta signifikante. Nos ta rekomendá revisá kontratonan i "
+"negoshá mihó término ku proveedornan."
 
 #: reportes.py:1252
 #, python-format
 msgid ""
 "La categoría '%(cat)s' representa el %(pct).1f%% de tus gastos. Vale la "
 "pena revisarla."
-msgstr "E kategoria '%(cat)s' ta representá %(pct).1f%% di bo gastunan. Vale la pena revis'é."
+msgstr ""
+"E kategoria '%(cat)s' ta representá %(pct).1f%% di bo gastunan. Vale la "
+"pena revis'é."
 
 #: reportes.py:1255
 msgid ""
@@ -674,4 +682,275 @@ msgstr "Rekomendashon: Enfoká na retenshon di klientenan i efisiensia operativo
 #: reportes.py:1595
 msgid "Proyecciones no disponibles por error técnico"
 msgstr "Proyekshonnan no disponibel pa eror técniko"
+
+#: reportes.py:2044
+msgid "ANÁLISIS DE INVENTARIOS Y GESTIÓN DE STOCK"
+msgstr "ANÁLISIS DI INVENTARIONAN Y GESTION DI STOCK"
+
+#: reportes.py:2045
+#, python-format
+msgid "Período de análisis: %(inicio)s a %(fin)s"
+msgstr "Período di analisis: %(inicio)s te %(fin)s"
+
+#: reportes.py:2053
+msgid "No hay datos de inventarios disponibles para análisis."
+msgstr "No tin datonan di inventario disponibel pa analisis."
+
+#: reportes.py:2079 reportes.py:2254
+msgid "Stock Actual"
+msgstr "Stock Aktual"
+
+#: reportes.py:2081
+msgid "Stock Mínimo"
+msgstr "Stock Mínimo"
+
+#: reportes.py:2083
+msgid "Stock Máximo"
+msgstr "Stock Máksimo"
+
+#: reportes.py:2089
+msgid "Niveles de Stock por Producto"
+msgstr "Nivelnan di Stock pa Produkto"
+
+#: reportes.py:2090
+msgid "Cantidad en Stock"
+msgstr "Kantidat na Stock"
+
+#: reportes.py:2109
+msgid "Valor Inventario"
+msgstr "Valor Inventario"
+
+#: reportes.py:2111
+msgid "% Acumulado"
+msgstr "% Akumulá"
+
+#: reportes.py:2113
+msgid "Análisis ABC - Valor de Inventario"
+msgstr "Análisis ABC - Valor di Inventario"
+
+#: reportes.py:2114
+msgid "Valor del Inventario ($)"
+msgstr "Valor di Inventario ($)"
+
+#: reportes.py:2115
+msgid "Productos (ordenados por valor)"
+msgstr "Produktonan (ordená pa valor)"
+
+#: reportes.py:2121
+msgid "Límite A/B (80%)"
+msgstr "Límite A/B (80%)"
+
+#: reportes.py:2122
+msgid "Límite B/C (95%)"
+msgstr "Límite B/C (95%)"
+
+#: reportes.py:2142
+msgid "Índice de Rotación de Inventario"
+msgstr "Índise di Rotashon di Inventario"
+
+#: reportes.py:2143
+msgid "Rotación (veces/año)"
+msgstr "Rotashon (biaha/aña)"
+
+#: reportes.py:2148
+msgid "Alta Rotación"
+msgstr "Rotashon Haltu"
+
+#: reportes.py:2149
+msgid "Media Rotación"
+msgstr "Rotashon Medio"
+
+#: reportes.py:2152
+msgid ""
+"Datos de rotación\n"
+"no disponibles"
+msgstr ""
+"Datonan di rotashon\n"
+"no disponibel"
+
+#: reportes.py:2155
+msgid "Índice de Rotación"
+msgstr "Índise di Rotashon"
+
+#: reportes.py:2181
+msgid "Días de Stock Disponible"
+msgstr "Dianan di Stock Disponibel"
+
+#: reportes.py:2182
+msgid "Días de Stock"
+msgstr "Dianan di Stock"
+
+#: reportes.py:2187
+msgid "Límite Crítico (7 días)"
+msgstr "Límite Krítiko (7 dianan)"
+
+#: reportes.py:2188
+msgid "Límite Alerta (14 días)"
+msgstr "Límite Alerta (14 dianan)"
+
+#: reportes.py:2199
+msgid "ANÁLISIS VISUAL DE INVENTARIOS"
+msgstr "ANÁLISIS VISUAL DI INVENTARIONAN"
+
+#: reportes.py:2211
+msgid "RESUMEN EJECUTIVO DE INVENTARIOS"
+msgstr "RESÚMEN EHEKUTIVO DI INVENTARIONAN"
+
+#: reportes.py:2229
+msgid "ALERTAS DE INVENTARIO"
+msgstr "ALERTANAN DI INVENTARIO"
+
+#: reportes.py:2239
+msgid "RECOMENDACIONES DE OPTIMIZACIÓN"
+msgstr "REKOMENDASHONNAN DI OPTIMISASHON"
+
+#: reportes.py:2249
+msgid "PUNTOS DE REORDEN SUGERIDOS"
+msgstr "PUNTONAN DI REORDEN SUGERÍ"
+
+#: reportes.py:2254
+msgid "Producto"
+msgstr "Produkto"
+
+#: reportes.py:2254
+msgid "Mínimo"
+msgstr "Mínimo"
+
+#: reportes.py:2254
+msgid "Reorden"
+msgstr "Reorden"
+
+#: reportes.py:2254
+msgid "Estado"
+msgstr "Estado"
+
+#: reportes.py:2254
+msgid "Valor"
+msgstr "Valor"
+
+#: reportes.py:2259
+msgid "OK"
+msgstr "OK"
+
+#: reportes.py:2259
+msgid "BAJO"
+msgstr "ABOU"
+
+#: reportes.py:2302
+msgid "ERROR AL GENERAR REPORTE DE INVENTARIOS"
+msgstr "ERROR NA GENERÁ REPORTE DI INVENTARIONAN"
+
+#: reportes.py:2569
+#, python-format
+msgid "Total de productos en inventario: %(total)s"
+msgstr "Total di produktonan na inventario: %(total)s"
+
+#: reportes.py:2570
+#, python-format
+msgid "Valor total del inventario: $%(valor)s"
+msgstr "Valor total di inventario: $%(valor)s"
+
+#: reportes.py:2571
+#, python-format
+msgid "Productos con stock bajo: %(n)s (%(pct).1f%%)"
+msgstr "Produktonan ku stock abou: %(n)s (%(pct).1f%%)"
+
+#: reportes.py:2572
+#, python-format
+msgid "Productos sobre stock máximo: %(n)s (%(pct).1f%%)"
+msgstr "Produktonan riba stock máksimo: %(n)s (%(pct).1f%%)"
+
+#: reportes.py:2573
+#, python-format
+msgid "Stock promedio por producto: %(avg).1f unidades"
+msgstr "Stock promedio pa produkto: %(avg).1f unidadnan"
+
+#: reportes.py:2574
+#, python-format
+msgid "Eficiencia general de inventario: %(pct).1f%%"
+msgstr "Efiensia general di inventario: %(pct).1f%%"
+
+#: reportes.py:2580
+msgid "Resumen no disponible temporalmente"
+msgstr "Resúmen no disponibel temporalmente"
+
+#: reportes.py:2591
+#, python-format
+msgid "STOCK CRÍTICO: %(nombre)s - Solo %(stock)s unidades (mínimo: %(min)s)"
+msgstr "STOCK KRÍTIKO: %(nombre)s - Solo %(stock)s unidadnan (mínimo: %(min)s)"
+
+#: reportes.py:2597
+#, python-format
+msgid "EXCESO DE STOCK: %(nombre)s - %(stock)s unidades (máximo: %(max)s)"
+msgstr "EKSESO DI STOCK: %(nombre)s - %(stock)s unidadnan (máksimo: %(max)s)"
+
+#: reportes.py:2603
+#, python-format
+msgid "MOVIMIENTO LENTO: %(nombre)s - Demanda baja con stock alto"
+msgstr "MOVEMENTU LENTU: %(nombre)s - Demanda abou ku stock haltu"
+
+#: reportes.py:2606
+msgid "No hay alertas críticas - Inventario en estado óptimo"
+msgstr "No tin alertanan krítiko - Inventario na estado óptimo"
+
+#: reportes.py:2611
+msgid "Sistema de alertas no disponible temporalmente"
+msgstr "Sistema di alerta no disponibel temporalmente"
+
+#: reportes.py:2626
+#, python-format
+msgid ""
+"ENFOQUE EN PRODUCTOS A: %(n)s productos representan el 80%% del valor del"
+" inventario"
+msgstr ""
+"ENFOKE NA PRODUKTONAN A: %(n)s produktonan ta representá 80%% di valor di"
+" inventario"
+
+#: reportes.py:2627
+msgid ""
+"CONTROL ESTRICTO: Implementar conteos cíclicos frecuentes para productos "
+"de alto valor"
+msgstr ""
+"KONTROL ESTRICTO: Implementá kontashonnan síkliko frekuente pa "
+"produktonan di haltu valor"
+
+#: reportes.py:2633
+#, python-format
+msgid "OPTIMIZAR: %(n)s productos con baja rotación (<6 veces/año)"
+msgstr "OPTIMISÁ: %(n)s produktonan ku rotashon abou (<6 biaha/aña)"
+
+#: reportes.py:2634
+msgid "ACCIÓN: Reducir compras y considerar promociones para estos productos"
+msgstr "AKSHON: Redusí kompranan i konsiderá promoshonnan pa e produktonan aki"
+
+#: reportes.py:2639
+msgid ""
+"OPTIMIZACIÓN FINANCIERA: Considerar reducir inventario para liberar "
+"capital de trabajo"
+msgstr ""
+"OPTIMISASHON FINANSIERO: Konsiderá redusí inventario pa liberá kapital di"
+" trabou"
+
+#: reportes.py:2644
+#, python-format
+msgid "COMPRAS PENDIENTES: %(n)s productos requieren reabastecimiento urgente"
+msgstr "KOMPRANAN PENDIENTE: %(n)s produktonan ta nesesitá reabastesementu urgente"
+
+#: reportes.py:2647
+msgid "MEJORA CONTINUA: Establecer revisiones periódicas de puntos de reorden"
+msgstr ""
+"MEHORAMENTU KONTINUO: Establesé revishonnan periódiko di puntunan di "
+"reorden"
+
+#: reportes.py:2648
+msgid ""
+"TECNOLOGÍA: Considerar sistema de código de barras para conteos más "
+"eficientes"
+msgstr ""
+"TEKNOLOGIA: Konsiderá un sistema di kódigo di barra pa kontashonnan mas "
+"efiheinte"
+
+#: reportes.py:2654
+msgid "Recomendaciones no disponibles temporalmente"
+msgstr "Rekomendashonnan no disponibel temporalmente"
 
