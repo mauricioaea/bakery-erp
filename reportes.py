@@ -274,17 +274,17 @@ class GeneradorReportes:
         elements = []
 
         elements.append(Paragraph(self.nombre_empresa, self.estilo_titulo))
-        elements.append(Paragraph("REPORTE DE FLUJO DE CAJA", self.estilo_titulo))
-        elements.append(Paragraph(f"Período: {fecha_inicio} a {fecha_fin}", self.styles['Normal']))
+        elements.append(Paragraph(_("REPORTE DE FLUJO DE CAJA"), self.estilo_titulo))
+        elements.append(Paragraph(_("Período: %(inicio)s a %(fin)s") % {'inicio': fecha_inicio, 'fin': fecha_fin}, self.styles['Normal']))
         elements.append(Spacer(1, 20))
 
         # ✅ FILTRAR POR TENANT
         flujo_data = self._obtener_flujo_caja_periodo(panaderia_id, fecha_inicio, fecha_fin)
 
         if not flujo_data:
-            elements.append(Paragraph("No hay datos de flujo de caja para el período seleccionado.", self.styles['Normal']))
+            elements.append(Paragraph(_("No hay datos de flujo de caja para el período seleccionado."), self.styles['Normal']))
         else:
-            data = [['Fecha', 'Ingresos', 'Gastos', 'Flujo Neto', 'Saldo Acumulado']]
+            data = [[_('Fecha'), _('Ingresos'), _('Gastos'), _('Flujo Neto'), _('Saldo Acumulado')]]
             saldo_acumulado = 0
 
             for fecha, ingresos, gastos in flujo_data:
@@ -301,7 +301,7 @@ class GeneradorReportes:
             total_ingresos = sum(item[1] for item in flujo_data)
             total_gastos = sum(item[2] for item in flujo_data)
             data.append([
-                'TOTALES',
+                _('TOTALES'),
                 f"${total_ingresos:,.0f}",
                 f"${total_gastos:,.0f}",
                 f"${total_ingresos - total_gastos:,.0f}",
@@ -328,23 +328,30 @@ class GeneradorReportes:
 
             # Análisis
             elements.append(Spacer(1, 20))
-            elements.append(Paragraph("ANÁLISIS DE FLUJO DE CAJA", self.estilo_subtitulo))
+            elements.append(Paragraph(_("ANÁLISIS DE FLUJO DE CAJA"), self.estilo_subtitulo))
 
             promedio_diario = (total_ingresos - total_gastos) / len(flujo_data) if flujo_data else 0
             dias_positivos = sum(1 for _, ingresos, gastos in flujo_data if ingresos - gastos > 0)
             porcentaje_positivos = (dias_positivos / len(flujo_data) * 100) if flujo_data else 0
 
+            # ── i18n: labels extraídos de la f-string (DT-37 F4 parte 2) ──
+            lbl_flujo_neto = _('Flujo neto total:')
+            lbl_promedio = _('Promedio diario:')
+            lbl_dias_pos = _('Días con flujo positivo:')
+            lbl_de = _('de')
+            lbl_saldo_final = _('Saldo final del período:')
+            
             analisis_texto = f"""
-            <b>Flujo neto total:</b> ${total_ingresos - total_gastos:,.0f}<br/>
-            <b>Promedio diario:</b> ${promedio_diario:,.0f}<br/>
-            <b>Días con flujo positivo:</b> {dias_positivos} de {len(flujo_data)} ({porcentaje_positivos:.1f}%)<br/>
-            <b>Saldo final del período:</b> ${saldo_acumulado:,.0f}
+            <b>{lbl_flujo_neto}</b> ${total_ingresos - total_gastos:,.0f}<br/>
+            <b>{lbl_promedio}</b> ${promedio_diario:,.0f}<br/>
+            <b>{lbl_dias_pos}</b> {dias_positivos} {lbl_de} {len(flujo_data)} ({porcentaje_positivos:.1f}%)<br/>
+            <b>{lbl_saldo_final}</b> ${saldo_acumulado:,.0f}
             """
             elements.append(Paragraph(analisis_texto, self.styles['Normal']))
 
         # Pie de página
         elements.append(Spacer(1, 30))
-        elements.append(Paragraph(f"Generado el: {datetime.now().strftime('%d/%m/%Y %H:%M')}", 
+        elements.append(Paragraph(_("Generado el: %(fecha)s") % {'fecha': datetime.now().strftime('%d/%m/%Y %H:%M')}, 
                                 ParagraphStyle('Footer', parent=self.styles['Normal'], fontSize=8, textColor=colors.gray)))
 
         doc.build(elements)

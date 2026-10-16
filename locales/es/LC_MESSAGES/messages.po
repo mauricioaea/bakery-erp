@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-16 12:32-0500\n"
+"POT-Creation-Date: 2026-10-16 14:41-0500\n"
 "PO-Revision-Date: 2026-10-15 10:37-0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es\n"
@@ -22,7 +22,7 @@ msgstr ""
 msgid "ESTADO DE RESULTADOS"
 msgstr ""
 
-#: reportes.py:89 reportes.py:1254
+#: reportes.py:89 reportes.py:278 reportes.py:1261
 #, python-format
 msgid "Período: %(inicio)s a %(fin)s"
 msgstr ""
@@ -33,7 +33,7 @@ msgid ""
 "seleccionadas."
 msgstr ""
 
-#: reportes.py:109 reportes.py:263 reportes.py:1417
+#: reportes.py:109 reportes.py:263 reportes.py:354 reportes.py:1424
 #, python-format
 msgid "Generado el: %(fecha)s"
 msgstr ""
@@ -154,89 +154,145 @@ msgstr ""
 msgid "Mantener estrategias actuales"
 msgstr ""
 
-#: reportes.py:1252
+#: reportes.py:277
+msgid "REPORTE DE FLUJO DE CAJA"
+msgstr ""
+
+#: reportes.py:285
+msgid "No hay datos de flujo de caja para el período seleccionado."
+msgstr ""
+
+#: reportes.py:287
+msgid "Fecha"
+msgstr ""
+
+#: reportes.py:287
+msgid "Ingresos"
+msgstr ""
+
+#: reportes.py:287
+msgid "Gastos"
+msgstr ""
+
+#: reportes.py:287
+msgid "Flujo Neto"
+msgstr ""
+
+#: reportes.py:287
+msgid "Saldo Acumulado"
+msgstr ""
+
+#: reportes.py:304
+msgid "TOTALES"
+msgstr ""
+
+#: reportes.py:331
+msgid "ANÁLISIS DE FLUJO DE CAJA"
+msgstr ""
+
+#: reportes.py:338
+msgid "Flujo neto total:"
+msgstr ""
+
+#: reportes.py:339
+msgid "Promedio diario:"
+msgstr ""
+
+#: reportes.py:340
+msgid "Días con flujo positivo:"
+msgstr ""
+
+#: reportes.py:341
+msgid "de"
+msgstr ""
+
+#: reportes.py:342
+msgid "Saldo final del período:"
+msgstr ""
+
+#: reportes.py:1259
 msgid "ANÁLISIS DE TENDENCIA DE VENTAS"
 msgstr ""
 
-#: reportes.py:1263
+#: reportes.py:1270
 msgid "No hay datos de ventas para el período seleccionado."
 msgstr ""
 
-#: reportes.py:1288
+#: reportes.py:1295
 msgid "Tendencia"
 msgstr ""
 
-#: reportes.py:1291
+#: reportes.py:1298
 msgid "Evolución de Ventas Diarias"
 msgstr ""
 
-#: reportes.py:1292
+#: reportes.py:1299
 msgid "Ventas ($)"
 msgstr ""
 
-#: reportes.py:1301
+#: reportes.py:1308
 msgid "Ventas Acumuladas"
 msgstr ""
 
-#: reportes.py:1302
+#: reportes.py:1309
 msgid "Ventas Acumuladas ($)"
 msgstr ""
 
-#: reportes.py:1315
+#: reportes.py:1322
 msgid "Lun"
 msgstr ""
 
-#: reportes.py:1315
+#: reportes.py:1322
 msgid "Mar"
 msgstr ""
 
-#: reportes.py:1315
+#: reportes.py:1322
 msgid "Mié"
 msgstr ""
 
-#: reportes.py:1315
+#: reportes.py:1322
 msgid "Jue"
 msgstr ""
 
-#: reportes.py:1315
+#: reportes.py:1322
 msgid "Vie"
 msgstr ""
 
-#: reportes.py:1315
+#: reportes.py:1322
 msgid "Sáb"
 msgstr ""
 
-#: reportes.py:1315
+#: reportes.py:1322
 msgid "Dom"
 msgstr ""
 
-#: reportes.py:1323
+#: reportes.py:1330
 msgid "Promedio de Ventas por Día"
 msgstr ""
 
-#: reportes.py:1324
+#: reportes.py:1331
 msgid "Ventas Promedio ($)"
 msgstr ""
 
-#: reportes.py:1333
+#: reportes.py:1340
 msgid ""
 "Se necesitan más datos\n"
 "para análisis semanal"
 msgstr ""
 
-#: reportes.py:1336
+#: reportes.py:1343
 msgid "Análisis Semanal (Datos Insuficientes)"
 msgstr ""
 
-#: reportes.py:1346
+#: reportes.py:1353
 msgid "ANÁLISIS VISUAL DE TENDENCIAS"
 msgstr ""
 
-#: reportes.py:1358
+#: reportes.py:1365
 msgid "ESTADÍSTICAS PRINCIPALES"
 msgstr ""
 
-#: reportes.py:1373
+#: reportes.py:1380
 #, python-format
 msgid ""
 "<b>Período Analizado:</b> %(dias)s días | <b>Ventas Totales:</b> "
@@ -245,138 +301,138 @@ msgid ""
 "$%(minima)s %(fecha_peor)s | <b>Variabilidad:</b> $%(variabilidad)s"
 msgstr ""
 
-#: reportes.py:1399
+#: reportes.py:1406
 msgid "DETECCIÓN DE PATRONES"
 msgstr ""
 
-#: reportes.py:1408
+#: reportes.py:1415
 msgid "PROYECCIÓN Y RECOMENDACIONES"
 msgstr ""
 
-#: reportes.py:1433
+#: reportes.py:1440
 msgid "ERROR AL GENERAR REPORTE DE TENDENCIA"
 msgstr ""
 
-#: reportes.py:1480
+#: reportes.py:1487
 msgid ""
 "Se necesitan más datos (mínimo 7 días) para detectar patrones "
 "significativos."
 msgstr ""
 
-#: reportes.py:1495
+#: reportes.py:1502
 #, python-format
 msgid "Tendencia creciente fuerte: +%(pct).1f%% en el período"
 msgstr ""
 
-#: reportes.py:1497
+#: reportes.py:1504
 #, python-format
 msgid "Ligera tendencia creciente: +%(pct).1f%% en el período"
 msgstr ""
 
-#: reportes.py:1499
+#: reportes.py:1506
 #, python-format
 msgid "Tendencia decreciente preocupante: %(pct).1f%% en el período"
 msgstr ""
 
-#: reportes.py:1501
+#: reportes.py:1508
 #, python-format
 msgid "Ligera tendencia decreciente: %(pct).1f%% en el período"
 msgstr ""
 
-#: reportes.py:1503
+#: reportes.py:1510
 msgid "Ventas estables sin crecimiento significativo"
 msgstr ""
 
-#: reportes.py:1512
+#: reportes.py:1519
 msgid "Lunes"
 msgstr ""
 
-#: reportes.py:1512
+#: reportes.py:1519
 msgid "Martes"
 msgstr ""
 
-#: reportes.py:1512
+#: reportes.py:1519
 msgid "Miércoles"
 msgstr ""
 
-#: reportes.py:1513
+#: reportes.py:1520
 msgid "Jueves"
 msgstr ""
 
-#: reportes.py:1513
+#: reportes.py:1520
 msgid "Viernes"
 msgstr ""
 
-#: reportes.py:1513
+#: reportes.py:1520
 msgid "Sábado"
 msgstr ""
 
-#: reportes.py:1513
+#: reportes.py:1520
 msgid "Domingo"
 msgstr ""
 
-#: reportes.py:1516
+#: reportes.py:1523
 #, python-format
 msgid "Día más fuerte: %(dia)s"
 msgstr ""
 
-#: reportes.py:1517
+#: reportes.py:1524
 #, python-format
 msgid "Día más débil: %(dia)s"
 msgstr ""
 
-#: reportes.py:1526
+#: reportes.py:1533
 #, python-format
 msgid "Se detectaron %(n)s días con ventas atípicas (fuera del rango normal)"
 msgstr ""
 
-#: reportes.py:1532
+#: reportes.py:1539
 msgid "Análisis de patrones no disponible por error técnico"
 msgstr ""
 
-#: reportes.py:1539
+#: reportes.py:1546
 msgid ""
 "Se necesitan más datos históricos (mínimo 14 días) para proyecciones "
 "confiables."
 msgstr ""
 
-#: reportes.py:1551
+#: reportes.py:1558
 #, python-format
 msgid "Venta promedio actual: $%(monto)s"
 msgstr ""
 
-#: reportes.py:1552
+#: reportes.py:1559
 #, python-format
 msgid "Venta promedio última semana: $%(monto)s"
 msgstr ""
 
-#: reportes.py:1555
+#: reportes.py:1562
 #, python-format
 msgid "Tendencia positiva: las ventas de la última semana son %(pct).1f%% mayores"
 msgstr ""
 
-#: reportes.py:1556
+#: reportes.py:1563
 msgid "Recomendación: Mantener estrategias actuales y considerar expansión"
 msgstr ""
 
-#: reportes.py:1558
+#: reportes.py:1565
 #, python-format
 msgid "Alerta: las ventas de la última semana son %(pct).1f%% menores"
 msgstr ""
 
-#: reportes.py:1559
+#: reportes.py:1566
 msgid "Recomendación: Revisar estrategias de marketing y promociones"
 msgstr ""
 
-#: reportes.py:1561
+#: reportes.py:1568
 msgid "Ventas estables: sin cambios significativos en la última semana"
 msgstr ""
 
-#: reportes.py:1562
+#: reportes.py:1569
 msgid "Recomendación: Enfocarse en retención de clientes y eficiencia operativa"
 msgstr ""
 
-#: reportes.py:1568
+#: reportes.py:1575
 msgid "Proyecciones no disponibles por error técnico"
 msgstr ""
 
