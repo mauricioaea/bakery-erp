@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-16 17:10-0500\n"
+"POT-Creation-Date: 2026-10-16 17:31-0500\n"
 "PO-Revision-Date: 2026-10-15 10:38-0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -27,11 +27,31 @@ msgstr "INCOME STATEMENT"
 msgid "Período: %(inicio)s a %(fin)s"
 msgstr "Period: %(inicio)s to %(fin)s"
 
+#: reportes.py:100
+msgid "SIN DATOS PARA EL PERÍODO"
+msgstr "NO DATA FOR THE PERIOD"
+
 #: reportes.py:101
 msgid ""
 "No se encontraron registros de ingresos o gastos para las fechas "
 "seleccionadas."
 msgstr "No income or expense records were found for the selected dates."
+
+#: reportes.py:103
+msgid "Recomendaciones:"
+msgstr "Recommendations:"
+
+#: reportes.py:104
+msgid "Verifique que las fechas sean correctas"
+msgstr "Verify that the dates are correct"
+
+#: reportes.py:105
+msgid "Confirme que existan ventas registradas en el período"
+msgstr "Confirm that there are sales registered in the period"
+
+#: reportes.py:106
+msgid "Verifique los cierres de caja del período"
+msgstr "Verify the cash closings for the period"
 
 #: reportes.py:109 reportes.py:263 reportes.py:354 reportes.py:1181
 #: reportes.py:1444 reportes.py:2287

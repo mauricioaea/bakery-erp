@@ -97,13 +97,13 @@ class GeneradorReportes:
         total_gastos = sum(gastos.values()) if gastos else 0
         
         if total_ingresos == 0 and total_gastos == 0:
-            elements.append(Paragraph(f"📊 {_('SIN DATOS PARA EL PERÍODO')}", self.estilo_subtitulo))
+            elements.append(Paragraph("📊 " + _('SIN DATOS PARA EL PERÍODO'), self.estilo_subtitulo))
             elements.append(Paragraph(_("No se encontraron registros de ingresos o gastos para las fechas seleccionadas."), self.styles['Normal']))
             elements.append(Spacer(1, 15))
-            elements.append(Paragraph(f"💡 {_('Recomendaciones:')}", self.styles['Normal']))
-            elements.append(Paragraph(f"• {_('Verifique que las fechas sean correctas')}", self.styles['Normal']))
-            elements.append(Paragraph(f"• {_('Confirme que existan ventas registradas en el período')}", self.styles['Normal']))
-            elements.append(Paragraph(f"• {_('Verifique los cierres de caja del período')}", self.styles['Normal']))
+            elements.append(Paragraph("💡 " + _('Recomendaciones:'), self.styles['Normal']))
+            elements.append(Paragraph("• " + _('Verifique que las fechas sean correctas'), self.styles['Normal']))
+            elements.append(Paragraph("• " + _('Confirme que existan ventas registradas en el período'), self.styles['Normal']))
+            elements.append(Paragraph("• " + _('Verifique los cierres de caja del período'), self.styles['Normal']))
             
             elements.append(Spacer(1, 30))
             elements.append(Paragraph(_("Generado el: %(fecha)s") % {'fecha': datetime.now().strftime('%d/%m/%Y %H:%M')}, 
