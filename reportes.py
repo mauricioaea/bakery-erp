@@ -85,8 +85,8 @@ class GeneradorReportes:
         
         # Encabezado
         elements.append(Paragraph(self.nombre_empresa, self.estilo_titulo))
-        elements.append(Paragraph("ESTADO DE RESULTADOS", self.estilo_titulo))
-        elements.append(Paragraph(f"Período: {fecha_inicio} a {fecha_fin}", self.styles['Normal']))
+        elements.append(Paragraph(_("ESTADO DE RESULTADOS"), self.estilo_titulo))
+        elements.append(Paragraph(_("Período: %(inicio)s a %(fin)s") % {'inicio': fecha_inicio, 'fin': fecha_fin}, self.styles['Normal']))
         elements.append(Spacer(1, 20))
         
         # ✅ FILTRAR POR TENANT
@@ -97,16 +97,16 @@ class GeneradorReportes:
         total_gastos = sum(gastos.values()) if gastos else 0
         
         if total_ingresos == 0 and total_gastos == 0:
-            elements.append(Paragraph("📊 SIN DATOS PARA EL PERÍODO", self.estilo_subtitulo))
-            elements.append(Paragraph("No se encontraron registros de ingresos o gastos para las fechas seleccionadas.", self.styles['Normal']))
+            elements.append(Paragraph(f"📊 {_('SIN DATOS PARA EL PERÍODO')}", self.estilo_subtitulo))
+            elements.append(Paragraph(_("No se encontraron registros de ingresos o gastos para las fechas seleccionadas."), self.styles['Normal']))
             elements.append(Spacer(1, 15))
-            elements.append(Paragraph("💡 Recomendaciones:", self.styles['Normal']))
-            elements.append(Paragraph("• Verifique que las fechas sean correctas", self.styles['Normal']))
-            elements.append(Paragraph("• Confirme que existan ventas registradas en el período", self.styles['Normal']))
-            elements.append(Paragraph("• Verifique los cierres de caja del período", self.styles['Normal']))
+            elements.append(Paragraph(f"💡 {_('Recomendaciones:')}", self.styles['Normal']))
+            elements.append(Paragraph(f"• {_('Verifique que las fechas sean correctas')}", self.styles['Normal']))
+            elements.append(Paragraph(f"• {_('Confirme que existan ventas registradas en el período')}", self.styles['Normal']))
+            elements.append(Paragraph(f"• {_('Verifique los cierres de caja del período')}", self.styles['Normal']))
             
             elements.append(Spacer(1, 30))
-            elements.append(Paragraph(f"Generado el: {datetime.now().strftime('%d/%m/%Y %H:%M')}", 
+            elements.append(Paragraph(_("Generado el: %(fecha)s") % {'fecha': datetime.now().strftime('%d/%m/%Y %H:%M')}, 
                                     ParagraphStyle('Footer', parent=self.styles['Normal'], fontSize=8, textColor=colors.gray)))
             
             doc.build(elements)
@@ -114,8 +114,8 @@ class GeneradorReportes:
             return buffer
         
         # Tabla de Ingresos
-        elements.append(Paragraph("INGRESOS", self.estilo_subtitulo))
-        data_ingresos = [['Concepto', 'Monto']]
+        elements.append(Paragraph(_("INGRESOS"), self.estilo_subtitulo))
+        data_ingresos = [[_('Concepto'), _('Monto')]]
         total_ingresos = 0
         
         for concepto, monto in ingresos.items():
@@ -123,7 +123,7 @@ class GeneradorReportes:
                 data_ingresos.append([concepto, f"${monto:,.0f}"])
                 total_ingresos += monto
         
-        data_ingresos.append(['TOTAL INGRESOS', f"${total_ingresos:,.0f}"])
+        data_ingresos.append([_('TOTAL INGRESOS'), f"${total_ingresos:,.0f}"])
         
         tabla_ingresos = Table(data_ingresos, colWidths=[4*inch, 2*inch])
         tabla_ingresos.setStyle(TableStyle([
@@ -144,8 +144,8 @@ class GeneradorReportes:
         elements.append(Spacer(1, 20))
         
         # Tabla de Gastos
-        elements.append(Paragraph("GASTOS", self.estilo_subtitulo))
-        data_gastos = [['Concepto', 'Monto']]
+        elements.append(Paragraph(_("GASTOS"), self.estilo_subtitulo))
+        data_gastos = [[_('Concepto'), _('Monto')]]
         total_gastos = 0
         
         for categoria, monto in gastos.items():
@@ -154,7 +154,7 @@ class GeneradorReportes:
                 data_gastos.append([categoria_formateada, f"${monto:,.0f}"])
                 total_gastos += monto
         
-        data_gastos.append(['TOTAL GASTOS', f"${total_gastos:,.0f}"])
+        data_gastos.append([_('TOTAL GASTOS'), f"${total_gastos:,.0f}"])
         
         tabla_gastos = Table(data_gastos, colWidths=[4*inch, 2*inch])
         tabla_gastos.setStyle(TableStyle([
@@ -178,7 +178,7 @@ class GeneradorReportes:
         resultado_neto = total_ingresos - total_gastos
         color_resultado = colors.HexColor('#27ae60') if resultado_neto >= 0 else colors.HexColor('#c0392b')
         
-        data_resultado = [['RESULTADO NETO DEL PERÍODO', f"${resultado_neto:,.0f}"]]
+        data_resultado = [[_('RESULTADO NETO DEL PERÍODO'), f"${resultado_neto:,.0f}"]]
         tabla_resultado = Table(data_resultado, colWidths=[4*inch, 2*inch])
         tabla_resultado.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), color_resultado),
@@ -193,7 +193,7 @@ class GeneradorReportes:
         
         # Análisis de Rentabilidad
         elements.append(Spacer(1, 30))
-        elements.append(Paragraph("ANÁLISIS DE RENTABILIDAD", self.estilo_subtitulo))
+        elements.append(Paragraph(_("ANÁLISIS DE RENTABILIDAD"), self.estilo_subtitulo))
         
         if total_ingresos > 0:
             margen_ganancia = (resultado_neto / total_ingresos * 100)
@@ -202,40 +202,65 @@ class GeneradorReportes:
             margen_ganancia = 0
             relacion_gastos_ingresos = 0
         
+        # ── i18n: labels extraídos de la f-string (DT-37 F4 fix) ──
+        # pybabel NO extrae _() dentro de f-strings → moverlos fuera
+        lbl_margen = _('Margen de Ganancia Neto:')
+        lbl_relacion = _('Relación Gastos/Ingresos:')
+        lbl_rentabilidad = _('Rentabilidad:')
+        lbl_positiva = _('POSITIVA')
+        lbl_negativa = _('NEGATIVA')
+        lbl_dias = _('Días del período:')
+        lbl_dias_unidad = _('días')
+        lbl_ingresos_prom = _('Ingresos promedio por día:')
+        
         analisis_texto = f"""
-        <b>Margen de Ganancia Neto:</b> {margen_ganancia:.1f}%<br/>
-        <b>Relación Gastos/Ingresos:</b> {relacion_gastos_ingresos:.1f}%<br/>
-        <b>Rentabilidad:</b> {'<font color="green">POSITIVA</font>' if resultado_neto >= 0 else '<font color="red">NEGATIVA</font>'}<br/>
-        <b>Días del período:</b> {(fecha_fin - fecha_inicio).days + 1} días<br/>
-        <b>Ingresos promedio por día:</b> ${(total_ingresos / ((fecha_fin - fecha_inicio).days + 1)):,.0f}
+        <b>{lbl_margen}</b> {margen_ganancia:.1f}%<br/>
+        <b>{lbl_relacion}</b> {relacion_gastos_ingresos:.1f}%<br/>
+        <b>{lbl_rentabilidad}</b> {'<font color="green">' + lbl_positiva + '</font>' if resultado_neto >= 0 else '<font color="red">' + lbl_negativa + '</font>'}<br/>
+        <b>{lbl_dias}</b> {(fecha_fin - fecha_inicio).days + 1} {lbl_dias_unidad}<br/>
+        <b>{lbl_ingresos_prom}</b> ${(total_ingresos / ((fecha_fin - fecha_inicio).days + 1)):,.0f}
         """
         elements.append(Paragraph(analisis_texto, self.styles['Normal']))
         
         # Recomendaciones
         elements.append(Spacer(1, 20))
-        elements.append(Paragraph("RECOMENDACIONES", self.estilo_subtitulo))
+        elements.append(Paragraph(_("RECOMENDACIONES"), self.estilo_subtitulo))
+        
+        # ── i18n: labels extraídos de las f-strings (DT-37 F4 fix) ──
+        rec_alerta_lbl = _('Alerta de Pérdidas:')
+        rec_alerta_msg = _('Se recomienda revisar gastos operativos')
+        rec_gastos_lbl = _('Gastos Elevados:')
+        rec_gastos_msg = _('Considerar optimización de costos')
+        rec_alta_lbl = _('Alta Rentabilidad:')
+        rec_alta_msg = _('Buen desempeño financiero')
+        rec_moderada_lbl = _('Rentabilidad Moderada:')
+        rec_moderada_msg = _('Oportunidad de mejora')
+        rec_baja_lbl = _('Rentabilidad Baja:')
+        rec_baja_msg = _('Evaluar estrategias de crecimiento')
+        rec_estable_lbl = _('Estable:')
+        rec_estable_msg = _('Mantener estrategias actuales')
         
         recomendaciones = []
         if resultado_neto < 0:
-            recomendaciones.append("🔴 <b>Alerta de Pérdidas:</b> Se recomienda revisar gastos operativos")
+            recomendaciones.append(f"🔴 <b>{rec_alerta_lbl}</b> {rec_alerta_msg}")
             if total_gastos > total_ingresos * 2:
-                recomendaciones.append("🔴 <b>Gastos Elevados:</b> Considerar optimización de costos")
+                recomendaciones.append(f"🔴 <b>{rec_gastos_lbl}</b> {rec_gastos_msg}")
         elif margen_ganancia > 20:
-            recomendaciones.append("🟢 <b>Alta Rentabilidad:</b> Buen desempeño financiero")
+            recomendaciones.append(f"🟢 <b>{rec_alta_lbl}</b> {rec_alta_msg}")
         elif margen_ganancia > 10:
-            recomendaciones.append("🟡 <b>Rentabilidad Moderada:</b> Oportunidad de mejora")
+            recomendaciones.append(f"🟡 <b>{rec_moderada_lbl}</b> {rec_moderada_msg}")
         else:
-            recomendaciones.append("🟡 <b>Rentabilidad Baja:</b> Evaluar estrategias de crecimiento")
+            recomendaciones.append(f"🟡 <b>{rec_baja_lbl}</b> {rec_baja_msg}")
         
         if not recomendaciones:
-            recomendaciones.append("⚪ <b>Estable:</b> Mantener estrategias actuales")
+            recomendaciones.append(f"⚪ <b>{rec_estable_lbl}</b> {rec_estable_msg}")
         
         for recomendacion in recomendaciones:
             elements.append(Paragraph(recomendacion, self.styles['Normal']))
         
         # Pie de página
         elements.append(Spacer(1, 30))
-        elements.append(Paragraph(f"Generado el: {datetime.now().strftime('%d/%m/%Y %H:%M')}", 
+        elements.append(Paragraph(_("Generado el: %(fecha)s") % {'fecha': datetime.now().strftime('%d/%m/%Y %H:%M')}, 
                                 ParagraphStyle('Footer', parent=self.styles['Normal'], fontSize=8, textColor=colors.gray)))
         
         doc.build(elements)
