@@ -1,7 +1,7 @@
 # 🗂️ CONTEXTO MAESTRO — PanaderíaPro (Bakery ERP)
 
 **Última actualización:** 16 de Octubre, 2026
-**Último commit:** 4cbc257 (feat DT-37 F4: migrar generar_reporte_analisis_gastos a i18n)
+**Último commit:** 186d78b (fix DT-37 F4: reparar f-strings con emoji en estado_resultados)
 **Sesión 2 Oct:** DT-11, DT-12, DT-13, DT-14, DT-16, DT-26, DT-27, DT-3, DT-4
 **Sesión 3 Oct:** DT-1, DT-6, DT-9, DT-20 Fase C (Tanda 1+2+3), DT-30, DT-31
 **Sesión 4 Oct:** DT-10, DT-22, DT-24, DT-17, DT-33, DT-34, DT-32, DT-18
@@ -12,7 +12,7 @@
 **Sesión 8 Oct (tarde):** DT-19 (CSRF completo con flask-wtf) — **Producción-ready en seguridad**
 **Sesión 12 Oct (mañana):** DT-47 (logging centralizado) — **Producción-ready en observabilidad**
 **Sesión 15 Oct (tarde):** DT-37 F0 + F1 + F2 + F3 (reporte piloto) + Papiamento — **Pipeline i18n funcional (es/en/pap)**
-**Sesión 16 Oct (mañana):** DT-37 F4 partes 1-4 (`estado_resultados` + `flujo_caja` + `conciliacion_bancaria` + `analisis_gastos`) — **4/13 reportes migrados**
+**Sesión 16 Oct (mañana):** DT-37 F4 partes 1-5 (`estado_resultados` + `flujo_caja` + `conciliacion_bancaria` + `analisis_gastos` + `analisis_inventarios`) + fix crítico de f-strings con emoji — **5/13 reportes migrados**
 
 ---
 
@@ -20,12 +20,12 @@
 
 - **Nombre:** PanaderíaPro (bakery-erp)
 - **Repo:** https://github.com/mauricioaea/bakery-erp
-- **Estado:** v1.6.0 — **11/11 módulos completados (100%)** + Demo Fases 1-12 + Endurecimiento de seguridad + DT-20 100% + DT-18 reporte tesorería nivel contable + tenant_1 limpio + Fase C.3 cerrada + DT-25 cerrada + DT-29 cerrada + DT-28/DT-45/DT-42/DT-43/DT-46 cerradas + DT-5-bis/DT-5-quinquies/DT-5-quater-bis cerradas + DT-19 cerrada + DT-47 cerrada + **DT-37 EN PROGRESO (~80%: F0-F3 + Papiamento + F4 partes 1-4 (4/13 reportes))**
+- **Estado:** v1.6.0 — **11/11 módulos completados (100%)** + Demo Fases 1-12 + Endurecimiento de seguridad + DT-20 100% + DT-18 reporte tesorería nivel contable + tenant_1 limpio + Fase C.3 cerrada + DT-25 cerrada + DT-29 cerrada + DT-28/DT-45/DT-42/DT-43/DT-46 cerradas + DT-5-bis/DT-5-quinquies/DT-5-quater-bis cerradas + DT-19 cerrada + DT-47 cerrada + **DT-37 EN PROGRESO (~85%: F0-F3 + Papiamento + F4 partes 1-5 (5/13 reportes) + fix crítico de f-strings con emoji)**
 - **Arquitectura:** Multi-tenant con PostgreSQL (schemas por tenant)
-- **Próximo hito:** DT-37 F4 (9 reportes restantes) + Dockerización (Fase 3) + DT-CRÉDITOS
+- **Próximo hito:** DT-37 F4 (8 reportes restantes) + auditoría de f-strings con emoji en reportes anteriores + Dockerización (Fase 3) + DT-CRÉDITOS
 - **Seguridad:** Producción-ready (CSRF con tokens firmados + Origin/Referer + logging centralizado)
 - **Observabilidad:** Producción-ready (logger con rotación de archivos, niveles configurables)
-- **i18n:** Operativo para reportes PDF en **es/en/pap** (4 de 13 reportes migrados)
+- **i18n:** Operativo para reportes PDF en **es/en/pap** (5 de 13 reportes migrados)
 
 ---
 
@@ -46,7 +46,7 @@
 ### Estructura de archivos
 - `app.py` (~12.700 líneas) — aplicación principal
 - `models.py` (~3.060 líneas) — modelos SQLAlchemy
-- `reportes.py` (~3.500 líneas) — generación PDF
+- `reportes.py` (~3.600 líneas) — generación PDF
 - `seed_demo.py` (~450 líneas) — seed del Demo
 - `seeds/` — 11 fases del seed
 - `middleware_saas.py`, `tenant_decorators.py`, `tenant_context.py` — multi-tenant
@@ -54,10 +54,10 @@
 - `migrations/sql/` — scripts SQL versionados
 - **`babel.cfg`** (NUEVO DT-37) — config de extracción de strings
 - **`locales/`** (NUEVO DT-37) — catálogos de traducción
-  - `locales/messages.pot` — plantilla (153 msgids)
+  - `locales/messages.pot` — plantilla (**217 msgids**)
   - `locales/es/LC_MESSAGES/messages.{po,mo}` — español (0 traducidos, fallback)
-  - `locales/en/LC_MESSAGES/messages.{po,mo}` — inglés (152 traducidos, 100%)
-  - `locales/pap/LC_MESSAGES/messages.{po,mo}` — papiamentu Curazao (152 traducidos, 100%)
+  - `locales/en/LC_MESSAGES/messages.{po,mo}` — inglés (**216 traducidos, 100%**)
+  - `locales/pap/LC_MESSAGES/messages.{po,mo}` — papiamentu Curazao (**216 traducidos, 100%**)
 - `templates/` (54 templates + `_csrf_head.html` partial + subcarpetas `secciones/`)
 - `static/js/` — incluye `csrf-auto-inject.js`
 - `logs/` — archivo rotativo `panaderia.log` (ignorado por git)
@@ -155,13 +155,16 @@
 | 8 | Activos Fijos | ✅ COMPLETO |
 | 9 | Gestión de Usuarios + Mi Perfil | ✅ COMPLETO |
 | 10 | Gestión Financiera | ✅ COMPLETO |
-| 11 | Reportes Profesionales | ✅ COMPLETO (i18n en progreso: 4/13 reportes migrados) |
+| 11 | Reportes Profesionales | ✅ COMPLETO (i18n en progreso: 5/13 reportes migrados) |
 
 ---
 
 ## 6️⃣ Últimos commits pusheados
 
 ```
+186d78b fix(DT-37 F4): reparar f-strings con emoji en estado_resultados (rama sin datos)
+8430027 feat(DT-37 F4): migrar generar_reporte_analisis_inventarios a i18n (es/en/pap)
+084ee74 docs: HANDOFF v8.9 - DT-37 F4 partes 1-4 completadas (4/13 reportes migrados)
 4cbc257 feat(DT-37 F4): migrar generar_reporte_analisis_gastos a i18n (es/en/pap)
 9ddc83f feat(DT-37 F4): migrar generar_reporte_conciliacion_bancaria a i18n (es/en/pap)
 8c53f4a feat(DT-37 F4): migrar generar_reporte_flujo_caja a i18n (es/en/pap)
@@ -234,6 +237,7 @@ SECRET_KEY=...
 - `/generar_reporte_flujo_caja` (✅ i18n es/en/pap — huérfano, sin UI)
 - `/generar_reporte_conciliacion_bancaria` (✅ i18n es/en/pap)
 - `/generar_reporte_analisis_gastos` (✅ i18n es/en/pap)
+- `/generar_reporte_analisis_inventarios` (✅ i18n es/en/pap)
 
 ### 🎯 Arquitectura del `before_request` (post-DT-25 + DT-37)
 
@@ -345,7 +349,7 @@ Flujo:
 
 6. **Cómo funciona el fallback:**
    - `es.po` tiene 0 traducciones → Babel devuelve el `msgid` original (que ya está en español).
-   - `en.po` y `pap.po` tienen 152 traducciones cada uno.
+   - `en.po` y `pap.po` tienen 216 traducciones cada uno.
 
 7. **⚠️ Lecciones aprendidas:**
    - `pybabel extract ... .` escanea **TODO** (incluido `venv/`) → usar lista explícita de archivos.
@@ -353,6 +357,7 @@ Flujo:
    - Los archivos `.mo` **deben commitearse** al repo (Flask-Babel no los genera en runtime).
    - Verificar el locale NO es suficiente con `get_locale()`. Hay que verificar que `gettext()` **efectivamente traduzca**.
    - **🆕 Pybabel NO extrae `_()` dentro de f-strings.** Bug conocido de Babel. Solución: extraer los `_()` a variables fuera de la f-string.
+   - **🆕 Pybabel NO extrae `_()` después de emoji dentro de f-string.** Solución: usar concatenación `"emoji " + _('texto')` en lugar de `f"emoji {_('texto')}"`.
    - **🆕 Pybabel update marca como `#, fuzzy` los msgids que heredan traducción de otros strings similares.** Hay que quitarlos manualmente + corregir la traducción.
    - **🆕 Los msgids largos se dividen en multi-línea** en el `.po` (regla de ancho 76 chars). Los scripts de reemplazo deben manejar esto.
    - **🆕 Los strings con placeholders llevan `#, python-format`.** Al quitar fuzzy, preservar `python-format`.
@@ -401,14 +406,15 @@ Flujo:
 
 ## 9️⃣ Deuda técnica acumulada
 
-### ✅ RESUELTAS el 16 de Octubre 2026 — DT-37 F4 (parcial)
+### ✅ RESUELTAS el 16 de Octubre 2026 — DT-37 F4 (parte 1-5 + fix)
 
 | # | Descripción | Commit |
 |---|---|---|
-| DT-37 F4.1 | Migrar `estado_resultados` a i18n | `41dc685` |
+| DT-37 F4.1 | Migrar `estado_resultados` a i18n | `41dc685` + `186d78b` (fix emoji rama sin datos) |
 | DT-37 F4.2 | Migrar `flujo_caja` a i18n | `8c53f4a` |
 | DT-37 F4.3 | Migrar `conciliacion_bancaria` a i18n | `9ddc83f` |
 | DT-37 F4.4 | Migrar `analisis_gastos` a i18n | `4cbc257` |
+| DT-37 F4.5 | Migrar `analisis_inventarios` a i18n | `8430027` |
 
 ### ✅ RESUELTAS el 15 de Octubre 2026 — DT-37 (parcial)
 
@@ -469,14 +475,15 @@ Fase C.3, DT-38, DT-40, DT-39, DT-36.
 
 | # | Ubicación | Descripción |
 |---|---|---|
-| DT-37 | `reportes.py` | i18n reportes — **F4 pendiente: 9 reportes restantes**. ~4-6 h. |
+| DT-37 | `reportes.py` | i18n reportes — **F4 pendiente: 8 reportes restantes**. ~6-7 h. |
 | **DT-NUEVA-1** | `migrations/sql/` | **Sincronizar `CREATE TABLE` con `idioma`** para tenants nuevos (obligatorio antes del próximo tenant). |
 | **DT-nueva** | `reportes.py` | **Error `'ingreso'` en `generar_reporte_ia_predictivo`** (detectado F3.2, no bloquea). PDF muestra "Las recomendaciones no están disponibles temporalmente por error técnico". |
 | **DT-nueva** | `app.py` | **Reducir logs verbosos de productos por tenant**: `✅ Agregado panadería: Milhojas` × cada producto × cada request. Con 500 tenants, los logs se llenan. Considerar bajar a debug o eliminar. |
-| **🆕 DT-nueva** | `app.py:9066` | **Endpoint `/generar_reporte_flujo_caja` huérfano**: existe pero ningún template lo invoca. Además tiene bug: `generador.generar_reporte_flujo_caja(fecha_inicio, fecha_fin)` le falta `panaderia_id` (L9092). |
-| **🆕 DT-nueva** | `reportes.py` | **`generar_reporte_libro_diario` (línea 493) posiblemente huérfano**: no aparece en el menú `/reportes`. Verificar si es huérfano como `flujo_caja`. |
-| **🆕 DT-nueva** | `reportes.py` (ReportLab) | **Emojis `🔴 🟢 🟡 ⚪` rotos en PDFs**: la fuente `Helvetica` default de ReportLab no tiene glyphs de emoji → salen como `n`. Deuda cosmética. Solución: cargar fuente con soporte emoji (DejaVu) o reemplazar por ASCII (`[!]`, `[+]`, etc.). |
-| **🆕 DT-nueva** | `analisis_gastos` (matplotlib) | **Overlap de labels en pie chart** cuando hay categorías con valores pequeños. Deuda cosmética. |
+| **DT-nueva** | `app.py:9066` | **Endpoint `/generar_reporte_flujo_caja` huérfano**: existe pero ningún template lo invoca. Además tiene bug: `generador.generar_reporte_flujo_caja(fecha_inicio, fecha_fin)` le falta `panaderia_id` (L9092). |
+| **DT-nueva** | `reportes.py` | **`generar_reporte_libro_diario` (línea 493) posiblemente huérfano**: no aparece en el menú `/reportes`. Verificar si es huérfano como `flujo_caja`. |
+| **🚨 DT-nueva-CRÍTICA** | `reportes.py` (ReportLab) | **Emojis `🔴 🟢 🟡 ⚪ 📦 📊 🚨 💡 📋 ✅` rotos en PDFs**: la fuente `Helvetica` default de ReportLab no tiene glyphs de emoji → salen como `n`. Deuda cosmética global. Solución: cargar fuente con soporte emoji (DejaVu) o reemplazar por ASCII (`[!]`, `[+]`, `[OK]`, etc.). |
+| **DT-nueva** | `analisis_gastos` (matplotlib) | **Overlap de labels en pie chart** cuando hay categorías con valores pequeños. Deuda cosmética. |
+| **🚨 DT-nueva-CRÍTICA** | `reportes.py` | **Auditar otros reportes por el bug de `f"emoji {_(...)}"`**. Ya se auditaron los principales: `estado_resultados` tenía 5 casos (reparados en `186d78b`). **Verificar `tendencia_ventas`, `flujo_caja`, `conciliacion_bancaria`, `analisis_gastos`** (probablemente limpios, pero no auditados formalmente). |
 
 ### 🟢 Bajas pendientes
 
@@ -564,7 +571,7 @@ Fase C.3, DT-38, DT-40, DT-39, DT-36.
 66. Antes de agregar un idioma nuevo, verificar el código ISO 639-2/3. Papiamentu = `pap`.
 67. Días en Papiamentu Curazao llevan prefijo `dja-` (djaluna, djamars, etc.). El Papiamentu de Aruba usa ortografía distinta → si se agrega, usar `pap_AW`.
 68. Los scripts de diagnóstico temporales se crean en archivo `.py` (no con `python -c "..."`): Python no permite `with` después de `;`.
-69. **🆕 pybabel NO extrae `_()` dentro de f-strings.** Bug conocido de Babel. Solución: extraer los `_()` a variables ANTES de la f-string. Ejemplo:
+69. **🚨 pybabel NO extrae `_()` dentro de f-strings.** Bug conocido de Babel. Solución: extraer los `_()` a variables ANTES de la f-string. Ejemplo:
    ```python
    # ❌ NO extraíble por pybabel
    texto = f"<b>{_('Etiqueta:')}</b> {valor}"
@@ -573,23 +580,32 @@ Fase C.3, DT-38, DT-40, DT-39, DT-36.
    lbl_etiqueta = _('Etiqueta:')
    texto = f"<b>{lbl_etiqueta}</b> {valor}"
    ```
-70. **🆕 pybabel update marca como `#, fuzzy` los msgids que heredan traducción de otros strings similares.** Después de cada `pybabel update`, SIEMPRE verificar con `findstr /n /c:"#, fuzzy" locales\en\LC_MESSAGES\messages.po`. Los fuzzy deben quitarse + corregir la traducción si es incorrecta.
-71. **🆕 Los msgids largos se dividen en multi-línea** en el `.po` (Babel corta a 76 chars). Los scripts de reemplazo deben manejar el formato multi-línea:
+70. **🚨 pybabel NO extrae `_()` después de emoji dentro de f-string.** Caso específico del bug 69. Solución: usar concatenación `"emoji " + _('texto')` en lugar de `f"emoji {_('texto')}"`.
+   ```python
+   # ❌ NO extraíble
+   elements.append(Paragraph(f"📦 {_('ANÁLISIS...')}", estilo))
+   
+   # ✅ Sí extraíble (concatenación)
+   elements.append(Paragraph("📦 " + _('ANÁLISIS...'), estilo))
+   ```
+71. **pybabel update marca como `#, fuzzy` los msgids que heredan traducción de otros strings similares.** Después de cada `pybabel update`, SIEMPRE verificar con `findstr /n /c:"#, fuzzy" locales\en\LC_MESSAGES\messages.po` y `locales\pap\LC_MESSAGES\messages.po`. Los fuzzy deben quitarse + corregir la traducción si es incorrecta.
+72. **Los msgids largos se dividen en multi-línea** en el `.po` (Babel corta a 76 chars). Los scripts de reemplazo deben manejar el formato multi-línea:
    ```
    msgid ""
    "Fragmento 1 "
    "Fragmento 2"
    msgstr ""
    ```
-72. **🆕 Los strings con `%(...)s` llevan `#, python-format`.** Al eliminar `fuzzy`, preservar `python-format`. Los msgstr deben usar los mismos placeholders.
-73. **🆕 Los scripts de reemplazo de `.po` deben aceptar el flag `--apply`** para modo real. Por defecto corren en dry-run (no escriben nada).
-74. **🆕 Los scripts de corrección de fuzzy deben usar regex flexible** que capture `#, fuzzy` con o sin `, python-format`:
+73. **Los strings con `%(...)s` llevan `#, python-format`.** Al eliminar `fuzzy`, preservar `python-format`. Los msgstr deben usar los mismos placeholders.
+74. **Los scripts de reemplazo de `.po` deben aceptar el flag `--apply`** para modo real. Por defecto corren en dry-run (no escriben nada).
+75. **Los scripts de corrección de fuzzy deben usar regex flexible** que capture `#, fuzzy` con o sin `, python-format`:
    ```python
    r'#, fuzzy(, python-format)?\nmsgid "..."\nmsgstr "[^"]*"'
    ```
-75. **🆕 Los scripts de reemplazo en `reportes.py` deben crear backup con timestamp** con patrón `reportes.py.bak_i18n_<reporte>_<YYYYMMDD_HHMMSS>`.
-76. **🆕 Al commitear, SIEMPRE usar `git add <archivo>` explícito para cada uno.** Evitar `git add .` o `git add -A` que puedan incluir scripts temporales.
-77. **🆕 Verificar `git status` DESPUÉS de cada `git add`** y antes de commitear. Confirmar que TODOS los archivos esperados están en stage.
+76. **Los scripts de reemplazo en `reportes.py` deben crear backup con timestamp** con patrón `reportes.py.bak_<tipo>_<YYYYMMDD_HHMMSS>`.
+77. **Al commitear, SIEMPRE usar `git add <archivo>` explícito para cada uno.** Evitar `git add .` o `git add -A` que puedan incluir scripts temporales.
+78. **Verificar `git status` DESPUÉS de cada `git add`** y antes de commitear. Confirmar que TODOS los archivos esperados están en stage.
+79. **Antes de generar un PDF i18n con emojis**, verificar que NO haya `f"emoji {_('texto')}"` en el método. Usar `grep`/`Select-String` con regex `f".*\{_`.
 
 ### Comandos útiles
 
@@ -665,6 +681,13 @@ Fase C.3, DT-38, DT-40, DT-39, DT-36.
 
   # Compilar .po -> .mo:
   pybabel compile -d locales --statistics
+
+  # Auditar fuzzy:
+  findstr /n /c:"#, fuzzy" locales\en\LC_MESSAGES\messages.po
+  findstr /n /c:"#, fuzzy" locales\pap\LC_MESSAGES\messages.po
+
+  # Auditar f-strings con emoji:
+  powershell -Command "Select-String -Path reportes.py -Pattern 'f\".*\{_'"
   ```
 
 ---
@@ -782,11 +805,11 @@ Auditoría del 5 Oct, alineación ORM↔BD:
 
 ---
 
-## 2️⃣0️⃣ DT-37 — i18n reportes (EN PROGRESO ~80%)
+## 2️⃣0️⃣ DT-37 — i18n reportes (EN PROGRESO ~85%)
 
-**Alcance:** `reportes.py` (~3.500 líneas) genera PDFs con texto hardcodeado en español. Objetivo: multi-idioma con Flask-Babel.
+**Alcance:** `reportes.py` (~3.600 líneas) genera PDFs con texto hardcodeado en español. Objetivo: multi-idioma con Flask-Babel.
 
-**Estado:** F0-F3 + Papiamento + **F4 partes 1-4** completadas. F4 pendiente (9 reportes restantes). F5 pendiente (smoke test final + HANDOFF).
+**Estado:** F0-F3 + Papiamento + **F4 partes 1-5** + **fix crítico emoji** completadas. F4 pendiente (8 reportes restantes). F5 pendiente (smoke test final + HANDOFF).
 
 ### F0 — Campo `idioma` (15 Oct, commit `85f8cf5`)
 
@@ -816,38 +839,39 @@ Auditoría del 5 Oct, alineación ORM↔BD:
 - `locales/pap/LC_MESSAGES/messages.{po,mo}`: 53 traducidos.
 - Días Curazao con prefijo `dja-`.
 
-### F4 — Reportes migrados (16 Oct, commits `41dc685` + `8c53f4a` + `9ddc83f` + `4cbc257`)
+### F4 — Reportes migrados (16 Oct, commits `41dc685` + `8c53f4a` + `9ddc83f` + `4cbc257` + `8430027` + `186d78b`)
 
-**✅ Migrados:**
+**✅ Migrados (6 total, incluyendo piloto):**
 
 | # | Reporte | Complejidad | Notas |
 |---|---|---|---|
-| 1 | `generar_reporte_estado_resultados` | Media | 29 reemplazos. Smoke test OK. |
-| 2 | `generar_reporte_flujo_caja` | Media | 7 reemplazos. **Reporte huérfano (sin UI)**. Bug detectado en endpoint. |
-| 3 | `generar_reporte_conciliacion_bancaria` | Media | 14 reemplazos. 23 strings nuevos. |
-| 4 | `generar_reporte_analisis_gastos` | Alta | 21 reemplazos. Incluye gráficos matplotlib + helper con f-strings. |
+| 1 | `generar_reporte_tendencia_ventas` (piloto) | Media | Migrado en F3 |
+| 2 | `generar_reporte_estado_resultados` | Media | 29 reemplazos + fix emoji rama sin datos (5 reparados) |
+| 3 | `generar_reporte_flujo_caja` | Media | 7 reemplazos. **Reporte huérfano (sin UI)**. Bug detectado en endpoint. |
+| 4 | `generar_reporte_conciliacion_bancaria` | Media | 14 reemplazos. 23 strings nuevos. |
+| 5 | `generar_reporte_analisis_gastos` | Alta | 21 reemplazos. Gráficos matplotlib + helper con f-strings. |
+| 6 | `generar_reporte_analisis_inventarios` | **Muy alta** | 41 reemplazos. 4 gráficos matplotlib + 3 helpers. **Fix crítico de f-strings con emoji (8 casos)**. |
 
 **Lecciones críticas de F4:**
 - **pybabel NO extrae `_()` dentro de f-strings.** Solución: extraer a variables.
+- **pybabel NO extrae `_()` después de emoji dentro de f-string.** Solución: `"emoji " + _('texto')`.
 - **pybabel update marca `#, fuzzy`** msgids que heredan traducción de otros similares. Quitar + corregir manualmente.
 - **Msgids largos van multi-línea** en `.po`.
 - **Strings con `%(...)s` llevan `#, python-format`.** Preservar al quitar fuzzy.
 
-**🟡 Reportes pendientes (9):**
+**🟡 Reportes pendientes (7):**
 
 | # | Reporte | Línea aprox. | Complejidad | Estimado |
 |---|---|---|---|---|
 | 1 | `generar_reporte_ia_predictivo` | ~1660 | **Alta + bug conocido** | ~1 h |
-| 2 | `generar_reporte_analisis_inventarios` | ~2100 | Media | ~45 min |
-| 3 | `generar_reporte_tesoreria_unificado` | ~2900 | **Muy alta (~450 líneas)** | ~2-3 h |
-| 4 | `generar_reporte_historial_pagos` | ~3350 | Media | ~45 min |
-| 5 | `generar_reporte_historial_depositos` | ~3520 | Media | ~45 min |
-| 6 | `generar_reporte_libro_diario` | ~493 | Media | ~45 min (¿huérfano?) |
-| 7 | `_generar_reporte_error` | — | Baja | ~15 min |
-| 8 | `_agregar_*_tesoreria` (helpers) | — | Baja | ~30 min |
-| 9 | `_obtener_*` (helpers adicionales) | — | Baja | ~30 min |
+| 2 | `generar_reporte_tesoreria_unificado` | ~2900 | **Muy alta (~450 líneas)** | ~2-3 h |
+| 3 | `generar_reporte_historial_pagos` | ~3350 | Media | ~45 min |
+| 4 | `generar_reporte_historial_depositos` | ~3520 | Media | ~45 min |
+| 5 | `generar_reporte_libro_diario` | ~493 | Media | ~45 min (¿huérfano?) |
+| 6 | `_generar_reporte_error` | — | Baja | ~15 min |
+| 7 | `_agregar_*_tesoreria` (helpers) | — | Baja | ~30 min |
 
-**Estimación F4 restante:** ~6-8 h.
+**Estimación F4 restante:** ~6-7 h.
 
 ### F5 — Smoke test final + HANDOFF (PENDIENTE)
 
@@ -926,7 +950,8 @@ Fases 1-12 completadas (~9.972 filas). Contraseña: `demo2026`. `idioma = pap`.
 
 | Bloque | Estimación |
 |---|---|
-| **DT-37 F4** (9 reportes restantes) | ~6-8 h |
+| **DT-37 F4** (7 reportes restantes) | ~6-7 h |
+| Auditoría f-strings emoji en reportes anteriores | ~1 h |
 | Dockerización (Fase 3) | ~22-32 h |
 | DT-CRÉDITOS (MVP) | ~6-8 h |
 | DT-CRÉDITOS (completo) | ~15-25 h |
@@ -957,11 +982,13 @@ El sistema está listo para Docker gracias a las DT cerradas:
 
 **Instrucción sugerida:**
 
-> "Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el archivo HANDOFF.md v8.9 con el contexto maestro. Vamos a continuar desde donde lo dejamos. Por favor actúa como instructor guiando paso a paso, con la metodología de trabajo descrita en el HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/findstr, commit tras cada fix verificado. Al insertar bloques, muéstrame ANTES → DESPUÉS con número de línea exacto. Tú me das LUZ VERDE cuando los cambios estén 100% validados. Yo aplico los cambios en mi editor."
+> "Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el archivo HANDOFF.md v8.10 con el contexto maestro. Vamos a continuar desde donde lo dejamos. Por favor actúa como instructor guiando paso a paso, con la metodología de trabajo descrita en el HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/findstr, commit tras cada fix verificado. Al insertar bloques, muéstrame ANTES → DESPUÉS con número de línea exacto. Tú me das LUZ VERDE cuando los cambios estén 100% validados. Yo aplico los cambios en mi editor."
 
 **Próxima tarea sugerida:**
 
-- **DT-37 F4** — Migrar los 9 reportes restantes. Empezar por `generar_reporte_analisis_inventarios` (~2100, Media).
+- **OPCIÓN A (recomendada):** Auditar los reportes ya migrados (`tendencia_ventas`, `flujo_caja`, `conciliacion_bancaria`, `analisis_gastos`) por el bug de `f"emoji {_(...)}"`. 5-30 min. Cierra deuda técnica crítica.
+- **OPCIÓN B:** Continuar F4 con `generar_reporte_ia_predictivo` (~1660, Alta + bug `'ingreso'` conocido). ~1 h.
+- **OPCIÓN C:** Migrar el más simple: `_generar_reporte_error` o `libro_diario`.
 - **Dockerización (Fase 3)** — Sesión dedicada. ~22-32 h.
 - **DT-CRÉDITOS** — Sesión dedicada con cuestionario previo.
 
@@ -969,8 +996,8 @@ El sistema está listo para Docker gracias a las DT cerradas:
 
 ## ✅ Última validación
 
-- **Último commit:** `4cbc257` (analisis_gastos, pusheado).
-- **Última sesión:** 16 Oct 2026 (mañana) — DT-37 F4 partes 1-4 completadas.
+- **Último commit:** `186d78b` (fix emoji estado_resultados, pusheado).
+- **Última sesión:** 16 Oct 2026 (mañana) — DT-37 F4 partes 1-5 + fix crítico de f-strings con emoji.
 - **Working tree:** clean (solo `_ver_untraducciones.py` untracked, script temporal).
 - **Servidor:** detenido.
 - **Sistema:** 100% funcional end-to-end.
@@ -978,7 +1005,7 @@ El sistema está listo para Docker gracias a las DT cerradas:
 - **Demo:** ~9.972 filas. `idioma = pap` en tenant_27.
 - **Seguridad:** Producción-ready (CSRF con tokens firmados).
 - **Observabilidad:** Producción-ready (logger con rotación).
-- **i18n:** 3 idiomas (es/en/pap), **4/13 reportes migrados** (+ piloto = 5/13).
+- **i18n:** 3 idiomas (es/en/pap), **5/13 reportes migrados** (+ piloto = 6/13 considerando `tendencia_ventas`).
 - **DT-19:** ✅ Resuelta.
 - **DT-25:** ✅ Resuelta.
 - **DT-28:** ✅ Resuelta.
@@ -993,10 +1020,10 @@ El sistema está listo para Docker gracias a las DT cerradas:
 - **DT-5-quater-bis:** ✅ Resuelta.
 - **DT-7:** ❌ Eliminada.
 - **DT-44:** ❌ Eliminada.
-- **DT-37:** 🟡 EN PROGRESO (F0-F3 + Papiamento ✅ | F4 4/13 ✅ | F4 9/13 pendientes | F5 pendiente).
-- **Pendientes:** DT-37 F4 (9 reportes), DT-NUEVA-1, Dockerización (Fase 3), DT-CRÉDITOS.
-- **Deudas críticas:** ninguna.
+- **DT-37:** 🟡 EN PROGRESO (F0-F3 + Papiamento ✅ | F4 5/13 ✅ + fix emoji ✅ | F4 8/13 pendientes | F5 pendiente).
+- **Pendientes:** DT-37 F4 (7 reportes + 1 fix previo), auditoría f-strings emoji en reportes anteriores, DT-NUEVA-1, Dockerización (Fase 3), DT-CRÉDITOS.
+- **Deudas críticas:** ninguna funcional. Emojis ReportLab como cosmética + auditoría pendiente de f-strings con emoji en reportes previos.
 
 ---
 
-**Fin del HANDOFF.md — v8.9**
+**Fin del HANDOFF.md — v8.10**
