@@ -686,8 +686,8 @@ class GeneradorReportes:
 
             # Encabezado
             elements.append(Paragraph(self.nombre_empresa, self.estilo_titulo))
-            elements.append(Paragraph("CONCILIACIÓN BANCARIA", self.estilo_titulo))
-            elements.append(Paragraph(f"Fecha de Corte: {fecha_corte}", self.styles['Normal']))
+            elements.append(Paragraph(_("CONCILIACIÓN BANCARIA"), self.estilo_titulo))
+            elements.append(Paragraph(_("Fecha de Corte: %(fecha)s") % {'fecha': fecha_corte}, self.styles['Normal']))
             elements.append(Spacer(1, 20))
 
             # Obtener saldo del sistema - ✅ CORREGIDO: Añadido filtro panaderia_id
@@ -703,13 +703,13 @@ class GeneradorReportes:
             cheques_pendientes = self._obtener_cheques_pendientes(fecha_corte)
 
             # 1. TABLA DE COMPARACIÓN DE SALDOS
-            elements.append(Paragraph("COMPARACIÓN DE SALDOS", self.estilo_subtitulo))
+            elements.append(Paragraph(_("COMPARACIÓN DE SALDOS"), self.estilo_subtitulo))
             
             data_comparacion = [
-                ['Concepto', 'Monto'],
-                ['Saldo según Extracto Bancario', f"${saldo_extracto:,.0f}"],
-                ['Saldo según Sistema', f"${saldo_sistema:,.0f}"],
-                ['Diferencia a Conciliar', f"${saldo_extracto - saldo_sistema:,.0f}"]
+                [_('Concepto'), _('Monto')],
+                [_('Saldo según Extracto Bancario'), f"${saldo_extracto:,.0f}"],
+                [_('Saldo según Sistema'), f"${saldo_sistema:,.0f}"],
+                [_('Diferencia a Conciliar'), f"${saldo_extracto - saldo_sistema:,.0f}"]
             ]
             
             tabla_comparacion = Table(data_comparacion, colWidths=[4*inch, 2*inch])
@@ -733,8 +733,8 @@ class GeneradorReportes:
             # 2. DEPÓSITOS EN TRÁNSITO
             total_depositos = 0
             if depositos_pendientes:
-                elements.append(Paragraph("DEPÓSITOS EN TRÁNSITO", self.estilo_subtitulo))
-                data_depositos = [['Fecha', 'Descripción', 'Referencia', 'Monto']]
+                elements.append(Paragraph(_("DEPÓSITOS EN TRÁNSITO"), self.estilo_subtitulo))
+                data_depositos = [[_('Fecha'), _('Descripción'), _('Referencia'), _('Monto')]]
                 
                 for deposito in depositos_pendientes:
                     data_depositos.append([
@@ -745,7 +745,7 @@ class GeneradorReportes:
                     ])
                     total_depositos += deposito['monto']
                 
-                data_depositos.append(['TOTAL DEPÓSITOS EN TRÁNSITO', '', '', f"${total_depositos:,.0f}"])
+                data_depositos.append([_('TOTAL DEPÓSITOS EN TRÁNSITO'), '', '', f"${total_depositos:,.0f}"])
                 
                 tabla_depositos = Table(data_depositos, colWidths=[1*inch, 2*inch, 1.5*inch, 1*inch])
                 tabla_depositos.setStyle(TableStyle([
@@ -766,8 +766,8 @@ class GeneradorReportes:
             # 3. CHEQUES PENDIENTES DE COBRO
             total_cheques = 0
             if cheques_pendientes:
-                elements.append(Paragraph("CHEQUES PENDIENTES DE COBRO", self.estilo_subtitulo))
-                data_cheques = [['Fecha', 'Beneficiario', 'N° Cheque', 'Monto']]
+                elements.append(Paragraph(_("CHEQUES PENDIENTES DE COBRO"), self.estilo_subtitulo))
+                data_cheques = [[_('Fecha'), _('Beneficiario'), _('N° Cheque'), _('Monto')]]
                 
                 for cheque in cheques_pendientes:
                     data_cheques.append([
@@ -778,7 +778,7 @@ class GeneradorReportes:
                     ])
                     total_cheques += cheque['monto']
                 
-                data_cheques.append(['TOTAL CHEQUES PENDIENTES', '', '', f"${total_cheques:,.0f}"])
+                data_cheques.append([_('TOTAL CHEQUES PENDIENTES'), '', '', f"${total_cheques:,.0f}"])
                 
                 tabla_cheques = Table(data_cheques, colWidths=[1*inch, 2*inch, 1.5*inch, 1*inch])
                 tabla_cheques.setStyle(TableStyle([
@@ -797,19 +797,19 @@ class GeneradorReportes:
                 elements.append(Spacer(1, 15))
 
             # 4. RESUMEN DE CONCILIACIÓN
-            elements.append(Paragraph("RESUMEN DE CONCILIACIÓN", self.estilo_subtitulo))
+            elements.append(Paragraph(_("RESUMEN DE CONCILIACIÓN"), self.estilo_subtitulo))
             
             saldo_conciliado = saldo_sistema + total_depositos - total_cheques
             diferencia_final = saldo_extracto - saldo_conciliado
             conciliacion_exitosa = abs(diferencia_final) <= 1
 
             data_resumen = [
-                ['Saldo según Sistema', f"${saldo_sistema:,.0f}"],
-                ['(+) Depósitos en Tránsito', f"${total_depositos:,.0f}"],
-                ['(-) Cheques Pendientes', f"-${total_cheques:,.0f}"],
-                ['SALDO CONCILIADO', f"${saldo_conciliado:,.0f}"],
-                ['Saldo según Extracto', f"${saldo_extracto:,.0f}"],
-                ['DIFERENCIA FINAL', f"${diferencia_final:,.0f}"]
+                [_('Saldo según Sistema'), f"${saldo_sistema:,.0f}"],
+                [_('(+) Depósitos en Tránsito'), f"${total_depositos:,.0f}"],
+                [_('(-) Cheques Pendientes'), f"-${total_cheques:,.0f}"],
+                [_('SALDO CONCILIADO'), f"${saldo_conciliado:,.0f}"],
+                [_('Saldo según Extracto'), f"${saldo_extracto:,.0f}"],
+                [_('DIFERENCIA FINAL'), f"${diferencia_final:,.0f}"]
             ]
             
             tabla_resumen = Table(data_resumen, colWidths=[3*inch, 2*inch])
@@ -829,16 +829,27 @@ class GeneradorReportes:
             # Estado de la conciliación
             elements.append(Spacer(1, 15))
             
+            # ── i18n: labels extraídos de la f-string (DT-37 F4 parte 3) ──
+            lbl_estado_conc = _('Estado de la Conciliación:')
+            lbl_conc_exitosa = _('CONCILIACIÓN EXITOSA')
+            lbl_conc_pendiente = _('CONCILIACIÓN PENDIENTE')
+            lbl_fecha_gen = _('Fecha de generación:')
+            lbl_preparado_por = _('Preparado por:')
+            
+            color_estado = 'green' if conciliacion_exitosa else 'red'
+            texto_estado = lbl_conc_exitosa if conciliacion_exitosa else lbl_conc_pendiente
+            sistema_nombre = "Sistema de Gestión Panadería-POS"
+            
             estado_texto = f"""
-            <b>Estado de la Conciliación:</b> <font color="{'green' if conciliacion_exitosa else 'red'}">{"CONCILIACIÓN EXITOSA" if conciliacion_exitosa else "CONCILIACIÓN PENDIENTE"}</font><br/>
-            <b>Fecha de generación:</b> {datetime.now().strftime('%d/%m/%Y %H:%M')}<br/>
-            <b>Preparado por:</b> Sistema de Gestión Panadería-POS
+            <b>{lbl_estado_conc}</b> <font color="{color_estado}">{texto_estado}</font><br/>
+            <b>{lbl_fecha_gen}</b> {datetime.now().strftime('%d/%m/%Y %H:%M')}<br/>
+            <b>{lbl_preparado_por}</b> {sistema_nombre}
             """
             elements.append(Paragraph(estado_texto, self.styles['Normal']))
 
             # Pie de página
             elements.append(Spacer(1, 30))
-            elements.append(Paragraph("Documento para fines de auditoría interna", 
+            elements.append(Paragraph(_("Documento para fines de auditoría interna"), 
                                     ParagraphStyle('Footer', parent=self.styles['Normal'], fontSize=8, textColor=colors.gray)))
 
             # Construir el documento
@@ -851,7 +862,7 @@ class GeneradorReportes:
             # Crear un PDF de error mínimo
             error_buffer = BytesIO()
             doc = SimpleDocTemplate(error_buffer, pagesize=A4)
-            elements = [Paragraph(f"Error al generar reporte: {str(e)}", self.styles['Normal'])]
+            elements = [Paragraph(_("Error al generar reporte: %(error)s") % {'error': str(e)}, self.styles['Normal'])]
             doc.build(elements)
             error_buffer.seek(0)
             return error_buffer
