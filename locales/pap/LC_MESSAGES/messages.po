@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-16 17:31-0500\n"
+"POT-Creation-Date: 2026-10-16 19:21-0500\n"
 "PO-Revision-Date: 2026-10-15 16:08-0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: pap\n"
@@ -487,7 +487,7 @@ msgstr "Tendensia"
 msgid "Evolución de Ventas Diarias"
 msgstr "Evolushon di Benta Diario"
 
-#: reportes.py:1319
+#: reportes.py:1319 reportes.py:1669
 msgid "Ventas ($)"
 msgstr "Benta ($)"
 
@@ -499,31 +499,31 @@ msgstr "Benta Akumulá"
 msgid "Ventas Acumuladas ($)"
 msgstr "Benta Akumulá ($)"
 
-#: reportes.py:1342
+#: reportes.py:1342 reportes.py:1685
 msgid "Lun"
 msgstr "lun"
 
-#: reportes.py:1342
+#: reportes.py:1342 reportes.py:1685
 msgid "Mar"
 msgstr "mar"
 
-#: reportes.py:1342
+#: reportes.py:1342 reportes.py:1685
 msgid "Mié"
 msgstr "mié"
 
-#: reportes.py:1342
+#: reportes.py:1342 reportes.py:1685
 msgid "Jue"
 msgstr "jue"
 
-#: reportes.py:1342
+#: reportes.py:1342 reportes.py:1685
 msgid "Vie"
 msgstr "vie"
 
-#: reportes.py:1342
+#: reportes.py:1342 reportes.py:1685
 msgid "Sáb"
 msgstr "sáb"
 
-#: reportes.py:1342
+#: reportes.py:1342 reportes.py:1685
 msgid "Dom"
 msgstr "dom"
 
@@ -531,11 +531,11 @@ msgstr "dom"
 msgid "Promedio de Ventas por Día"
 msgstr "Promedio di Benta pa Dia"
 
-#: reportes.py:1351
+#: reportes.py:1351 reportes.py:1698
 msgid "Ventas Promedio ($)"
 msgstr "Benta Promedio ($)"
 
-#: reportes.py:1360
+#: reportes.py:1360 reportes.py:1710
 msgid ""
 "Se necesitan más datos\n"
 "para análisis semanal"
@@ -703,6 +703,296 @@ msgstr "Rekomendashon: Enfoká na retenshon di klientenan i efisiensia operativo
 msgid "Proyecciones no disponibles por error técnico"
 msgstr "Proyekshonnan no disponibel pa eror técniko"
 
+#: reportes.py:1618
+msgid "ANÁLISIS PREDICTIVO CON INTELIGENCIA ARTIFICIAL"
+msgstr "ANALISIS PREDIKTIVO KU INTELIGENSIA ARTIFISIAL"
+
+#: reportes.py:1619
+#, python-format
+msgid "Período de análisis: %(ini)s a %(fin)s"
+msgstr "Periodo di analisis: %(ini)s te %(fin)s"
+
+#: reportes.py:1627
+msgid "No hay datos suficientes para análisis predictivo."
+msgstr "No tin sufisiente datonan pa analisis predictivo."
+
+#: reportes.py:1648
+msgid "Ventas Reales"
+msgstr "Benta Real"
+
+#: reportes.py:1659
+msgid "Ajuste"
+msgstr "Ajuste"
+
+#: reportes.py:1661
+msgid "Proyección 7 días"
+msgstr "Pronóstiko di 7 dia"
+
+#: reportes.py:1666
+msgid "Rango probable"
+msgstr "Rango probable"
+
+#: reportes.py:1668
+msgid "Tendencia y Proyección"
+msgstr "Tendensia i Pronóstiko"
+
+#: reportes.py:1695
+#, python-format
+msgid "Promedio: $%(val)s"
+msgstr "Promedio: $%(val)s"
+
+#: reportes.py:1697 reportes.py:1713
+msgid "Patrón Semanal"
+msgstr "Patron Semanal"
+
+#: reportes.py:1730
+msgid "Crecimiento Diario (%)"
+msgstr "Kresementu Diario (%)"
+
+#: reportes.py:1731
+msgid "Crecimiento %"
+msgstr "Kresementu %"
+
+#: reportes.py:1737
+#, python-format
+msgid "Promedio: %(val)s%%"
+msgstr "Promedio: %(val)s%%"
+
+#: reportes.py:1740
+msgid ""
+"Insuficientes datos\n"
+"para análisis de crecimiento"
+msgstr "Datonan insufisiente\npa analisis di kresementu"
+
+#: reportes.py:1743
+msgid "Crecimiento Diario"
+msgstr "Kresementu Diario"
+
+#: reportes.py:1754
+msgid "Máxima"
+msgstr "Máksimo"
+
+#: reportes.py:1754
+msgid "Mínima"
+msgstr "Mínimo"
+
+#: reportes.py:1754
+msgid "Promedio"
+msgstr "Promedio"
+
+#: reportes.py:1754
+msgid "Estabilidad"
+msgstr "Estabilidat"
+
+#: reportes.py:1759 reportes.py:1776
+msgid "Métricas Clave"
+msgstr "Métrikanan Klave"
+
+#: reportes.py:1760 reportes.py:2254
+msgid "Valor"
+msgstr "Valor"
+
+#: reportes.py:1773
+msgid ""
+"Datos insuficientes\n"
+"para métricas"
+msgstr "Datonan insufisiente\npa métrikanan"
+
+#: reportes.py:1786
+msgid "ANÁLISIS VISUAL PREDICTIVO"
+msgstr "ANALISIS VISUAL PREDIKTIVO"
+
+#: reportes.py:1798
+msgid "RECOMENDACIONES INTELIGENTES"
+msgstr "REKOMENDASHONNAN INTELIGENTE"
+
+#: reportes.py:1817
+msgid "PREDICCIONES PARA PRÓXIMA SEMANA"
+msgstr "PRONÓSTIKONAN PA SIMAN SIGUIENTE"
+
+#: reportes.py:1827
+msgid "PLAN DE ACCIÓN RECOMENDADO"
+msgstr "PLAN DI AKSION REKOMENDÁ"
+
+#: reportes.py:1836
+#, python-format
+msgid "Generado por Sistema IA el: %(fecha)s"
+msgstr "Generá pa Sistema IA riba: %(fecha)s"
+
+#: reportes.py:1851
+msgid "ERROR AL GENERAR REPORTE DE IA"
+msgstr "ERROR NA GENERÁ REPORTE DI IA"
+
+#: reportes.py:1852
+#, python-format
+msgid "Error: %(err)s"
+msgstr "Error: %(err)s"
+
+#: reportes.py:1900
+msgid ""
+"Se necesitan más datos históricos (mínimo 7 días) para recomendaciones "
+"precisas."
+msgstr "Mas datonan históriko nesesario (mínimo 7 dia) pa rekomendashonnan presis."
+
+#: reportes.py:1915
+msgid ""
+"**Tendencia muy positiva**: Considera aumentar capacidad de producción y "
+"expandir horarios"
+msgstr "**Tendensia masha positivo**: Konsiderá oumentá kapasidat di produskshon i ekspandé orarionan"
+
+#: reportes.py:1916
+msgid ""
+"**Oportunidad de inversión**: Buen momento para invertir en nuevo "
+"equipamiento"
+msgstr "**Oportunidat di invershon**: Bon momento pa invertí den ekipo nobo"
+
+#: reportes.py:1918
+msgid ""
+"**Crecimiento estable**: Mantén las estrategias actuales y enfócate en "
+"retención de clientes"
+msgstr "**Kresementu stabil**: Manteneé e strategianan aktual i enfoká riba retenshon di klientenan"
+
+#: reportes.py:1920
+msgid ""
+"**Alerta de decrecimiento**: Revisa estrategias de marketing y considera "
+"promociones"
+msgstr "**Alerta di bahada**: Revisá strategianan di márketing i konsiderá promoshonnan"
+
+#: reportes.py:1922
+msgid ""
+"**Estabilidad detectada**: Enfócate en eficiencia operativa y reducción "
+"de costos"
+msgstr "**Estabilidat detektá**: Enfoká riba efisiensia operativo i redukshon di kostunan"
+
+#: reportes.py:1928
+msgid ""
+"**Alta variabilidad**: Implementa estrategias para suavizar ventas "
+"(promociones en días bajos)"
+msgstr "**Variabilidad haltu**: Implementá strategianan pa suavisá benta (promoshonnan riba dianan bahu)"
+
+#: reportes.py:1930
+msgid ""
+"**Variabilidad moderada**: Analiza causas de fluctuaciones para optimizar"
+" inventario"
+msgstr "**Variabilidad moderá**: Analisá kousanan di fluktuashon pa optimisá inventario"
+
+#: reportes.py:1932
+msgid ""
+"**Baja variabilidad**: Excelente para planeación de producción e "
+"inventario"
+msgstr "**Variabilidad bahu**: Ekselente pa planeashon di produskshon i inventario"
+
+#: reportes.py:1940
+#, python-format
+msgid "**Más vendido**: %(prod)s (%(vend)s unidades)"
+msgstr "**Mas vendí**: %(prod)s (%(vend)s unidadnan)"
+
+#: reportes.py:1943
+msgid ""
+"**Optimización horaria**: Analiza datos de hora pico para ajustar "
+"personal y producción"
+msgstr "**Optimisashon di ora**: Analisá datonan di ora piko pa ajustá personal i produskshon"
+
+#: reportes.py:1944
+msgid ""
+"**Análisis continuo**: Monitorea estas métricas semanalmente para ajustar"
+" estrategias"
+msgstr "**Analisis kontinuo**: Monitoreá e métrikanan aki semanalmente pa ajustá strategianan"
+
+#: reportes.py:1950
+msgid "Las recomendaciones no están disponibles temporalmente por error técnico"
+msgstr "Rekomendashonnan temporalmente no disponibel pa un error téknik"
+
+#: reportes.py:1957
+msgid "Se necesitan más datos históricos (14+ días) para predicciones confiables."
+msgstr "Mas datonan históriko nesesario (14+ dia) pa pronóstikonan konfiabel."
+
+#: reportes.py:1969
+#, python-format
+msgid "Ventas proyectadas: $%(min)s - $%(max)s"
+msgstr "Benta proyektá: $%(min)s - $%(max)s"
+
+#: reportes.py:1970
+#, python-format
+msgid "Crecimiento esperado: %(val)s%%"
+msgstr "Kresementu ekspektá: %(val)s%%"
+
+#: reportes.py:1974
+msgid "Expectativa: Crecimiento continuo en próxima semana"
+msgstr "Ekspektativa: Kresementu kontinuo e siman sigiente"
+
+#: reportes.py:1975
+msgid "Recomendación: Prepara inventario adicional"
+msgstr "Rekomendashon: Prepará inventario adishonal"
+
+#: reportes.py:1977
+msgid "Expectativa: Ventas estables o leve decrecimiento"
+msgstr "Ekspektativa: Benta stabil òu levemente bahando"
+
+#: reportes.py:1978
+msgid "Recomendación: Enfócate en promociones estratégicas"
+msgstr "Rekomendashon: Enfoká riba promoshonnan estratégiko"
+
+#: reportes.py:1980
+msgid "Días clave: Viernes y Sábado mostrarán mayor actividad"
+msgstr "Dianan klave: Djabièrnè i djasabra lo mustra mas aktividat"
+
+#: reportes.py:1981
+msgid "Considera: Factores externos como clima y eventos locales"
+msgstr "Konsiderá: Faktornan eksterno manera clima i eventonan lokal"
+
+#: reportes.py:1987
+msgid "Las predicciones no están disponibles temporalmente"
+msgstr "Pronóstikonan temporalmente no disponibel"
+
+#: reportes.py:1994
+msgid "Recolecta más datos para generar un plan de acción personalizado."
+msgstr "Kolektá mas datonan pa generá un plan di aksion personalisá."
+
+#: reportes.py:2004
+msgid "Implementar promociones en días de baja demanda identificados"
+msgstr "Implementá promoshonnan riba dianan di bahu demanda identificá"
+
+#: reportes.py:2005
+msgid "Optimizar inventario para reducir desperdicios en días lentos"
+msgstr "Optimisá inventario pa reducí desperdisio riba dianan lento"
+
+#: reportes.py:2006
+msgid "Crear paquetes especiales para estimular ventas en horarios bajos"
+msgstr "Kreá paketenan spesial pa stimulá benta den oranan bahu"
+
+#: reportes.py:2008
+msgid "Mantener niveles actuales de producción e inventario"
+msgstr "Manteneé nivelnan aktual di produskshon i inventario"
+
+#: reportes.py:2009
+msgid "Enfocar esfuerzos en mejorar margen de utilidad"
+msgstr "Enfoká esfuerso riba mehorá margen di utilidat"
+
+#: reportes.py:2010
+msgid "Explorar nuevos productos o servicios complementarios"
+msgstr "Eksplorá produktunan nobo òu servisionan komplementario"
+
+#: reportes.py:2013
+msgid "Revisar y ajustar horarios de personal según patrones de venta"
+msgstr "Revisá i ajustá orarionan di personal segun patronnan di benta"
+
+#: reportes.py:2014
+msgid "Optimizar compras de materias primas basado en tendencias"
+msgstr "Optimisá kompranan di materia prima basá riba tendensianan"
+
+#: reportes.py:2015
+msgid "Programar mantenimiento preventivo en horarios de baja demanda"
+msgstr "Programá mantenshon preventivo den oranan di bahu demanda"
+
+#: reportes.py:2016
+msgid "Capacitar equipo en técnicas de ventas y servicio al cliente"
+msgstr "Kapasitá ekipo den téknikanan di benta i servisio na kliente"
+
+#: reportes.py:2022
+msgid "Plan de acción no disponible temporalmente"
+msgstr "Plan di aksion temporalmente no disponibel"
+
 #: reportes.py:2044
 msgid "ANÁLISIS DE INVENTARIOS Y GESTIÓN DE STOCK"
 msgstr "ANÁLISIS DI INVENTARIONAN Y GESTION DI STOCK"
@@ -843,10 +1133,6 @@ msgstr "Reorden"
 #: reportes.py:2254
 msgid "Estado"
 msgstr "Estado"
-
-#: reportes.py:2254
-msgid "Valor"
-msgstr "Valor"
 
 #: reportes.py:2259
 msgid "OK"

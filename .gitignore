@@ -98,3 +98,5 @@ warning_traceback.txt
 
 # Excepcion: versionar scripts SQL de migraciones
 !migrations/sql/*.sql
+_*.py
+_*.md

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-16 17:31-0500\n"
+"POT-Creation-Date: 2026-10-16 19:21-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -478,7 +478,7 @@ msgstr ""
 msgid "Evolución de Ventas Diarias"
 msgstr ""
 
-#: reportes.py:1319
+#: reportes.py:1319 reportes.py:1669
 msgid "Ventas ($)"
 msgstr ""
 
@@ -490,31 +490,31 @@ msgstr ""
 msgid "Ventas Acumuladas ($)"
 msgstr ""
 
-#: reportes.py:1342
+#: reportes.py:1342 reportes.py:1685
 msgid "Lun"
 msgstr ""
 
-#: reportes.py:1342
+#: reportes.py:1342 reportes.py:1685
 msgid "Mar"
 msgstr ""
 
-#: reportes.py:1342
+#: reportes.py:1342 reportes.py:1685
 msgid "Mié"
 msgstr ""
 
-#: reportes.py:1342
+#: reportes.py:1342 reportes.py:1685
 msgid "Jue"
 msgstr ""
 
-#: reportes.py:1342
+#: reportes.py:1342 reportes.py:1685
 msgid "Vie"
 msgstr ""
 
-#: reportes.py:1342
+#: reportes.py:1342 reportes.py:1685
 msgid "Sáb"
 msgstr ""
 
-#: reportes.py:1342
+#: reportes.py:1342 reportes.py:1685
 msgid "Dom"
 msgstr ""
 
@@ -522,11 +522,11 @@ msgstr ""
 msgid "Promedio de Ventas por Día"
 msgstr ""
 
-#: reportes.py:1351
+#: reportes.py:1351 reportes.py:1698
 msgid "Ventas Promedio ($)"
 msgstr ""
 
-#: reportes.py:1360
+#: reportes.py:1360 reportes.py:1710
 msgid ""
 "Se necesitan más datos\n"
 "para análisis semanal"
@@ -688,6 +688,296 @@ msgstr ""
 msgid "Proyecciones no disponibles por error técnico"
 msgstr ""
 
+#: reportes.py:1618
+msgid "ANÁLISIS PREDICTIVO CON INTELIGENCIA ARTIFICIAL"
+msgstr ""
+
+#: reportes.py:1619
+#, python-format
+msgid "Período de análisis: %(ini)s a %(fin)s"
+msgstr ""
+
+#: reportes.py:1627
+msgid "No hay datos suficientes para análisis predictivo."
+msgstr ""
+
+#: reportes.py:1648
+msgid "Ventas Reales"
+msgstr ""
+
+#: reportes.py:1659
+msgid "Ajuste"
+msgstr ""
+
+#: reportes.py:1661
+msgid "Proyección 7 días"
+msgstr ""
+
+#: reportes.py:1666
+msgid "Rango probable"
+msgstr ""
+
+#: reportes.py:1668
+msgid "Tendencia y Proyección"
+msgstr ""
+
+#: reportes.py:1695
+#, python-format
+msgid "Promedio: $%(val)s"
+msgstr ""
+
+#: reportes.py:1697 reportes.py:1713
+msgid "Patrón Semanal"
+msgstr ""
+
+#: reportes.py:1730
+msgid "Crecimiento Diario (%)"
+msgstr ""
+
+#: reportes.py:1731
+msgid "Crecimiento %"
+msgstr ""
+
+#: reportes.py:1737
+#, python-format
+msgid "Promedio: %(val)s%%"
+msgstr ""
+
+#: reportes.py:1740
+msgid ""
+"Insuficientes datos\n"
+"para análisis de crecimiento"
+msgstr ""
+
+#: reportes.py:1743
+msgid "Crecimiento Diario"
+msgstr ""
+
+#: reportes.py:1754
+msgid "Máxima"
+msgstr ""
+
+#: reportes.py:1754
+msgid "Mínima"
+msgstr ""
+
+#: reportes.py:1754
+msgid "Promedio"
+msgstr ""
+
+#: reportes.py:1754
+msgid "Estabilidad"
+msgstr ""
+
+#: reportes.py:1759 reportes.py:1776
+msgid "Métricas Clave"
+msgstr ""
+
+#: reportes.py:1760 reportes.py:2254
+msgid "Valor"
+msgstr ""
+
+#: reportes.py:1773
+msgid ""
+"Datos insuficientes\n"
+"para métricas"
+msgstr ""
+
+#: reportes.py:1786
+msgid "ANÁLISIS VISUAL PREDICTIVO"
+msgstr ""
+
+#: reportes.py:1798
+msgid "RECOMENDACIONES INTELIGENTES"
+msgstr ""
+
+#: reportes.py:1817
+msgid "PREDICCIONES PARA PRÓXIMA SEMANA"
+msgstr ""
+
+#: reportes.py:1827
+msgid "PLAN DE ACCIÓN RECOMENDADO"
+msgstr ""
+
+#: reportes.py:1836
+#, python-format
+msgid "Generado por Sistema IA el: %(fecha)s"
+msgstr ""
+
+#: reportes.py:1851
+msgid "ERROR AL GENERAR REPORTE DE IA"
+msgstr ""
+
+#: reportes.py:1852
+#, python-format
+msgid "Error: %(err)s"
+msgstr ""
+
+#: reportes.py:1900
+msgid ""
+"Se necesitan más datos históricos (mínimo 7 días) para recomendaciones "
+"precisas."
+msgstr ""
+
+#: reportes.py:1915
+msgid ""
+"**Tendencia muy positiva**: Considera aumentar capacidad de producción y "
+"expandir horarios"
+msgstr ""
+
+#: reportes.py:1916
+msgid ""
+"**Oportunidad de inversión**: Buen momento para invertir en nuevo "
+"equipamiento"
+msgstr ""
+
+#: reportes.py:1918
+msgid ""
+"**Crecimiento estable**: Mantén las estrategias actuales y enfócate en "
+"retención de clientes"
+msgstr ""
+
+#: reportes.py:1920
+msgid ""
+"**Alerta de decrecimiento**: Revisa estrategias de marketing y considera "
+"promociones"
+msgstr ""
+
+#: reportes.py:1922
+msgid ""
+"**Estabilidad detectada**: Enfócate en eficiencia operativa y reducción "
+"de costos"
+msgstr ""
+
+#: reportes.py:1928
+msgid ""
+"**Alta variabilidad**: Implementa estrategias para suavizar ventas "
+"(promociones en días bajos)"
+msgstr ""
+
+#: reportes.py:1930
+msgid ""
+"**Variabilidad moderada**: Analiza causas de fluctuaciones para optimizar"
+" inventario"
+msgstr ""
+
+#: reportes.py:1932
+msgid ""
+"**Baja variabilidad**: Excelente para planeación de producción e "
+"inventario"
+msgstr ""
+
+#: reportes.py:1940
+#, python-format
+msgid "**Más vendido**: %(prod)s (%(vend)s unidades)"
+msgstr ""
+
+#: reportes.py:1943
+msgid ""
+"**Optimización horaria**: Analiza datos de hora pico para ajustar "
+"personal y producción"
+msgstr ""
+
+#: reportes.py:1944
+msgid ""
+"**Análisis continuo**: Monitorea estas métricas semanalmente para ajustar"
+" estrategias"
+msgstr ""
+
+#: reportes.py:1950
+msgid "Las recomendaciones no están disponibles temporalmente por error técnico"
+msgstr ""
+
+#: reportes.py:1957
+msgid "Se necesitan más datos históricos (14+ días) para predicciones confiables."
+msgstr ""
+
+#: reportes.py:1969
+#, python-format
+msgid "Ventas proyectadas: $%(min)s - $%(max)s"
+msgstr ""
+
+#: reportes.py:1970
+#, python-format
+msgid "Crecimiento esperado: %(val)s%%"
+msgstr ""
+
+#: reportes.py:1974
+msgid "Expectativa: Crecimiento continuo en próxima semana"
+msgstr ""
+
+#: reportes.py:1975
+msgid "Recomendación: Prepara inventario adicional"
+msgstr ""
+
+#: reportes.py:1977
+msgid "Expectativa: Ventas estables o leve decrecimiento"
+msgstr ""
+
+#: reportes.py:1978
+msgid "Recomendación: Enfócate en promociones estratégicas"
+msgstr ""
+
+#: reportes.py:1980
+msgid "Días clave: Viernes y Sábado mostrarán mayor actividad"
+msgstr ""
+
+#: reportes.py:1981
+msgid "Considera: Factores externos como clima y eventos locales"
+msgstr ""
+
+#: reportes.py:1987
+msgid "Las predicciones no están disponibles temporalmente"
+msgstr ""
+
+#: reportes.py:1994
+msgid "Recolecta más datos para generar un plan de acción personalizado."
+msgstr ""
+
+#: reportes.py:2004
+msgid "Implementar promociones en días de baja demanda identificados"
+msgstr ""
+
+#: reportes.py:2005
+msgid "Optimizar inventario para reducir desperdicios en días lentos"
+msgstr ""
+
+#: reportes.py:2006
+msgid "Crear paquetes especiales para estimular ventas en horarios bajos"
+msgstr ""
+
+#: reportes.py:2008
+msgid "Mantener niveles actuales de producción e inventario"
+msgstr ""
+
+#: reportes.py:2009
+msgid "Enfocar esfuerzos en mejorar margen de utilidad"
+msgstr ""
+
+#: reportes.py:2010
+msgid "Explorar nuevos productos o servicios complementarios"
+msgstr ""
+
+#: reportes.py:2013
+msgid "Revisar y ajustar horarios de personal según patrones de venta"
+msgstr ""
+
+#: reportes.py:2014
+msgid "Optimizar compras de materias primas basado en tendencias"
+msgstr ""
+
+#: reportes.py:2015
+msgid "Programar mantenimiento preventivo en horarios de baja demanda"
+msgstr ""
+
+#: reportes.py:2016
+msgid "Capacitar equipo en técnicas de ventas y servicio al cliente"
+msgstr ""
+
+#: reportes.py:2022
+msgid "Plan de acción no disponible temporalmente"
+msgstr ""
+
 #: reportes.py:2044
 msgid "ANÁLISIS DE INVENTARIOS Y GESTIÓN DE STOCK"
 msgstr ""
@@ -825,10 +1115,6 @@ msgstr ""
 
 #: reportes.py:2254
 msgid "Estado"
-msgstr ""
-
-#: reportes.py:2254
-msgid "Valor"
 msgstr ""
 
 #: reportes.py:2259
