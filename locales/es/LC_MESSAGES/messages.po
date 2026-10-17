@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-16 19:21-0500\n"
+"POT-Creation-Date: 2026-10-16 22:11-0500\n"
 "PO-Revision-Date: 2026-10-15 10:37-0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es\n"
@@ -54,7 +54,7 @@ msgid "Verifique los cierres de caja del período"
 msgstr ""
 
 #: reportes.py:109 reportes.py:263 reportes.py:354 reportes.py:1181
-#: reportes.py:1444 reportes.py:2287
+#: reportes.py:1444 reportes.py:2287 reportes.py:3424 reportes.py:3586
 #, python-format
 msgid "Generado el: %(fecha)s"
 msgstr ""
@@ -63,12 +63,12 @@ msgstr ""
 msgid "INGRESOS"
 msgstr ""
 
-#: reportes.py:118 reportes.py:148 reportes.py:709
+#: reportes.py:118 reportes.py:148 reportes.py:709 reportes.py:3383
 msgid "Concepto"
 msgstr ""
 
 #: reportes.py:118 reportes.py:148 reportes.py:709 reportes.py:737
-#: reportes.py:770 reportes.py:1108
+#: reportes.py:770 reportes.py:1108 reportes.py:3383 reportes.py:3545
 msgid "Monto"
 msgstr ""
 
@@ -184,7 +184,8 @@ msgstr ""
 msgid "No hay datos de flujo de caja para el período seleccionado."
 msgstr ""
 
-#: reportes.py:287 reportes.py:737 reportes.py:770
+#: reportes.py:287 reportes.py:737 reportes.py:770 reportes.py:3383
+#: reportes.py:3545
 msgid "Fecha"
 msgstr ""
 
@@ -265,7 +266,7 @@ msgstr ""
 msgid "Descripción"
 msgstr ""
 
-#: reportes.py:737
+#: reportes.py:737 reportes.py:3545
 msgid "Referencia"
 msgstr ""
 
@@ -374,7 +375,7 @@ msgstr ""
 msgid "DISTRIBUCIÓN DETALLADA DE GASTOS"
 msgstr ""
 
-#: reportes.py:1108
+#: reportes.py:1108 reportes.py:3356 reportes.py:3383
 msgid "Categoría"
 msgstr ""
 
@@ -1232,5 +1233,102 @@ msgstr ""
 
 #: reportes.py:2654
 msgid "Recomendaciones no disponibles temporalmente"
+msgstr ""
+
+#: reportes.py:3273
+msgid "HISTORIAL DE PAGOS"
+msgstr ""
+
+#: reportes.py:3275 reportes.py:3446
+#, python-format
+msgid "Período: %(ini)s a %(fin)s"
+msgstr ""
+
+#: reportes.py:3283
+#, python-format
+msgid "<b>Categoría:</b> %(val)s"
+msgstr ""
+
+#: reportes.py:3288
+#, python-format
+msgid "<b>Proveedor:</b> %(val)s"
+msgstr ""
+
+#: reportes.py:3316
+msgid "No hay pagos para el período y filtros seleccionados."
+msgstr ""
+
+#: reportes.py:3326
+msgid "Total Pagado"
+msgstr ""
+
+#: reportes.py:3326
+msgid "Cantidad de Pagos"
+msgstr ""
+
+#: reportes.py:3326
+msgid "Promedio por Pago"
+msgstr ""
+
+#: reportes.py:3355
+msgid "DESGLOSE POR CATEGORÍA"
+msgstr ""
+
+#: reportes.py:3356 reportes.py:3518
+msgid "Cantidad"
+msgstr ""
+
+#: reportes.py:3356 reportes.py:3518
+msgid "Total"
+msgstr ""
+
+#: reportes.py:3381
+msgid "DETALLE DE PAGOS"
+msgstr ""
+
+#: reportes.py:3383 reportes.py:3545
+msgid "Método"
+msgstr ""
+
+#: reportes.py:3444
+msgid "HISTORIAL DE DEPÓSITOS BANCARIOS"
+msgstr ""
+
+#: reportes.py:3454
+#, python-format
+msgid "<b>Banco:</b> %(val)s"
+msgstr ""
+
+#: reportes.py:3456
+#, python-format
+msgid "<b>Estado:</b> %(val)s"
+msgstr ""
+
+#: reportes.py:3479
+msgid "No hay depósitos para el período y filtros seleccionados."
+msgstr ""
+
+#: reportes.py:3488
+msgid "Total Depositado"
+msgstr ""
+
+#: reportes.py:3488
+msgid "Cantidad de Depósitos"
+msgstr ""
+
+#: reportes.py:3488
+msgid "Promedio por Depósito"
+msgstr ""
+
+#: reportes.py:3517
+msgid "DESGLOSE POR BANCO"
+msgstr ""
+
+#: reportes.py:3518 reportes.py:3545
+msgid "Banco"
+msgstr ""
+
+#: reportes.py:3543
+msgid "DETALLE DE DEPÓSITOS"
 msgstr ""
 

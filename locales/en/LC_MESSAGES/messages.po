@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-16 19:21-0500\n"
+"POT-Creation-Date: 2026-10-16 22:11-0500\n"
 "PO-Revision-Date: 2026-10-15 10:38-0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -54,7 +54,7 @@ msgid "Verifique los cierres de caja del período"
 msgstr "Verify the cash closings for the period"
 
 #: reportes.py:109 reportes.py:263 reportes.py:354 reportes.py:1181
-#: reportes.py:1444 reportes.py:2287
+#: reportes.py:1444 reportes.py:2287 reportes.py:3424 reportes.py:3586
 #, python-format
 msgid "Generado el: %(fecha)s"
 msgstr "Generated on: %(fecha)s"
@@ -63,12 +63,12 @@ msgstr "Generated on: %(fecha)s"
 msgid "INGRESOS"
 msgstr "INCOME"
 
-#: reportes.py:118 reportes.py:148 reportes.py:709
+#: reportes.py:118 reportes.py:148 reportes.py:709 reportes.py:3383
 msgid "Concepto"
 msgstr "Concept"
 
 #: reportes.py:118 reportes.py:148 reportes.py:709 reportes.py:737
-#: reportes.py:770 reportes.py:1108
+#: reportes.py:770 reportes.py:1108 reportes.py:3383 reportes.py:3545
 msgid "Monto"
 msgstr "Amount"
 
@@ -184,7 +184,8 @@ msgstr "CASH FLOW REPORT"
 msgid "No hay datos de flujo de caja para el período seleccionado."
 msgstr "No cash flow data available for the selected period."
 
-#: reportes.py:287 reportes.py:737 reportes.py:770
+#: reportes.py:287 reportes.py:737 reportes.py:770 reportes.py:3383
+#: reportes.py:3545
 msgid "Fecha"
 msgstr "Date"
 
@@ -265,7 +266,7 @@ msgstr "DEPOSITS IN TRANSIT"
 msgid "Descripción"
 msgstr "Description"
 
-#: reportes.py:737
+#: reportes.py:737 reportes.py:3545
 msgid "Referencia"
 msgstr "Reference"
 
@@ -374,7 +375,7 @@ msgstr "VISUAL EXPENSE ANALYSIS"
 msgid "DISTRIBUCIÓN DETALLADA DE GASTOS"
 msgstr "DETAILED EXPENSE BREAKDOWN"
 
-#: reportes.py:1108
+#: reportes.py:1108 reportes.py:3356 reportes.py:3383
 msgid "Categoría"
 msgstr "Category"
 
@@ -762,7 +763,9 @@ msgstr "Average: %(val)s%%"
 msgid ""
 "Insuficientes datos\n"
 "para análisis de crecimiento"
-msgstr "Insufficient data\nfor growth analysis"
+msgstr ""
+"Insufficient data\n"
+"for growth analysis"
 
 #: reportes.py:1743
 msgid "Crecimiento Diario"
@@ -796,7 +799,9 @@ msgstr "Value"
 msgid ""
 "Datos insuficientes\n"
 "para métricas"
-msgstr "Insufficient data\nfor metrics"
+msgstr ""
+"Insufficient data\n"
+"for metrics"
 
 #: reportes.py:1786
 msgid "ANÁLISIS VISUAL PREDICTIVO"
@@ -838,7 +843,9 @@ msgstr "More historical data needed (minimum 7 days) for precise recommendations
 msgid ""
 "**Tendencia muy positiva**: Considera aumentar capacidad de producción y "
 "expandir horarios"
-msgstr "**Very positive trend**: Consider increasing production capacity and expanding hours"
+msgstr ""
+"**Very positive trend**: Consider increasing production capacity and "
+"expanding hours"
 
 #: reportes.py:1916
 msgid ""
@@ -850,7 +857,9 @@ msgstr "**Investment opportunity**: Good time to invest in new equipment"
 msgid ""
 "**Crecimiento estable**: Mantén las estrategias actuales y enfócate en "
 "retención de clientes"
-msgstr "**Stable growth**: Maintain current strategies and focus on customer retention"
+msgstr ""
+"**Stable growth**: Maintain current strategies and focus on customer "
+"retention"
 
 #: reportes.py:1920
 msgid ""
@@ -868,7 +877,9 @@ msgstr "**Stability detected**: Focus on operational efficiency and cost reducti
 msgid ""
 "**Alta variabilidad**: Implementa estrategias para suavizar ventas "
 "(promociones en días bajos)"
-msgstr "**High variability**: Implement strategies to smooth sales (promotions on low days)"
+msgstr ""
+"**High variability**: Implement strategies to smooth sales (promotions on"
+" low days)"
 
 #: reportes.py:1930
 msgid ""
@@ -891,7 +902,9 @@ msgstr "**Best seller**: %(prod)s (%(vend)s units)"
 msgid ""
 "**Optimización horaria**: Analiza datos de hora pico para ajustar "
 "personal y producción"
-msgstr "**Time optimization**: Analyze peak hour data to adjust staff and production"
+msgstr ""
+"**Time optimization**: Analyze peak hour data to adjust staff and "
+"production"
 
 #: reportes.py:1944
 msgid ""
@@ -1251,4 +1264,101 @@ msgstr "TECHNOLOGY: Consider a barcode system for more efficient counts"
 #: reportes.py:2654
 msgid "Recomendaciones no disponibles temporalmente"
 msgstr "Recommendations temporarily unavailable"
+
+#: reportes.py:3273
+msgid "HISTORIAL DE PAGOS"
+msgstr "PAYMENT HISTORY"
+
+#: reportes.py:3275 reportes.py:3446
+#, python-format
+msgid "Período: %(ini)s a %(fin)s"
+msgstr "Period: %(ini)s to %(fin)s"
+
+#: reportes.py:3283
+#, python-format
+msgid "<b>Categoría:</b> %(val)s"
+msgstr "<b>Category:</b> %(val)s"
+
+#: reportes.py:3288
+#, python-format
+msgid "<b>Proveedor:</b> %(val)s"
+msgstr "<b>Supplier:</b> %(val)s"
+
+#: reportes.py:3316
+msgid "No hay pagos para el período y filtros seleccionados."
+msgstr "No payments for the selected period and filters."
+
+#: reportes.py:3326
+msgid "Total Pagado"
+msgstr "Total Paid"
+
+#: reportes.py:3326
+msgid "Cantidad de Pagos"
+msgstr "Number of Payments"
+
+#: reportes.py:3326
+msgid "Promedio por Pago"
+msgstr "Average per Payment"
+
+#: reportes.py:3355
+msgid "DESGLOSE POR CATEGORÍA"
+msgstr "BREAKDOWN BY CATEGORY"
+
+#: reportes.py:3356 reportes.py:3518
+msgid "Cantidad"
+msgstr "Quantity"
+
+#: reportes.py:3356 reportes.py:3518
+msgid "Total"
+msgstr "Total"
+
+#: reportes.py:3381
+msgid "DETALLE DE PAGOS"
+msgstr "PAYMENT DETAIL"
+
+#: reportes.py:3383 reportes.py:3545
+msgid "Método"
+msgstr "Method"
+
+#: reportes.py:3444
+msgid "HISTORIAL DE DEPÓSITOS BANCARIOS"
+msgstr "BANK DEPOSITS HISTORY"
+
+#: reportes.py:3454
+#, python-format
+msgid "<b>Banco:</b> %(val)s"
+msgstr "<b>Bank:</b> %(val)s"
+
+#: reportes.py:3456
+#, python-format
+msgid "<b>Estado:</b> %(val)s"
+msgstr "<b>Status:</b> %(val)s"
+
+#: reportes.py:3479
+msgid "No hay depósitos para el período y filtros seleccionados."
+msgstr "No deposits for the selected period and filters."
+
+#: reportes.py:3488
+msgid "Total Depositado"
+msgstr "Total Deposited"
+
+#: reportes.py:3488
+msgid "Cantidad de Depósitos"
+msgstr "Number of Deposits"
+
+#: reportes.py:3488
+msgid "Promedio por Depósito"
+msgstr "Average per Deposit"
+
+#: reportes.py:3517
+msgid "DESGLOSE POR BANCO"
+msgstr "BREAKDOWN BY BANK"
+
+#: reportes.py:3518 reportes.py:3545
+msgid "Banco"
+msgstr "Bank"
+
+#: reportes.py:3543
+msgid "DETALLE DE DEPÓSITOS"
+msgstr "DEPOSIT DETAIL"
 

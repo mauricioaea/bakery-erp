@@ -3270,9 +3270,9 @@ class GeneradorReportes:
         elements = []
 
         elements.append(Paragraph(self.nombre_empresa, self.estilo_titulo))
-        elements.append(Paragraph("HISTORIAL DE PAGOS", self.estilo_titulo))
+        elements.append(Paragraph(_("HISTORIAL DE PAGOS"), self.estilo_titulo))
         elements.append(Paragraph(
-            f"Período: {fecha_inicio} a {fecha_fin}",
+            _('Período: %(ini)s a %(fin)s') % {'ini': fecha_inicio, 'fin': fecha_fin},
             self.styles['Normal']
         ))
         elements.append(Spacer(1, 15))
@@ -3280,12 +3280,12 @@ class GeneradorReportes:
         # --- Filtros aplicados (informativo) ---
         filtros_texto = []
         if categoria:
-            filtros_texto.append(f"<b>Categoría:</b> {categoria}")
+            filtros_texto.append(_("<b>Categoría:</b> %(val)s") % {'val': categoria})
         if proveedor_id:
             try:
                 prov = Proveedor.query.get(int(proveedor_id))
                 if prov:
-                    filtros_texto.append(f"<b>Proveedor:</b> {prov.nombre}")
+                    filtros_texto.append(_("<b>Proveedor:</b> %(val)s") % {'val': prov.nombre})
             except (ValueError, TypeError):
                 pass
         if filtros_texto:
@@ -3313,7 +3313,7 @@ class GeneradorReportes:
 
         if not pagos:
             elements.append(Paragraph(
-                "No hay pagos para el período y filtros seleccionados.",
+                _("No hay pagos para el período y filtros seleccionados."),
                 self.styles['Normal']
             ))
         else:
@@ -3323,7 +3323,7 @@ class GeneradorReportes:
             promedio = total_monto / total_cantidad if total_cantidad > 0 else 0
 
             kpi_data = [
-                ['Total Pagado', 'Cantidad de Pagos', 'Promedio por Pago'],
+                [_('Total Pagado'), _('Cantidad de Pagos'), _('Promedio por Pago')],
                 [f"${total_monto:,.0f}", f"{total_cantidad}", f"${promedio:,.0f}"]
             ]
             kpi_tabla = Table(kpi_data, colWidths=[2.0*inch, 2.0*inch, 2.0*inch])
@@ -3352,8 +3352,8 @@ class GeneradorReportes:
             ).all()
 
             if desglose:
-                elements.append(Paragraph("DESGLOSE POR CATEGORÍA", self.estilo_subtitulo))
-                desg_data = [['Categoría', 'Cantidad', 'Total']]
+                elements.append(Paragraph(_("DESGLOSE POR CATEGORÍA"), self.estilo_subtitulo))
+                desg_data = [[_('Categoría'), _('Cantidad'), _('Total')]]
                 for cat, tot, cant in desglose:
                     desg_data.append([
                         (cat or '-').replace('_', ' ').title(),
@@ -3378,9 +3378,9 @@ class GeneradorReportes:
                 elements.append(Spacer(1, 20))
 
             # --- Detalle de pagos (sin paginar) ---
-            elements.append(Paragraph("DETALLE DE PAGOS", self.estilo_subtitulo))
+            elements.append(Paragraph(_("DETALLE DE PAGOS"), self.estilo_subtitulo))
 
-            det_data = [['Fecha', 'Categoría', 'Concepto', 'Método', 'Monto']]
+            det_data = [[_('Fecha'), _('Categoría'), _('Concepto'), _('Método'), _('Monto')]]
             for p in pagos:
                 det_data.append([
                     p.fecha_pago.strftime('%d/%m/%Y') if p.fecha_pago else '-',
@@ -3421,7 +3421,7 @@ class GeneradorReportes:
 
         elements.append(Spacer(1, 30))
         elements.append(Paragraph(
-            f"Generado el: {datetime.now().strftime('%d/%m/%Y %H:%M')}",
+            _('Generado el: %(fecha)s') % {'fecha': datetime.now().strftime('%d/%m/%Y %H:%M')},
             ParagraphStyle('Footer', parent=self.styles['Normal'],
                            fontSize=8, textColor=colors.gray)
         ))
@@ -3441,9 +3441,9 @@ class GeneradorReportes:
         elements = []
 
         elements.append(Paragraph(self.nombre_empresa, self.estilo_titulo))
-        elements.append(Paragraph("HISTORIAL DE DEPÓSITOS BANCARIOS", self.estilo_titulo))
+        elements.append(Paragraph(_("HISTORIAL DE DEPÓSITOS BANCARIOS"), self.estilo_titulo))
         elements.append(Paragraph(
-            f"Período: {fecha_inicio} a {fecha_fin}",
+            _('Período: %(ini)s a %(fin)s') % {'ini': fecha_inicio, 'fin': fecha_fin},
             self.styles['Normal']
         ))
         elements.append(Spacer(1, 15))
@@ -3451,9 +3451,9 @@ class GeneradorReportes:
         # --- Filtros aplicados (informativo) ---
         filtros_texto = []
         if banco:
-            filtros_texto.append(f"<b>Banco:</b> {banco}")
+            filtros_texto.append(_("<b>Banco:</b> %(val)s") % {'val': banco})
         if estado:
-            filtros_texto.append(f"<b>Estado:</b> {estado}")
+            filtros_texto.append(_("<b>Estado:</b> %(val)s") % {'val': estado})
         if filtros_texto:
             elements.append(Paragraph(" | ".join(filtros_texto), self.styles['Normal']))
             elements.append(Spacer(1, 10))
@@ -3476,7 +3476,7 @@ class GeneradorReportes:
 
         if not depositos:
             elements.append(Paragraph(
-                "No hay depósitos para el período y filtros seleccionados.",
+                _("No hay depósitos para el período y filtros seleccionados."),
                 self.styles['Normal']
             ))
         else:
@@ -3485,7 +3485,7 @@ class GeneradorReportes:
             promedio = total_monto / total_cantidad if total_cantidad > 0 else 0
 
             kpi_data = [
-                ['Total Depositado', 'Cantidad de Depósitos', 'Promedio por Depósito'],
+                [_('Total Depositado'), _('Cantidad de Depósitos'), _('Promedio por Depósito')],
                 [f"${total_monto:,.0f}", f"{total_cantidad}", f"${promedio:,.0f}"]
             ]
             kpi_tabla = Table(kpi_data, colWidths=[2.0*inch, 2.0*inch, 2.0*inch])
@@ -3514,8 +3514,8 @@ class GeneradorReportes:
             ).all()
 
             if desglose:
-                elements.append(Paragraph("DESGLOSE POR BANCO", self.estilo_subtitulo))
-                desg_data = [['Banco', 'Cantidad', 'Total']]
+                elements.append(Paragraph(_("DESGLOSE POR BANCO"), self.estilo_subtitulo))
+                desg_data = [[_('Banco'), _('Cantidad'), _('Total')]]
                 for b, tot, cant in desglose:
                     desg_data.append([
                         b or '-',
@@ -3540,9 +3540,9 @@ class GeneradorReportes:
                 elements.append(Spacer(1, 20))
 
             # --- Detalle de depósitos ---
-            elements.append(Paragraph("DETALLE DE DEPÓSITOS", self.estilo_subtitulo))
+            elements.append(Paragraph(_("DETALLE DE DEPÓSITOS"), self.estilo_subtitulo))
 
-            det_data = [['Fecha', 'Banco', 'Referencia', 'Método', 'Monto']]
+            det_data = [[_('Fecha'), _('Banco'), _('Referencia'), _('Método'), _('Monto')]]
             for d in depositos:
                 det_data.append([
                     d.fecha_deposito.strftime('%d/%m/%Y') if d.fecha_deposito else '-',
@@ -3583,7 +3583,7 @@ class GeneradorReportes:
 
         elements.append(Spacer(1, 30))
         elements.append(Paragraph(
-            f"Generado el: {datetime.now().strftime('%d/%m/%Y %H:%M')}",
+            _('Generado el: %(fecha)s') % {'fecha': datetime.now().strftime('%d/%m/%Y %H:%M')},
             ParagraphStyle('Footer', parent=self.styles['Normal'],
                            fontSize=8, textColor=colors.gray)
         ))

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-16 19:21-0500\n"
+"POT-Creation-Date: 2026-10-16 22:11-0500\n"
 "PO-Revision-Date: 2026-10-15 16:08-0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: pap\n"
@@ -54,7 +54,7 @@ msgid "Verifique los cierres de caja del período"
 msgstr "Verifiká e serratura di kaha di e períodoo"
 
 #: reportes.py:109 reportes.py:263 reportes.py:354 reportes.py:1181
-#: reportes.py:1444 reportes.py:2287
+#: reportes.py:1444 reportes.py:2287 reportes.py:3424 reportes.py:3586
 #, python-format
 msgid "Generado el: %(fecha)s"
 msgstr "Generá na: %(fecha)s"
@@ -63,12 +63,12 @@ msgstr "Generá na: %(fecha)s"
 msgid "INGRESOS"
 msgstr "ENTRADANAN"
 
-#: reportes.py:118 reportes.py:148 reportes.py:709
+#: reportes.py:118 reportes.py:148 reportes.py:709 reportes.py:3383
 msgid "Concepto"
 msgstr "Konsepto"
 
 #: reportes.py:118 reportes.py:148 reportes.py:709 reportes.py:737
-#: reportes.py:770 reportes.py:1108
+#: reportes.py:770 reportes.py:1108 reportes.py:3383 reportes.py:3545
 msgid "Monto"
 msgstr "Monto"
 
@@ -184,7 +184,8 @@ msgstr "REPORTE DI FLUHO DI KAHA"
 msgid "No hay datos de flujo de caja para el período seleccionado."
 msgstr "No tin datonan di fluho di kaha pa e período skohí."
 
-#: reportes.py:287 reportes.py:737 reportes.py:770
+#: reportes.py:287 reportes.py:737 reportes.py:770 reportes.py:3383
+#: reportes.py:3545
 msgid "Fecha"
 msgstr "Fecha"
 
@@ -265,7 +266,7 @@ msgstr "DEPOSITONAN NA TRÁNSITO"
 msgid "Descripción"
 msgstr "Deskripshon"
 
-#: reportes.py:737
+#: reportes.py:737 reportes.py:3545
 msgid "Referencia"
 msgstr "Referensia"
 
@@ -374,7 +375,7 @@ msgstr "ANÁLISIS VISUAL DI GASTUNAN"
 msgid "DISTRIBUCIÓN DETALLADA DE GASTOS"
 msgstr "DISTRIBUSHON DETAYÁ DI GASTUNAN"
 
-#: reportes.py:1108
+#: reportes.py:1108 reportes.py:3356 reportes.py:3383
 msgid "Categoría"
 msgstr "Kategoria"
 
@@ -762,7 +763,9 @@ msgstr "Promedio: %(val)s%%"
 msgid ""
 "Insuficientes datos\n"
 "para análisis de crecimiento"
-msgstr "Datonan insufisiente\npa analisis di kresementu"
+msgstr ""
+"Datonan insufisiente\n"
+"pa analisis di kresementu"
 
 #: reportes.py:1743
 msgid "Crecimiento Diario"
@@ -796,7 +799,9 @@ msgstr "Valor"
 msgid ""
 "Datos insuficientes\n"
 "para métricas"
-msgstr "Datonan insufisiente\npa métrikanan"
+msgstr ""
+"Datonan insufisiente\n"
+"pa métrikanan"
 
 #: reportes.py:1786
 msgid "ANÁLISIS VISUAL PREDICTIVO"
@@ -838,7 +843,9 @@ msgstr "Mas datonan históriko nesesario (mínimo 7 dia) pa rekomendashonnan pre
 msgid ""
 "**Tendencia muy positiva**: Considera aumentar capacidad de producción y "
 "expandir horarios"
-msgstr "**Tendensia masha positivo**: Konsiderá oumentá kapasidat di produskshon i ekspandé orarionan"
+msgstr ""
+"**Tendensia masha positivo**: Konsiderá oumentá kapasidat di produskshon "
+"i ekspandé orarionan"
 
 #: reportes.py:1916
 msgid ""
@@ -850,31 +857,41 @@ msgstr "**Oportunidat di invershon**: Bon momento pa invertí den ekipo nobo"
 msgid ""
 "**Crecimiento estable**: Mantén las estrategias actuales y enfócate en "
 "retención de clientes"
-msgstr "**Kresementu stabil**: Manteneé e strategianan aktual i enfoká riba retenshon di klientenan"
+msgstr ""
+"**Kresementu stabil**: Manteneé e strategianan aktual i enfoká riba "
+"retenshon di klientenan"
 
 #: reportes.py:1920
 msgid ""
 "**Alerta de decrecimiento**: Revisa estrategias de marketing y considera "
 "promociones"
-msgstr "**Alerta di bahada**: Revisá strategianan di márketing i konsiderá promoshonnan"
+msgstr ""
+"**Alerta di bahada**: Revisá strategianan di márketing i konsiderá "
+"promoshonnan"
 
 #: reportes.py:1922
 msgid ""
 "**Estabilidad detectada**: Enfócate en eficiencia operativa y reducción "
 "de costos"
-msgstr "**Estabilidat detektá**: Enfoká riba efisiensia operativo i redukshon di kostunan"
+msgstr ""
+"**Estabilidat detektá**: Enfoká riba efisiensia operativo i redukshon di "
+"kostunan"
 
 #: reportes.py:1928
 msgid ""
 "**Alta variabilidad**: Implementa estrategias para suavizar ventas "
 "(promociones en días bajos)"
-msgstr "**Variabilidad haltu**: Implementá strategianan pa suavisá benta (promoshonnan riba dianan bahu)"
+msgstr ""
+"**Variabilidad haltu**: Implementá strategianan pa suavisá benta "
+"(promoshonnan riba dianan bahu)"
 
 #: reportes.py:1930
 msgid ""
 "**Variabilidad moderada**: Analiza causas de fluctuaciones para optimizar"
 " inventario"
-msgstr "**Variabilidad moderá**: Analisá kousanan di fluktuashon pa optimisá inventario"
+msgstr ""
+"**Variabilidad moderá**: Analisá kousanan di fluktuashon pa optimisá "
+"inventario"
 
 #: reportes.py:1932
 msgid ""
@@ -891,13 +908,17 @@ msgstr "**Mas vendí**: %(prod)s (%(vend)s unidadnan)"
 msgid ""
 "**Optimización horaria**: Analiza datos de hora pico para ajustar "
 "personal y producción"
-msgstr "**Optimisashon di ora**: Analisá datonan di ora piko pa ajustá personal i produskshon"
+msgstr ""
+"**Optimisashon di ora**: Analisá datonan di ora piko pa ajustá personal i"
+" produskshon"
 
 #: reportes.py:1944
 msgid ""
 "**Análisis continuo**: Monitorea estas métricas semanalmente para ajustar"
 " estrategias"
-msgstr "**Analisis kontinuo**: Monitoreá e métrikanan aki semanalmente pa ajustá strategianan"
+msgstr ""
+"**Analisis kontinuo**: Monitoreá e métrikanan aki semanalmente pa ajustá "
+"strategianan"
 
 #: reportes.py:1950
 msgid "Las recomendaciones no están disponibles temporalmente por error técnico"
@@ -1259,4 +1280,101 @@ msgstr ""
 #: reportes.py:2654
 msgid "Recomendaciones no disponibles temporalmente"
 msgstr "Rekomendashonnan no disponibel temporalmente"
+
+#: reportes.py:3273
+msgid "HISTORIAL DE PAGOS"
+msgstr "HISTORIAL DI PAGONAN"
+
+#: reportes.py:3275 reportes.py:3446
+#, python-format
+msgid "Período: %(ini)s a %(fin)s"
+msgstr "Periodo: %(ini)s te %(fin)s"
+
+#: reportes.py:3283
+#, python-format
+msgid "<b>Categoría:</b> %(val)s"
+msgstr "<b>Kategoria:</b> %(val)s"
+
+#: reportes.py:3288
+#, python-format
+msgid "<b>Proveedor:</b> %(val)s"
+msgstr "<b>Proveedor:</b> %(val)s"
+
+#: reportes.py:3316
+msgid "No hay pagos para el período y filtros seleccionados."
+msgstr "No tin pagonan pa e periodo i filtronan selekshoná."
+
+#: reportes.py:3326
+msgid "Total Pagado"
+msgstr "Total Pagá"
+
+#: reportes.py:3326
+msgid "Cantidad de Pagos"
+msgstr "Kantidat di Pagonan"
+
+#: reportes.py:3326
+msgid "Promedio por Pago"
+msgstr "Promedio pa Pago"
+
+#: reportes.py:3355
+msgid "DESGLOSE POR CATEGORÍA"
+msgstr "DESGLOSE PA KATEGORIA"
+
+#: reportes.py:3356 reportes.py:3518
+msgid "Cantidad"
+msgstr "Kantidat"
+
+#: reportes.py:3356 reportes.py:3518
+msgid "Total"
+msgstr "Total"
+
+#: reportes.py:3381
+msgid "DETALLE DE PAGOS"
+msgstr "DETAYE DI PAGONAN"
+
+#: reportes.py:3383 reportes.py:3545
+msgid "Método"
+msgstr "Método"
+
+#: reportes.py:3444
+msgid "HISTORIAL DE DEPÓSITOS BANCARIOS"
+msgstr "HISTORIAL DI DEPOSITONAN BANKARIO"
+
+#: reportes.py:3454
+#, python-format
+msgid "<b>Banco:</b> %(val)s"
+msgstr "<b>Banco:</b> %(val)s"
+
+#: reportes.py:3456
+#, python-format
+msgid "<b>Estado:</b> %(val)s"
+msgstr "<b>Estado:</b> %(val)s"
+
+#: reportes.py:3479
+msgid "No hay depósitos para el período y filtros seleccionados."
+msgstr "No tin depositonan pa e periodo i filtronan selekshoná."
+
+#: reportes.py:3488
+msgid "Total Depositado"
+msgstr "Total Depositá"
+
+#: reportes.py:3488
+msgid "Cantidad de Depósitos"
+msgstr "Kantidat di Depositonan"
+
+#: reportes.py:3488
+msgid "Promedio por Depósito"
+msgstr "Promedio pa Deposito"
+
+#: reportes.py:3517
+msgid "DESGLOSE POR BANCO"
+msgstr "DESGLOSE PA BANCO"
+
+#: reportes.py:3518 reportes.py:3545
+msgid "Banco"
+msgstr "Banco"
+
+#: reportes.py:3543
+msgid "DETALLE DE DEPÓSITOS"
+msgstr "DETAYE DI DEPOSITONAN"
 
