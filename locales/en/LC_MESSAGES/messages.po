@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-16 22:11-0500\n"
+"POT-Creation-Date: 2026-10-18 08:30-0500\n"
 "PO-Revision-Date: 2026-10-15 10:38-0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -54,7 +54,7 @@ msgid "Verifique los cierres de caja del período"
 msgstr "Verify the cash closings for the period"
 
 #: reportes.py:109 reportes.py:263 reportes.py:354 reportes.py:1181
-#: reportes.py:1444 reportes.py:2287 reportes.py:3424 reportes.py:3586
+#: reportes.py:1444 reportes.py:2287 reportes.py:3440 reportes.py:3602
 #, python-format
 msgid "Generado el: %(fecha)s"
 msgstr "Generated on: %(fecha)s"
@@ -63,12 +63,14 @@ msgstr "Generated on: %(fecha)s"
 msgid "INGRESOS"
 msgstr "INCOME"
 
-#: reportes.py:118 reportes.py:148 reportes.py:709 reportes.py:3383
+#: reportes.py:118 reportes.py:148 reportes.py:709 reportes.py:2683
+#: reportes.py:3035 reportes.py:3181 reportes.py:3399
 msgid "Concepto"
 msgstr "Concept"
 
 #: reportes.py:118 reportes.py:148 reportes.py:709 reportes.py:737
-#: reportes.py:770 reportes.py:1108 reportes.py:3383 reportes.py:3545
+#: reportes.py:770 reportes.py:1108 reportes.py:3035 reportes.py:3068
+#: reportes.py:3154 reportes.py:3181 reportes.py:3399 reportes.py:3561
 msgid "Monto"
 msgstr "Amount"
 
@@ -80,7 +82,7 @@ msgstr "TOTAL INCOME"
 msgid "GASTOS"
 msgstr "EXPENSES"
 
-#: reportes.py:157 reportes.py:1119
+#: reportes.py:157 reportes.py:1119 reportes.py:3157
 msgid "TOTAL GASTOS"
 msgstr "TOTAL EXPENSES"
 
@@ -184,12 +186,12 @@ msgstr "CASH FLOW REPORT"
 msgid "No hay datos de flujo de caja para el período seleccionado."
 msgstr "No cash flow data available for the selected period."
 
-#: reportes.py:287 reportes.py:737 reportes.py:770 reportes.py:3383
-#: reportes.py:3545
+#: reportes.py:287 reportes.py:737 reportes.py:770 reportes.py:2683
+#: reportes.py:3223 reportes.py:3399 reportes.py:3561
 msgid "Fecha"
 msgstr "Date"
 
-#: reportes.py:287
+#: reportes.py:287 reportes.py:2683 reportes.py:3223
 msgid "Ingresos"
 msgstr "INCOME"
 
@@ -197,7 +199,7 @@ msgstr "INCOME"
 msgid "Gastos"
 msgstr "EXPENSES"
 
-#: reportes.py:287
+#: reportes.py:287 reportes.py:3184
 msgid "Flujo Neto"
 msgstr "Net Flow"
 
@@ -205,7 +207,7 @@ msgstr "Net Flow"
 msgid "Saldo Acumulado"
 msgstr "CUMULATIVE BALANCE"
 
-#: reportes.py:304
+#: reportes.py:304 reportes.py:2702
 msgid "TOTALES"
 msgstr "TOTALS"
 
@@ -266,7 +268,7 @@ msgstr "DEPOSITS IN TRANSIT"
 msgid "Descripción"
 msgstr "Description"
 
-#: reportes.py:737 reportes.py:3545
+#: reportes.py:737 reportes.py:2683 reportes.py:3561
 msgid "Referencia"
 msgstr "Reference"
 
@@ -375,11 +377,11 @@ msgstr "VISUAL EXPENSE ANALYSIS"
 msgid "DISTRIBUCIÓN DETALLADA DE GASTOS"
 msgstr "DETAILED EXPENSE BREAKDOWN"
 
-#: reportes.py:1108 reportes.py:3356 reportes.py:3383
+#: reportes.py:1108 reportes.py:3372 reportes.py:3399
 msgid "Categoría"
 msgstr "Category"
 
-#: reportes.py:1108
+#: reportes.py:1108 reportes.py:3068
 msgid "Porcentaje"
 msgstr "Percentage"
 
@@ -1131,7 +1133,7 @@ msgstr "OPTIMIZATION RECOMMENDATIONS"
 msgid "PUNTOS DE REORDEN SUGERIDOS"
 msgstr "SUGGESTED REORDER POINTS"
 
-#: reportes.py:2254
+#: reportes.py:2254 reportes.py:3096
 msgid "Producto"
 msgstr "Product"
 
@@ -1265,100 +1267,322 @@ msgstr "TECHNOLOGY: Consider a barcode system for more efficient counts"
 msgid "Recomendaciones no disponibles temporalmente"
 msgstr "Recommendations temporarily unavailable"
 
-#: reportes.py:3273
+#: reportes.py:2660
+msgid "positivo"
+msgstr "positive"
+
+#: reportes.py:2660
+msgid "negativo"
+msgstr "negative"
+
+#: reportes.py:2663
+#, python-format
+msgid ""
+"<b>Análisis de Flujo:</b><br/>- El flujo neto del período es "
+"<b>%(estado)s</b>.<br/>- El %(pct)s%% de los días tuvo flujo "
+"positivo.<br/>- El saldo de caja final es de <b>$%(saldo)s</b>."
+msgstr ""
+"<b>Flow Analysis:</b><br/>- The net flow of the period is "
+"<b>%(estado)s</b>.<br/>- %(pct)s%% of days had positive flow.<br/>- The "
+"final cash balance is <b>$%(saldo)s</b>."
+
+#: reportes.py:2679
+msgid "No hay movimientos para mostrar."
+msgstr "No movements to show."
+
+#: reportes.py:2683
+msgid "Egresos"
+msgstr "Expenses"
+
+#: reportes.py:2683
+msgid "Saldo"
+msgstr "Balance"
+
+#: reportes.py:2737
+msgid ""
+"<b>Atención:</b> Saldo negativo detectado. Se recomienda revisar gastos "
+"operativos y considerar ajustes en el flujo de efectivo."
+msgstr ""
+"<b>Warning:</b> Negative balance detected. Review operating expenses and "
+"consider adjustments to cash flow."
+
+#: reportes.py:2739
+msgid ""
+"<b>Monitoreo:</b> Saldo bajo identificado. Se sugiere vigilancia cercana "
+"del flujo de caja en los próximos días."
+msgstr ""
+"<b>Monitoring:</b> Low balance identified. Close monitoring of cash flow "
+"is suggested in the coming days."
+
+#: reportes.py:2745
+#, python-format
+msgid ""
+"<b>Oportunidad:</b> Menos de la mitad de los días muestran flujo "
+"positivo. Evaluar estrategias para mejorar la consistencia de ingresos."
+msgstr "<b>Opportunity:</b> Less than half of days show positive flow. Evaluate strategies to improve income consistency."
+
+#: reportes.py:2747
+msgid ""
+"<b>Fortalecimiento:</b> Alta consistencia en flujos positivos. Considerar"
+" oportunidades de reinversión o crecimiento."
+msgstr ""
+"<b>Strengthening:</b> High consistency in positive flows. Consider "
+"reinvestment or growth opportunities."
+
+#: reportes.py:2751
+msgid ""
+"<b>Observación:</b> Baja actividad transaccional en el período. Validar "
+"completitud de registros."
+msgstr ""
+"<b>Observation:</b> Low transactional activity in the period. Validate "
+"completeness of records."
+
+#: reportes.py:2755
+msgid ""
+"<b>Estabilidad:</b> La posición de tesorería se mantiene estable. "
+"Continuar con las prácticas actuales de gestión."
+msgstr ""
+"<b>Stability:</b> The treasury position remains stable. Continue with "
+"current management practices."
+
+#: reportes.py:2800
+#, python-format
+msgid ""
+"<b>Total Ingresos:</b> $%(ingresos)s<br/><b>Total Egresos:</b> "
+"$%(egresos)s<br/><b>Saldo Final:</b> $%(saldo)s<br/><b>Flujo Neto "
+"Total:</b> $%(flujo)s<br/><b>Días Analizados:</b> %(dias)s<br/><b>Días "
+"con Flujo Positivo:</b> %(dias_pos)s (%(pct_pos)s%%)<br/><b>Total "
+"Movimientos:</b> %(total_mov)s"
+msgstr ""
+"<b>Total Income:</b> $%(ingresos)s<br/><b>Total Expenses:</b> "
+"$%(egresos)s<br/><b>Final Balance:</b> $%(saldo)s<br/><b>Total Net "
+"Flow:</b> $%(flujo)s<br/><b>Days Analyzed:</b> %(dias)s<br/><b>Days with "
+"Positive Flow:</b> %(dias_pos)s (%(pct_pos)s%%)<br/><b>Total "
+"Movements:</b> %(total_mov)s"
+
+#: reportes.py:2824
+#, python-format
+msgid "Error: %(msg)s"
+msgstr "Error: %(msg)s"
+
+#: reportes.py:2999
+msgid "REPORTE UNIFICADO DE TESORERIA"
+msgstr "UNIFIED TREASURY REPORT"
+
+#: reportes.py:3000
+#, python-format
+msgid "Periodo: %(ini)s a %(fin)s"
+msgstr "Period: %(ini)s to %(fin)s"
+
+#: reportes.py:3002
+#, python-format
+msgid "Consecutivo: %(val)s"
+msgstr "Sequence: %(val)s"
+
+#: reportes.py:3003
+#, python-format
+msgid "Emitido: %(fecha)s"
+msgstr "Issued: %(fecha)s"
+
+#: reportes.py:3030
+msgid "1. INGRESOS OPERACIONALES"
+msgstr "1. OPERATING INCOME"
+
+#: reportes.py:3036
+msgid "Ventas del periodo"
+msgstr "Sales for the period"
+
+#: reportes.py:3037
+msgid "Cantidad de transacciones"
+msgstr "Number of transactions"
+
+#: reportes.py:3038
+msgid "TOTAL INGRESOS OPERACIONALES"
+msgstr "TOTAL OPERATING INCOME"
+
+#: reportes.py:3065
+msgid "2. INGRESOS POR METODO DE PAGO"
+msgstr "2. INCOME BY PAYMENT METHOD"
+
+#: reportes.py:3068
+msgid "Metodo"
+msgstr "Method"
+
+#: reportes.py:3072 reportes.py:3232
+msgid "TOTAL"
+msgstr "TOTAL"
+
+#: reportes.py:3092
+msgid "3. CONSUMO INTERNO / DONACIONES"
+msgstr "3. INTERNAL CONSUMPTION / DONATIONS"
+
+#: reportes.py:3096
+msgid "Cant."
+msgstr "Qty."
+
+#: reportes.py:3096
+msgid "Costo Unit."
+msgstr "Unit Cost"
+
+#: reportes.py:3096
+msgid "Total Costo"
+msgstr "Total Cost"
+
+#: reportes.py:3107
+msgid "TOTAL COSTO CONSUMO"
+msgstr "TOTAL CONSUMPTION COST"
+
+#: reportes.py:3127
+msgid "Sin consumo interno ni donaciones en el periodo."
+msgstr "No internal consumption or donations in the period."
+
+#: reportes.py:3141
+msgid ""
+"<b>Nota:</b> El consumo interno y las donaciones no generan ingresos. El "
+"costo de produccion se deduce del inventario y se registra como gasto "
+"operativo. Consultar con su asesor tributario local para el tratamiento "
+"fiscal aplicable en su pais."
+msgstr ""
+"<b>Note:</b> Internal consumption and donations do not generate income. "
+"Production cost is deducted from inventory and recorded as an operating "
+"expense. Consult your local tax advisor for the applicable tax treatment "
+"in your country."
+
+#: reportes.py:3151
+msgid "4. GASTOS DEL PERIODO"
+msgstr "4. PERIOD EXPENSES"
+
+#: reportes.py:3154
+msgid "Categoria"
+msgstr "Category"
+
+#: reportes.py:3177
+msgid "5. RESUMEN EJECUTIVO"
+msgstr "5. EXECUTIVE SUMMARY"
+
+#: reportes.py:3182
+msgid "Total Ingresos"
+msgstr "Total Income"
+
+#: reportes.py:3183
+msgid "Total Gastos"
+msgstr "Total Expenses"
+
+#: reportes.py:3188 reportes.py:3190
+msgid "Utilidad Neta del Periodo"
+msgstr "Net Profit for the Period"
+
+#: reportes.py:3188
+#, python-format
+msgid "$%(val)s (PERDIDA)"
+msgstr "$%(val)s (LOSS)"
+
+#: reportes.py:3220
+msgid "6. DETALLE DE INGRESOS DIARIOS"
+msgstr "6. DAILY INCOME DETAIL"
+
+#: reportes.py:3231
+msgid "Sin ingresos en el periodo"
+msgstr "No income in the period"
+
+#: reportes.py:3261
+msgid "Firma del responsable"
+msgstr "Responsible signature"
+
+#: reportes.py:3289
 msgid "HISTORIAL DE PAGOS"
 msgstr "PAYMENT HISTORY"
 
-#: reportes.py:3275 reportes.py:3446
+#: reportes.py:3291 reportes.py:3462
 #, python-format
 msgid "Período: %(ini)s a %(fin)s"
 msgstr "Period: %(ini)s to %(fin)s"
 
-#: reportes.py:3283
+#: reportes.py:3299
 #, python-format
 msgid "<b>Categoría:</b> %(val)s"
 msgstr "<b>Category:</b> %(val)s"
 
-#: reportes.py:3288
+#: reportes.py:3304
 #, python-format
 msgid "<b>Proveedor:</b> %(val)s"
 msgstr "<b>Supplier:</b> %(val)s"
 
-#: reportes.py:3316
+#: reportes.py:3332
 msgid "No hay pagos para el período y filtros seleccionados."
 msgstr "No payments for the selected period and filters."
 
-#: reportes.py:3326
+#: reportes.py:3342
 msgid "Total Pagado"
 msgstr "Total Paid"
 
-#: reportes.py:3326
+#: reportes.py:3342
 msgid "Cantidad de Pagos"
 msgstr "Number of Payments"
 
-#: reportes.py:3326
+#: reportes.py:3342
 msgid "Promedio por Pago"
 msgstr "Average per Payment"
 
-#: reportes.py:3355
+#: reportes.py:3371
 msgid "DESGLOSE POR CATEGORÍA"
 msgstr "BREAKDOWN BY CATEGORY"
 
-#: reportes.py:3356 reportes.py:3518
+#: reportes.py:3372 reportes.py:3534
 msgid "Cantidad"
 msgstr "Quantity"
 
-#: reportes.py:3356 reportes.py:3518
+#: reportes.py:3372 reportes.py:3534
 msgid "Total"
 msgstr "Total"
 
-#: reportes.py:3381
+#: reportes.py:3397
 msgid "DETALLE DE PAGOS"
 msgstr "PAYMENT DETAIL"
 
-#: reportes.py:3383 reportes.py:3545
+#: reportes.py:3399 reportes.py:3561
 msgid "Método"
 msgstr "Method"
 
-#: reportes.py:3444
+#: reportes.py:3460
 msgid "HISTORIAL DE DEPÓSITOS BANCARIOS"
 msgstr "BANK DEPOSITS HISTORY"
 
-#: reportes.py:3454
+#: reportes.py:3470
 #, python-format
 msgid "<b>Banco:</b> %(val)s"
 msgstr "<b>Bank:</b> %(val)s"
 
-#: reportes.py:3456
+#: reportes.py:3472
 #, python-format
 msgid "<b>Estado:</b> %(val)s"
 msgstr "<b>Status:</b> %(val)s"
 
-#: reportes.py:3479
+#: reportes.py:3495
 msgid "No hay depósitos para el período y filtros seleccionados."
 msgstr "No deposits for the selected period and filters."
 
-#: reportes.py:3488
+#: reportes.py:3504
 msgid "Total Depositado"
 msgstr "Total Deposited"
 
-#: reportes.py:3488
+#: reportes.py:3504
 msgid "Cantidad de Depósitos"
 msgstr "Number of Deposits"
 
-#: reportes.py:3488
+#: reportes.py:3504
 msgid "Promedio por Depósito"
 msgstr "Average per Deposit"
 
-#: reportes.py:3517
+#: reportes.py:3533
 msgid "DESGLOSE POR BANCO"
 msgstr "BREAKDOWN BY BANK"
 
-#: reportes.py:3518 reportes.py:3545
+#: reportes.py:3534 reportes.py:3561
 msgid "Banco"
 msgstr "Bank"
 
-#: reportes.py:3543
+#: reportes.py:3559
 msgid "DETALLE DE DEPÓSITOS"
 msgstr "DEPOSIT DETAIL"
 

@@ -2657,12 +2657,18 @@ class GeneradorReportes:
         """Agrega el análisis de flujo al reporte"""
         metricas = datos['metricas']
         
-        analisis_texto = f"""
-        <b>Análisis de Flujo:</b><br/>
-        - El flujo neto del período es <b>{'positivo' if metricas['flujo_neto_total'] >= 0 else 'negativo'}</b>.<br/>
-        - El {metricas['dias_positivos']/metricas['dias_analizados']*100 if metricas['dias_analizados'] > 0 else 0:.1f}% de los días tuvo flujo positivo.<br/>
-        - El saldo de caja final es de <b>${metricas['saldo_final']:,.0f}</b>.
-        """
+        _positivo = _('positivo') if metricas['flujo_neto_total'] >= 0 else _('negativo')
+        _pct_dias = (metricas['dias_positivos']/metricas['dias_analizados']*100) if metricas['dias_analizados'] > 0 else 0
+        analisis_texto = _(
+            "<b>Análisis de Flujo:</b><br/>"
+            "- El flujo neto del período es <b>%(estado)s</b>.<br/>"
+            "- El %(pct)s%% de los días tuvo flujo positivo.<br/>"
+            "- El saldo de caja final es de <b>$%(saldo)s</b>."
+        ) % {
+            'estado': _positivo,
+            'pct': f"{_pct_dias:.1f}",
+            'saldo': f"{metricas['saldo_final']:,.0f}",
+        }
         elements.append(Paragraph(analisis_texto, self.styles['Normal']))
 
     def _agregar_detalle_movimientos_tesoreria(self, elements, datos):
@@ -2670,11 +2676,11 @@ class GeneradorReportes:
         movimientos = datos['movimientos']
         
         if not movimientos:
-            elements.append(Paragraph("No hay movimientos para mostrar.", self.styles['Normal']))
+            elements.append(Paragraph(_("No hay movimientos para mostrar."), self.styles['Normal']))
             return
 
         # Crear tabla de movimientos
-        data = [['Fecha', 'Concepto', 'Referencia', 'Ingresos', 'Egresos', 'Saldo']]
+        data = [[_('Fecha'), _('Concepto'), _('Referencia'), _('Ingresos'), _('Egresos'), _('Saldo')]]
         saldo_acumulado = 0
 
         for movimiento in movimientos:
@@ -2693,7 +2699,7 @@ class GeneradorReportes:
         total_ingresos = sum(mov[3] for mov in movimientos)
         total_egresos = sum(mov[4] for mov in movimientos)
         data.append([
-            'TOTALES', '', '', 
+            _('TOTALES'), '', '', 
             f"${total_ingresos:,.0f}", 
             f"${total_egresos:,.0f}", 
             f"${saldo_acumulado:,.0f}"
@@ -2728,25 +2734,25 @@ class GeneradorReportes:
 
         # Análisis de saldo
         if metricas['saldo_final'] < 0:
-            recomendaciones.append("• <b>Atención:</b> Saldo negativo detectado. Se recomienda revisar gastos operativos y considerar ajustes en el flujo de efectivo.")
+            recomendaciones.append("• " + _("<b>Atención:</b> Saldo negativo detectado. Se recomienda revisar gastos operativos y considerar ajustes en el flujo de efectivo."))
         elif metricas['saldo_final'] < 100000:  # Umbral ajustable según tu negocio
-            recomendaciones.append("• <b>Monitoreo:</b> Saldo bajo identificado. Se sugiere vigilancia cercana del flujo de caja en los próximos días.")
+            recomendaciones.append("• " + _("<b>Monitoreo:</b> Saldo bajo identificado. Se sugiere vigilancia cercana del flujo de caja en los próximos días."))
 
         # Análisis de consistencia de flujo
         if metricas['dias_analizados'] > 0:
             porcentaje_positivo = (metricas['dias_positivos'] / metricas['dias_analizados']) * 100
             if porcentaje_positivo < 50:
-                recomendaciones.append("• <b>Oportunidad:</b> Menos del 50% de los días muestran flujo positivo. Evaluar estrategias para mejorar la consistencia de ingresos.")
+                recomendaciones.append("• " + _("<b>Oportunidad:</b> Menos de la mitad de los días muestran flujo positivo. Evaluar estrategias para mejorar la consistencia de ingresos."))
             elif porcentaje_positivo > 80:
-                recomendaciones.append("• <b>Fortalecimiento:</b> Alta consistencia en flujos positivos. Considerar oportunidades de reinversión o crecimiento.")
+                recomendaciones.append("• " + _("<b>Fortalecimiento:</b> Alta consistencia en flujos positivos. Considerar oportunidades de reinversión o crecimiento."))
 
         # Recomendación general basada en el volumen
         if metricas['total_movimientos'] < 10:
-            recomendaciones.append("• <b>Observación:</b> Baja actividad transaccional en el período. Validar completitud de registros.")
+            recomendaciones.append("• " + _("<b>Observación:</b> Baja actividad transaccional en el período. Validar completitud de registros."))
         
         # Mensaje final positivo si no hay alertas críticas
         if not recomendaciones:
-            recomendaciones.append("• <b>Estabilidad:</b> La posición de tesorería se mantiene estable. Continuar con las prácticas actuales de gestión.")
+            recomendaciones.append("• " + _("<b>Estabilidad:</b> La posición de tesorería se mantiene estable. Continuar con las prácticas actuales de gestión."))
 
         # Agregar todas las recomendaciones
         for rec in recomendaciones:
@@ -2789,15 +2795,25 @@ class GeneradorReportes:
         """Agrega el resumen ejecutivo al reporte"""
         metricas = datos['metricas']
         
-        resumen_texto = f"""
-        <b>Total Ingresos:</b> ${metricas['total_ingresos']:,.0f}<br/>
-        <b>Total Egresos:</b> ${metricas['total_egresos']:,.0f}<br/>
-        <b>Saldo Final:</b> ${metricas['saldo_final']:,.0f}<br/>
-        <b>Flujo Neto Total:</b> ${metricas['flujo_neto_total']:,.0f}<br/>
-        <b>Días Analizados:</b> {metricas['dias_analizados']}<br/>
-        <b>Días con Flujo Positivo:</b> {metricas['dias_positivos']} ({metricas['dias_positivos']/metricas['dias_analizados']*100 if metricas['dias_analizados'] > 0 else 0:.1f}%)<br/>
-        <b>Total Movimientos:</b> {metricas['total_movimientos']}
-        """
+        _pct_dias_pos = (metricas['dias_positivos']/metricas['dias_analizados']*100) if metricas['dias_analizados'] > 0 else 0
+        resumen_texto = _(
+            "<b>Total Ingresos:</b> $%(ingresos)s<br/>"
+            "<b>Total Egresos:</b> $%(egresos)s<br/>"
+            "<b>Saldo Final:</b> $%(saldo)s<br/>"
+            "<b>Flujo Neto Total:</b> $%(flujo)s<br/>"
+            "<b>Días Analizados:</b> %(dias)s<br/>"
+            "<b>Días con Flujo Positivo:</b> %(dias_pos)s (%(pct_pos)s%%)<br/>"
+            "<b>Total Movimientos:</b> %(total_mov)s"
+        ) % {
+            'ingresos': f"{metricas['total_ingresos']:,.0f}",
+            'egresos': f"{metricas['total_egresos']:,.0f}",
+            'saldo': f"{metricas['saldo_final']:,.0f}",
+            'flujo': f"{metricas['flujo_neto_total']:,.0f}",
+            'dias': metricas['dias_analizados'],
+            'dias_pos': metricas['dias_positivos'],
+            'pct_pos': f"{_pct_dias_pos:.1f}",
+            'total_mov': metricas['total_movimientos'],
+        }
         elements.append(Paragraph(resumen_texto, self.styles['Normal']))
 
     
@@ -2805,7 +2821,7 @@ class GeneradorReportes:
         """Genera un PDF de error mínimo"""
         buffer = BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=A4)
-        elements = [Paragraph(f"Error: {mensaje}", self.styles['Normal'])]
+        elements = [Paragraph(_('Error: %(msg)s') % {'msg': mensaje}, self.styles['Normal'])]
         doc.build(elements)
         buffer.seek(0)
         return buffer
@@ -2980,11 +2996,11 @@ class GeneradorReportes:
             story.append(Spacer(1, 15))
 
             # Titulo del reporte
-            story.append(Paragraph("REPORTE UNIFICADO DE TESORERIA", title_style))
-            _periodo_str = f"Periodo: {fecha_inicio.strftime('%d/%m/%Y')} a {fecha_fin.strftime('%d/%m/%Y')}"
+            story.append(Paragraph(_("REPORTE UNIFICADO DE TESORERIA"), title_style))
+            _periodo_str = _("Periodo: %(ini)s a %(fin)s") % {'ini': fecha_inicio.strftime('%d/%m/%Y'), 'fin': fecha_fin.strftime('%d/%m/%Y')}
             story.append(Paragraph(_periodo_str, styles['Normal']))
-            story.append(Paragraph(f"Consecutivo: {_consecutivo}", meta_style))
-            _emitido_str = f"Emitido: {_ahora.strftime('%d/%m/%Y %H:%M')}"
+            story.append(Paragraph(_("Consecutivo: %(val)s") % {'val': _consecutivo}, meta_style))
+            _emitido_str = _("Emitido: %(fecha)s") % {'fecha': _ahora.strftime('%d/%m/%Y %H:%M')}
             story.append(Paragraph(_emitido_str, meta_style))
             story.append(Spacer(1, 20))
             
@@ -3011,15 +3027,15 @@ class GeneradorReportes:
             # =============================================
             # 1. INGRESOS OPERACIONALES
             # =============================================
-            story.append(Paragraph("1. INGRESOS OPERACIONALES", styles['Heading2']))
+            story.append(Paragraph(_("1. INGRESOS OPERACIONALES"), styles['Heading2']))
             story.append(Spacer(1, 10))
 
             cantidad_ventas = len(ventas_normales)
             datos_ingresos = [
-                ['Concepto', 'Monto'],
-                ['Ventas del periodo', f'${total_ingresos:,.0f}'],
-                ['Cantidad de transacciones', f'{cantidad_ventas}'],
-                ['TOTAL INGRESOS OPERACIONALES', f'${total_ingresos:,.0f}']
+                [_('Concepto'), _('Monto')],
+                [_('Ventas del periodo'), f'${total_ingresos:,.0f}'],
+                [_('Cantidad de transacciones'), f'{cantidad_ventas}'],
+                [_('TOTAL INGRESOS OPERACIONALES'), f'${total_ingresos:,.0f}']
             ]
 
             tabla_ingresos = Table(datos_ingresos, colWidths=[250, 150])
@@ -3046,14 +3062,14 @@ class GeneradorReportes:
                 ingresos_por_metodo[metodo] = ingresos_por_metodo.get(metodo, 0) + (v.total or 0)
 
             if ingresos_por_metodo:
-                story.append(Paragraph("2. INGRESOS POR METODO DE PAGO", styles['Heading2']))
+                story.append(Paragraph(_("2. INGRESOS POR METODO DE PAGO"), styles['Heading2']))
                 story.append(Spacer(1, 10))
 
-                datos_metodos = [['Metodo', 'Monto', 'Porcentaje']]
+                datos_metodos = [[_('Metodo'), _('Monto'), _('Porcentaje')]]
                 for metodo, monto in sorted(ingresos_por_metodo.items(), key=lambda x: x[1], reverse=True):
                     pct = (monto / total_ingresos * 100) if total_ingresos > 0 else 0
                     datos_metodos.append([metodo, f'${monto:,.0f}', f'{pct:.1f}%'])
-                datos_metodos.append(['TOTAL', f'${total_ingresos:,.0f}', '100%'])
+                datos_metodos.append([_('TOTAL'), f'${total_ingresos:,.0f}', '100%'])
 
                 tabla_metodos = Table(datos_metodos, colWidths=[150, 150, 100])
                 tabla_metodos.setStyle(TableStyle([
@@ -3073,11 +3089,11 @@ class GeneradorReportes:
             # =============================================
             # 3. CONSUMO INTERNO / DONACIONES
             # =============================================
-            story.append(Paragraph("3. CONSUMO INTERNO / DONACIONES", styles['Heading2']))
+            story.append(Paragraph(_("3. CONSUMO INTERNO / DONACIONES"), styles['Heading2']))
             story.append(Spacer(1, 10))
 
             if consumo_por_producto:
-                datos_consumo = [['Producto', 'Cant.', 'Costo Unit.', 'Total Costo']]
+                datos_consumo = [[_('Producto'), _('Cant.'), _('Costo Unit.'), _('Total Costo')]]
                 for nombre_prod, info in sorted(consumo_por_producto.items(),
                                                  key=lambda x: x[1]['costo_total'],
                                                  reverse=True):
@@ -3088,7 +3104,7 @@ class GeneradorReportes:
                         f"${info['costo_total']:,.0f}"
                     ])
                 datos_consumo.append([
-                    'TOTAL COSTO CONSUMO',
+                    _('TOTAL COSTO CONSUMO'),
                     str(total_unidades_consumo),
                     '',
                     f'${total_costo_consumo:,.0f}'
@@ -3108,7 +3124,7 @@ class GeneradorReportes:
                 ]))
                 story.append(tabla_consumo)
             else:
-                story.append(Paragraph("Sin consumo interno ni donaciones en el periodo.", styles['Normal']))
+                story.append(Paragraph(_("Sin consumo interno ni donaciones en el periodo."), styles['Normal']))
 
             story.append(Spacer(1, 8))
 
@@ -3121,7 +3137,7 @@ class GeneradorReportes:
                 alignment=0,
                 spaceAfter=2
             )
-            nota_texto = (
+            nota_texto = _(
                 "<b>Nota:</b> El consumo interno y las donaciones no generan ingresos. "
                 "El costo de produccion se deduce del inventario y se registra como gasto operativo. "
                 "Consultar con su asesor tributario local para el tratamiento fiscal aplicable en su pais."
@@ -3132,13 +3148,13 @@ class GeneradorReportes:
             # =============================================
             # 4. GASTOS DEL PERIODO
             # =============================================
-            story.append(Paragraph("4. GASTOS DEL PERIODO", styles['Heading2']))
+            story.append(Paragraph(_("4. GASTOS DEL PERIODO"), styles['Heading2']))
             story.append(Spacer(1, 10))
 
-            datos_gastos = [['Categoria', 'Monto']]
+            datos_gastos = [[_('Categoria'), _('Monto')]]
             for cat, monto in sorted(gastos_por_categoria.items(), key=lambda x: x[1], reverse=True):
                 datos_gastos.append([str(cat), f'${monto:,.0f}'])
-            datos_gastos.append(['TOTAL GASTOS', f'${total_gastos:,.0f}'])
+            datos_gastos.append([_('TOTAL GASTOS'), f'${total_gastos:,.0f}'])
 
             tabla_gastos = Table(datos_gastos, colWidths=[250, 150])
             tabla_gastos.setStyle(TableStyle([
@@ -3158,20 +3174,20 @@ class GeneradorReportes:
             # =============================================
             # 5. RESUMEN EJECUTIVO
             # =============================================
-            story.append(Paragraph("5. RESUMEN EJECUTIVO", styles['Heading2']))
+            story.append(Paragraph(_("5. RESUMEN EJECUTIVO"), styles['Heading2']))
             story.append(Spacer(1, 10))
 
             datos_resumen = [
-                ['Concepto', 'Monto'],
-                ['Total Ingresos', f'${total_ingresos:,.0f}'],
-                ['Total Gastos', f'${total_gastos:,.0f}'],
-                ['Flujo Neto', f'${flujo_neto:,.0f}']
+                [_('Concepto'), _('Monto')],
+                [_('Total Ingresos'), f'${total_ingresos:,.0f}'],
+                [_('Total Gastos'), f'${total_gastos:,.0f}'],
+                [_('Flujo Neto'), f'${flujo_neto:,.0f}']
             ]
 
             if utilidad_neta < 0:
-                datos_resumen.append(['Utilidad Neta del Periodo', f'${utilidad_neta:,.0f} (PERDIDA)'])
+                datos_resumen.append([_('Utilidad Neta del Periodo'), _('$%(val)s (PERDIDA)') % {'val': f'{utilidad_neta:,.0f}'}])
             else:
-                datos_resumen.append(['Utilidad Neta del Periodo', f'${utilidad_neta:,.0f}'])
+                datos_resumen.append([_('Utilidad Neta del Periodo'), f'${utilidad_neta:,.0f}'])
 
             tabla_resumen = Table(datos_resumen, colWidths=[200, 200])
 
@@ -3201,10 +3217,10 @@ class GeneradorReportes:
             # =============================================
             # 6. DETALLE DE INGRESOS DIARIOS
             # =============================================
-            story.append(Paragraph("6. DETALLE DE INGRESOS DIARIOS", styles['Heading2']))
+            story.append(Paragraph(_("6. DETALLE DE INGRESOS DIARIOS"), styles['Heading2']))
             story.append(Spacer(1, 10))
 
-            datos_detalle = [['Fecha', 'Ingresos']]
+            datos_detalle = [[_('Fecha'), _('Ingresos')]]
             if ingresos_por_dia:
                 for fecha_dia in sorted(ingresos_por_dia.keys()):
                     datos_detalle.append([
@@ -3212,8 +3228,8 @@ class GeneradorReportes:
                         f'${ingresos_por_dia[fecha_dia]:,.0f}'
                     ])
             else:
-                datos_detalle.append(['Sin ingresos en el periodo', '$0'])
-            datos_detalle.append(['TOTAL', f'${total_ingresos:,.0f}'])
+                datos_detalle.append([_('Sin ingresos en el periodo'), '$0'])
+            datos_detalle.append([_('TOTAL'), f'${total_ingresos:,.0f}'])
 
             tabla_detalle = Table(datos_detalle, colWidths=[150, 150])
             tabla_detalle.setStyle(TableStyle([
@@ -3242,7 +3258,7 @@ class GeneradorReportes:
                 textColor=colors.HexColor('#555555')
             )
             story.append(Paragraph("_" * 40, firma_style))
-            story.append(Paragraph("Firma del responsable", firma_style))
+            story.append(Paragraph(_("Firma del responsable"), firma_style))
 
             # Build PDF
             doc.build(story)
