@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-20 22:45-0500\n"
+"POT-Creation-Date: 2026-10-21 15:01-0500\n"
 "PO-Revision-Date: 2026-10-15 16:08-0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: pap\n"
@@ -193,6 +193,8 @@ msgstr "Fecha"
 
 #: reportes.py:287 reportes.py:2683 reportes.py:3223
 #: templates/cierre_caja.html:539 templates/cierre_caja.html:794
+#: templates/productos_populares.html:388
+#: templates/productos_populares.html:446
 msgid "Ingresos"
 msgstr "ENTRADANAN"
 
@@ -382,7 +384,7 @@ msgstr "DISTRIBUSHON DETAYÁ DI GASTUNAN"
 msgid "Categoría"
 msgstr "Kategoria"
 
-#: reportes.py:1108 reportes.py:3068
+#: reportes.py:1108 reportes.py:3068 templates/productos_populares.html:486
 msgid "Porcentaje"
 msgstr "Porsentahe"
 
@@ -1144,7 +1146,10 @@ msgid "PUNTOS DE REORDEN SUGERIDOS"
 msgstr "PUNTONAN DI REORDEN SUGERÍ"
 
 #: reportes.py:2254 reportes.py:3096 templates/cierre_caja.html:537
-#: templates/cierre_caja.html:572
+#: templates/cierre_caja.html:572 templates/productos_populares.html:385
+#: templates/productos_populares.html:445
+#: templates/productos_populares.html:527
+#: templates/productos_populares.html:554
 msgid "Producto"
 msgstr "Produkto"
 
@@ -1548,11 +1553,12 @@ msgstr "Promedio pa Pago"
 msgid "DESGLOSE POR CATEGORÍA"
 msgstr "DESGLOSE PA KATEGORIA"
 
-#: reportes.py:3372 reportes.py:3534
+#: reportes.py:3372 reportes.py:3534 templates/productos_populares.html:485
 msgid "Cantidad"
 msgstr "Kantidat"
 
 #: reportes.py:3372 reportes.py:3534 templates/cierre_caja.html:675
+#: templates/productos_populares.html:504
 msgid "Total"
 msgstr "Total"
 
@@ -1622,11 +1628,11 @@ msgstr "AWE"
 msgid "Consultar fecha:"
 msgstr "Konsultá fecha:"
 
-#: templates/cierre_caja.html:467
+#: templates/cierre_caja.html:467 templates/productos_populares.html:229
 msgid "Hoy"
 msgstr "Awe"
 
-#: templates/cierre_caja.html:468
+#: templates/cierre_caja.html:468 templates/productos_populares.html:230
 msgid "Ayer"
 msgstr "Ayera"
 
@@ -1649,6 +1655,7 @@ msgstr "Kantidat di transakshonnan"
 
 #: templates/cierre_caja.html:521 templates/cierre_caja.html:680
 #: templates/cierre_caja.html:691 templates/cierre_caja.html:697
+#: templates/productos_populares.html:295
 msgid "Salidas No Comerciales"
 msgstr "Salida No Komersial"
 
@@ -1708,7 +1715,7 @@ msgstr "Benta Real"
 msgid "vs ayer"
 msgstr "vs ayera"
 
-#: templates/cierre_caja.html:711
+#: templates/cierre_caja.html:711 templates/productos_populares.html:299
 msgid "Productos"
 msgstr "Produkto"
 
@@ -1753,13 +1760,238 @@ msgid "Inventario"
 msgstr "Valor Inventario"
 
 #: templates/cierre_caja.html:927
-#, python-format
 msgid "Generado el"
-
+msgstr "Generá na"
 
 #: templates/cierre_caja.html:927
 msgid "Sistema Panadería"
 msgstr "Kantidat di Pagonan"
+
+#: templates/productos_populares.html:6
+msgid "Productos Más Vendidos"
+msgstr "Produkto"
+
+#: templates/productos_populares.html:6
+msgid "Panadería"
+msgstr "Kantidat di Pagonan"
+
+#: templates/productos_populares.html:214
+msgid "Seleccionar Período"
+msgstr "Dianan di e períodoo:"
+
+#: templates/productos_populares.html:217
+msgid "Fecha Inicio"
+msgstr "Fecha Inisio"
+
+#: templates/productos_populares.html:222
+msgid "Fecha Fin"
+msgstr "Fecha"
+
+#: templates/productos_populares.html:227
+msgid "Período Rápido"
+msgstr "Produkto"
+
+#: templates/productos_populares.html:231
+msgid "Esta Semana"
+msgstr "Patron Semanal"
+
+#: templates/productos_populares.html:232
+msgid "Este Mes"
+msgstr "E Mes aki"
+
+#: templates/productos_populares.html:233
+msgid "Mes Anterior"
+msgstr "Luna Pasá"
+
+#: templates/productos_populares.html:234
+msgid "Personalizado"
+msgstr "Personalisa"
+
+#: templates/productos_populares.html:239
+msgid "Actualizar"
+msgstr "Aktualisá"
+
+#: templates/productos_populares.html:253
+msgid "PRODUCTOS MÁS VENDIDOS"
+msgstr "Produkto"
+
+#: templates/productos_populares.html:254
+msgid "Análisis de Rotación y Popularidad"
+msgstr "ANÁLISIS DI RENTABILIDAT"
+
+#: templates/productos_populares.html:257
+msgid "Período analizado:"
+msgstr "Personalisa"
+
+#: templates/productos_populares.html:259
+msgid "Actual"
+msgstr "Stock Aktual"
+
+#: templates/productos_populares.html:265
+msgid "Exportar PDF"
+msgstr "Download PDF"
+
+#: templates/productos_populares.html:280
+msgid "Información de Salidas No Comerciales en el Período"
+msgstr "Salida No Komersial"
+
+#: templates/productos_populares.html:283
+msgid "Se registraron"
+msgstr "A registrá"
+
+#: templates/productos_populares.html:283
+msgid "transacciones de donación"
+msgstr "Kantidat di transakshonnan"
+
+#: templates/productos_populares.html:284
+msgid "con"
+msgstr "ku"
+
+#: templates/productos_populares.html:284
+msgid "productos donados."
+msgstr "Produkto"
+
+#: templates/productos_populares.html:287
+msgid "Incluidas en el análisis de productos"
+msgstr "Incluí den e análisis di produktonan"
+
+#: templates/productos_populares.html:309
+msgid "Actualizaciones de IA Aplicadas"
+msgstr "Aktualisashonnan di IA Apliká"
+
+#: templates/productos_populares.html:312
+#, python-format
+msgid ""
+"Se actualizaron automáticamente %(num)s rotaciones de productos usando "
+"aprendizaje automático."
+msgstr ""
+
+#: templates/productos_populares.html:321
+msgid "Top 10 Productos Más Vendidos"
+msgstr "Produkto"
+
+#: templates/productos_populares.html:322
+msgid "Ranking basado en unidades vendidas"
+msgstr "Ranking basá riba unidadnan bendí"
+
+#: templates/productos_populares.html:347
+msgid "unidades"
+msgstr "Unid"
+
+#: templates/productos_populares.html:352
+msgid "ingresos"
+msgstr "ENTRADANAN"
+
+#: templates/productos_populares.html:356
+msgid "Rotación:"
+msgstr "Rotashon Haltu"
+
+#: templates/productos_populares.html:361
+msgid "/día"
+msgstr "dianan"
+
+#: templates/productos_populares.html:386
+#: templates/productos_populares.html:484
+msgid "Tipo"
+msgstr "Tipo"
+
+#: templates/productos_populares.html:387
+msgid "Unidades"
+msgstr "Unid"
+
+#: templates/productos_populares.html:389
+#: templates/productos_populares.html:528
+#: templates/productos_populares.html:555
+msgid "Rotación/día"
+msgstr "Rotashon Haltu"
+
+#: templates/productos_populares.html:433
+msgid "Top 5 por Ingresos"
+msgstr "Total Ingreso"
+
+#: templates/productos_populares.html:447
+msgid "Ranking"
+msgstr "Ranking"
+
+#: templates/productos_populares.html:472
+msgid "Distribución por Tipo"
+msgstr "DISTRIBUSHON DETAYÁ DI GASTUNAN"
+
+#: templates/productos_populares.html:494
+msgid "Producción"
+msgstr "Promedio diario:"
+
+#: templates/productos_populares.html:499
+msgid "Externo"
+msgstr "Externo"
+
+#: templates/productos_populares.html:519
+msgid "Análisis de Rotación Automática"
+msgstr "ANÁLISIS DI RENTABILIDAT"
+
+#: templates/productos_populares.html:522
+msgid "Productos de Alta Rotación"
+msgstr "Rotashon Haltu"
+
+#: templates/productos_populares.html:541
+msgid "No hay productos con rotación muy alta"
+msgstr "Top productonan pa benta"
+
+#: templates/productos_populares.html:549
+msgid "Productos de Baja Rotación"
+msgstr "REVISÁ RESETANAN DI PRODUKTONAN KU ROTASHON ABOU (<6 biaha/aña)"
+
+#: templates/productos_populares.html:568
+msgid "No hay productos con rotación crítica"
+msgstr "Top productonan pa benta"
+
+#: templates/productos_populares.html:584
+msgid "Recomendaciones Basadas en IA"
+msgstr "REKOMENDASHONNAN"
+
+#: templates/productos_populares.html:588
+msgid "Oportunidades"
+msgstr "Unid"
+
+#: templates/productos_populares.html:591
+msgid "Aumentar producción de productos top 3"
+msgstr "Aumentá produkshon di e 3 produktonan top"
+
+#: templates/productos_populares.html:592
+msgid "Crear promociones con productos de media rotación"
+msgstr "Hasi promoshonnan ku produktonan di media rotashon"
+
+#: templates/productos_populares.html:593
+msgid "Destacar productos estrella en vitrina"
+msgstr "Resaltá e produktonan estreya den e vitrina"
+
+#: templates/productos_populares.html:600
+msgid "Acciones Recomendadas"
+msgstr "PLAN DI AKSION REKOMENDÁ"
+
+#: templates/productos_populares.html:603
+msgid "Revisar recetas de productos con baja rotación"
+msgstr "REVISÁ RESETANAN DI PRODUKTONAN KU ROTASHON ABOU (<6 biaha/aña)"
+
+#: templates/productos_populares.html:604
+msgid "Optimizar horarios de producción"
+msgstr "Optimalisá e horarionan di produkshon"
+
+#: templates/productos_populares.html:605
+msgid "Analizar estacionalidad de ventas"
+msgstr "HISTORIAL DI PAGONAN"
+
+#: templates/productos_populares.html:620
+msgid "Reporte generado automáticamente"
+msgstr "Reporte generá automáticamente"
+
+#: templates/productos_populares.html:620
+msgid "Sistema en tiempo real"
+msgstr "Sistema den tempu real"
+
+#: templates/productos_populares.html:621
+msgid "Análisis de rotación automática aplicado"
+msgstr "ANÁLISIS DI RENTABILIDAT"
 
 #: templates/reportes.html:3
 msgid "Reportes"
@@ -2039,7 +2271,7 @@ msgstr "Sera"
 
 #: templates/reportes.html:532
 msgid "Fecha de Corte"
-msgstr ""
+msgstr "Fecha di Korte"
 
 #: templates/reportes.html:536
 msgid "Saldo según Extracto Bancario:"

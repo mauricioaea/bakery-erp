@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Productos Más Vendidos - Panadería</title>
+    <title>{{ _('Productos Más Vendidos') }} - {{ _('Panadería') }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -211,32 +211,32 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title"><i class="fas fa-calendar-alt"></i> Seleccionar Período</h5>
+                    <h5 class="card-title"><i class="fas fa-calendar-alt"></i> {{ _('Seleccionar Período') }}</h5>
                     <form id="formFechas" class="row g-3">
                         <div class="col-md-3">
-                            <label for="fecha_inicio" class="form-label">Fecha Inicio</label>
+                            <label for="fecha_inicio" class="form-label">{{ _('Fecha Inicio') }}</label>
                             <input type="date" class="form-control" id="fecha_inicio" 
                                 value="{{ fecha_inicio.strftime('%Y-%m-%d') if fecha_inicio else '' }}">
                         </div>
                         <div class="col-md-3">
-                            <label for="fecha_fin" class="form-label">Fecha Fin</label>
+                            <label for="fecha_fin" class="form-label">{{ _('Fecha Fin') }}</label>
                             <input type="date" class="form-control" id="fecha_fin" 
                                 value="{{ fecha_fin.strftime('%Y-%m-%d') if fecha_fin else datetime.now().strftime('%Y-%m-%d') }}">
                         </div>
                         <div class="col-md-3">
-                            <label for="periodo" class="form-label">Período Rápido</label>
+                            <label for="periodo" class="form-label">{{ _('Período Rápido') }}</label>
                             <select class="form-select" id="periodo">
-                                <option value="hoy">Hoy</option>
-                                <option value="ayer">Ayer</option>
-                                <option value="semana">Esta Semana</option>
-                                <option value="mes">Este Mes</option>
-                                <option value="mes_anterior">Mes Anterior</option>
-                                <option value="personalizado" selected>Personalizado</option>
+                                <option value="hoy">{{ _('Hoy') }}</option>
+                                <option value="ayer">{{ _('Ayer') }}</option>
+                                <option value="semana">{{ _('Esta Semana') }}</option>
+                                <option value="mes">{{ _('Este Mes') }}</option>
+                                <option value="mes_anterior">{{ _('Mes Anterior') }}</option>
+                                <option value="personalizado" selected>{{ _('Personalizado') }}</option>
                             </select>
                         </div>
                         <div class="col-md-3 d-flex align-items-end">
                             <button type="button" class="btn btn-primary w-100" onclick="actualizarReporte()">
-                                <i class="fas fa-sync-alt"></i> Actualizar
+                                <i class="fas fa-sync-alt"></i> {{ _('Actualizar') }}
                             </button>
                         </div>
                     </form>
@@ -250,19 +250,19 @@
         <div class="reporte-header no-break">
             <div class="row align-items-center">
                 <div class="col-md-10">
-                    <h1 class="fw-bold mb-1">PRODUCTOS MÁS VENDIDOS</h1>
-                    <h4 class="mb-1">Análisis de Rotación y Popularidad</h4>
+                    <h1 class="fw-bold mb-1">{{ _('PRODUCTOS MÁS VENDIDOS') }}</h1>
+                    <h4 class="mb-1">{{ _('Análisis de Rotación y Popularidad') }}</h4>
                     <p class="mb-0">
                         <i class="fas fa-calendar-alt"></i>
-                        Período analizado: 
+                        {{ _('Período analizado:') }} 
                         <span class="badge bg-light text-dark ms-1">
-                            {{ fecha_inicio.strftime('%d/%m/%Y') }} - Actual
+                            {{ fecha_inicio.strftime('%d/%m/%Y') }} - {{ _('Actual') }}
                         </span>
                     </p>
                 </div>
                 <div class="col-md-2 text-center no-print">
                     <button class="btn btn-pdf" onclick="generarPDF()">
-                        <i class="fas fa-file-pdf"></i> Exportar PDF
+                        <i class="fas fa-file-pdf"></i> {{ _('Exportar PDF') }}
                     </button>
                 </div>
             </div>
@@ -270,7 +270,6 @@
 
         <!-- Cuerpo del Reporte -->
         <div class="reporte-body">
-            <!-- Resumen de Actualizaciones ML -->
             <!-- 🎁 SECCIÓN DE DONACIONES -->
             <div class="row mb-4">
                 <div class="col-12">
@@ -278,14 +277,14 @@
                         <div class="row align-items-center">
                             <div class="col-md-8">
                                 <h5 class="mb-1">
-                                    <i class="fas fa-gift me-2"></i>Información de Salidas No Comerciales en el Período
+                                    <i class="fas fa-gift me-2"></i>{{ _('Información de Salidas No Comerciales en el Período') }}
                                 </h5>
                                 <p class="mb-0">
-                                    Se registraron <strong>{{ total_donaciones }}</strong> transacciones de donación 
-                                    con <strong>{{ productos_donados }}</strong> productos donados.
+                                    {{ _('Se registraron') }} <strong>{{ total_donaciones }}</strong> {{ _('transacciones de donación') }} 
+                                    {{ _('con') }} <strong>{{ productos_donados }}</strong> {{ _('productos donados.') }}
                                     <span class="badge bg-light text-dark ms-2">
                                         <i class="fas fa-info-circle me-1"></i>
-                                        Incluidas en el análisis de productos
+                                        {{ _('Incluidas en el análisis de productos') }}
                                     </span>
                                 </p>
                             </div>
@@ -293,11 +292,11 @@
                                 <div class="row text-center">
                                     <div class="col-6">
                                         <h4 class="text-warning mb-0">{{ total_donaciones }}</h4>
-                                        <small class="text-muted">Salidas No Comerciales</small>
+                                        <small class="text-muted">{{ _('Salidas No Comerciales') }}</small>
                                     </div>
                                     <div class="col-6">
                                         <h4 class="text-warning mb-0">{{ productos_donados }}</h4>
-                                        <small class="text-muted">Productos</small>
+                                        <small class="text-muted">{{ _('Productos') }}</small>
                                     </div>
                                 </div>
                             </div>
@@ -307,11 +306,10 @@
             </div>
             {% if actualizaciones_ml %}
             <div class="alert alert-info mb-4 no-print">
-                <h5><i class="fas fa-robot"></i> Actualizaciones de IA Aplicadas</h5>
+                <h5><i class="fas fa-robot"></i> {{ _('Actualizaciones de IA Aplicadas') }}</h5>
                 <p class="mb-0">
                     <i class="fas fa-sync-alt"></i>
-                    Se actualizaron automáticamente {{ actualizaciones_ml }} rotaciones de productos 
-                    usando aprendizaje automático.
+                    {{ _('Se actualizaron automáticamente %(num)s rotaciones de productos usando aprendizaje automático.', num=actualizaciones_ml) }}
                 </p>
             </div>
             {% endif %}
@@ -320,8 +318,8 @@
             <div class="row mb-4">
                 <div class="col-12">
                     <div class="metric-card">
-                        <h4><i class="fas fa-trophy"></i> Top 10 Productos Más Vendidos</h4>
-                        <p class="text-muted">Ranking basado en unidades vendidas</p>
+                        <h4><i class="fas fa-trophy"></i> {{ _('Top 10 Productos Más Vendidos') }}</h4>
+                        <p class="text-muted">{{ _('Ranking basado en unidades vendidas') }}</p>
                         
                         <!-- Versión normal para pantalla -->
                         <div class="no-print">
@@ -340,27 +338,27 @@
                                     <div class="col-md-4">
                                         <h5 class="mb-1">{{ producto.nombre }}</h5>
                                         <span class="badge {% if producto.tipo == 'Producción' %}bg-primary{% else %}bg-secondary{% endif %} tipo-badge">
-                                            {{ producto.tipo }}
+                                            {{ _(producto.tipo) }}
                                         </span>
                                     </div>
                                     <div class="col-md-2 text-center">
                                         <strong class="fs-5">{{ producto.cantidad_vendida }}</strong>
                                         <br>
-                                        <small class="text-muted">unidades</small>
+                                        <small class="text-muted">{{ _('unidades') }}</small>
                                     </div>
                                     <div class="col-md-2 text-center">
                                         <strong class="fs-5">${{ "{:,.2f}".format(producto.ingresos_totales) }}</strong>
                                         <br>
-                                        <small class="text-muted">ingresos</small>
+                                        <small class="text-muted">{{ _('ingresos') }}</small>
                                     </div>
                                     <div class="col-md-3">
                                         <div class="d-flex justify-content-between align-items-center">
-                                            <span>Rotación:</span>
+                                            <span>{{ _('Rotación:') }}</span>
                                             <span class="
                                                 {% if producto.rotacion_promedio > 20 %}rotacion-alta
                                                 {% elif producto.rotacion_promedio > 10 %}rotacion-media
                                                 {% else %}rotacion-baja{% endif %}">
-                                                {{ "%.1f"|format(producto.rotacion_promedio) }}/día
+                                                {{ "%.1f"|format(producto.rotacion_promedio) }}{{ _('/día') }}
                                             </span>
                                         </div>
                                         <div class="progress">
@@ -384,11 +382,11 @@
                                     <thead class="table-light">
                                         <tr>
                                             <th>#</th>
-                                            <th>Producto</th>
-                                            <th>Tipo</th>
-                                            <th class="text-center">Unidades</th>
-                                            <th class="text-end">Ingresos</th>
-                                            <th class="text-center">Rotación/día</th>
+                                            <th>{{ _('Producto') }}</th>
+                                            <th>{{ _('Tipo') }}</th>
+                                            <th class="text-center">{{ _('Unidades') }}</th>
+                                            <th class="text-end">{{ _('Ingresos') }}</th>
+                                            <th class="text-center">{{ _('Rotación/día') }}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -406,7 +404,7 @@
                                             <td><strong>{{ producto.nombre[:25] }}{% if producto.nombre|length > 25 %}...{% endif %}</strong></td>
                                             <td>
                                                 <span class="badge {% if producto.tipo == 'Producción' %}bg-primary{% else %}bg-secondary{% endif %}">
-                                                    {{ producto.tipo[:1] }}
+                                                    {{ _(producto.tipo[:1]) }}
                                                 </span>
                                             </td>
                                             <td class="text-center">{{ producto.cantidad_vendida }}</td>
@@ -432,7 +430,7 @@
             <div class="row mb-4 no-break">
                 <div class="col-md-6">
                     <div class="chart-container">
-                        <h4><i class="fas fa-chart-bar"></i> Top 5 por Ingresos</h4>
+                        <h4><i class="fas fa-chart-bar"></i> {{ _('Top 5 por Ingresos') }}</h4>
                         
                         <!-- Gráfico para pantalla -->
                         <div class="no-print">
@@ -444,9 +442,9 @@
                             <table class="table table-sm table-bordered tabla-pdf">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Producto</th>
-                                        <th class="text-end">Ingresos</th>
-                                        <th class="text-center">Ranking</th>
+                                        <th>{{ _('Producto') }}</th>
+                                        <th class="text-end">{{ _('Ingresos') }}</th>
+                                        <th class="text-center">{{ _('Ranking') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -471,7 +469,7 @@
                 </div>
                 <div class="col-md-6">
                     <div class="chart-container">
-                        <h4><i class="fas fa-chart-pie"></i> Distribución por Tipo</h4>
+                        <h4><i class="fas fa-chart-pie"></i> {{ _('Distribución por Tipo') }}</h4>
                         
                         <!-- Gráfico para pantalla -->
                         <div class="no-print">
@@ -483,9 +481,9 @@
                             <table class="table table-sm table-bordered tabla-pdf">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Tipo</th>
-                                        <th class="text-center">Cantidad</th>
-                                        <th class="text-center">Porcentaje</th>
+                                        <th>{{ _('Tipo') }}</th>
+                                        <th class="text-center">{{ _('Cantidad') }}</th>
+                                        <th class="text-center">{{ _('Porcentaje') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -493,17 +491,17 @@
                                     {% set produccion_count = productos|selectattr('tipo', 'equalto', 'Producción')|list|length %}
                                     {% set externo_count = productos|selectattr('tipo', 'equalto', 'Externo')|list|length %}
                                     <tr>
-                                        <td>Producción</td>
+                                        <td>{{ _('Producción') }}</td>
                                         <td class="text-center">{{ produccion_count }}</td>
                                         <td class="text-center">{{ "%.1f"|format((produccion_count / total_productos * 100) if total_productos > 0 else 0) }}%</td>
                                     </tr>
                                     <tr>
-                                        <td>Externo</td>
+                                        <td>{{ _('Externo') }}</td>
                                         <td class="text-center">{{ externo_count }}</td>
                                         <td class="text-center">{{ "%.1f"|format((externo_count / total_productos * 100) if total_productos > 0 else 0) }}%</td>
                                     </tr>
                                     <tr class="table-primary">
-                                        <td><strong>Total</strong></td>
+                                        <td><strong>{{ _('Total') }}</strong></td>
                                         <td class="text-center"><strong>{{ total_productos }}</strong></td>
                                         <td class="text-center"><strong>100%</strong></td>
                                     </tr>
@@ -518,16 +516,16 @@
             <div class="row no-break">
                 <div class="col-12">
                     <div class="metric-card">
-                        <h4><i class="fas fa-brain"></i> Análisis de Rotación Automática</h4>
+                        <h4><i class="fas fa-brain"></i> {{ _('Análisis de Rotación Automática') }}</h4>
                         <div class="row mt-3">
                             <div class="col-md-6">
-                                <h5><i class="fas fa-rocket"></i> Productos de Alta Rotación</h5>
+                                <h5><i class="fas fa-rocket"></i> {{ _('Productos de Alta Rotación') }}</h5>
                                 <div class="table-responsive">
                                     <table class="table table-sm table-bordered tabla-pdf">
                                         <thead class="table-light">
                                             <tr>
-                                                <th>Producto</th>
-                                                <th class="text-center">Rotación/día</th>
+                                                <th>{{ _('Producto') }}</th>
+                                                <th class="text-center">{{ _('Rotación/día') }}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -540,7 +538,7 @@
                                             </tr>
                                             {% else %}
                                             <tr>
-                                                <td colspan="2" class="text-muted text-center">No hay productos con rotación muy alta</td>
+                                                <td colspan="2" class="text-muted text-center">{{ _('No hay productos con rotación muy alta') }}</td>
                                             </tr>
                                             {% endfor %}
                                         </tbody>
@@ -548,13 +546,13 @@
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <h5><i class="fas fa-exclamation-triangle"></i> Productos de Baja Rotación</h5>
+                                <h5><i class="fas fa-exclamation-triangle"></i> {{ _('Productos de Baja Rotación') }}</h5>
                                 <div class="table-responsive">
                                     <table class="table table-sm table-bordered tabla-pdf">
                                         <thead class="table-light">
                                             <tr>
-                                                <th>Producto</th>
-                                                <th class="text-center">Rotación/día</th>
+                                                <th>{{ _('Producto') }}</th>
+                                                <th class="text-center">{{ _('Rotación/día') }}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -567,7 +565,7 @@
                                             </tr>
                                             {% else %}
                                             <tr>
-                                                <td colspan="2" class="text-muted text-center">No hay productos con rotación crítica</td>
+                                                <td colspan="2" class="text-muted text-center">{{ _('No hay productos con rotación crítica') }}</td>
                                             </tr>
                                             {% endfor %}
                                         </tbody>
@@ -583,28 +581,28 @@
             <div class="row mt-4 no-break">
                 <div class="col-12">
                     <div class="metric-card">
-                        <h4><i class="fas fa-lightbulb"></i> Recomendaciones Basadas en IA</h4>
+                        <h4><i class="fas fa-lightbulb"></i> {{ _('Recomendaciones Basadas en IA') }}</h4>
                         <div class="row mt-3">
                             <div class="col-md-6">
                                 <div class="alert alert-success p-2">
-                                    <h6><i class="fas fa-thumbs-up"></i> Oportunidades</h6>
+                                    <h6><i class="fas fa-thumbs-up"></i> {{ _('Oportunidades') }}</h6>
                                     <small>
                                         <ul class="mb-0 ps-3">
-                                            <li>Aumentar producción de productos top 3</li>
-                                            <li>Crear promociones con productos de media rotación</li>
-                                            <li>Destacar productos estrella en vitrina</li>
+                                            <li>{{ _('Aumentar producción de productos top 3') }}</li>
+                                            <li>{{ _('Crear promociones con productos de media rotación') }}</li>
+                                            <li>{{ _('Destacar productos estrella en vitrina') }}</li>
                                         </ul>
                                     </small>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="alert alert-warning p-2">
-                                    <h6><i class="fas fa-exclamation-circle"></i> Acciones Recomendadas</h6>
+                                    <h6><i class="fas fa-exclamation-circle"></i> {{ _('Acciones Recomendadas') }}</h6>
                                     <small>
                                         <ul class="mb-0 ps-3">
-                                            <li>Revisar recetas de productos con baja rotación</li>
-                                            <li>Optimizar horarios de producción</li>
-                                            <li>Analizar estacionalidad de ventas</li>
+                                            <li>{{ _('Revisar recetas de productos con baja rotación') }}</li>
+                                            <li>{{ _('Optimizar horarios de producción') }}</li>
+                                            <li>{{ _('Analizar estacionalidad de ventas') }}</li>
                                         </ul>
                                     </small>
                                 </div>
@@ -619,8 +617,8 @@
         <div class="reporte-footer bg-light py-2 px-3 text-center mt-3">
             <small class="text-muted">
                 <i class="fas fa-sync-alt"></i>
-                Reporte generado automáticamente - Sistema en tiempo real | 
-                Análisis de rotación automática aplicado
+                {{ _('Reporte generado automáticamente') }} - {{ _('Sistema en tiempo real') }} | 
+                {{ _('Análisis de rotación automática aplicado') }}
             </small>
         </div>
     </div>

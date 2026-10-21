@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-20 22:45-0500\n"
+"POT-Creation-Date: 2026-10-21 15:01-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -192,6 +192,8 @@ msgstr ""
 
 #: reportes.py:287 reportes.py:2683 reportes.py:3223
 #: templates/cierre_caja.html:539 templates/cierre_caja.html:794
+#: templates/productos_populares.html:388
+#: templates/productos_populares.html:446
 msgid "Ingresos"
 msgstr ""
 
@@ -381,7 +383,7 @@ msgstr ""
 msgid "Categoría"
 msgstr ""
 
-#: reportes.py:1108 reportes.py:3068
+#: reportes.py:1108 reportes.py:3068 templates/productos_populares.html:486
 msgid "Porcentaje"
 msgstr ""
 
@@ -1107,7 +1109,10 @@ msgid "PUNTOS DE REORDEN SUGERIDOS"
 msgstr ""
 
 #: reportes.py:2254 reportes.py:3096 templates/cierre_caja.html:537
-#: templates/cierre_caja.html:572
+#: templates/cierre_caja.html:572 templates/productos_populares.html:385
+#: templates/productos_populares.html:445
+#: templates/productos_populares.html:527
+#: templates/productos_populares.html:554
 msgid "Producto"
 msgstr ""
 
@@ -1477,11 +1482,12 @@ msgstr ""
 msgid "DESGLOSE POR CATEGORÍA"
 msgstr ""
 
-#: reportes.py:3372 reportes.py:3534
+#: reportes.py:3372 reportes.py:3534 templates/productos_populares.html:485
 msgid "Cantidad"
 msgstr ""
 
 #: reportes.py:3372 reportes.py:3534 templates/cierre_caja.html:675
+#: templates/productos_populares.html:504
 msgid "Total"
 msgstr ""
 
@@ -1551,11 +1557,11 @@ msgstr ""
 msgid "Consultar fecha:"
 msgstr ""
 
-#: templates/cierre_caja.html:467
+#: templates/cierre_caja.html:467 templates/productos_populares.html:229
 msgid "Hoy"
 msgstr ""
 
-#: templates/cierre_caja.html:468
+#: templates/cierre_caja.html:468 templates/productos_populares.html:230
 msgid "Ayer"
 msgstr ""
 
@@ -1578,6 +1584,7 @@ msgstr ""
 
 #: templates/cierre_caja.html:521 templates/cierre_caja.html:680
 #: templates/cierre_caja.html:691 templates/cierre_caja.html:697
+#: templates/productos_populares.html:295
 msgid "Salidas No Comerciales"
 msgstr ""
 
@@ -1637,7 +1644,7 @@ msgstr ""
 msgid "vs ayer"
 msgstr ""
 
-#: templates/cierre_caja.html:711
+#: templates/cierre_caja.html:711 templates/productos_populares.html:299
 msgid "Productos"
 msgstr ""
 
@@ -1687,6 +1694,232 @@ msgstr ""
 
 #: templates/cierre_caja.html:927
 msgid "Sistema Panadería"
+msgstr ""
+
+#: templates/productos_populares.html:6
+msgid "Productos Más Vendidos"
+msgstr ""
+
+#: templates/productos_populares.html:6
+msgid "Panadería"
+msgstr ""
+
+#: templates/productos_populares.html:214
+msgid "Seleccionar Período"
+msgstr ""
+
+#: templates/productos_populares.html:217
+msgid "Fecha Inicio"
+msgstr ""
+
+#: templates/productos_populares.html:222
+msgid "Fecha Fin"
+msgstr ""
+
+#: templates/productos_populares.html:227
+msgid "Período Rápido"
+msgstr ""
+
+#: templates/productos_populares.html:231
+msgid "Esta Semana"
+msgstr ""
+
+#: templates/productos_populares.html:232
+msgid "Este Mes"
+msgstr ""
+
+#: templates/productos_populares.html:233
+msgid "Mes Anterior"
+msgstr ""
+
+#: templates/productos_populares.html:234
+msgid "Personalizado"
+msgstr ""
+
+#: templates/productos_populares.html:239
+msgid "Actualizar"
+msgstr ""
+
+#: templates/productos_populares.html:253
+msgid "PRODUCTOS MÁS VENDIDOS"
+msgstr ""
+
+#: templates/productos_populares.html:254
+msgid "Análisis de Rotación y Popularidad"
+msgstr ""
+
+#: templates/productos_populares.html:257
+msgid "Período analizado:"
+msgstr ""
+
+#: templates/productos_populares.html:259
+msgid "Actual"
+msgstr ""
+
+#: templates/productos_populares.html:265
+msgid "Exportar PDF"
+msgstr ""
+
+#: templates/productos_populares.html:280
+msgid "Información de Salidas No Comerciales en el Período"
+msgstr ""
+
+#: templates/productos_populares.html:283
+msgid "Se registraron"
+msgstr ""
+
+#: templates/productos_populares.html:283
+msgid "transacciones de donación"
+msgstr ""
+
+#: templates/productos_populares.html:284
+msgid "con"
+msgstr ""
+
+#: templates/productos_populares.html:284
+msgid "productos donados."
+msgstr ""
+
+#: templates/productos_populares.html:287
+msgid "Incluidas en el análisis de productos"
+msgstr ""
+
+#: templates/productos_populares.html:309
+msgid "Actualizaciones de IA Aplicadas"
+msgstr ""
+
+#: templates/productos_populares.html:312
+#, python-format
+msgid ""
+"Se actualizaron automáticamente %(num)s rotaciones de productos usando "
+"aprendizaje automático."
+msgstr ""
+
+#: templates/productos_populares.html:321
+msgid "Top 10 Productos Más Vendidos"
+msgstr ""
+
+#: templates/productos_populares.html:322
+msgid "Ranking basado en unidades vendidas"
+msgstr ""
+
+#: templates/productos_populares.html:347
+msgid "unidades"
+msgstr ""
+
+#: templates/productos_populares.html:352
+msgid "ingresos"
+msgstr ""
+
+#: templates/productos_populares.html:356
+msgid "Rotación:"
+msgstr ""
+
+#: templates/productos_populares.html:361
+msgid "/día"
+msgstr ""
+
+#: templates/productos_populares.html:386
+#: templates/productos_populares.html:484
+msgid "Tipo"
+msgstr ""
+
+#: templates/productos_populares.html:387
+msgid "Unidades"
+msgstr ""
+
+#: templates/productos_populares.html:389
+#: templates/productos_populares.html:528
+#: templates/productos_populares.html:555
+msgid "Rotación/día"
+msgstr ""
+
+#: templates/productos_populares.html:433
+msgid "Top 5 por Ingresos"
+msgstr ""
+
+#: templates/productos_populares.html:447
+msgid "Ranking"
+msgstr ""
+
+#: templates/productos_populares.html:472
+msgid "Distribución por Tipo"
+msgstr ""
+
+#: templates/productos_populares.html:494
+msgid "Producción"
+msgstr ""
+
+#: templates/productos_populares.html:499
+msgid "Externo"
+msgstr ""
+
+#: templates/productos_populares.html:519
+msgid "Análisis de Rotación Automática"
+msgstr ""
+
+#: templates/productos_populares.html:522
+msgid "Productos de Alta Rotación"
+msgstr ""
+
+#: templates/productos_populares.html:541
+msgid "No hay productos con rotación muy alta"
+msgstr ""
+
+#: templates/productos_populares.html:549
+msgid "Productos de Baja Rotación"
+msgstr ""
+
+#: templates/productos_populares.html:568
+msgid "No hay productos con rotación crítica"
+msgstr ""
+
+#: templates/productos_populares.html:584
+msgid "Recomendaciones Basadas en IA"
+msgstr ""
+
+#: templates/productos_populares.html:588
+msgid "Oportunidades"
+msgstr ""
+
+#: templates/productos_populares.html:591
+msgid "Aumentar producción de productos top 3"
+msgstr ""
+
+#: templates/productos_populares.html:592
+msgid "Crear promociones con productos de media rotación"
+msgstr ""
+
+#: templates/productos_populares.html:593
+msgid "Destacar productos estrella en vitrina"
+msgstr ""
+
+#: templates/productos_populares.html:600
+msgid "Acciones Recomendadas"
+msgstr ""
+
+#: templates/productos_populares.html:603
+msgid "Revisar recetas de productos con baja rotación"
+msgstr ""
+
+#: templates/productos_populares.html:604
+msgid "Optimizar horarios de producción"
+msgstr ""
+
+#: templates/productos_populares.html:605
+msgid "Analizar estacionalidad de ventas"
+msgstr ""
+
+#: templates/productos_populares.html:620
+msgid "Reporte generado automáticamente"
+msgstr ""
+
+#: templates/productos_populares.html:620
+msgid "Sistema en tiempo real"
+msgstr ""
+
+#: templates/productos_populares.html:621
+msgid "Análisis de rotación automática aplicado"
 msgstr ""
 
 #: templates/reportes.html:3

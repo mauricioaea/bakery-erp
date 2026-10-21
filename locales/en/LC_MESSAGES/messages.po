@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-20 22:45-0500\n"
+"POT-Creation-Date: 2026-10-21 15:01-0500\n"
 "PO-Revision-Date: 2026-10-15 10:38-0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -193,6 +193,8 @@ msgstr "Date"
 
 #: reportes.py:287 reportes.py:2683 reportes.py:3223
 #: templates/cierre_caja.html:539 templates/cierre_caja.html:794
+#: templates/productos_populares.html:388
+#: templates/productos_populares.html:446
 msgid "Ingresos"
 msgstr "INCOME"
 
@@ -382,7 +384,7 @@ msgstr "DETAILED EXPENSE BREAKDOWN"
 msgid "Categoría"
 msgstr "Category"
 
-#: reportes.py:1108 reportes.py:3068
+#: reportes.py:1108 reportes.py:3068 templates/productos_populares.html:486
 msgid "Porcentaje"
 msgstr "Percentage"
 
@@ -1136,7 +1138,10 @@ msgid "PUNTOS DE REORDEN SUGERIDOS"
 msgstr "SUGGESTED REORDER POINTS"
 
 #: reportes.py:2254 reportes.py:3096 templates/cierre_caja.html:537
-#: templates/cierre_caja.html:572
+#: templates/cierre_caja.html:572 templates/productos_populares.html:385
+#: templates/productos_populares.html:445
+#: templates/productos_populares.html:527
+#: templates/productos_populares.html:554
 msgid "Producto"
 msgstr "Product"
 
@@ -1532,11 +1537,12 @@ msgstr "Average per Payment"
 msgid "DESGLOSE POR CATEGORÍA"
 msgstr "BREAKDOWN BY CATEGORY"
 
-#: reportes.py:3372 reportes.py:3534
+#: reportes.py:3372 reportes.py:3534 templates/productos_populares.html:485
 msgid "Cantidad"
 msgstr "Quantity"
 
 #: reportes.py:3372 reportes.py:3534 templates/cierre_caja.html:675
+#: templates/productos_populares.html:504
 msgid "Total"
 msgstr "Total"
 
@@ -1606,11 +1612,11 @@ msgstr "TODAY"
 msgid "Consultar fecha:"
 msgstr "Check date:"
 
-#: templates/cierre_caja.html:467
+#: templates/cierre_caja.html:467 templates/productos_populares.html:229
 msgid "Hoy"
 msgstr "Today"
 
-#: templates/cierre_caja.html:468
+#: templates/cierre_caja.html:468 templates/productos_populares.html:230
 msgid "Ayer"
 msgstr "Yesterday"
 
@@ -1633,6 +1639,7 @@ msgstr "Number of transactions"
 
 #: templates/cierre_caja.html:521 templates/cierre_caja.html:680
 #: templates/cierre_caja.html:691 templates/cierre_caja.html:697
+#: templates/productos_populares.html:295
 msgid "Salidas No Comerciales"
 msgstr "Non-Commercial Outflows"
 
@@ -1692,7 +1699,7 @@ msgstr "Real Sales"
 msgid "vs ayer"
 msgstr "vs yesterday"
 
-#: templates/cierre_caja.html:711
+#: templates/cierre_caja.html:711 templates/productos_populares.html:299
 msgid "Productos"
 msgstr "Product"
 
@@ -1737,13 +1744,238 @@ msgid "Inventario"
 msgstr "Inventory Value"
 
 #: templates/cierre_caja.html:927
-#, python-format
 msgid "Generado el"
-
+msgstr "Generated on"
 
 #: templates/cierre_caja.html:927
 msgid "Sistema Panadería"
 msgstr "Number of Payments"
+
+#: templates/productos_populares.html:6
+msgid "Productos Más Vendidos"
+msgstr "Product"
+
+#: templates/productos_populares.html:6
+msgid "Panadería"
+msgstr "Number of Payments"
+
+#: templates/productos_populares.html:214
+msgid "Seleccionar Período"
+msgstr "Days in period:"
+
+#: templates/productos_populares.html:217
+msgid "Fecha Inicio"
+msgstr "Start Date"
+
+#: templates/productos_populares.html:222
+msgid "Fecha Fin"
+msgstr "Date"
+
+#: templates/productos_populares.html:227
+msgid "Período Rápido"
+msgstr "Product"
+
+#: templates/productos_populares.html:231
+msgid "Esta Semana"
+msgstr "Weekly Pattern"
+
+#: templates/productos_populares.html:232
+msgid "Este Mes"
+msgstr "This Month"
+
+#: templates/productos_populares.html:233
+msgid "Mes Anterior"
+msgstr "Last Month"
+
+#: templates/productos_populares.html:234
+msgid "Personalizado"
+msgstr "Custom"
+
+#: templates/productos_populares.html:239
+msgid "Actualizar"
+msgstr "Update"
+
+#: templates/productos_populares.html:253
+msgid "PRODUCTOS MÁS VENDIDOS"
+msgstr "Product"
+
+#: templates/productos_populares.html:254
+msgid "Análisis de Rotación y Popularidad"
+msgstr "PROFITABILITY ANALYSIS"
+
+#: templates/productos_populares.html:257
+msgid "Período analizado:"
+msgstr "Custom"
+
+#: templates/productos_populares.html:259
+msgid "Actual"
+msgstr "Current Stock"
+
+#: templates/productos_populares.html:265
+msgid "Exportar PDF"
+msgstr "Download PDF"
+
+#: templates/productos_populares.html:280
+msgid "Información de Salidas No Comerciales en el Período"
+msgstr "Non-Commercial Outflows"
+
+#: templates/productos_populares.html:283
+msgid "Se registraron"
+msgstr "There were"
+
+#: templates/productos_populares.html:283
+msgid "transacciones de donación"
+msgstr "Number of transactions"
+
+#: templates/productos_populares.html:284
+msgid "con"
+msgstr "with"
+
+#: templates/productos_populares.html:284
+msgid "productos donados."
+msgstr "Product"
+
+#: templates/productos_populares.html:287
+msgid "Incluidas en el análisis de productos"
+msgstr "Included in product analysis"
+
+#: templates/productos_populares.html:309
+msgid "Actualizaciones de IA Aplicadas"
+msgstr "Applied AI Updates"
+
+#: templates/productos_populares.html:312
+#, python-format
+msgid ""
+"Se actualizaron automáticamente %(num)s rotaciones de productos usando "
+"aprendizaje automático."
+msgstr ""
+
+#: templates/productos_populares.html:321
+msgid "Top 10 Productos Más Vendidos"
+msgstr "Product"
+
+#: templates/productos_populares.html:322
+msgid "Ranking basado en unidades vendidas"
+msgstr "Ranking based on units sold"
+
+#: templates/productos_populares.html:347
+msgid "unidades"
+msgstr "Qty"
+
+#: templates/productos_populares.html:352
+msgid "ingresos"
+msgstr "INCOME"
+
+#: templates/productos_populares.html:356
+msgid "Rotación:"
+msgstr "High Turnover"
+
+#: templates/productos_populares.html:361
+msgid "/día"
+msgstr "days"
+
+#: templates/productos_populares.html:386
+#: templates/productos_populares.html:484
+msgid "Tipo"
+msgstr "Type"
+
+#: templates/productos_populares.html:387
+msgid "Unidades"
+msgstr "Qty"
+
+#: templates/productos_populares.html:389
+#: templates/productos_populares.html:528
+#: templates/productos_populares.html:555
+msgid "Rotación/día"
+msgstr "High Turnover"
+
+#: templates/productos_populares.html:433
+msgid "Top 5 por Ingresos"
+msgstr "Total Income"
+
+#: templates/productos_populares.html:447
+msgid "Ranking"
+msgstr "Ranking"
+
+#: templates/productos_populares.html:472
+msgid "Distribución por Tipo"
+msgstr "DETAILED EXPENSE BREAKDOWN"
+
+#: templates/productos_populares.html:494
+msgid "Producción"
+msgstr "Daily average:"
+
+#: templates/productos_populares.html:499
+msgid "Externo"
+msgstr "External"
+
+#: templates/productos_populares.html:519
+msgid "Análisis de Rotación Automática"
+msgstr "PROFITABILITY ANALYSIS"
+
+#: templates/productos_populares.html:522
+msgid "Productos de Alta Rotación"
+msgstr "High Turnover"
+
+#: templates/productos_populares.html:541
+msgid "No hay productos con rotación muy alta"
+msgstr "Top products by sales"
+
+#: templates/productos_populares.html:549
+msgid "Productos de Baja Rotación"
+msgstr "REVIEW RECIPES OF LOW-TURNOVER PRODUCTS (<6 times/year)"
+
+#: templates/productos_populares.html:568
+msgid "No hay productos con rotación crítica"
+msgstr "Top products by sales"
+
+#: templates/productos_populares.html:584
+msgid "Recomendaciones Basadas en IA"
+msgstr "RECOMMENDATIONS"
+
+#: templates/productos_populares.html:588
+msgid "Oportunidades"
+msgstr "Qty"
+
+#: templates/productos_populares.html:591
+msgid "Aumentar producción de productos top 3"
+msgstr "Increase production of top 3 products"
+
+#: templates/productos_populares.html:592
+msgid "Crear promociones con productos de media rotación"
+msgstr "Create promotions with medium-turnover products"
+
+#: templates/productos_populares.html:593
+msgid "Destacar productos estrella en vitrina"
+msgstr "Highlight star products in the display case"
+
+#: templates/productos_populares.html:600
+msgid "Acciones Recomendadas"
+msgstr "RECOMMENDED ACTION PLAN"
+
+#: templates/productos_populares.html:603
+msgid "Revisar recetas de productos con baja rotación"
+msgstr "REVIEW RECIPES OF LOW-TURNOVER PRODUCTS (<6 times/year)"
+
+#: templates/productos_populares.html:604
+msgid "Optimizar horarios de producción"
+msgstr "Optimize production schedules"
+
+#: templates/productos_populares.html:605
+msgid "Analizar estacionalidad de ventas"
+msgstr "PAYMENT HISTORY"
+
+#: templates/productos_populares.html:620
+msgid "Reporte generado automáticamente"
+msgstr "Report generated automatically"
+
+#: templates/productos_populares.html:620
+msgid "Sistema en tiempo real"
+msgstr "Real-time system"
+
+#: templates/productos_populares.html:621
+msgid "Análisis de rotación automática aplicado"
+msgstr "PROFITABILITY ANALYSIS"
 
 #: templates/reportes.html:3
 msgid "Reportes"
@@ -2023,7 +2255,7 @@ msgstr "Close"
 
 #: templates/reportes.html:532
 msgid "Fecha de Corte"
-msgstr ""
+msgstr "Cut-off Date"
 
 #: templates/reportes.html:536
 msgid "Saldo según Extracto Bancario:"
