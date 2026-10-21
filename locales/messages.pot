@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-21 15:01-0500\n"
+"POT-Creation-Date: 2026-10-21 15:56-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -380,6 +380,7 @@ msgid "DISTRIBUCIÓN DETALLADA DE GASTOS"
 msgstr ""
 
 #: reportes.py:1108 reportes.py:3372 reportes.py:3399
+#: templates/reporte_activos.html:660 templates/reporte_activos.html:709
 msgid "Categoría"
 msgstr ""
 
@@ -1124,7 +1125,7 @@ msgstr ""
 msgid "Reorden"
 msgstr ""
 
-#: reportes.py:2254
+#: reportes.py:2254 templates/reporte_activos.html:710
 msgid "Estado"
 msgstr ""
 
@@ -1483,6 +1484,7 @@ msgid "DESGLOSE POR CATEGORÍA"
 msgstr ""
 
 #: reportes.py:3372 reportes.py:3534 templates/productos_populares.html:485
+#: templates/reporte_activos.html:661
 msgid "Cantidad"
 msgstr ""
 
@@ -1700,7 +1702,8 @@ msgstr ""
 msgid "Productos Más Vendidos"
 msgstr ""
 
-#: templates/productos_populares.html:6
+#: templates/productos_populares.html:6 templates/reporte_activos.html:6
+#: templates/reporte_activos.html:576
 msgid "Panadería"
 msgstr ""
 
@@ -1920,6 +1923,120 @@ msgstr ""
 
 #: templates/productos_populares.html:621
 msgid "Análisis de rotación automática aplicado"
+msgstr ""
+
+#: templates/reporte_activos.html:6 templates/reporte_activos.html:588
+msgid "Reporte de Activos Fijos"
+msgstr ""
+
+#: templates/reporte_activos.html:567
+msgid "Volver a Activos Fijos"
+msgstr ""
+
+#: templates/reporte_activos.html:581
+msgid "Sistema de Gestión PanaderíaPro"
+msgstr ""
+
+#: templates/reporte_activos.html:595
+msgid "Imprimir / Guardar PDF"
+msgstr ""
+
+#: templates/reporte_activos.html:596
+msgid "Dashboard"
+msgstr ""
+
+#: templates/reporte_activos.html:597
+msgid "Ver Lista Completa"
+msgstr ""
+
+#: templates/reporte_activos.html:602
+msgid "Resumen Ejecutivo"
+msgstr ""
+
+#: templates/reporte_activos.html:607
+msgid "Total Activos"
+msgstr ""
+
+#: templates/reporte_activos.html:612
+msgid "Inversión Total"
+msgstr ""
+
+#: templates/reporte_activos.html:617
+msgid "Depreciación Acum."
+msgstr ""
+
+#: templates/reporte_activos.html:622
+msgid "Valor Neto Actual"
+msgstr ""
+
+#: templates/reporte_activos.html:634 templates/reporte_activos.html:713
+msgid "Depreciado"
+msgstr ""
+
+#: templates/reporte_activos.html:642
+msgid "Análisis Visual"
+msgstr ""
+
+#: templates/reporte_activos.html:647
+msgid ""
+"Distribución de activos por categoría, valor, estado y depreciación "
+"acumulada"
+msgstr ""
+
+#: templates/reporte_activos.html:655
+msgid "Resumen por Categoría"
+msgstr ""
+
+#: templates/reporte_activos.html:662 templates/reporte_activos.html:711
+msgid "Valor Compra"
+msgstr ""
+
+#: templates/reporte_activos.html:663 templates/reporte_activos.html:712
+msgid "Valor Actual"
+msgstr ""
+
+#: templates/reporte_activos.html:664
+msgid "del Total"
+msgstr ""
+
+#: templates/reporte_activos.html:703
+msgid "Activos por Valor de Compra (Top 10)"
+msgstr ""
+
+#: templates/reporte_activos.html:708 templates/reporte_activos.html:728
+msgid "Activo"
+msgstr ""
+
+#: templates/reporte_activos.html:730
+msgid "Mant."
+msgstr ""
+
+#: templates/reporte_activos.html:732
+msgid "Inactivo"
+msgstr ""
+
+#: templates/reporte_activos.html:757
+msgid "No hay activos registrados"
+msgstr ""
+
+#: templates/reporte_activos.html:758
+msgid "Registra algunos activos para ver análisis y estadísticas en este reporte."
+msgstr ""
+
+#: templates/reporte_activos.html:760
+msgid "Registrar Primer Activo"
+msgstr ""
+
+#: templates/reporte_activos.html:769
+msgid "Reporte generado:"
+msgstr ""
+
+#: templates/reporte_activos.html:772
+msgid "Sistema:"
+msgstr ""
+
+#: templates/reporte_activos.html:772
+msgid "PanaderíaPro - Módulo de Activos Fijos"
 msgstr ""
 
 #: templates/reportes.html:3

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-21 15:01-0500\n"
+"POT-Creation-Date: 2026-10-21 15:56-0500\n"
 "PO-Revision-Date: 2026-10-15 16:08-0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: pap\n"
@@ -381,6 +381,7 @@ msgid "DISTRIBUCIÓN DETALLADA DE GASTOS"
 msgstr "DISTRIBUSHON DETAYÁ DI GASTUNAN"
 
 #: reportes.py:1108 reportes.py:3372 reportes.py:3399
+#: templates/reporte_activos.html:660 templates/reporte_activos.html:709
 msgid "Categoría"
 msgstr "Kategoria"
 
@@ -1161,7 +1162,7 @@ msgstr "Mínimo"
 msgid "Reorden"
 msgstr "Reorden"
 
-#: reportes.py:2254
+#: reportes.py:2254 templates/reporte_activos.html:710
 msgid "Estado"
 msgstr "Estado"
 
@@ -1554,6 +1555,7 @@ msgid "DESGLOSE POR CATEGORÍA"
 msgstr "DESGLOSE PA KATEGORIA"
 
 #: reportes.py:3372 reportes.py:3534 templates/productos_populares.html:485
+#: templates/reporte_activos.html:661
 msgid "Cantidad"
 msgstr "Kantidat"
 
@@ -1771,7 +1773,8 @@ msgstr "Kantidat di Pagonan"
 msgid "Productos Más Vendidos"
 msgstr "Produkto"
 
-#: templates/productos_populares.html:6
+#: templates/productos_populares.html:6 templates/reporte_activos.html:6
+#: templates/reporte_activos.html:576
 msgid "Panadería"
 msgstr "Kantidat di Pagonan"
 
@@ -1992,6 +1995,122 @@ msgstr "Sistema den tempu real"
 #: templates/productos_populares.html:621
 msgid "Análisis de rotación automática aplicado"
 msgstr "ANÁLISIS DI RENTABILIDAT"
+
+#: templates/reporte_activos.html:6 templates/reporte_activos.html:588
+msgid "Reporte de Activos Fijos"
+msgstr "Activo Fijo"
+
+#: templates/reporte_activos.html:567
+msgid "Volver a Activos Fijos"
+msgstr "Activo Fijo"
+
+#: templates/reporte_activos.html:581
+msgid "Sistema de Gestión PanaderíaPro"
+msgstr "Kantidat di Pagonan"
+
+#: templates/reporte_activos.html:595
+msgid "Imprimir / Guardar PDF"
+msgstr "Imprimí / Warda PDF"
+
+#: templates/reporte_activos.html:596
+msgid "Dashboard"
+msgstr "Dashboard"
+
+#: templates/reporte_activos.html:597
+msgid "Ver Lista Completa"
+msgstr "Wak Lista Kompletu"
+
+#: templates/reporte_activos.html:602
+msgid "Resumen Ejecutivo"
+msgstr "5. RESÚMEN EHEKUTIVO"
+
+#: templates/reporte_activos.html:607
+msgid "Total Activos"
+msgstr "Total Gasto"
+
+#: templates/reporte_activos.html:612
+msgid "Inversión Total"
+msgstr "Invershon Total"
+
+#: templates/reporte_activos.html:617
+msgid "Depreciación Acum."
+msgstr "Depresiashon Akum."
+
+#: templates/reporte_activos.html:622
+msgid "Valor Neto Actual"
+msgstr "Fluho neto total:"
+
+#: templates/reporte_activos.html:634 templates/reporte_activos.html:713
+msgid "Depreciado"
+msgstr "Depresiá"
+
+#: templates/reporte_activos.html:642
+msgid "Análisis Visual"
+msgstr "ANÁLISIS VISUAL DI GASTUNAN"
+
+#: templates/reporte_activos.html:647
+msgid ""
+"Distribución de activos por categoría, valor, estado y depreciación "
+"acumulada"
+msgstr "Distribushon di Gastunan pa Kategoria"
+
+#: templates/reporte_activos.html:655
+msgid "Resumen por Categoría"
+msgstr "DESGLOSE PA KATEGORIA"
+
+#: templates/reporte_activos.html:662 templates/reporte_activos.html:711
+msgid "Valor Compra"
+msgstr "Valor Inventario"
+
+#: templates/reporte_activos.html:663 templates/reporte_activos.html:712
+msgid "Valor Actual"
+msgstr "Stock Aktual"
+
+#: templates/reporte_activos.html:664
+msgid "del Total"
+msgstr "di e total"
+
+#: templates/reporte_activos.html:703
+msgid "Activos por Valor de Compra (Top 10)"
+msgstr "Aktivo pa Balor di Kompra (Top 10)"
+
+#: templates/reporte_activos.html:708 templates/reporte_activos.html:728
+msgid "Activo"
+msgstr "Aktivo"
+
+#: templates/reporte_activos.html:730
+msgid "Mant."
+msgstr "Kant."
+
+#: templates/reporte_activos.html:732
+msgid "Inactivo"
+msgstr "Aktivo"
+
+#: templates/reporte_activos.html:757
+msgid "No hay activos registrados"
+msgstr "No tin aktivo registrá"
+
+#: templates/reporte_activos.html:758
+msgid "Registra algunos activos para ver análisis y estadísticas en este reporte."
+msgstr ""
+"Registrá algun aktivo pa mira e análisis i estadístikanan den e reporte "
+"aki."
+
+#: templates/reporte_activos.html:760
+msgid "Registrar Primer Activo"
+msgstr "Registrá Promé Aktivo"
+
+#: templates/reporte_activos.html:769
+msgid "Reporte generado:"
+msgstr "Reporte generá automáticamente"
+
+#: templates/reporte_activos.html:772
+msgid "Sistema:"
+msgstr "Sistema:"
+
+#: templates/reporte_activos.html:772
+msgid "PanaderíaPro - Módulo de Activos Fijos"
+msgstr "Activo Fijo"
 
 #: templates/reportes.html:3
 msgid "Reportes"

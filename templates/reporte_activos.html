@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reporte de Activos Fijos - {{ nombre_empresa or 'Panadería' }}</title>
+    <title>{{ _('Reporte de Activos Fijos') }} - {{ nombre_empresa or _('Panadería') }}</title>
         <style>
         /* ============================================
            VARIABLES CORPORATIVAS
@@ -564,7 +564,7 @@
 </head>
 <body>
     <div style="max-width: 1200px; margin: 0 auto 20px auto;">
-        <a href="{{ url_for('activos_fijos') }}" class="back-btn">← Volver a Activos Fijos</a>
+        <a href="{{ url_for('activos_fijos') }}" class="back-btn">← {{ _('Volver a Activos Fijos') }}</a>
     </div>
 
     <div class="container">
@@ -573,53 +573,53 @@
             <div class="header-left">
                 <div class="header-logo">🥖</div>
                 <div class="header-info">
-                    <div class="empresa-nombre">{{ nombre_empresa or "Panadería" }}</div>
+                    <div class="empresa-nombre">{{ nombre_empresa or _("Panadería") }}</div>
                     <div class="empresa-detalle">
                         {% if nit_empresa and nit_empresa != 'N/A' %}
                             NIT: {{ nit_empresa }}<br>
                         {% endif %}
-                        Sistema de Gestión PanaderíaPro
+                        {{ _('Sistema de Gestión PanaderíaPro') }}
                     </div>
                 </div>
             </div>
             <div class="header-right">
                 <div class="fecha">📅 {{ now.strftime('%d/%m/%Y') }}</div>
                 <div>🕐 {{ now.strftime('%H:%M') }}</div>
-                <div class="reporte-titulo">📊 Reporte de Activos Fijos</div>
+                <div class="reporte-titulo">📊 {{ _('Reporte de Activos Fijos') }}</div>
             </div>
         </div>
 
         <div class="content">
             <!-- BARRA DE ACCIONES -->
             <div class="actions-bar">
-                <button onclick="window.print()" class="btn btn-primary">🖨️ Imprimir / Guardar PDF</button>
-                <a href="{{ url_for('activos_fijos') }}" class="btn btn-secondary">🏠 Dashboard</a>
-                <a href="{{ url_for('lista_activos') }}" class="btn btn-warning">📋 Ver Lista Completa</a>
+                <button onclick="window.print()" class="btn btn-primary">🖨️ {{ _('Imprimir / Guardar PDF') }}</button>
+                <a href="{{ url_for('activos_fijos') }}" class="btn btn-secondary">🏠 {{ _('Dashboard') }}</a>
+                <a href="{{ url_for('lista_activos') }}" class="btn btn-warning">📋 {{ _('Ver Lista Completa') }}</a>
             </div>
 
             <!-- ✅ MÉTRICAS PRINCIPALES -->
             <div class="report-section">
-                <h3>📈 Resumen Ejecutivo</h3>
+                <h3>📈 {{ _('Resumen Ejecutivo') }}</h3>
                 <div class="metrics-grid">
                     <div class="metric-card">
                         <div class="metric-icon">📦</div>
                         <div class="metric-value">{{ activos|length }}</div>
-                        <div class="metric-label">Total Activos</div>
+                        <div class="metric-label">{{ _('Total Activos') }}</div>
                     </div>
                     <div class="metric-card">
                         <div class="metric-icon">💰</div>
                         <div class="metric-value">${{ "{:,.0f}".format(activos|sum(attribute='valor_compra')) }}</div>
-                        <div class="metric-label">Inversión Total</div>
+                        <div class="metric-label">{{ _('Inversión Total') }}</div>
                     </div>
                     <div class="metric-card">
                         <div class="metric-icon">📉</div>
                         <div class="metric-value">${{ "{:,.0f}".format(total_depreciacion) }}</div>
-                        <div class="metric-label">Depreciación Acum.</div>
+                        <div class="metric-label">{{ _('Depreciación Acum.') }}</div>
                     </div>
                     <div class="metric-card">
                         <div class="metric-icon">💎</div>
                         <div class="metric-value">${{ "{:,.0f}".format(total_valor) }}</div>
-                        <div class="metric-label">Valor Neto Actual</div>
+                        <div class="metric-label">{{ _('Valor Neto Actual') }}</div>
                     </div>
                     <div class="metric-card">
                         <div class="metric-icon">📊</div>
@@ -631,7 +631,7 @@
                                 0%
                             {% endif %}
                         </div>
-                        <div class="metric-label">% Depreciado</div>
+                        <div class="metric-label">% {{ _('Depreciado') }}</div>
                     </div>
                 </div>
             </div>
@@ -639,12 +639,12 @@
             <!-- GRÁFICOS -->
             {% if graph_path %}
             <div class="report-section">
-                <h3>📊 Análisis Visual</h3>
+                <h3>📊 {{ _('Análisis Visual') }}</h3>
                 <div class="chart-container">
                     <img src="{{ url_for('static', filename='temp/activos_report.png') }}" 
                          alt="Gráficos de análisis de activos">
                     <p class="chart-caption">
-                        Distribución de activos por categoría, valor, estado y depreciación acumulada
+                        {{ _('Distribución de activos por categoría, valor, estado y depreciación acumulada') }}
                     </p>
                 </div>
             </div>
@@ -652,16 +652,16 @@
 
             <!-- ✅ RESUMEN POR CATEGORÍA -->
             <div class="report-section">
-                <h3>📦 Resumen por Categoría</h3>
+                <h3>📦 {{ _('Resumen por Categoría') }}</h3>
                 <div class="table-container">
                     <table>
                         <thead>
                             <tr>
-                                <th>Categoría</th>
-                                <th class="text-center">Cantidad</th>
-                                <th class="text-right">Valor Compra</th>
-                                <th class="text-right">Valor Actual</th>
-                                <th class="text-right">% del Total</th>
+                                <th>{{ _('Categoría') }}</th>
+                                <th class="text-center">{{ _('Cantidad') }}</th>
+                                <th class="text-right">{{ _('Valor Compra') }}</th>
+                                <th class="text-right">{{ _('Valor Actual') }}</th>
+                                <th class="text-right">% {{ _('del Total') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -700,17 +700,17 @@
 
             <!-- ✅ ACTUALIZADO: ACTIVOS POR VALOR (Top 10) con estado -->
             <div class="report-section">
-                <h3>📋 Activos por Valor de Compra (Top 10)</h3>
+                <h3>📋 {{ _('Activos por Valor de Compra (Top 10)') }}</h3>
                 <div class="table-container">
                     <table>
                         <thead>
                             <tr>
-                                <th>Activo</th>
-                                <th>Categoría</th>
-                                <th class="text-center">Estado</th>
-                                <th class="text-right">Valor Compra</th>
-                                <th class="text-right">Valor Actual</th>
-                                <th class="text-right">% Depreciado</th>
+                                <th>{{ _('Activo') }}</th>
+                                <th>{{ _('Categoría') }}</th>
+                                <th class="text-center">{{ _('Estado') }}</th>
+                                <th class="text-right">{{ _('Valor Compra') }}</th>
+                                <th class="text-right">{{ _('Valor Actual') }}</th>
+                                <th class="text-right">% {{ _('Depreciado') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -725,11 +725,11 @@
                                     </td>
                                     <td class="text-center">
                                         {% if activo.estado == 'ACTIVO' %}
-                                            <span class="badge badge-activo">✅ Activo</span>
+                                            <span class="badge badge-activo">✅ {{ _('Activo') }}</span>
                                         {% elif activo.estado == 'MANTENIMIENTO' %}
-                                            <span class="badge badge-mantenimiento">🔧 Mant.</span>
+                                            <span class="badge badge-mantenimiento">🔧 {{ _('Mant.') }}</span>
                                         {% else %}
-                                            <span class="badge badge-inactivo">❌ Inactivo</span>
+                                            <span class="badge badge-inactivo">❌ {{ _('Inactivo') }}</span>
                                         {% endif %}
                                     </td>
                                     <td class="text-right">${{ "{:,.0f}".format(activo.valor_compra) }}</td>
@@ -754,10 +754,10 @@
             <div class="report-section">
                 <div class="empty-state">
                     <div class="empty-icon">📭</div>
-                    <h3>No hay activos registrados</h3>
-                    <p>Registra algunos activos para ver análisis y estadísticas en este reporte.</p>
+                    <h3>{{ _('No hay activos registrados') }}</h3>
+                    <p>{{ _('Registra algunos activos para ver análisis y estadísticas en este reporte.') }}</p>
                     <a href="{{ url_for('registrar_activo') }}" class="btn btn-primary" style="margin-top: 20px;">
-                        ➕ Registrar Primer Activo
+                        ➕ {{ _('Registrar Primer Activo') }}
                     </a>
                 </div>
             </div>
@@ -766,10 +766,10 @@
             <!-- ✅ PIE DE PÁGINA PROFESIONAL -->
             <div class="footer-info print-only">
                 <div>
-                    <strong>Reporte generado:</strong> {{ now.strftime('%d/%m/%Y a las %H:%M') }}
+                    <strong>{{ _('Reporte generado:') }}</strong> {{ now.strftime('%d/%m/%Y a las %H:%M') }}
                 </div>
                 <div>
-                    <strong>Sistema:</strong> PanaderíaPro - Módulo de Activos Fijos
+                    <strong>{{ _('Sistema:') }}</strong> {{ _('PanaderíaPro - Módulo de Activos Fijos') }}
                 </div>
                 <div>
                     <!-- Página: numeración automática del navegador -->

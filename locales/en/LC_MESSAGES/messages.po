@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-21 15:01-0500\n"
+"POT-Creation-Date: 2026-10-21 15:56-0500\n"
 "PO-Revision-Date: 2026-10-15 10:38-0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -381,6 +381,7 @@ msgid "DISTRIBUCIÓN DETALLADA DE GASTOS"
 msgstr "DETAILED EXPENSE BREAKDOWN"
 
 #: reportes.py:1108 reportes.py:3372 reportes.py:3399
+#: templates/reporte_activos.html:660 templates/reporte_activos.html:709
 msgid "Categoría"
 msgstr "Category"
 
@@ -1153,7 +1154,7 @@ msgstr "Minimum"
 msgid "Reorden"
 msgstr "Reorder"
 
-#: reportes.py:2254
+#: reportes.py:2254 templates/reporte_activos.html:710
 msgid "Estado"
 msgstr "Status"
 
@@ -1538,6 +1539,7 @@ msgid "DESGLOSE POR CATEGORÍA"
 msgstr "BREAKDOWN BY CATEGORY"
 
 #: reportes.py:3372 reportes.py:3534 templates/productos_populares.html:485
+#: templates/reporte_activos.html:661
 msgid "Cantidad"
 msgstr "Quantity"
 
@@ -1755,7 +1757,8 @@ msgstr "Number of Payments"
 msgid "Productos Más Vendidos"
 msgstr "Product"
 
-#: templates/productos_populares.html:6
+#: templates/productos_populares.html:6 templates/reporte_activos.html:6
+#: templates/reporte_activos.html:576
 msgid "Panadería"
 msgstr "Number of Payments"
 
@@ -1976,6 +1979,120 @@ msgstr "Real-time system"
 #: templates/productos_populares.html:621
 msgid "Análisis de rotación automática aplicado"
 msgstr "PROFITABILITY ANALYSIS"
+
+#: templates/reporte_activos.html:6 templates/reporte_activos.html:588
+msgid "Reporte de Activos Fijos"
+msgstr "Fixed Assets"
+
+#: templates/reporte_activos.html:567
+msgid "Volver a Activos Fijos"
+msgstr "Fixed Assets"
+
+#: templates/reporte_activos.html:581
+msgid "Sistema de Gestión PanaderíaPro"
+msgstr "Number of Payments"
+
+#: templates/reporte_activos.html:595
+msgid "Imprimir / Guardar PDF"
+msgstr "Print / Save PDF"
+
+#: templates/reporte_activos.html:596
+msgid "Dashboard"
+msgstr "Dashboard"
+
+#: templates/reporte_activos.html:597
+msgid "Ver Lista Completa"
+msgstr "View Full List"
+
+#: templates/reporte_activos.html:602
+msgid "Resumen Ejecutivo"
+msgstr "5. EXECUTIVE SUMMARY"
+
+#: templates/reporte_activos.html:607
+msgid "Total Activos"
+msgstr "Total Expenses"
+
+#: templates/reporte_activos.html:612
+msgid "Inversión Total"
+msgstr "Total Investment"
+
+#: templates/reporte_activos.html:617
+msgid "Depreciación Acum."
+msgstr "Accum. Depreciation"
+
+#: templates/reporte_activos.html:622
+msgid "Valor Neto Actual"
+msgstr "Total net flow:"
+
+#: templates/reporte_activos.html:634 templates/reporte_activos.html:713
+msgid "Depreciado"
+msgstr "Depreciated"
+
+#: templates/reporte_activos.html:642
+msgid "Análisis Visual"
+msgstr "VISUAL EXPENSE ANALYSIS"
+
+#: templates/reporte_activos.html:647
+msgid ""
+"Distribución de activos por categoría, valor, estado y depreciación "
+"acumulada"
+msgstr "Expense Distribution by Category"
+
+#: templates/reporte_activos.html:655
+msgid "Resumen por Categoría"
+msgstr "BREAKDOWN BY CATEGORY"
+
+#: templates/reporte_activos.html:662 templates/reporte_activos.html:711
+msgid "Valor Compra"
+msgstr "Inventory Value"
+
+#: templates/reporte_activos.html:663 templates/reporte_activos.html:712
+msgid "Valor Actual"
+msgstr "Current Stock"
+
+#: templates/reporte_activos.html:664
+msgid "del Total"
+msgstr "of Total"
+
+#: templates/reporte_activos.html:703
+msgid "Activos por Valor de Compra (Top 10)"
+msgstr "Assets by Purchase Value (Top 10)"
+
+#: templates/reporte_activos.html:708 templates/reporte_activos.html:728
+msgid "Activo"
+msgstr "Active"
+
+#: templates/reporte_activos.html:730
+msgid "Mant."
+msgstr "Qty."
+
+#: templates/reporte_activos.html:732
+msgid "Inactivo"
+msgstr "Active"
+
+#: templates/reporte_activos.html:757
+msgid "No hay activos registrados"
+msgstr "No assets registered"
+
+#: templates/reporte_activos.html:758
+msgid "Registra algunos activos para ver análisis y estadísticas en este reporte."
+msgstr "Register some assets to view analysis and statistics in this report."
+
+#: templates/reporte_activos.html:760
+msgid "Registrar Primer Activo"
+msgstr "Register First Asset"
+
+#: templates/reporte_activos.html:769
+msgid "Reporte generado:"
+msgstr "Report generated automatically"
+
+#: templates/reporte_activos.html:772
+msgid "Sistema:"
+msgstr "System:"
+
+#: templates/reporte_activos.html:772
+msgid "PanaderíaPro - Módulo de Activos Fijos"
+msgstr "Fixed Assets"
 
 #: templates/reportes.html:3
 msgid "Reportes"
