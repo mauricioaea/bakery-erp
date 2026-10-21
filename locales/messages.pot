@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-18 08:30-0500\n"
+"POT-Creation-Date: 2026-10-20 22:45-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -191,6 +191,7 @@ msgid "Fecha"
 msgstr ""
 
 #: reportes.py:287 reportes.py:2683 reportes.py:3223
+#: templates/cierre_caja.html:539 templates/cierre_caja.html:794
 msgid "Ingresos"
 msgstr ""
 
@@ -473,7 +474,8 @@ msgstr ""
 msgid "No hay datos de ventas para el período seleccionado."
 msgstr ""
 
-#: reportes.py:1315
+#: reportes.py:1315 templates/cierre_caja.html:509
+#: templates/cierre_caja.html:658
 msgid "Tendencia"
 msgstr ""
 
@@ -776,7 +778,7 @@ msgstr ""
 msgid "Métricas Clave"
 msgstr ""
 
-#: reportes.py:1760 reportes.py:2254
+#: reportes.py:1760 reportes.py:2254 templates/cierre_caja.html:724
 msgid "Valor"
 msgstr ""
 
@@ -1104,7 +1106,8 @@ msgstr ""
 msgid "PUNTOS DE REORDEN SUGERIDOS"
 msgstr ""
 
-#: reportes.py:2254 reportes.py:3096
+#: reportes.py:2254 reportes.py:3096 templates/cierre_caja.html:537
+#: templates/cierre_caja.html:572
 msgid "Producto"
 msgstr ""
 
@@ -1478,7 +1481,7 @@ msgstr ""
 msgid "Cantidad"
 msgstr ""
 
-#: reportes.py:3372 reportes.py:3534
+#: reportes.py:3372 reportes.py:3534 templates/cierre_caja.html:675
 msgid "Total"
 msgstr ""
 
@@ -1530,5 +1533,463 @@ msgstr ""
 
 #: reportes.py:3559
 msgid "DETALLE DE DEPÓSITOS"
+msgstr ""
+
+#: templates/cierre_caja.html:434
+msgid "REPORTE DE CIERRE"
+msgstr ""
+
+#: templates/cierre_caja.html:444
+msgid "HISTÓRICO"
+msgstr ""
+
+#: templates/cierre_caja.html:446
+msgid "HOY"
+msgstr ""
+
+#: templates/cierre_caja.html:466
+msgid "Consultar fecha:"
+msgstr ""
+
+#: templates/cierre_caja.html:467
+msgid "Hoy"
+msgstr ""
+
+#: templates/cierre_caja.html:468
+msgid "Ayer"
+msgstr ""
+
+#: templates/cierre_caja.html:483
+msgid "Consulta histórica"
+msgstr ""
+
+#: templates/cierre_caja.html:497
+msgid "RESUMEN EJECUTIVO"
+msgstr ""
+
+#: templates/cierre_caja.html:503 templates/cierre_caja.html:645
+msgid "Total Ventas"
+msgstr ""
+
+#: templates/cierre_caja.html:515 templates/cierre_caja.html:631
+#: templates/cierre_caja.html:671 templates/cierre_caja.html:704
+msgid "Transacciones"
+msgstr ""
+
+#: templates/cierre_caja.html:521 templates/cierre_caja.html:680
+#: templates/cierre_caja.html:691 templates/cierre_caja.html:697
+msgid "Salidas No Comerciales"
+msgstr ""
+
+#: templates/cierre_caja.html:538 templates/cierre_caja.html:573
+msgid "Unid"
+msgstr ""
+
+#: templates/cierre_caja.html:540 templates/cierre_caja.html:801
+msgid "Costo"
+msgstr ""
+
+#: templates/cierre_caja.html:541 templates/cierre_caja.html:808
+msgid "Utilidad"
+msgstr ""
+
+#: templates/cierre_caja.html:542
+msgid "Margen"
+msgstr ""
+
+#: templates/cierre_caja.html:574 templates/cierre_caja.html:851
+msgid "Valor Mercado"
+msgstr ""
+
+#: templates/cierre_caja.html:575 templates/cierre_caja.html:858
+msgid "Costo Real"
+msgstr ""
+
+#: templates/cierre_caja.html:595
+msgid "VENTAS POR MÉTODO DE PAGO"
+msgstr ""
+
+#: templates/cierre_caja.html:600
+msgid "Efectivo:"
+msgstr ""
+
+#: templates/cierre_caja.html:602
+msgid "Transferencia:"
+msgstr ""
+
+#: templates/cierre_caja.html:617
+msgid "Margen Real:"
+msgstr ""
+
+#: templates/cierre_caja.html:620
+msgid "Utilidad Neta:"
+msgstr ""
+
+#: templates/cierre_caja.html:623
+msgid "ROI:"
+msgstr ""
+
+#: templates/cierre_caja.html:653
+msgid "Ventas normales"
+msgstr ""
+
+#: templates/cierre_caja.html:666
+msgid "vs ayer"
+msgstr ""
+
+#: templates/cierre_caja.html:711
+msgid "Productos"
+msgstr ""
+
+#: templates/cierre_caja.html:733 templates/cierre_caja.html:738
+msgid "Ventas por Método de Pago"
+msgstr ""
+
+#: templates/cierre_caja.html:758
+msgid "No hay ventas registradas"
+msgstr ""
+
+#: templates/cierre_caja.html:780
+msgid "Producto vendido"
+msgstr ""
+
+#: templates/cierre_caja.html:787 templates/cierre_caja.html:844
+msgid "Unid."
+msgstr ""
+
+#: templates/cierre_caja.html:816
+msgid "No hay productos vendidos"
+msgstr ""
+
+#: templates/cierre_caja.html:837
+msgid "Producto donado"
+msgstr ""
+
+#: templates/cierre_caja.html:865
+msgid "Pérdida"
+msgstr ""
+
+#: templates/cierre_caja.html:890
+msgid "Real"
+msgstr ""
+
+#: templates/cierre_caja.html:903
+msgid "Neta"
+msgstr ""
+
+#: templates/cierre_caja.html:916
+msgid "Inventario"
+msgstr ""
+
+#: templates/cierre_caja.html:927
+msgid "Generado el"
+msgstr ""
+
+#: templates/cierre_caja.html:927
+msgid "Sistema Panadería"
+msgstr ""
+
+#: templates/reportes.html:3
+msgid "Reportes"
+msgstr ""
+
+#: templates/reportes.html:3
+msgid "Panadería POS"
+msgstr ""
+
+#: templates/reportes.html:136
+msgid "Gestión Financiera"
+msgstr ""
+
+#: templates/reportes.html:196 templates/reportes.html:213
+msgid "Ver Historial"
+msgstr ""
+
+#: templates/reportes.html:204 templates/reportes.html:206
+msgid "Historial de Depósitos"
+msgstr ""
+
+#: templates/reportes.html:208
+msgid "Depósitos bancarios"
+msgstr ""
+
+#: templates/reportes.html:209
+msgid ""
+"Consulta de depósitos por período, banco y estado de conciliación. Con "
+"exportación a PDF."
+msgstr ""
+
+#: templates/reportes.html:221 templates/reportes.html:223
+msgid "Historial de Ventas"
+msgstr ""
+
+#: templates/reportes.html:225
+msgid "Ventas por período"
+msgstr ""
+
+#: templates/reportes.html:226
+msgid "Análisis detallado de ventas con desglose por producto y método de pago."
+msgstr ""
+
+#: templates/reportes.html:235 templates/reportes.html:237
+msgid "Cierre de Caja"
+msgstr ""
+
+#: templates/reportes.html:239
+msgid "Reporte diario de caja"
+msgstr ""
+
+#: templates/reportes.html:240
+msgid "Detalle del cierre diario con desglose de efectivo y transferencias."
+msgstr ""
+
+#: templates/reportes.html:258
+msgid "Contable"
+msgstr ""
+
+#: templates/reportes.html:260
+msgid "Documentos formales para presentación ante contador y autoridades fiscales"
+msgstr ""
+
+#: templates/reportes.html:263 templates/reportes.html:265
+msgid "Reporte Unificado de Tesorería"
+msgstr ""
+
+#: templates/reportes.html:267
+msgid "Integración de Estados Financieros"
+msgstr ""
+
+#: templates/reportes.html:268
+msgid ""
+"Combina el Libro Mayor con el Estado de Flujos de Efectivo para análisis "
+"completo de liquidez."
+msgstr ""
+
+#: templates/reportes.html:272 templates/reportes.html:702
+msgid "Generar Reporte Consolidado"
+msgstr ""
+
+#: templates/reportes.html:275
+msgid "Completo"
+msgstr ""
+
+#: templates/reportes.html:276
+msgid "Usa el período"
+msgstr ""
+
+#: templates/reportes.html:281 templates/reportes.html:283
+msgid "Estado de Resultados"
+msgstr ""
+
+#: templates/reportes.html:285
+msgid "Pérdidas y Ganancias"
+msgstr ""
+
+#: templates/reportes.html:286
+msgid ""
+"Muestra ingresos, gastos y resultado neto del período. Esencial para "
+"declaraciones de impuestos."
+msgstr ""
+
+#: templates/reportes.html:290
+msgid "Descargar PDF"
+msgstr ""
+
+#: templates/reportes.html:299
+msgid "Conciliación de Saldos"
+msgstr ""
+
+#: templates/reportes.html:300
+msgid ""
+"Compara saldos del sistema con extractos bancarios. Esencial para "
+"auditorías."
+msgstr ""
+
+#: templates/reportes.html:304 templates/reportes.html:544
+msgid "Generar Conciliación"
+msgstr ""
+
+#: templates/reportes.html:309 templates/reportes.html:311
+msgid "Análisis de Gastos"
+msgstr ""
+
+#: templates/reportes.html:313
+msgid "Distribución de Costos"
+msgstr ""
+
+#: templates/reportes.html:314
+msgid ""
+"Gráficos y análisis de gastos por categoría. Identifica áreas de "
+"optimización."
+msgstr ""
+
+#: templates/reportes.html:332
+msgid "Análisis y Operaciones"
+msgstr ""
+
+#: templates/reportes.html:334
+msgid "Reportes operativos y de análisis para optimización del negocio"
+msgstr ""
+
+#: templates/reportes.html:337 templates/reportes.html:339
+msgid "Productos Populares"
+msgstr ""
+
+#: templates/reportes.html:341
+msgid "Top productos por ventas"
+msgstr ""
+
+#: templates/reportes.html:342
+msgid "Ranking de productos más vendidos con análisis de rotación automática."
+msgstr ""
+
+#: templates/reportes.html:354 templates/reportes.html:356
+msgid "Producción Diaria"
+msgstr ""
+
+#: templates/reportes.html:358
+msgid "Reporte imprimible"
+msgstr ""
+
+#: templates/reportes.html:359
+msgid "Detalle de producción diaria con filtro de fechas."
+msgstr ""
+
+#: templates/reportes.html:371 templates/reportes.html:373
+msgid "Inventario Externo"
+msgstr ""
+
+#: templates/reportes.html:375 templates/reportes.html:392
+msgid "Productos externos"
+msgstr ""
+
+#: templates/reportes.html:376
+msgid "Reporte completo del inventario de productos externos con valorización."
+msgstr ""
+
+#: templates/reportes.html:390
+msgid "Ventas y Rentabilidad"
+msgstr ""
+
+#: templates/reportes.html:393
+msgid "Análisis de ventas y rentabilidad de productos externos."
+msgstr ""
+
+#: templates/reportes.html:406 templates/reportes.html:408
+msgid "Activos Fijos"
+msgstr ""
+
+#: templates/reportes.html:410
+msgid "Inventario de activos"
+msgstr ""
+
+#: templates/reportes.html:411
+msgid "Reporte de activos fijos con depreciación y mantenimientos."
+msgstr ""
+
+#: templates/reportes.html:432
+msgid "Gerencial con IA"
+msgstr ""
+
+#: templates/reportes.html:434
+msgid "Análisis inteligentes con Machine Learning y recomendaciones automáticas"
+msgstr ""
+
+#: templates/reportes.html:437 templates/reportes.html:439
+msgid "Reporte Avanzado Ventas + IA"
+msgstr ""
+
+#: templates/reportes.html:441
+msgid "Unificado Inteligente"
+msgstr ""
+
+#: templates/reportes.html:442
+msgid ""
+"Combina análisis de ventas, tendencias, ML y recomendaciones IA en un "
+"solo reporte."
+msgstr ""
+
+#: templates/reportes.html:446
+msgid "Ver Reporte Web"
+msgstr ""
+
+#: templates/reportes.html:456 templates/reportes.html:458
+msgid "Análisis Predictivo"
+msgstr ""
+
+#: templates/reportes.html:460
+msgid "Predicciones y tendencias"
+msgstr ""
+
+#: templates/reportes.html:461
+msgid "Análisis predictivo con proyecciones de ventas y recomendaciones."
+msgstr ""
+
+#: templates/reportes.html:473 templates/reportes.html:475
+msgid "Tendencia de Ventas"
+msgstr ""
+
+#: templates/reportes.html:477
+msgid "Análisis de comportamiento"
+msgstr ""
+
+#: templates/reportes.html:478
+msgid "Evolución de ventas en el tiempo. Detecta patrones y estacionalidad."
+msgstr ""
+
+#: templates/reportes.html:489
+msgid "Recomendaciones con IA"
+msgstr ""
+
+#: templates/reportes.html:491
+msgid "Análisis predictivo"
+msgstr ""
+
+#: templates/reportes.html:492
+msgid "Recomendaciones inteligentes basadas en datos históricos y tendencias."
+msgstr ""
+
+#: templates/reportes.html:501 templates/reportes.html:503
+msgid "Análisis de Inventarios"
+msgstr ""
+
+#: templates/reportes.html:505
+msgid "Gestión de stock"
+msgstr ""
+
+#: templates/reportes.html:506
+msgid "Rotación, puntos de reorden y optimización de inventarios."
+msgstr ""
+
+#: templates/reportes.html:528
+msgid "Cerrar"
+msgstr ""
+
+#: templates/reportes.html:532
+msgid "Fecha de Corte"
+msgstr ""
+
+#: templates/reportes.html:536
+msgid "Saldo según Extracto Bancario:"
+msgstr ""
+
+#: templates/reportes.html:537
+msgid "Ej: 1500000"
+msgstr ""
+
+#: templates/reportes.html:538
+msgid "Ingresa el saldo que aparece en tu extracto bancario"
+msgstr ""
+
+#: templates/reportes.html:542
+msgid "Cancelar"
+msgstr ""
+
+#: templates/reportes.html:557
+msgid "Generando reporte..."
+msgstr ""
+
+#: templates/reportes.html:558
+msgid "Por favor espera, esto puede tomar unos segundos"
 msgstr ""
 

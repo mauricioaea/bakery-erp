@@ -431,7 +431,7 @@
             <div class="row align-items-center">
                 <div class="col-md-8 col-12">
                     <h1 class="fw-bold mb-1" style="font-size: 1.6rem;">
-                        <i class="fas fa-cash-register me-2"></i>REPORTE DE CIERRE
+                        <i class="fas fa-cash-register me-2"></i>{{ _('REPORTE DE CIERRE') }}
                     </h1>
                     <p class="mb-0" style="font-size: 0.95rem;">
                         <i class="fas fa-calendar-alt me-2"></i>
@@ -441,9 +441,9 @@
                             Fecha no disponible
                         {% endif %}
                         {% if fecha and fecha.strftime('%d/%m/%Y') != hoy.strftime('%d/%m/%Y') %}
-                            <span class="badge bg-warning ms-2">HISTÓRICO</span>
+                            <span class="badge bg-warning ms-2">{{ _('HISTÓRICO') }}</span>
                         {% else %}
-                            <span class="badge bg-success ms-2">HOY</span>
+                            <span class="badge bg-success ms-2">{{ _('HOY') }}</span>
                         {% endif %}
                     </p>
                 </div>
@@ -463,9 +463,9 @@
             <div class="row align-items-center">
                 <div class="col-md-8 col-12">
                     <div class="d-flex flex-wrap align-items-center">
-                        <strong class="me-2" style="font-size: 0.9rem;">Consultar fecha:</strong>
-                        <button class="btn-periodo {% if es_hoy %}active{% endif %}" onclick="seleccionarFecha('{{ hoy.isoformat() }}')">Hoy</button>
-                        <button class="btn-periodo" onclick="seleccionarFecha('{{ ayer.isoformat() }}')">Ayer</button>
+                        <strong class="me-2" style="font-size: 0.9rem;">{{ _('Consultar fecha:') }}</strong>
+                        <button class="btn-periodo {% if es_hoy %}active{% endif %}" onclick="seleccionarFecha('{{ hoy.isoformat() }}')">{{ _('Hoy') }}</button>
+                        <button class="btn-periodo" onclick="seleccionarFecha('{{ ayer.isoformat() }}')">{{ _('Ayer') }}</button>
                         
                         <div class="input-group ms-2" style="max-width: 200px;">
                             <input type="date" id="fecha_consulta" class="form-control form-control-sm" 
@@ -480,7 +480,7 @@
                 <div class="col-md-4 col-12 text-md-end text-start mt-2 mt-md-0">
                     <small class="text-light">
                         <i class="fas fa-info-circle me-1"></i>
-                        Consulta histórica
+                        {{ _('Consulta histórica') }}
                     </small>
                 </div>
             </div>
@@ -494,31 +494,31 @@
             <div class="d-print-block" style="display: none;">
                 <!-- Resumen Ejecutivo Compacto -->
                 <div class="tarjeta-compacta tarjeta-resumen mb-2">
-                    <h6><i class="fas fa-chart-bar me-1"></i>RESUMEN EJECUTIVO</h6>
+                    <h6><i class="fas fa-chart-bar me-1"></i>{{ _('RESUMEN EJECUTIVO') }}</h6>
                     <div class="grid-datos">
                         <div class="dato-item">
                             <div class="dato-valor text-primary">
                                 ${{ "{:,.0f}".format(total_ventas) if total_ventas is defined else 0 }}
                             </div>
-                            <div class="dato-label">Total Ventas</div>
+                            <div class="dato-label">{{ _('Total Ventas') }}</div>
                         </div>
                         <div class="dato-item">
                             <div class="dato-valor {% if tendencia >= 0 %}text-success{% else %}text-danger{% endif %}">
                                 {{ "{:+.0f}".format(tendencia) if tendencia is defined else 0 }}%
                             </div>
-                            <div class="dato-label">Tendencia</div>
+                            <div class="dato-label">{{ _('Tendencia') }}</div>
                         </div>
                         <div class="dato-item">
                             <div class="dato-valor text-info">
                                 {{ total_transacciones if total_transacciones is defined else 0 }}
                             </div>
-                            <div class="dato-label">Transacciones</div>
+                            <div class="dato-label">{{ _('Transacciones') }}</div>
                         </div>
                         <div class="dato-item">
                             <div class="dato-valor text-warning">
                                 {{ total_donaciones if total_donaciones is defined else 0 }}
                             </div>
-                            <div class="dato-label">Salidas No Comerciales</div>
+                            <div class="dato-label">{{ _('Salidas No Comerciales') }}</div>
                         </div>
                     </div>
                 </div>
@@ -534,12 +534,12 @@
                                 </th>
                             </tr>
                             <tr>
-                                <th>Producto</th>
-                                <th>Unid</th>
-                                <th>Ingresos</th>
-                                <th>Costo</th>
-                                <th>Utilidad</th>
-                                <th>Margen</th>
+                                <th>{{ _('Producto') }}</th>
+                                <th>{{ _('Unid') }}</th>
+                                <th>{{ _('Ingresos') }}</th>
+                                <th>{{ _('Costo') }}</th>
+                                <th>{{ _('Utilidad') }}</th>
+                                <th>{{ _('Margen') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -569,10 +569,10 @@
                                 </th>
                             </tr>
                             <tr>
-                                <th>Producto</th>
-                                <th>Unid</th>
-                                <th>Valor Mercado</th>
-                                <th>Costo Real</th>
+                                <th>{{ _('Producto') }}</th>
+                                <th>{{ _('Unid') }}</th>
+                                <th>{{ _('Valor Mercado') }}</th>
+                                <th>{{ _('Costo Real') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -592,14 +592,14 @@
                 <!-- Métodos de Pago -->
                 {% if ventas_por_metodo %}
                 <div class="tarjeta-compacta tarjeta-metodos mb-2">
-                    <h6><i class="fas fa-credit-card me-1"></i>VENTAS POR MÉTODO DE PAGO</h6>
+                    <h6><i class="fas fa-credit-card me-1"></i>{{ _('VENTAS POR MÉTODO DE PAGO') }}</h6>
                     <div class="metodos-linea">
                         {% for metodo, total in ventas_por_metodo.items() %}
                         <div class="metodo-item">
                             {% if metodo == 'efectivo' %}
-                                <i class="fas fa-money-bill me-1"></i>Efectivo:
+                                <i class="fas fa-money-bill me-1"></i>{{ _('Efectivo:') }}
                             {% elif metodo == 'transferencia' %}
-                                <i class="fas fa-university me-1"></i>Transferencia:
+                                <i class="fas fa-university me-1"></i>{{ _('Transferencia:') }}
                             {% else %}
                                 <i class="fas fa-wallet me-1"></i>{{ metodo|title }}:
                             {% endif %}
@@ -614,13 +614,13 @@
                 <div class="resumen-financiero">
                     <div class="row text-center">
                         <div class="col-3">
-                            <strong>Margen Real:</strong> {{ "%.0f"|format(margen_promedio) if margen_promedio is defined else 0 }}%
+                            <strong>{{ _('Margen Real:') }}</strong> {{ "%.0f"|format(margen_promedio) if margen_promedio is defined else 0 }}%
                         </div>
                         <div class="col-3">
-                            <strong>Utilidad Neta:</strong> ${{ "{:,.0f}".format(utilidad_neta) if utilidad_neta is defined else 0 }}
+                            <strong>{{ _('Utilidad Neta:') }}</strong> ${{ "{:,.0f}".format(utilidad_neta) if utilidad_neta is defined else 0 }}
                         </div>
                         <div class="col-3">
-                            <strong>ROI:</strong> 
+                            <strong>{{ _('ROI:') }}</strong> 
                             {% if costo_inventario is defined and costo_inventario > 0 %}
                                 {{ "%.0f"|format((utilidad_neta / costo_inventario) * 100) }}%
                             {% else %}
@@ -628,7 +628,7 @@
                             {% endif %}
                         </div>
                         <div class="col-3">
-                            <strong>Transacciones:</strong> {{ total_transacciones if total_transacciones is defined else 0 }}
+                            <strong>{{ _('Transacciones') }}:</strong> {{ total_transacciones if total_transacciones is defined else 0 }}
                         </div>
                     </div>
                 </div>
@@ -642,7 +642,7 @@
                 <div class="row mb-3">
                     <div class="col-6 col-md-3 mb-2">
                         <div class="metric-card text-center h-100">
-                            <h6 style="font-size: 0.85rem; margin-bottom: 5px;"><i class="fas fa-money-bill-wave"></i> Total Ventas</h6>
+                            <h6 style="font-size: 0.85rem; margin-bottom: 5px;"><i class="fas fa-money-bill-wave"></i> {{ _('Total Ventas') }}</h6>
                             <div class="metric-value">
                                 {% if total_ventas is defined %}
                                     ${{ "{:,.0f}".format(total_ventas) }}
@@ -650,12 +650,12 @@
                                     $0
                                 {% endif %}
                             </div>
-                            <small class="text-muted" style="font-size: 0.75rem;">Ventas normales</small>
+                            <small class="text-muted" style="font-size: 0.75rem;">{{ _('Ventas normales') }}</small>
                         </div>
                     </div>
                     <div class="col-6 col-md-3 mb-2">
                         <div class="metric-card text-center h-100">
-                            <h6 style="font-size: 0.85rem; margin-bottom: 5px;"><i class="fas fa-chart-line"></i> Tendencia</h6>
+                            <h6 style="font-size: 0.85rem; margin-bottom: 5px;"><i class="fas fa-chart-line"></i> {{ _('Tendencia') }}</h6>
                             <div class="metric-value {% if tendencia >= 0 %}tendencia-positiva{% else %}tendencia-negativa{% endif %}">
                                 {% if tendencia is defined %}
                                     {{ "{:+.0f}".format(tendencia) }}%
@@ -663,21 +663,21 @@
                                     0%
                                 {% endif %}
                             </div>
-                            <small class="text-muted" style="font-size: 0.75rem;">vs ayer</small>
+                            <small class="text-muted" style="font-size: 0.75rem;">{{ _('vs ayer') }}</small>
                         </div>
                     </div>
                     <div class="col-6 col-md-3 mb-2">
                         <div class="metric-card text-center h-100">
-                            <h6 style="font-size: 0.85rem; margin-bottom: 5px;"><i class="fas fa-receipt"></i> Transacciones</h6>
+                            <h6 style="font-size: 0.85rem; margin-bottom: 5px;"><i class="fas fa-receipt"></i> {{ _('Transacciones') }}</h6>
                             <div class="metric-value">
                                 {{ total_transacciones if total_transacciones is defined else 0 }}
                             </div>
-                            <small class="text-muted" style="font-size: 0.75rem;">Total</small>
+                            <small class="text-muted" style="font-size: 0.75rem;">{{ _('Total') }}</small>
                         </div>
                     </div>
                     <div class="col-6 col-md-3 mb-2">
                         <div class="metric-card text-center h-100">
-                            <h6 style="font-size: 0.85rem; margin-bottom: 5px;"><i class="fas fa-gift"></i> Salidas No Comerciales</h6>
+                            <h6 style="font-size: 0.85rem; margin-bottom: 5px;"><i class="fas fa-gift"></i> {{ _('Salidas No Comerciales') }}</h6>
                             <div class="metric-value text-warning">
                                 {{ total_donaciones if total_donaciones is defined else 0 }}
                             </div>
@@ -688,27 +688,27 @@
                     </div>
                 </div>
 
-                <!-- Sección de Salidas No Comerciales (si existen) -->
+                <!-- Sección de {{ _('Salidas No Comerciales') }} (si existen) -->
                 {% if total_donaciones and total_donaciones > 0 %}
                 <div class="row mb-3">
                     <div class="col-12">
                         <div class="metric-card" style="border-left-color: #ffc107; background: linear-gradient(135deg, #fff9e6, #fff3cd); padding: 12px;">
                             <h5 style="font-size: 1rem; margin-bottom: 10px;">
-                                <i class="fas fa-gift me-2"></i>Resumen de Salidas No Comerciales
+                                <i class="fas fa-gift me-2"></i>Resumen de {{ _('Salidas No Comerciales') }}
                             </h5>
                             <div class="row text-center">
                                 <div class="col-4">
                                     <div style="border-radius: 6px; padding: 8px; background: white;">
                                         <strong class="text-warning" style="font-size: 1.1rem;">{{ total_donaciones }}</strong>
                                         <br>
-                                        <small class="text-muted" style="font-size: 0.7rem;">Transacciones</small>
+                                        <small class="text-muted" style="font-size: 0.7rem;">{{ _('Transacciones') }}</small>
                                     </div>
                                 </div>
                                 <div class="col-4">
                                     <div style="border-radius: 6px; padding: 8px; background: white;">
                                         <strong class="text-warning" style="font-size: 1.1rem;">{{ productos_donados }}</strong>
                                         <br>
-                                        <small class="text-muted" style="font-size: 0.7rem;">Productos</small>
+                                        <small class="text-muted" style="font-size: 0.7rem;">{{ _('Productos') }}</small>
                                     </div>
                                 </div>
                                 <div class="col-4">
@@ -721,7 +721,7 @@
                                             {% endif %}
                                         </strong>
                                         <br>
-                                        <small class="text-muted" style="font-size: 0.7rem;">Valor</small>
+                                        <small class="text-muted" style="font-size: 0.7rem;">{{ _('Valor') }}</small>
                                     </div>
                                 </div>
                             </div>
@@ -730,12 +730,12 @@
                 </div>
                 {% endif %}
 
-                <!-- Ventas por Método de Pago Compacto -->
+                <!-- {{ _('Ventas por Método de Pago') }} Compacto -->
                 <div class="row mb-3">
                     <div class="col-12">
                         <div class="metric-card">
                             <h5 style="font-size: 1rem; margin-bottom: 10px;">
-                                <i class="fas fa-credit-card"></i> Ventas por Método de Pago
+                                <i class="fas fa-credit-card"></i> {{ _('Ventas por Método de Pago') }}
                             </h5>
                             <div class="row">
                                 {% if ventas_por_metodo %}
@@ -755,7 +755,7 @@
                                     {% endfor %}
                                 {% else %}
                                 <div class="col-12">
-                                    <p class="text-muted text-center" style="font-size: 0.9rem;">No hay ventas registradas</p>
+                                    <p class="text-muted text-center" style="font-size: 0.9rem;">{{ _('No hay ventas registradas') }}</p>
                                 </div>
                                 {% endif %}
                             </div>
@@ -777,35 +777,35 @@
                                         <div class="row align-items-center">
                                             <div class="col-12 col-md-3 mb-2 mb-md-0">
                                                 <h6 style="font-size: 0.9rem; margin-bottom: 3px; font-weight: bold;">{{ producto.nombre }}</h6>
-                                                <small class="text-muted" style="font-size: 0.75rem;">Producto vendido</small>
+                                                <small class="text-muted" style="font-size: 0.75rem;">{{ _('Producto vendido') }}</small>
                                             </div>
                                             <div class="col-12 col-md-9">
                                                 <div class="producto-analisis-grid">
                                                     <div class="analisis-item analisis-unidades">
                                                         <strong class="text-primary">{{ producto.cantidad }}</strong>
                                                         <br>
-                                                        <small class="text-muted">Unid.</small>
+                                                        <small class="text-muted">{{ _('Unid.') }}</small>
                                                     </div>
                                                     <div class="analisis-item analisis-ingresos">
                                                         <strong class="text-success">
                                                             ${{ "{:,.0f}".format(producto.ingresos) }}
                                                         </strong>
                                                         <br>
-                                                        <small class="text-muted">Ingresos</small>
+                                                        <small class="text-muted">{{ _('Ingresos') }}</small>
                                                     </div>
                                                     <div class="analisis-item analisis-costos">
                                                         <strong class="text-warning">
                                                             ${{ "{:,.0f}".format(producto.costo) }}
                                                         </strong>
                                                         <br>
-                                                        <small class="text-muted">Costo</small>
+                                                        <small class="text-muted">{{ _('Costo') }}</small>
                                                     </div>
                                                     <div class="analisis-item analisis-utilidad">
                                                         <strong class="text-info">
                                                             ${{ "{:,.0f}".format(producto.utilidad) }}
                                                         </strong>
                                                         <br>
-                                                        <small class="text-muted">Utilidad</small>
+                                                        <small class="text-muted">{{ _('Utilidad') }}</small>
                                                     </div>
                                                 </div>
                                             </div>
@@ -813,7 +813,7 @@
                                     </div>
                                     {% endfor %}
                                 {% else %}
-                                    <p class="text-muted text-center" style="font-size: 0.9rem;">No hay productos vendidos</p>
+                                    <p class="text-muted text-center" style="font-size: 0.9rem;">{{ _('No hay productos vendidos') }}</p>
                                 {% endif %}
                             </div>
                         </div>
@@ -834,35 +834,35 @@
                                     <div class="row align-items-center">
                                         <div class="col-12 col-md-3 mb-2 mb-md-0">
                                             <h6 style="font-size: 0.9rem; margin-bottom: 3px; font-weight: bold;">{{ producto.nombre }}</h6>
-                                            <small class="text-muted" style="font-size: 0.75rem;">Producto donado</small>
+                                            <small class="text-muted" style="font-size: 0.75rem;">{{ _('Producto donado') }}</small>
                                         </div>
                                         <div class="col-12 col-md-9">
                                             <div class="producto-analisis-grid">
                                                 <div class="analisis-item analisis-unidades">
                                                     <strong class="text-primary">{{ producto.cantidad }}</strong>
                                                     <br>
-                                                    <small class="text-muted">Unid.</small>
+                                                    <small class="text-muted">{{ _('Unid.') }}</small>
                                                 </div>
                                                 <div class="analisis-item" style="background: #fff3e0; border-left: 3px solid #ff9800;">
                                                     <strong class="text-warning">
                                                         ${{ "{:,.0f}".format(producto.valor_mercado) }}
                                                     </strong>
                                                     <br>
-                                                    <small class="text-muted">Valor Mercado</small>
+                                                    <small class="text-muted">{{ _('Valor Mercado') }}</small>
                                                 </div>
                                                 <div class="analisis-item" style="background: #ffebee; border-left: 3px solid #f44336;">
                                                     <strong class="text-danger">
                                                         ${{ "{:,.0f}".format(producto.costo_real) }}
                                                     </strong>
                                                     <br>
-                                                    <small class="text-muted">Costo Real</small>
+                                                    <small class="text-muted">{{ _('Costo Real') }}</small>
                                                 </div>
                                                 <div class="analisis-item" style="background: #f3e5f5; border-left: 3px solid #9c27b0;">
                                                     <strong class="text-info">
                                                         ${{ "{:,.0f}".format(producto.valor_mercado - producto.costo_real) }}
                                                     </strong>
                                                     <br>
-                                                    <small class="text-muted">Pérdida</small>
+                                                    <small class="text-muted">{{ _('Pérdida') }}</small>
                                                 </div>
                                             </div>
                                         </div>
@@ -887,7 +887,7 @@
                                     0%
                                 {% endif %}
                             </div>
-                            <small class="text-muted" style="font-size: 0.7rem;">Real</small>
+                            <small class="text-muted" style="font-size: 0.7rem;">{{ _('Real') }}</small>
                         </div>
                     </div>
                     <div class="col-4">
@@ -900,7 +900,7 @@
                                     $0
                                 {% endif %}
                             </div>
-                            <small class="text-muted" style="font-size: 0.7rem;">Neta</small>
+                            <small class="text-muted" style="font-size: 0.7rem;">{{ _('Neta') }}</small>
                         </div>
                     </div>
                     <div class="col-4">
@@ -913,7 +913,7 @@
                                     0%
                                 {% endif %}
                             </div>
-                            <small class="text-muted" style="font-size: 0.7rem;">Inventario</small>
+                            <small class="text-muted" style="font-size: 0.7rem;">{{ _('Inventario') }}</small>
                         </div>
                     </div>
                 </div>
@@ -924,7 +924,7 @@
         <div class="reporte-footer bg-light py-2 px-3 text-center no-print">
             <small class="text-muted" style="font-size: 0.75rem;">
                 <i class="fas fa-sync-alt"></i>
-                Generado el {{ hoy.strftime('%d/%m/%Y %H:%M') }} | Sistema Panadería
+                {{ _('Generado el') }} {{ hoy.strftime('%d/%m/%Y %H:%M') }} | {{ _('Sistema Panadería') }}
             </small>
         </div>
     </div>

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Reportes - Panadería POS{% endblock %}
+{% block title %}{{ _('Reportes') }} - {{ _('Panadería POS') }}{% endblock %}
 
 {% block content %}
 <style>
@@ -133,7 +133,7 @@
                     🏠 Volver al Dashboard
                 </a>
                 <a href="{{ url_for('gestion_financiera') }}" class="btn btn-warning btn-sm">
-                    💰 Gestión Financiera
+                    💰 {{ _('Gestión Financiera') }}
                 </a>
             </div>
         </div>
@@ -193,7 +193,7 @@
                     </p>
                     <div class="acciones">
                         <a href="{{ url_for('historial_pagos') }}" class="btn btn-warning btn-sm">
-                            📋 Ver Historial
+                            📋 {{ _('Ver Historial') }}
                         </a>
                         <div>
                             <span class="badge-reporte bg-nuevo">NUEVO</span>
@@ -201,16 +201,16 @@
                     </div>
                 </div>
 
-                <!-- Historial de Depósitos -->
+                <!-- {{ _('Historial de Depósitos') }} -->
                 <div class="reporte-card movimiento">
-                    <h3>🏦 Historial de Depósitos</h3>
+                    <h3>🏦 {{ _('Historial de Depósitos') }}</h3>
                     <p>
-                        <strong>Depósitos bancarios</strong><br>
-                        Consulta de depósitos por período, banco y estado de conciliación. Con exportación a PDF.
+                        <strong>{{ _('Depósitos bancarios') }}</strong><br>
+                        {{ _('Consulta de depósitos por período, banco y estado de conciliación. Con exportación a PDF.') }}
                     </p>
                     <div class="acciones">
                         <a href="{{ url_for('historial_depositos') }}" class="btn btn-warning btn-sm">
-                            📋 Ver Historial
+                            📋 {{ _('Ver Historial') }}
                         </a>
                         <div>
                             <span class="badge-reporte bg-nuevo">NUEVO</span>
@@ -218,12 +218,12 @@
                     </div>
                 </div>
 
-                <!-- Historial de Ventas -->
+                <!-- {{ _('Historial de Ventas') }} -->
                 <div class="reporte-card movimiento">
-                    <h3>🛒 Historial de Ventas</h3>
+                    <h3>🛒 {{ _('Historial de Ventas') }}</h3>
                     <p>
-                        <strong>Ventas por período</strong><br>
-                        Análisis detallado de ventas con desglose por producto y método de pago.
+                        <strong>{{ _('Ventas por período') }}</strong><br>
+                        {{ _('Análisis detallado de ventas con desglose por producto y método de pago.') }}
                     </p>
                     <div class="acciones">
                         <a href="{{ url_for('reporte_ventas') }}" class="btn btn-warning btn-sm">
@@ -232,12 +232,12 @@
                     </div>
                 </div>
 
-                <!-- Cierre de Caja -->
+                <!-- {{ _('Cierre de Caja') }} -->
                 <div class="reporte-card movimiento">
-                    <h3>💼 Cierre de Caja</h3>
+                    <h3>💼 {{ _('Cierre de Caja') }}</h3>
                     <p>
-                        <strong>Reporte diario de caja</strong><br>
-                        Detalle del cierre diario con desglose de efectivo y transferencias.
+                        <strong>{{ _('Reporte diario de caja') }}</strong><br>
+                        {{ _('Detalle del cierre diario con desglose de efectivo y transferencias.') }}
                     </p>
                     <div class="acciones">
                     <a href="{{ url_for('reporte_cierre_caja') }}" target="_blank" class="btn btn-warning btn-sm">
@@ -255,39 +255,39 @@
     <div class="card mb-4">
         <div class="card-body">
             <div class="seccion-titulo">
-                <h2>🧮 Contable</h2>
+                <h2>🧮 {{ _('Contable') }}</h2>
             </div>
-            <p class="text-muted mb-3">Documentos formales para presentación ante contador y autoridades fiscales</p>
+            <p class="text-muted mb-3">{{ _('Documentos formales para presentación ante contador y autoridades fiscales') }}</p>
 
             <div class="reporte-grid">
-                <!-- Reporte Unificado de Tesorería -->
+                <!-- {{ _('Reporte Unificado de Tesorería') }} -->
                 <div class="reporte-card unificado">
-                    <h3>📋 Reporte Unificado de Tesorería</h3>
+                    <h3>📋 {{ _('Reporte Unificado de Tesorería') }}</h3>
                     <p>
-                        <strong>Integración de Estados Financieros</strong><br>
-                        Combina el Libro Mayor con el Estado de Flujos de Efectivo para análisis completo de liquidez.
+                        <strong>{{ _('Integración de Estados Financieros') }}</strong><br>
+                        {{ _('Combina el Libro Mayor con el Estado de Flujos de Efectivo para análisis completo de liquidez.') }}
                     </p>
                     <div class="acciones">
                         <button class="btn btn-purple btn-sm w-100" onclick="generarReporteConsolidado()">
-                            📊 Generar Reporte Consolidado
+                            📊 {{ _('Generar Reporte Consolidado') }}
                         </button>
                         <div>
-                            <span class="badge-reporte bg-purple">Completo</span>
-                            <span class="badge-reporte bg-info">Usa el período</span>
+                            <span class="badge-reporte bg-purple">{{ _('Completo') }}</span>
+                            <span class="badge-reporte bg-info">{{ _('Usa el período') }}</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Estado de Resultados -->
+                <!-- {{ _('Estado de Resultados') }} -->
                 <div class="reporte-card contable">
-                    <h3>📈 Estado de Resultados</h3>
+                    <h3>📈 {{ _('Estado de Resultados') }}</h3>
                     <p>
-                        <strong>Pérdidas y Ganancias</strong><br>
-                        Muestra ingresos, gastos y resultado neto del período. Esencial para declaraciones de impuestos.
+                        <strong>{{ _('Pérdidas y Ganancias') }}</strong><br>
+                        {{ _('Muestra ingresos, gastos y resultado neto del período. Esencial para declaraciones de impuestos.') }}
                     </p>
                     <div class="acciones">
                         <button class="btn btn-primary btn-sm" onclick="generarReporte('estado_resultados')">
-                            <i class="fas fa-file-pdf me-1"></i> Descargar PDF
+                            <i class="fas fa-file-pdf me-1"></i> {{ _('Descargar PDF') }}
                         </button>
                     </div>
                 </div>
@@ -296,22 +296,22 @@
                 <div class="reporte-card contable">
                     <h3>🏦 Conciliación Bancaria</h3>
                     <p>
-                        <strong>Conciliación de Saldos</strong><br>
-                        Compara saldos del sistema con extractos bancarios. Esencial para auditorías.
+                        <strong>{{ _('Conciliación de Saldos') }}</strong><br>
+                        {{ _('Compara saldos del sistema con extractos bancarios. Esencial para auditorías.') }}
                     </p>
                     <div class="acciones">
                         <button class="btn btn-primary btn-sm" onclick="abrirModalConciliacion()">
-                            📥 Generar Conciliación
+                            📥 {{ _('Generar Conciliación') }}
                         </button>
                     </div>
                 </div>
 
-                <!-- Análisis de Gastos -->
+                <!-- {{ _('Análisis de Gastos') }} -->
                 <div class="reporte-card contable">
-                    <h3>📊 Análisis de Gastos</h3>
+                    <h3>📊 {{ _('Análisis de Gastos') }}</h3>
                     <p>
-                        <strong>Distribución de Costos</strong><br>
-                        Gráficos y análisis de gastos por categoría. Identifica áreas de optimización.
+                        <strong>{{ _('Distribución de Costos') }}</strong><br>
+                        {{ _('Gráficos y análisis de gastos por categoría. Identifica áreas de optimización.') }}
                     </p>
                     <div class="acciones">
                         <button class="btn btn-primary btn-sm" onclick="generarReporte('analisis_gastos')">
@@ -329,17 +329,17 @@
     <div class="card mb-4">
         <div class="card-body">
             <div class="seccion-titulo">
-                <h2>📈 Análisis y Operaciones</h2>
+                <h2>📈 {{ _('Análisis y Operaciones') }}</h2>
             </div>
-            <p class="text-muted mb-3">Reportes operativos y de análisis para optimización del negocio</p>
+            <p class="text-muted mb-3">{{ _('Reportes operativos y de análisis para optimización del negocio') }}</p>
 
             <div class="reporte-grid">
-                <!-- Productos Populares -->
+                <!-- {{ _('Productos Populares') }} -->
                 <div class="reporte-card gerencial">
-                    <h3>🏆 Productos Populares</h3>
+                    <h3>🏆 {{ _('Productos Populares') }}</h3>
                     <p>
-                        <strong>Top productos por ventas</strong><br>
-                        Ranking de productos más vendidos con análisis de rotación automática.
+                        <strong>{{ _('Top productos por ventas') }}</strong><br>
+                        {{ _('Ranking de productos más vendidos con análisis de rotación automática.') }}
                     </p>
                     <div class="acciones">
                         <a href="{{ url_for('reporte_productos_populares') }}" class="btn btn-success btn-sm">
@@ -351,12 +351,12 @@
                     </div>
                 </div>
 
-                <!-- Producción Diaria -->
+                <!-- {{ _('Producción Diaria') }} -->
                 <div class="reporte-card gerencial">
-                    <h3>🏭 Producción Diaria</h3>
+                    <h3>🏭 {{ _('Producción Diaria') }}</h3>
                     <p>
-                        <strong>Reporte imprimible</strong><br>
-                        Detalle de producción diaria con filtro de fechas.
+                        <strong>{{ _('Reporte imprimible') }}</strong><br>
+                        {{ _('Detalle de producción diaria con filtro de fechas.') }}
                     </p>
                     <div class="acciones">
                         <a href="{{ url_for('reporte_produccion_diaria') }}" class="btn btn-success btn-sm">
@@ -368,12 +368,12 @@
                     </div>
                 </div>
 
-                <!-- Inventario Externo -->
+                <!-- {{ _('Inventario Externo') }} -->
                 <div class="reporte-card gerencial">
-                    <h3>📦 Inventario Externo</h3>
+                    <h3>📦 {{ _('Inventario Externo') }}</h3>
                     <p>
-                        <strong>Productos externos</strong><br>
-                        Reporte completo del inventario de productos externos con valorización.
+                        <strong>{{ _('Productos externos') }}</strong><br>
+                        {{ _('Reporte completo del inventario de productos externos con valorización.') }}
                     </p>
                     <div class="acciones">
                         <a href="{{ url_for('reporte_inventario_externo') }}" class="btn btn-success btn-sm">
@@ -387,10 +387,10 @@
 
                 <!-- Ventas Externas -->
                 <div class="reporte-card gerencial">
-                    <h3>🥤 Ventas y Rentabilidad</h3>
+                    <h3>🥤 {{ _('Ventas y Rentabilidad') }}</h3>
                     <p>
-                        <strong>Productos externos</strong><br>
-                        Análisis de ventas y rentabilidad de productos externos.
+                        <strong>{{ _('Productos externos') }}</strong><br>
+                        {{ _('Análisis de ventas y rentabilidad de productos externos.') }}
                     </p>
                     <div class="acciones">
                         <a href="{{ url_for('reporte_ventas_externas') }}" class="btn btn-success btn-sm">
@@ -403,12 +403,12 @@
                     </div>
                 </div>
 
-                <!-- Activos Fijos -->
+                <!-- {{ _('Activos Fijos') }} -->
                 <div class="reporte-card gerencial">
-                    <h3>🏢 Activos Fijos</h3>
+                    <h3>🏢 {{ _('Activos Fijos') }}</h3>
                     <p>
-                        <strong>Inventario de activos</strong><br>
-                        Reporte de activos fijos con depreciación y mantenimientos.
+                        <strong>{{ _('Inventario de activos') }}</strong><br>
+                        {{ _('Reporte de activos fijos con depreciación y mantenimientos.') }}
                     </p>
                     <div class="acciones">
                         <a href="{{ url_for('reporte_activos') }}" class="btn btn-success btn-sm">
@@ -429,21 +429,21 @@
     <div class="card mb-4">
         <div class="card-body">
             <div class="seccion-titulo">
-                <h2>🤖 Gerencial con IA</h2>
+                <h2>🤖 {{ _('Gerencial con IA') }}</h2>
             </div>
-            <p class="text-muted mb-3">Análisis inteligentes con Machine Learning y recomendaciones automáticas</p>
+            <p class="text-muted mb-3">{{ _('Análisis inteligentes con Machine Learning y recomendaciones automáticas') }}</p>
 
             <div class="reporte-grid">
-                <!-- Reporte Avanzado Ventas + IA -->
+                <!-- {{ _('Reporte Avanzado Ventas + IA') }} -->
                 <div class="reporte-card gerencial">
-                    <h3>🚀 Reporte Avanzado Ventas + IA</h3>
+                    <h3>🚀 {{ _('Reporte Avanzado Ventas + IA') }}</h3>
                     <p>
-                        <strong>Unificado Inteligente</strong><br>
-                        Combina análisis de ventas, tendencias, ML y recomendaciones IA en un solo reporte.
+                        <strong>{{ _('Unificado Inteligente') }}</strong><br>
+                        {{ _('Combina análisis de ventas, tendencias, ML y recomendaciones IA en un solo reporte.') }}
                     </p>
                     <div class="acciones">
                         <a href="{{ url_for('reporte_ventas_avanzado') }}" class="btn btn-primary btn-sm">
-                            <i class="fas fa-chart-line"></i> Ver Reporte Web
+                            <i class="fas fa-chart-line"></i> {{ _('Ver Reporte Web') }}
                         </a>
                         <div>
                             <span class="badge-reporte bg-nuevo">NUEVO</span>
@@ -453,12 +453,12 @@
                     </div>
                 </div>
 
-                <!-- Análisis Predictivo -->
+                <!-- {{ _('Análisis Predictivo') }} -->
                 <div class="reporte-card gerencial">
-                    <h3>🔮 Análisis Predictivo</h3>
+                    <h3>🔮 {{ _('Análisis Predictivo') }}</h3>
                     <p>
-                        <strong>Predicciones y tendencias</strong><br>
-                        Análisis predictivo con proyecciones de ventas y recomendaciones.
+                        <strong>{{ _('Predicciones y tendencias') }}</strong><br>
+                        {{ _('Análisis predictivo con proyecciones de ventas y recomendaciones.') }}
                     </p>
                     <div class="acciones">
                         <a href="{{ url_for('reporte_analisis_predictivo') }}" class="btn btn-success btn-sm">
@@ -470,12 +470,12 @@
                     </div>
                 </div>
 
-                <!-- Tendencia de Ventas -->
+                <!-- {{ _('Tendencia de Ventas') }} -->
                 <div class="reporte-card gerencial">
-                    <h3>📈 Tendencia de Ventas</h3>
+                    <h3>📈 {{ _('Tendencia de Ventas') }}</h3>
                     <p>
-                        <strong>Análisis de comportamiento</strong><br>
-                        Evolución de ventas en el tiempo. Detecta patrones y estacionalidad.
+                        <strong>{{ _('Análisis de comportamiento') }}</strong><br>
+                        {{ _('Evolución de ventas en el tiempo. Detecta patrones y estacionalidad.') }}
                     </p>
                     <div class="acciones">
                         <button class="btn btn-success btn-sm" onclick="generarReporte('tendencia_ventas')">
@@ -486,10 +486,10 @@
 
                 <!-- Recomendaciones IA -->
                 <div class="reporte-card gerencial">
-                    <h3>🤖 Recomendaciones con IA</h3>
+                    <h3>🤖 {{ _('Recomendaciones con IA') }}</h3>
                     <p>
-                        <strong>Análisis predictivo</strong><br>
-                        Recomendaciones inteligentes basadas en datos históricos y tendencias.
+                        <strong>{{ _('Análisis predictivo') }}</strong><br>
+                        {{ _('Recomendaciones inteligentes basadas en datos históricos y tendencias.') }}
                     </p>
                     <div class="acciones">
                         <button class="btn btn-success btn-sm" onclick="generarReporte('ia_predictivo')">
@@ -498,12 +498,12 @@
                     </div>
                 </div>
 
-                <!-- Análisis de Inventarios -->
+                <!-- {{ _('Análisis de Inventarios') }} -->
                 <div class="reporte-card gerencial">
-                    <h3>📦 Análisis de Inventarios</h3>
+                    <h3>📦 {{ _('Análisis de Inventarios') }}</h3>
                     <p>
-                        <strong>Gestión de stock</strong><br>
-                        Rotación, puntos de reorden y optimización de inventarios.
+                        <strong>{{ _('Gestión de stock') }}</strong><br>
+                        {{ _('Rotación, puntos de reorden y optimización de inventarios.') }}
                     </p>
                     <div class="acciones">
                         <button class="btn btn-success btn-sm" onclick="generarReporte('analisis_inventarios')">
@@ -525,23 +525,23 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">🏦 Conciliación Bancaria</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ _('Cerrar') }}"></button>
             </div>
             <div class="modal-body">
                 <div class="mb-3">
-                    <label for="fecha_corte" class="form-label"><strong>Fecha de Corte:</strong></label>
+                    <label for="fecha_corte" class="form-label"><strong>{{ _('Fecha de Corte') }}:</strong></label>
                     <input type="date" id="fecha_corte" class="form-control" required>
                 </div>
                 <div class="mb-3">
-                    <label for="saldo_extracto" class="form-label"><strong>Saldo según Extracto Bancario:</strong></label>
-                    <input type="number" step="0.01" id="saldo_extracto" class="form-control" placeholder="Ej: 1500000" required>
-                    <small class="text-muted">Ingresa el saldo que aparece en tu extracto bancario</small>
+                    <label for="saldo_extracto" class="form-label"><strong>{{ _('Saldo según Extracto Bancario:') }}</strong></label>
+                    <input type="number" step="0.01" id="saldo_extracto" class="form-control" placeholder="{{ _('Ej: 1500000') }}" required>
+                    <small class="text-muted">{{ _('Ingresa el saldo que aparece en tu extracto bancario') }}</small>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Cancelar') }}</button>
                 <button type="button" class="btn btn-primary" onclick="generarConciliacion()">
-                    📊 Generar Conciliación
+                    📊 {{ _('Generar Conciliación') }}
                 </button>
             </div>
         </div>
@@ -554,8 +554,8 @@
 <div id="loadingOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; align-items: center; justify-content: center;">
     <div style="background: white; padding: 40px; border-radius: 15px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
         <div class="loader"></div>
-        <p style="color: #333; font-weight: bold; font-size: 1.1em;">⏳ Generando reporte...</p>
-        <p style="color: #666; font-size: 0.9em;">Por favor espera, esto puede tomar unos segundos</p>
+        <p style="color: #333; font-weight: bold; font-size: 1.1em;">⏳ {{ _('Generando reporte...') }}</p>
+        <p style="color: #666; font-size: 0.9em;">{{ _('Por favor espera, esto puede tomar unos segundos') }}</p>
     </div>
 </div>
 
@@ -699,7 +699,7 @@
 
         const url = `/generar_reporte_tesoreria_unificado?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}&nivel_detalle=completo`;
 
-        if (confirm(`📊 ¿Generar Reporte Consolidado de Tesorería?\n\n📅 Período: ${fechaInicio} a ${fechaFin}`)) {
+        if (confirm(`📊 ¿{{ _('Generar Reporte Consolidado') }} de Tesorería?\n\n📅 Período: ${fechaInicio} a ${fechaFin}`)) {
             mostrarCarga(true);
             window.open(url, '_blank');
             setTimeout(() => { mostrarCarga(false); }, 3000);
