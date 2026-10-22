@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-21 15:56-0500\n"
+"POT-Creation-Date: 2026-10-21 22:55-0500\n"
 "PO-Revision-Date: 2026-10-15 10:37-0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es\n"
@@ -17,6 +17,55 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
+
+#: app.py:6521 templates/reporte_inventario_externo.html:6
+#: templates/reporte_inventario_externo.html:35
+msgid "Reporte de Inventario Externo"
+msgstr ""
+
+#: app.py:6526 reportes.py:2254 reportes.py:3096 templates/cierre_caja.html:537
+#: templates/cierre_caja.html:572 templates/productos_populares.html:385
+#: templates/productos_populares.html:445
+#: templates/productos_populares.html:527
+#: templates/productos_populares.html:554
+#: templates/reporte_inventario_externo.html:46
+msgid "Producto"
+msgstr ""
+
+#: app.py:6526 reportes.py:1108 reportes.py:3372 reportes.py:3399
+#: templates/reporte_activos.html:660 templates/reporte_activos.html:709
+#: templates/reporte_inventario_externo.html:47
+msgid "Categoría"
+msgstr ""
+
+#: app.py:6526
+msgid "Stock"
+msgstr ""
+
+#: app.py:6526
+msgid "Stock Mín"
+msgstr ""
+
+#: app.py:6526 templates/reporte_inventario_externo.html:50
+msgid "Precio Compra"
+msgstr ""
+
+#: app.py:6527 templates/reporte_inventario_externo.html:51
+msgid "Precio Venta"
+msgstr ""
+
+#: app.py:6527 templates/cierre_caja.html:541 templates/cierre_caja.html:808
+#: templates/reporte_inventario_externo.html:52
+msgid "Utilidad"
+msgstr ""
+
+#: app.py:6527
+msgid "Margen %"
+msgstr ""
+
+#: app.py:6527
+msgid "Valor Inv."
+msgstr ""
 
 #: reportes.py:88
 msgid "ESTADO DE RESULTADOS"
@@ -378,11 +427,6 @@ msgstr ""
 
 #: reportes.py:1106
 msgid "DISTRIBUCIÓN DETALLADA DE GASTOS"
-msgstr ""
-
-#: reportes.py:1108 reportes.py:3372 reportes.py:3399
-#: templates/reporte_activos.html:660 templates/reporte_activos.html:709
-msgid "Categoría"
 msgstr ""
 
 #: reportes.py:1108 reportes.py:3068 templates/productos_populares.html:486
@@ -1001,10 +1045,11 @@ msgid "No hay datos de inventarios disponibles para análisis."
 msgstr ""
 
 #: reportes.py:2079 reportes.py:2254
+#: templates/reporte_inventario_externo.html:48
 msgid "Stock Actual"
 msgstr ""
 
-#: reportes.py:2081
+#: reportes.py:2081 templates/reporte_inventario_externo.html:49
 msgid "Stock Mínimo"
 msgstr ""
 
@@ -1020,7 +1065,7 @@ msgstr ""
 msgid "Cantidad en Stock"
 msgstr ""
 
-#: reportes.py:2109
+#: reportes.py:2109 templates/reporte_inventario_externo.html:54
 msgid "Valor Inventario"
 msgstr ""
 
@@ -1108,14 +1153,6 @@ msgstr ""
 
 #: reportes.py:2249
 msgid "PUNTOS DE REORDEN SUGERIDOS"
-msgstr ""
-
-#: reportes.py:2254 reportes.py:3096 templates/cierre_caja.html:537
-#: templates/cierre_caja.html:572 templates/productos_populares.html:385
-#: templates/productos_populares.html:445
-#: templates/productos_populares.html:527
-#: templates/productos_populares.html:554
-msgid "Producto"
 msgstr ""
 
 #: reportes.py:2254
@@ -1599,11 +1636,7 @@ msgstr ""
 msgid "Costo"
 msgstr ""
 
-#: templates/cierre_caja.html:541 templates/cierre_caja.html:808
-msgid "Utilidad"
-msgstr ""
-
-#: templates/cierre_caja.html:542
+#: templates/cierre_caja.html:542 templates/reporte_inventario_externo.html:53
 msgid "Margen"
 msgstr ""
 
@@ -2038,6 +2071,18 @@ msgstr ""
 
 #: templates/reporte_activos.html:772
 msgid "PanaderíaPro - Módulo de Activos Fijos"
+msgstr ""
+
+#: templates/reporte_inventario_externo.html:38
+msgid "Exportar a CSV"
+msgstr ""
+
+#: templates/reporte_inventario_externo.html:39
+msgid "Volver"
+msgstr ""
+
+#: templates/reporte_inventario_externo.html:55
+msgid "Proveedor"
 msgstr ""
 
 #: templates/reportes.html:3

@@ -1262,6 +1262,7 @@ csrf = CSRFProtect(app)
 # (aplicar app.config['BABEL_TRANSLATION_DIRECTORIES'] después
 # de Babel(app) es demasiado tarde: Babel ya leyó la config).
 from flask_babel import Babel
+from flask_babel import Babel, gettext as _
 
 def _get_locale():
     """Devuelve el idioma del tenant actual (fallback: 'es')."""
@@ -6517,13 +6518,13 @@ def exportar_inventario_externo():
     styles = getSampleStyleSheet()
     
     # Título
-    title = Paragraph("Reporte de Inventario Externo", styles['Title'])
+    title = Paragraph(_("Reporte de Inventario Externo"), styles['Title'])
     elements.append(title)
     elements.append(Paragraph("<br/>", styles['Normal']))
     
     # Preparar datos de la tabla
-    data = [['Producto', 'Categoría', 'Stock', 'Stock Mín', 'Precio Compra', 
-             'Precio Venta', 'Utilidad', 'Margen %', 'Valor Inv.']]
+    data = [[_('Producto'), _('Categoría'), _('Stock'), _('Stock Mín'), _('Precio Compra'), 
+             _('Precio Venta'), _('Utilidad'), _('Margen %'), _('Valor Inv.')]]
     
     for producto in productos:
         utilidad = producto.precio_venta - producto.precio_compra
