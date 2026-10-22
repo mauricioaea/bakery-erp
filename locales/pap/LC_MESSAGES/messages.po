@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-21 22:55-0500\n"
+"POT-Creation-Date: 2026-10-22 17:46-0500\n"
 "PO-Revision-Date: 2026-10-15 16:08-0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: pap\n"
@@ -20,37 +20,36 @@ msgstr ""
 
 #: app.py:6521 templates/reporte_inventario_externo.html:6
 #: templates/reporte_inventario_externo.html:35
-#, fuzzy
 msgid "Reporte de Inventario Externo"
 msgstr "Inventario Externo"
 
-#: app.py:6526 reportes.py:2254 reportes.py:3096 templates/cierre_caja.html:537
-#: templates/cierre_caja.html:572 templates/productos_populares.html:385
+#: app.py:6526 app.py:6711 reportes.py:2254 reportes.py:3096
+#: templates/cierre_caja.html:537 templates/cierre_caja.html:572
+#: templates/productos_populares.html:385
 #: templates/productos_populares.html:445
 #: templates/productos_populares.html:527
 #: templates/productos_populares.html:554
 #: templates/reporte_inventario_externo.html:46
+#: templates/reporte_ventas_externas.html:98
 msgid "Producto"
 msgstr "Produkto"
 
-#: app.py:6526 reportes.py:1108 reportes.py:3372 reportes.py:3399
+#: app.py:6526 app.py:6711 reportes.py:1108 reportes.py:3372 reportes.py:3399
 #: templates/reporte_activos.html:660 templates/reporte_activos.html:709
 #: templates/reporte_inventario_externo.html:47
+#: templates/reporte_ventas_externas.html:99
 msgid "Categoría"
 msgstr "Kategoria"
 
 #: app.py:6526
-#, fuzzy
 msgid "Stock"
 msgstr "Total Kostu"
 
 #: app.py:6526
-#, fuzzy
 msgid "Stock Mín"
 msgstr "Stock Mínimo"
 
 #: app.py:6526 templates/reporte_inventario_externo.html:50
-#, fuzzy
 msgid "Precio Compra"
 msgstr "Valor Inventario"
 
@@ -58,20 +57,41 @@ msgstr "Valor Inventario"
 msgid "Precio Venta"
 msgstr "Prijs di Benta"
 
-#: app.py:6527 templates/cierre_caja.html:541 templates/cierre_caja.html:808
-#: templates/reporte_inventario_externo.html:52
+#: app.py:6527 app.py:6711 templates/cierre_caja.html:541
+#: templates/cierre_caja.html:808 templates/reporte_inventario_externo.html:52
+#: templates/reporte_ventas_externas.html:103
 msgid "Utilidad"
 msgstr "Ganashinan"
 
-#: app.py:6527
-#, fuzzy
+#: app.py:6527 app.py:6711
 msgid "Margen %"
 msgstr "Margen"
 
 #: app.py:6527
-#, fuzzy
 msgid "Valor Inv."
 msgstr "Valor Inventario"
+
+#: app.py:6687 templates/reporte_ventas_externas.html:6
+#: templates/reporte_ventas_externas.html:35
+msgid "Reporte de Ventas Externas"
+msgstr "Reporte di Benta Externo"
+
+#: app.py:6711 templates/productos_populares.html:387
+msgid "Unidades"
+msgstr "Unid"
+
+#: app.py:6711 reportes.py:287 reportes.py:2683 reportes.py:3223
+#: templates/cierre_caja.html:539 templates/cierre_caja.html:794
+#: templates/productos_populares.html:388
+#: templates/productos_populares.html:446
+#: templates/reporte_ventas_externas.html:101
+msgid "Ingresos"
+msgstr "ENTRADANAN"
+
+#: app.py:6711 templates/cierre_caja.html:540 templates/cierre_caja.html:801
+#: templates/reporte_ventas_externas.html:102
+msgid "Costo"
+msgstr "Total Kostu"
 
 #: reportes.py:88
 msgid "ESTADO DE RESULTADOS"
@@ -245,13 +265,6 @@ msgstr "No tin datonan di fluho di kaha pa e período skohí."
 #: reportes.py:3223 reportes.py:3399 reportes.py:3561
 msgid "Fecha"
 msgstr "Fecha"
-
-#: reportes.py:287 reportes.py:2683 reportes.py:3223
-#: templates/cierre_caja.html:539 templates/cierre_caja.html:794
-#: templates/productos_populares.html:388
-#: templates/productos_populares.html:446
-msgid "Ingresos"
-msgstr "ENTRADANAN"
 
 #: reportes.py:287
 msgid "Gastos"
@@ -1690,8 +1703,9 @@ msgid "RESUMEN EJECUTIVO"
 msgstr "5. RESÚMEN EHEKUTIVO"
 
 #: templates/cierre_caja.html:503 templates/cierre_caja.html:645
+#: templates/reporte_ventas_externas.html:63
 msgid "Total Ventas"
-msgstr "TOTALNAN"
+msgstr "TOTAL DI BENTA"
 
 #: templates/cierre_caja.html:515 templates/cierre_caja.html:631
 #: templates/cierre_caja.html:671 templates/cierre_caja.html:704
@@ -1708,11 +1722,8 @@ msgstr "Salida No Komersial"
 msgid "Unid"
 msgstr "Unid"
 
-#: templates/cierre_caja.html:540 templates/cierre_caja.html:801
-msgid "Costo"
-msgstr "Total Kostu"
-
 #: templates/cierre_caja.html:542 templates/reporte_inventario_externo.html:53
+#: templates/reporte_ventas_externas.html:104
 msgid "Margen"
 msgstr "Margen"
 
@@ -1822,10 +1833,12 @@ msgid "Seleccionar Período"
 msgstr "Dianan di e períodoo:"
 
 #: templates/productos_populares.html:217
+#: templates/reporte_ventas_externas.html:40
 msgid "Fecha Inicio"
 msgstr "Fecha Inisio"
 
 #: templates/productos_populares.html:222
+#: templates/reporte_ventas_externas.html:44
 msgid "Fecha Fin"
 msgstr "Fecha"
 
@@ -1936,10 +1949,6 @@ msgstr "dianan"
 #: templates/productos_populares.html:484
 msgid "Tipo"
 msgstr "Tipo"
-
-#: templates/productos_populares.html:387
-msgid "Unidades"
-msgstr "Unid"
 
 #: templates/productos_populares.html:389
 #: templates/productos_populares.html:528
@@ -2152,18 +2161,42 @@ msgid "PanaderíaPro - Módulo de Activos Fijos"
 msgstr "Activo Fijo"
 
 #: templates/reporte_inventario_externo.html:38
-#, fuzzy
+#: templates/reporte_ventas_externas.html:54
 msgid "Exportar a CSV"
 msgstr "Download PDF"
 
 #: templates/reporte_inventario_externo.html:39
+#: templates/reporte_ventas_externas.html:55
 msgid "Volver"
 msgstr "Bèk"
 
 #: templates/reporte_inventario_externo.html:55
-#, fuzzy
 msgid "Proveedor"
 msgstr "Promedio"
+
+#: templates/reporte_ventas_externas.html:48
+msgid "Filtrar"
+msgstr "Filtra"
+
+#: templates/reporte_ventas_externas.html:49
+msgid "Limpiar"
+msgstr "mar"
+
+#: templates/reporte_ventas_externas.html:71
+msgid "Utilidad Total"
+msgstr "Utilidat Neto di e Periodo"
+
+#: templates/reporte_ventas_externas.html:79
+msgid "Productos Vendidos"
+msgstr "Produkto"
+
+#: templates/reporte_ventas_externas.html:87
+msgid "Margen Promedio"
+msgstr "Promedio"
+
+#: templates/reporte_ventas_externas.html:100
+msgid "Cantidad Vendida"
+msgstr "Kantidat Bendí"
 
 #: templates/reportes.html:3
 msgid "Reportes"
@@ -2468,4 +2501,3 @@ msgstr "Generando reporte..."
 #: templates/reportes.html:558
 msgid "Por favor espera, esto puede tomar unos segundos"
 msgstr "Por fabor warda, esaki por tuma un par di segundo"
-

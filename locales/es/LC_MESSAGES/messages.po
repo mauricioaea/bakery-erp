@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-21 22:55-0500\n"
+"POT-Creation-Date: 2026-10-22 17:46-0500\n"
 "PO-Revision-Date: 2026-10-15 10:37-0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es\n"
@@ -23,18 +23,21 @@ msgstr ""
 msgid "Reporte de Inventario Externo"
 msgstr ""
 
-#: app.py:6526 reportes.py:2254 reportes.py:3096 templates/cierre_caja.html:537
-#: templates/cierre_caja.html:572 templates/productos_populares.html:385
+#: app.py:6526 app.py:6711 reportes.py:2254 reportes.py:3096
+#: templates/cierre_caja.html:537 templates/cierre_caja.html:572
+#: templates/productos_populares.html:385
 #: templates/productos_populares.html:445
 #: templates/productos_populares.html:527
 #: templates/productos_populares.html:554
 #: templates/reporte_inventario_externo.html:46
+#: templates/reporte_ventas_externas.html:98
 msgid "Producto"
 msgstr ""
 
-#: app.py:6526 reportes.py:1108 reportes.py:3372 reportes.py:3399
+#: app.py:6526 app.py:6711 reportes.py:1108 reportes.py:3372 reportes.py:3399
 #: templates/reporte_activos.html:660 templates/reporte_activos.html:709
 #: templates/reporte_inventario_externo.html:47
+#: templates/reporte_ventas_externas.html:99
 msgid "Categoría"
 msgstr ""
 
@@ -54,17 +57,40 @@ msgstr ""
 msgid "Precio Venta"
 msgstr ""
 
-#: app.py:6527 templates/cierre_caja.html:541 templates/cierre_caja.html:808
-#: templates/reporte_inventario_externo.html:52
+#: app.py:6527 app.py:6711 templates/cierre_caja.html:541
+#: templates/cierre_caja.html:808 templates/reporte_inventario_externo.html:52
+#: templates/reporte_ventas_externas.html:103
 msgid "Utilidad"
 msgstr ""
 
-#: app.py:6527
+#: app.py:6527 app.py:6711
 msgid "Margen %"
 msgstr ""
 
 #: app.py:6527
 msgid "Valor Inv."
+msgstr ""
+
+#: app.py:6687 templates/reporte_ventas_externas.html:6
+#: templates/reporte_ventas_externas.html:35
+msgid "Reporte de Ventas Externas"
+msgstr ""
+
+#: app.py:6711 templates/productos_populares.html:387
+msgid "Unidades"
+msgstr ""
+
+#: app.py:6711 reportes.py:287 reportes.py:2683 reportes.py:3223
+#: templates/cierre_caja.html:539 templates/cierre_caja.html:794
+#: templates/productos_populares.html:388
+#: templates/productos_populares.html:446
+#: templates/reporte_ventas_externas.html:101
+msgid "Ingresos"
+msgstr ""
+
+#: app.py:6711 templates/cierre_caja.html:540 templates/cierre_caja.html:801
+#: templates/reporte_ventas_externas.html:102
+msgid "Costo"
 msgstr ""
 
 #: reportes.py:88
@@ -238,13 +264,6 @@ msgstr ""
 #: reportes.py:287 reportes.py:737 reportes.py:770 reportes.py:2683
 #: reportes.py:3223 reportes.py:3399 reportes.py:3561
 msgid "Fecha"
-msgstr ""
-
-#: reportes.py:287 reportes.py:2683 reportes.py:3223
-#: templates/cierre_caja.html:539 templates/cierre_caja.html:794
-#: templates/productos_populares.html:388
-#: templates/productos_populares.html:446
-msgid "Ingresos"
 msgstr ""
 
 #: reportes.py:287
@@ -1614,6 +1633,7 @@ msgid "RESUMEN EJECUTIVO"
 msgstr ""
 
 #: templates/cierre_caja.html:503 templates/cierre_caja.html:645
+#: templates/reporte_ventas_externas.html:63
 msgid "Total Ventas"
 msgstr ""
 
@@ -1632,11 +1652,8 @@ msgstr ""
 msgid "Unid"
 msgstr ""
 
-#: templates/cierre_caja.html:540 templates/cierre_caja.html:801
-msgid "Costo"
-msgstr ""
-
 #: templates/cierre_caja.html:542 templates/reporte_inventario_externo.html:53
+#: templates/reporte_ventas_externas.html:104
 msgid "Margen"
 msgstr ""
 
@@ -1746,10 +1763,12 @@ msgid "Seleccionar Período"
 msgstr ""
 
 #: templates/productos_populares.html:217
+#: templates/reporte_ventas_externas.html:40
 msgid "Fecha Inicio"
 msgstr ""
 
 #: templates/productos_populares.html:222
+#: templates/reporte_ventas_externas.html:44
 msgid "Fecha Fin"
 msgstr ""
 
@@ -1859,10 +1878,6 @@ msgstr ""
 #: templates/productos_populares.html:386
 #: templates/productos_populares.html:484
 msgid "Tipo"
-msgstr ""
-
-#: templates/productos_populares.html:387
-msgid "Unidades"
 msgstr ""
 
 #: templates/productos_populares.html:389
@@ -2074,15 +2089,41 @@ msgid "PanaderíaPro - Módulo de Activos Fijos"
 msgstr ""
 
 #: templates/reporte_inventario_externo.html:38
+#: templates/reporte_ventas_externas.html:54
 msgid "Exportar a CSV"
 msgstr ""
 
 #: templates/reporte_inventario_externo.html:39
+#: templates/reporte_ventas_externas.html:55
 msgid "Volver"
 msgstr ""
 
 #: templates/reporte_inventario_externo.html:55
 msgid "Proveedor"
+msgstr ""
+
+#: templates/reporte_ventas_externas.html:48
+msgid "Filtrar"
+msgstr ""
+
+#: templates/reporte_ventas_externas.html:49
+msgid "Limpiar"
+msgstr ""
+
+#: templates/reporte_ventas_externas.html:71
+msgid "Utilidad Total"
+msgstr ""
+
+#: templates/reporte_ventas_externas.html:79
+msgid "Productos Vendidos"
+msgstr ""
+
+#: templates/reporte_ventas_externas.html:87
+msgid "Margen Promedio"
+msgstr ""
+
+#: templates/reporte_ventas_externas.html:100
+msgid "Cantidad Vendida"
 msgstr ""
 
 #: templates/reportes.html:3

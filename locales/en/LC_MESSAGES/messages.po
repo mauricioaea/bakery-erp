@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-21 22:55-0500\n"
+"POT-Creation-Date: 2026-10-22 17:46-0500\n"
 "PO-Revision-Date: 2026-10-15 10:38-0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -23,28 +23,29 @@ msgstr ""
 msgid "Reporte de Inventario Externo"
 msgstr "External Inventory Report"
 
-#: app.py:6526 reportes.py:2254 reportes.py:3096 templates/cierre_caja.html:537
-#: templates/cierre_caja.html:572 templates/productos_populares.html:385
+#: app.py:6526 app.py:6711 reportes.py:2254 reportes.py:3096
+#: templates/cierre_caja.html:537 templates/cierre_caja.html:572
+#: templates/productos_populares.html:385
 #: templates/productos_populares.html:445
 #: templates/productos_populares.html:527
 #: templates/productos_populares.html:554
 #: templates/reporte_inventario_externo.html:46
+#: templates/reporte_ventas_externas.html:98
 msgid "Producto"
 msgstr "Product"
 
-#: app.py:6526 reportes.py:1108 reportes.py:3372 reportes.py:3399
+#: app.py:6526 app.py:6711 reportes.py:1108 reportes.py:3372 reportes.py:3399
 #: templates/reporte_activos.html:660 templates/reporte_activos.html:709
 #: templates/reporte_inventario_externo.html:47
+#: templates/reporte_ventas_externas.html:99
 msgid "Categoría"
 msgstr "Category"
 
 #: app.py:6526
-#, fuzzy
 msgid "Stock"
 msgstr "Total Cost"
 
 #: app.py:6526
-#, fuzzy
 msgid "Stock Mín"
 msgstr "Minimum Stock"
 
@@ -56,20 +57,41 @@ msgstr "Inventory Value"
 msgid "Precio Venta"
 msgstr "Sale Price"
 
-#: app.py:6527 templates/cierre_caja.html:541 templates/cierre_caja.html:808
-#: templates/reporte_inventario_externo.html:52
+#: app.py:6527 app.py:6711 templates/cierre_caja.html:541
+#: templates/cierre_caja.html:808 templates/reporte_inventario_externo.html:52
+#: templates/reporte_ventas_externas.html:103
 msgid "Utilidad"
 msgstr "Profit"
 
-#: app.py:6527
-#, fuzzy
+#: app.py:6527 app.py:6711
 msgid "Margen %"
 msgstr "Margin"
 
 #: app.py:6527
-#, fuzzy
 msgid "Valor Inv."
 msgstr "Inventory Value"
+
+#: app.py:6687 templates/reporte_ventas_externas.html:6
+#: templates/reporte_ventas_externas.html:35
+msgid "Reporte de Ventas Externas"
+msgstr "External Sales Report"
+
+#: app.py:6711 templates/productos_populares.html:387
+msgid "Unidades"
+msgstr "Qty"
+
+#: app.py:6711 reportes.py:287 reportes.py:2683 reportes.py:3223
+#: templates/cierre_caja.html:539 templates/cierre_caja.html:794
+#: templates/productos_populares.html:388
+#: templates/productos_populares.html:446
+#: templates/reporte_ventas_externas.html:101
+msgid "Ingresos"
+msgstr "INCOME"
+
+#: app.py:6711 templates/cierre_caja.html:540 templates/cierre_caja.html:801
+#: templates/reporte_ventas_externas.html:102
+msgid "Costo"
+msgstr "Total Cost"
 
 #: reportes.py:88
 msgid "ESTADO DE RESULTADOS"
@@ -243,13 +265,6 @@ msgstr "No cash flow data available for the selected period."
 #: reportes.py:3223 reportes.py:3399 reportes.py:3561
 msgid "Fecha"
 msgstr "Date"
-
-#: reportes.py:287 reportes.py:2683 reportes.py:3223
-#: templates/cierre_caja.html:539 templates/cierre_caja.html:794
-#: templates/productos_populares.html:388
-#: templates/productos_populares.html:446
-msgid "Ingresos"
-msgstr "INCOME"
 
 #: reportes.py:287
 msgid "Gastos"
@@ -1672,8 +1687,9 @@ msgid "RESUMEN EJECUTIVO"
 msgstr "5. EXECUTIVE SUMMARY"
 
 #: templates/cierre_caja.html:503 templates/cierre_caja.html:645
+#: templates/reporte_ventas_externas.html:63
 msgid "Total Ventas"
-msgstr "TOTALS"
+msgstr "TOTAL SALES"
 
 #: templates/cierre_caja.html:515 templates/cierre_caja.html:631
 #: templates/cierre_caja.html:671 templates/cierre_caja.html:704
@@ -1690,11 +1706,8 @@ msgstr "Non-Commercial Outflows"
 msgid "Unid"
 msgstr "Qty"
 
-#: templates/cierre_caja.html:540 templates/cierre_caja.html:801
-msgid "Costo"
-msgstr "Total Cost"
-
 #: templates/cierre_caja.html:542 templates/reporte_inventario_externo.html:53
+#: templates/reporte_ventas_externas.html:104
 msgid "Margen"
 msgstr "Margin"
 
@@ -1804,10 +1817,12 @@ msgid "Seleccionar Período"
 msgstr "Days in period:"
 
 #: templates/productos_populares.html:217
+#: templates/reporte_ventas_externas.html:40
 msgid "Fecha Inicio"
 msgstr "Start Date"
 
 #: templates/productos_populares.html:222
+#: templates/reporte_ventas_externas.html:44
 msgid "Fecha Fin"
 msgstr "Date"
 
@@ -1918,10 +1933,6 @@ msgstr "days"
 #: templates/productos_populares.html:484
 msgid "Tipo"
 msgstr "Type"
-
-#: templates/productos_populares.html:387
-msgid "Unidades"
-msgstr "Qty"
 
 #: templates/productos_populares.html:389
 #: templates/productos_populares.html:528
@@ -2132,16 +2143,42 @@ msgid "PanaderíaPro - Módulo de Activos Fijos"
 msgstr "Fixed Assets"
 
 #: templates/reporte_inventario_externo.html:38
+#: templates/reporte_ventas_externas.html:54
 msgid "Exportar a CSV"
 msgstr "Download PDF"
 
 #: templates/reporte_inventario_externo.html:39
+#: templates/reporte_ventas_externas.html:55
 msgid "Volver"
 msgstr "Back"
 
 #: templates/reporte_inventario_externo.html:55
 msgid "Proveedor"
 msgstr "Supplier"
+
+#: templates/reporte_ventas_externas.html:48
+msgid "Filtrar"
+msgstr "Filter"
+
+#: templates/reporte_ventas_externas.html:49
+msgid "Limpiar"
+msgstr "Tue"
+
+#: templates/reporte_ventas_externas.html:71
+msgid "Utilidad Total"
+msgstr "Net Profit for the Period"
+
+#: templates/reporte_ventas_externas.html:79
+msgid "Productos Vendidos"
+msgstr "Product"
+
+#: templates/reporte_ventas_externas.html:87
+msgid "Margen Promedio"
+msgstr "Average"
+
+#: templates/reporte_ventas_externas.html:100
+msgid "Cantidad Vendida"
+msgstr "Quantity Sold"
 
 #: templates/reportes.html:3
 msgid "Reportes"
@@ -2446,4 +2483,3 @@ msgstr "Generating report..."
 #: templates/reportes.html:558
 msgid "Por favor espera, esto puede tomar unos segundos"
 msgstr "Please wait, this may take a few seconds"
-

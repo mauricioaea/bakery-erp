@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reporte de Ventas Externas</title>
+    <title>{{ _('Reporte de Ventas Externas') }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     {% include '_csrf_head.html' %}
 </head>
@@ -32,27 +32,27 @@
     </nav>
 
     <div class="container mt-4">
-        <h1>💰 Reporte de Ventas Externas</h1>
+        <h1> {{ _('Reporte de Ventas Externas') }}</h1>
         
         <!-- Filtros por fecha -->
         <form method="GET" class="row g-3 mb-4">
             <div class="col-md-4">
-                <label for="fecha_inicio" class="form-label">Fecha Inicio</label>
+                <label for="fecha_inicio" class="form-label">{{ _('Fecha Inicio') }}</label>
                 <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" value="{{ fecha_inicio.strftime('%Y-%m-%d') if fecha_inicio else '' }}">
             </div>
             <div class="col-md-4">
-                <label for="fecha_fin" class="form-label">Fecha Fin</label>
+                <label for="fecha_fin" class="form-label">{{ _('Fecha Fin') }}</label>
                 <input type="date" class="form-control" id="fecha_fin" name="fecha_fin" value="{{ fecha_fin.strftime('%Y-%m-%d') if fecha_fin else '' }}">
             </div>
             <div class="col-md-4 d-flex align-items-end">
-                <button type="submit" class="btn btn-primary me-2">Filtrar</button>
-                <a href="/reporte_ventas_externas" class="btn btn-secondary">Limpiar</a>
+                <button type="submit" class="btn btn-primary me-2">{{ _('Filtrar') }}</button>
+                <a href="/reporte_ventas_externas" class="btn btn-secondary">{{ _('Limpiar') }}</a>
             </div>
         </form>
         
         <div class="mb-3">
-            <a href="/exportar_ventas_externas" class="btn btn-success">📥 Exportar a CSV</a>
-            <a href="/productos_externos" class="btn btn-secondary">← Volver</a>
+            <a href="/exportar_ventas_externas" class="btn btn-success">📥 {{ _('Exportar a CSV') }}</a>
+            <a href="/productos_externos" class="btn btn-secondary">← {{ _('Volver') }}</a>
         </div>
 
         <!-- Resumen -->
@@ -60,7 +60,7 @@
             <div class="col-md-3">
                 <div class="card bg-primary text-white">
                     <div class="card-body">
-                        <h6 class="card-title">Total Ventas</h6>
+                        <h6 class="card-title">{{ _('Total Ventas') }}</h6>
                         <h4>${{ "{:,.0f}".format(total_ventas) }}</h4>
                     </div>
                 </div>
@@ -68,7 +68,7 @@
             <div class="col-md-3">
                 <div class="card bg-success text-white">
                     <div class="card-body">
-                        <h6 class="card-title">Utilidad Total</h6>
+                        <h6 class="card-title">{{ _('Utilidad Total') }}</h6>
                         <h4>${{ "{:,.0f}".format(total_utilidad) }}</h4>
                     </div>
                 </div>
@@ -76,7 +76,7 @@
             <div class="col-md-3">
                 <div class="card bg-info text-white">
                     <div class="card-body">
-                        <h6 class="card-title">Productos Vendidos</h6>
+                        <h6 class="card-title">{{ _('Productos Vendidos') }}</h6>
                         <h4>{{ productos_ventas|length }}</h4>
                     </div>
                 </div>
@@ -84,7 +84,7 @@
             <div class="col-md-3">
                 <div class="card bg-warning text-white">
                     <div class="card-body">
-                        <h6 class="card-title">Margen Promedio</h6>
+                        <h6 class="card-title">{{ _('Margen Promedio') }}</h6>
                         <h4>{{ "%.1f"|format((total_utilidad / total_ventas * 100) if total_ventas > 0 else 0) }}%</h4>
                     </div>
                 </div>
@@ -95,13 +95,13 @@
             <table class="table table-striped">
                 <thead>
                     <tr>
-                        <th>Producto</th>
-                        <th>Categoría</th>
-                        <th>Cantidad Vendida</th>
-                        <th>Ingresos</th>
-                        <th>Costo</th>
-                        <th>Utilidad</th>
-                        <th>Margen %</th>
+                        <th>{{ _('Producto') }}</th>
+                        <th>{{ _('Categoría') }}</th>
+                        <th>{{ _('Cantidad Vendida') }}</th>
+                        <th>{{ _('Ingresos') }}</th>
+                        <th>{{ _('Costo') }}</th>
+                        <th>{{ _('Utilidad') }}</th>
+                        <th>{{ _('Margen') }} %</th>
                     </tr>
                 </thead>
                 <tbody>

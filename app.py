@@ -6683,10 +6683,12 @@ def exportar_ventas_externas():
     # Estilos
     styles = getSampleStyleSheet()
     
-    # Título
-    title = Paragraph("Reporte de Ventas Externas", styles['Title'])
+        # Título
+    title = Paragraph(_("Reporte de Ventas Externas"), styles['Title'])
     elements.append(title)
     elements.append(Paragraph("<br/>", styles['Normal']))
+    
+    
     
     # Procesar datos
     ventas_por_producto = {}
@@ -6706,7 +6708,7 @@ def exportar_ventas_externas():
         ventas_por_producto[producto.id]['costo'] += detalle.cantidad * producto.precio_compra
     
     # Preparar datos de la tabla
-    table_data = [['Producto', 'Categoría', 'Unidades', 'Ingresos', 'Costo', 'Utilidad', 'Margen %']]
+    table_data = [[_('Producto'), _('Categoría'), _('Unidades'), _('Ingresos'), _('Costo'), _('Utilidad'), _('Margen %')]]
     
     for venta_data in ventas_por_producto.values():
         utilidad = venta_data['ingresos'] - venta_data['costo']
