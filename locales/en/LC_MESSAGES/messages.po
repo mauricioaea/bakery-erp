@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-23 15:33-0500\n"
+"POT-Creation-Date: 2026-10-23 17:14-0500\n"
 "PO-Revision-Date: 2026-10-15 10:38-0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -30,6 +30,7 @@ msgstr "External Inventory Report"
 #: templates/productos_populares.html:527
 #: templates/productos_populares.html:554
 #: templates/reporte_inventario_externo.html:46
+#: templates/reporte_produccion.html:175
 #: templates/reporte_ventas_externas.html:98 templates/ventas_periodo.html:417
 msgid "Producto"
 msgstr "Product"
@@ -37,6 +38,7 @@ msgstr "Product"
 #: app.py:6526 app.py:6711 reportes.py:1108 reportes.py:3372 reportes.py:3399
 #: templates/reporte_activos.html:660 templates/reporte_activos.html:709
 #: templates/reporte_inventario_externo.html:47
+#: templates/reporte_produccion.html:177
 #: templates/reporte_ventas_externas.html:99 templates/ventas_periodo.html:322
 #: templates/ventas_periodo.html:418
 msgid "Categoría"
@@ -266,6 +268,7 @@ msgstr "No cash flow data available for the selected period."
 
 #: reportes.py:287 reportes.py:737 reportes.py:770 reportes.py:2683
 #: reportes.py:3223 reportes.py:3399 reportes.py:3561
+#: templates/reporte_produccion.html:146
 msgid "Fecha"
 msgstr "Date"
 
@@ -1605,6 +1608,7 @@ msgstr "BREAKDOWN BY CATEGORY"
 #: reportes.py:3372 reportes.py:3534 templates/analisis_predictivo.html:481
 #: templates/analisis_predictivo.html:528
 #: templates/productos_populares.html:485 templates/reporte_activos.html:661
+#: templates/reporte_produccion.html:148
 msgid "Cantidad"
 msgstr "Quantity"
 
@@ -1671,8 +1675,8 @@ msgstr "VISUAL PREDICTIVE ANALYSIS"
 
 #: templates/analisis_predictivo.html:6 templates/productos_populares.html:6
 #: templates/reporte_activos.html:6 templates/reporte_activos.html:576
-#: templates/ventas_periodo.html:6 templates/ventas_periodo.html:329
-#: templates/ventas_periodo.html:584
+#: templates/reporte_produccion.html:6 templates/ventas_periodo.html:6
+#: templates/ventas_periodo.html:329 templates/ventas_periodo.html:584
 msgid "Panadería"
 msgstr "Number of Payments"
 
@@ -1830,7 +1834,8 @@ msgid "Stock actual:"
 msgstr "Current Stock"
 
 #: templates/analisis_predictivo.html:340
-#: templates/productos_populares.html:347
+#: templates/productos_populares.html:347 templates/reporte_produccion.html:157
+#: templates/reporte_produccion.html:184
 msgid "unidades"
 msgstr "Qty"
 
@@ -2096,7 +2101,7 @@ msgstr "Status"
 msgid "Inventario"
 msgstr "Inventory Value"
 
-#: templates/cierre_caja.html:927
+#: templates/cierre_caja.html:927 templates/reporte_produccion.html:196
 msgid "Generado el"
 msgstr "Generated on"
 
@@ -2284,7 +2289,7 @@ msgstr "Fixed Assets"
 msgid "Sistema de Gestión PanaderíaPro"
 msgstr "Number of Payments"
 
-#: templates/reporte_activos.html:595
+#: templates/reporte_activos.html:595 templates/reporte_produccion.html:112
 msgid "Imprimir / Guardar PDF"
 msgstr "Print / Save PDF"
 
@@ -2399,6 +2404,78 @@ msgstr "Back"
 #: templates/reporte_inventario_externo.html:55
 msgid "Proveedor"
 msgstr "Supplier"
+
+#: templates/reporte_produccion.html:6 templates/reporte_produccion.html:101
+msgid "Reporte de Producción"
+msgstr "Printable report"
+
+#: templates/reporte_produccion.html:106
+msgid "Del"
+msgstr "of"
+
+#: templates/reporte_produccion.html:106
+msgid "al"
+msgstr "Real"
+
+#: templates/reporte_produccion.html:115 templates/reportes.html:528
+msgid "Cerrar"
+msgstr "Close"
+
+#: templates/reporte_produccion.html:124
+msgid "Total Producido"
+msgstr "Total Paid"
+
+#: templates/reporte_produccion.html:128
+msgid "Recetas Producidas"
+msgstr "Recipes Produced"
+
+#: templates/reporte_produccion.html:135
+msgid "Órdenes Completadas"
+msgstr "Cumulative Sales"
+
+#: templates/reporte_produccion.html:139
+msgid "órdenes"
+msgstr "orders"
+
+#: templates/reporte_produccion.html:147
+msgid "Receta"
+msgstr "Sale Price"
+
+#: templates/reporte_produccion.html:149
+msgid "Hora"
+msgstr "Real"
+
+#: templates/reporte_produccion.html:155 templates/reporte_produccion.html:158
+msgid "N/A"
+msgstr "N/A"
+
+#: templates/reporte_produccion.html:156
+msgid "Sin receta"
+msgstr "No recipe"
+
+#: templates/reporte_produccion.html:164
+msgid "No hay órdenes completadas en este período"
+msgstr "No income in the period"
+
+#: templates/reporte_produccion.html:170
+msgid "Stock Actual en Vitrina"
+msgstr "Current Stock"
+
+#: templates/reporte_produccion.html:176
+msgid "Stock en Vitrina"
+msgstr "Display Stock"
+
+#: templates/reporte_produccion.html:185
+msgid "Sin categoría"
+msgstr "Category"
+
+#: templates/reporte_produccion.html:191
+msgid "No hay información de stock disponible"
+msgstr "Days of Stock Available"
+
+#: templates/reporte_produccion.html:197
+msgid "Sistema de Gestión Panadería"
+msgstr "Number of Payments"
 
 #: templates/reporte_ventas_externas.html:48
 msgid "Filtrar"
@@ -2691,10 +2768,6 @@ msgstr "Days of Stock"
 #: templates/reportes.html:506
 msgid "Rotación, puntos de reorden y optimización de inventarios."
 msgstr "Inventory Turnover Ratio"
-
-#: templates/reportes.html:528
-msgid "Cerrar"
-msgstr "Close"
 
 #: templates/reportes.html:532
 msgid "Fecha de Corte"

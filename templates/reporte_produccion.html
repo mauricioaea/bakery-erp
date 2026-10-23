@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reporte de Producción - Panadería</title>
+    <title>{{ _('Reporte de Producción') }} - {{ _('Panadería') }}</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; padding: 20px; background: white; }
@@ -77,8 +77,8 @@
         .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
         .btn-print { background: #28a745; color: white; }
         .btn-close { background: #6c757d; color: white; }
-        
-        /* ✅ CONFIGURACIÓN PARA IMPRESIÓN EN PDF */
+
+        /* CONFIGURACIÓN PARA IMPRESIÓN EN PDF */
         @media print {
             .no-print { display: none !important; }
             body { padding: 0; background: white; }
@@ -98,21 +98,21 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>📊 Reporte de Producción</h1>
+            <h1>📊 {{ _('Reporte de Producción') }}</h1>
             <div class="rango-fechas">
                 {% if fecha_inicio == fecha_fin %}
                     📅 {{ fecha_inicio.strftime('%d/%m/%Y') }}
                 {% else %}
-                    📅 Del {{ fecha_inicio.strftime('%d/%m/%Y') }} al {{ fecha_fin.strftime('%d/%m/%Y') }}
+                    📅 {{ _('Del') }} {{ fecha_inicio.strftime('%d/%m/%Y') }} {{ _('al') }} {{ fecha_fin.strftime('%d/%m/%Y') }}
                 {% endif %}
             </div>
-            
+
             <div class="btn-acciones no-print" style="margin-top: 20px;">
                 <button onclick="window.print()" class="btn btn-print">
-                    🖨️ Imprimir / Guardar PDF
+                    🖨️ {{ _('Imprimir / Guardar PDF') }}
                 </button>
                 <button onclick="window.close()" class="btn btn-close">
-                    ❌ Cerrar
+                    ❌ {{ _('Cerrar') }}
                 </button>
             </div>
         </div>
@@ -121,80 +121,80 @@
         <div class="metrics">
             <div class="metric-card">
                 <div class="metric-value">{{ total_producido }}</div>
-                <div class="metric-label">Total Producido</div>
+                <div class="metric-label">{{ _('Total Producido') }}</div>
             </div>
             <div class="metric-card">
                 <div class="metric-value">{{ total_recetas }}</div>
-                <div class="metric-label">Recetas Producidas</div>
+                <div class="metric-label">{{ _('Recetas Producidas') }}</div>
             </div>
         </div>
 
         <!-- Órdenes Completadas en el rango -->
         <div class="section">
             <div class="section-title">
-                ✅ Órdenes Completadas
+                ✅ {{ _('Órdenes Completadas') }}
                 {% if fecha_inicio == fecha_fin %}
                     ({{ fecha_inicio.strftime('%d/%m/%Y') }})
                 {% else %}
-                    ({{ ordenes_hoy|length }} órdenes)
+                    ({{ ordenes_hoy|length }} {{ _('órdenes') }})
                 {% endif %}
             </div>
             {% if ordenes_hoy %}
             <table>
                 <thead>
                     <tr>
-                        <th>Fecha</th>
-                        <th>Receta</th>
-                        <th>Cantidad</th>
-                        <th>Hora</th>
+                        <th>{{ _('Fecha') }}</th>
+                        <th>{{ _('Receta') }}</th>
+                        <th>{{ _('Cantidad') }}</th>
+                        <th>{{ _('Hora') }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for orden in ordenes_hoy %}
                     <tr>
-                        <td>{{ orden.fecha_fin.strftime('%d/%m/%Y') if orden.fecha_fin else 'N/A' }}</td>
-                        <td>{{ orden.receta.nombre if orden.receta else 'Sin receta' }}</td>
-                        <td>{{ orden.cantidad_producir }} unidades</td>
-                        <td>{{ orden.fecha_fin.strftime('%H:%M') if orden.fecha_fin else 'N/A' }}</td>
+                        <td>{{ orden.fecha_fin.strftime('%d/%m/%Y') if orden.fecha_fin else _('N/A') }}</td>
+                        <td>{{ orden.receta.nombre if orden.receta else _('Sin receta') }}</td>
+                        <td>{{ orden.cantidad_producir }} {{ _('unidades') }}</td>
+                        <td>{{ orden.fecha_fin.strftime('%H:%M') if orden.fecha_fin else _('N/A') }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
             {% else %}
-            <div class="no-data">No hay órdenes completadas en este período</div>
+            <div class="no-data">{{ _('No hay órdenes completadas en este período') }}</div>
             {% endif %}
         </div>
 
         <!-- Stock Actual en Vitrina -->
         <div class="section">
-            <div class="section-title">📦 Stock Actual en Vitrina</div>
+            <div class="section-title">📦 {{ _('Stock Actual en Vitrina') }}</div>
             {% if stock_actual %}
             <table>
                 <thead>
                     <tr>
-                        <th>Producto</th>
-                        <th>Stock en Vitrina</th>
-                        <th>Categoría</th>
+                        <th>{{ _('Producto') }}</th>
+                        <th>{{ _('Stock en Vitrina') }}</th>
+                        <th>{{ _('Categoría') }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for item in stock_actual %}
                     <tr>
                         <td>{{ item.nombre }}</td>
-                        <td>{{ item.stock }} unidades</td>
-                        <td>{{ item.categoria or 'Sin categoría' }}</td>
+                        <td>{{ item.stock }} {{ _('unidades') }}</td>
+                        <td>{{ item.categoria or _('Sin categoría') }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
             {% else %}
-            <div class="no-data">No hay información de stock disponible</div>
+            <div class="no-data">{{ _('No hay información de stock disponible') }}</div>
             {% endif %}
         </div>
 
         <div class="footer">
-            <p>Generado el {{ fecha.strftime('%d/%m/%Y a las %H:%M') }}</p>
-            <p>Sistema de Gestión Panadería</p>
+            <p>{{ _('Generado el') }} {{ fecha.strftime('%d/%m/%Y a las %H:%M') }}</p>
+            <p>{{ _('Sistema de Gestión Panadería') }}</p>
         </div>
     </div>
 
