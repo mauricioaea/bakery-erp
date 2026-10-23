@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reporte de Ventas por Período - Panadería</title>
+    <title>{{ _('Reporte de Ventas por Período') }} - {{ _('Panadería') }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -193,32 +193,32 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-body">
-                        <h5 class="card-title"><i class="fas fa-calendar-alt"></i> Seleccionar Período</h5>
+                        <h5 class="card-title"><i class="fas fa-calendar-alt"></i> {{ _('Seleccionar Período') }}</h5>
                         <form id="formFechas" class="row g-3">
                             <div class="col-md-3">
-                                <label for="fecha_inicio" class="form-label">Fecha Inicio</label>
+                                <label for="fecha_inicio" class="form-label">{{ _('Fecha Inicio') }}</label>
                                 <input type="date" class="form-control" id="fecha_inicio" 
                                     value="{{ fecha_inicio.strftime('%Y-%m-%d') if fecha_inicio else '' }}">
                             </div>
                             <div class="col-md-3">
-                                <label for="fecha_fin" class="form-label">Fecha Fin</label>
+                                <label for="fecha_fin" class="form-label">{{ _('Fecha Fin') }}</label>
                                 <input type="date" class="form-control" id="fecha_fin" 
                                     value="{{ fecha_fin.strftime('%Y-%m-%d') if fecha_fin else datetime.now().strftime('%Y-%m-%d') }}">
                             </div>
                             <div class="col-md-3">
-                                <label for="periodo" class="form-label">Período Rápido</label>
+                                <label for="periodo" class="form-label">{{ _('Período Rápido') }}</label>
                                 <select class="form-select" id="periodo">
-                                    <option value="hoy">Hoy</option>
-                                    <option value="ayer">Ayer</option>
-                                    <option value="semana">Esta Semana</option>
-                                    <option value="mes">Este Mes</option>
-                                    <option value="mes_anterior">Mes Anterior</option>
-                                    <option value="personalizado" selected>Personalizado</option>
+                                    <option value="hoy">{{ _('Hoy') }}</option>
+                                    <option value="ayer">{{ _('Ayer') }}</option>
+                                    <option value="semana">{{ _('Esta Semana') }}</option>
+                                    <option value="mes">{{ _('Este Mes') }}</option>
+                                    <option value="mes_anterior">{{ _('Mes Anterior') }}</option>
+                                    <option value="personalizado" selected>{{ _('Personalizado') }}</option>
                                 </select>
                             </div>
                             <div class="col-md-3 d-flex align-items-end">
                                 <button type="button" class="btn btn-primary w-100" onclick="actualizarReporte()">
-                                    <i class="fas fa-sync-alt"></i> Actualizar
+                                    <i class="fas fa-sync-alt"></i> {{ _('Actualizar') }}
                                 </button>
                             </div>
                         </form>
@@ -231,11 +231,11 @@
         <div class="reporte-header no-break">
             <div class="row align-items-center">
                 <div class="col-md-10">
-                    <h1 class="fw-bold mb-1">REPORTE DE VENTAS POR PERÍODO</h1>
-                    <h4 class="mb-1">Panadería Dulce Tradición</h4>
+                    <h1 class="fw-bold mb-1">{{ _('REPORTE DE VENTAS POR PERÍODO') }}</h1>
+                    <h4 class="mb-1">{{ config.nombre_panaderia }}</h4>
                     <p class="mb-0">
                         <i class="fas fa-calendar-alt"></i>
-                        Período: 
+                        {{ _('Período:') }}
                         <span class="badge periodo-badge bg-light text-dark">
                             {{ fecha_inicio.strftime('%d/%m/%Y') }} - {{ fecha_fin.strftime('%d/%m/%Y') }}
                         </span>
@@ -243,7 +243,7 @@
                 </div>
                 <div class="col-md-2 text-center no-print">
                     <button class="btn btn-pdf" onclick="generarPDF()">
-                        <i class="fas fa-file-pdf"></i> Exportar PDF
+                        <i class="fas fa-file-pdf"></i> {{ _('Exportar PDF') }}
                     </button>
                 </div>
             </div>
@@ -255,50 +255,50 @@
             <div class="row mb-4 no-break">
                 <div class="col-md-3">
                     <div class="metric-card">
-                        <h5><i class="fas fa-money-bill-wave"></i> Total Ventas</h5>
+                        <h5><i class="fas fa-money-bill-wave"></i> {{ _('Total Ventas') }}</h5>
                         <div class="metric-value">${{ "{:,.2f}".format(total_ventas) }}</div>
-                        <small class="text-muted">Ingresos reales (excluye donaciones)</small>
+                        <small class="text-muted">{{ _('Ingresos reales (excluye donaciones)') }}</small>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="metric-card">
-                        <h5><i class="fas fa-receipt"></i> Transacciones</h5>
+                        <h5><i class="fas fa-receipt"></i> {{ _('Transacciones') }}</h5>
                         <div class="metric-value">{{ total_transacciones }}</div>
-                        <small class="text-muted">Total ventas + donaciones</small>
+                        <small class="text-muted">{{ _('Total ventas + donaciones') }}</small>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="metric-card">
-                        <h5><i class="fas fa-calculator"></i> Ticket Promedio</h5>
+                        <h5><i class="fas fa-calculator"></i> {{ _('Ticket Promedio') }}</h5>
                         <div class="metric-value">${{ "{:,.2f}".format(promedio_venta) }}</div>
-                        <small class="text-muted">Por transacción (ventas reales)</small>
+                        <small class="text-muted">{{ _('Por transacción (ventas reales)') }}</small>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="metric-card">
-                        <h5><i class="fas fa-chart-line"></i> Tendencia</h5>
+                        <h5><i class="fas fa-chart-line"></i> {{ _('Tendencia') }}</h5>
                         <div class="metric-value {% if tendencia >= 0 %}tendencia-positiva{% else %}tendencia-negativa{% endif %}">
                             {{ "{:+.1f}".format(tendencia) }}%
                         </div>
-                        <small class="text-muted">vs período anterior</small>
+                        <small class="text-muted">{{ _('vs período anterior') }}</small>
                     </div>
                 </div>
             </div>
 
-            <!-- 🎁 SECCIÓN DE DONACIONES - AGREGAR DESPUÉS DEL RESUMEN PRINCIPAL -->
+            <!-- 🎁 SECCIÓN DE DONACIONES -->
             <div class="row mb-4">
                 <div class="col-md-6">
                     <div class="metric-card" style="border-left-color: #ffc107;">
-                        <h5><i class="fas fa-gift text-warning"></i> Salidas No Comerciales</h5>
+                        <h5><i class="fas fa-gift text-warning"></i> {{ _('Salidas No Comerciales') }}</h5>
                         <div class="metric-value text-warning">{{ total_donaciones }}</div>
-                        <small class="text-muted">Transacciones de donación en el período</small>
+                        <small class="text-muted">{{ _('Transacciones de donación en el período') }}</small>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="metric-card" style="border-left-color: #ffc107;">
-                        <h5><i class="fas fa-box text-warning"></i> Productos Donados</h5>
+                        <h5><i class="fas fa-box text-warning"></i> {{ _('Productos Donados') }}</h5>
                         <div class="metric-value text-warning">{{ productos_donados }}</div>
-                        <small class="text-muted">Unidades donadas en el período</small>
+                        <small class="text-muted">{{ _('Unidades donadas en el período') }}</small>
                     </div>
                 </div>
             </div>
@@ -307,7 +307,7 @@
             <div class="row mb-4 no-break">
                 <div class="col-md-6">
                     <div class="chart-container">
-                        <h4><i class="fas fa-chart-pie"></i> Distribución por Categoría</h4>
+                        <h4><i class="fas fa-chart-pie"></i> {{ _('Distribución por Categoría') }}</h4>
                         
                         <!-- Gráfico para pantalla -->
                         <div class="no-print">
@@ -319,29 +319,29 @@
                             <table class="table table-sm table-bordered tabla-pdf">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Categoría</th>
-                                        <th>Porcentaje</th>
-                                        <th>Ventas Estimadas</th>
+                                        <th>{{ _('Categoría') }}</th>
+                                        <th>{{ _('Porcentaje') }}</th>
+                                        <th>{{ _('Ventas Estimadas') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td>Panadería</td>
+                                        <td>{{ _('Panadería') }}</td>
                                         <td>40%</td>
                                         <td>${{ "{:,.2f}".format(total_ventas * 0.4) }}</td>
                                     </tr>
                                     <tr>
-                                        <td>Pastelería</td>
+                                        <td>{{ _('Pastelería') }}</td>
                                         <td>35%</td>
                                         <td>${{ "{:,.2f}".format(total_ventas * 0.35) }}</td>
                                     </tr>
                                     <tr>
-                                        <td>Bebidas</td>
+                                        <td>{{ _('Bebidas') }}</td>
                                         <td>15%</td>
                                         <td>${{ "{:,.2f}".format(total_ventas * 0.15) }}</td>
                                     </tr>
                                     <tr>
-                                        <td>Otros</td>
+                                        <td>{{ _('Otros') }}</td>
                                         <td>10%</td>
                                         <td>${{ "{:,.2f}".format(total_ventas * 0.1) }}</td>
                                     </tr>
@@ -352,7 +352,7 @@
                 </div>
                 <div class="col-md-6">
                     <div class="chart-container">
-                        <h4><i class="fas fa-chart-bar"></i> Resumen de Desempeño</h4>
+                        <h4><i class="fas fa-chart-bar"></i> {{ _('Resumen de Desempeño') }}</h4>
                         
                         <!-- Gráfico para pantalla -->
                         <div class="no-print">
@@ -364,14 +364,14 @@
                             <table class="table table-sm table-bordered tabla-pdf">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Métrica</th>
-                                        <th>Valor</th>
-                                        <th>Estado</th>
+                                        <th>{{ _('Métrica') }}</th>
+                                        <th>{{ _('Valor') }}</th>
+                                        <th>{{ _('Estado') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td>Ventas Totales</td>
+                                        <td>{{ _('Ventas Totales') }}</td>
                                         <td>${{ "{:,.2f}".format(total_ventas) }}</td>
                                         <td>
                                             <span class="badge {% if tendencia >= 0 %}bg-success{% else %}bg-danger{% endif %}">
@@ -380,7 +380,7 @@
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td>Transacciones</td>
+                                        <td>{{ _('Transacciones') }}</td>
                                         <td>{{ total_transacciones }}</td>
                                         <td>
                                             <span class="badge {% if total_transacciones > 50 %}bg-success{% elif total_transacciones > 20 %}bg-warning{% else %}bg-danger{% endif %}">
@@ -389,7 +389,7 @@
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td>Ticket Promedio</td>
+                                        <td>{{ _('Ticket Promedio') }}</td>
                                         <td>${{ "{:,.2f}".format(promedio_venta) }}</td>
                                         <td>
                                             <span class="badge {% if promedio_venta > 500 %}bg-success{% elif promedio_venta > 300 %}bg-warning{% else %}bg-danger{% endif %}">
@@ -408,18 +408,18 @@
             <div class="row mb-4">
                 <div class="col-12">
                     <div class="metric-card">
-                        <h4><i class="fas fa-boxes"></i> Análisis de Productos por Categoría</h4>
+                        <h4><i class="fas fa-boxes"></i> {{ _('Análisis de Productos por Categoría') }}</h4>
                         
                         <div class="table-responsive mt-3">
                             <table class="table table-striped tabla-ventas tabla-pdf">
                                 <thead>
                                     <tr>
-                                        <th>Producto</th>
-                                        <th>Categoría</th>
-                                        <th class="text-center">Unidades</th>
-                                        <th class="text-end">Ingresos</th>
-                                        <th class="text-center">Frecuencia</th>
-                                        <th class="text-center">Desempeño</th>
+                                        <th>{{ _('Producto') }}</th>
+                                        <th>{{ _('Categoría') }}</th>
+                                        <th class="text-center">{{ _('Unidades') }}</th>
+                                        <th class="text-end">{{ _('Ingresos') }}</th>
+                                        <th class="text-center">{{ _('Frecuencia') }}</th>
+                                        <th class="text-center">{{ _('Desempeño') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -439,20 +439,20 @@
                                         </td>
                                         <td class="text-center">
                                             {% if producto.frecuencia > 10 %}
-                                                <span class="badge bg-success">Alta</span>
+                                                <span class="badge bg-success">{{ _('Alta') }}</span>
                                             {% elif producto.frecuencia > 5 %}
-                                                <span class="badge bg-warning">Media</span>
+                                                <span class="badge bg-warning">{{ _('Media') }}</span>
                                             {% else %}
-                                                <span class="badge bg-danger">Baja</span>
+                                                <span class="badge bg-danger">{{ _('Baja') }}</span>
                                             {% endif %}
                                         </td>
                                         <td class="text-center">
                                             {% if producto.ingresos > 1000 %}
-                                                <i class="fas fa-rocket text-success" title="Alto desempeño"></i>
+                                                <i class="fas fa-rocket text-success" title="{{ _('Alto desempeño') }}"></i>
                                             {% elif producto.ingresos > 500 %}
-                                                <i class="fas fa-chart-line text-warning" title="Medio desempeño"></i>
+                                                <i class="fas fa-chart-line text-warning" title="{{ _('Medio desempeño') }}"></i>
                                             {% else %}
-                                                <i class="fas fa-exclamation-triangle text-danger" title="Bajo desempeño"></i>
+                                                <i class="fas fa-exclamation-triangle text-danger" title="{{ _('Bajo desempeño') }}"></i>
                                             {% endif %}
                                         </td>
                                     </tr>
@@ -468,35 +468,35 @@
             <div class="row no-break">
                 <div class="col-12">
                     <div class="metric-card">
-                        <h4><i class="fas fa-brain"></i> Análisis Predictivo y Recomendaciones</h4>
+                        <h4><i class="fas fa-brain"></i> {{ _('Análisis Predictivo y Recomendaciones') }}</h4>
                         <div class="row mt-3">
                             <div class="col-md-6">
                                 <div class="alert alert-success p-2">
                                     <i class="fas fa-thumbs-up"></i>
-                                    <strong>Fortalezas:</strong><br>
+                                    <strong>{{ _('Fortalezas:') }}</strong><br>
                                     <small>
                                     {% if tendencia > 0 %}
-                                        • Crecimiento del {{ "{:.1f}".format(tendencia) }}%<br>
+                                        • {{ _('Crecimiento del') }} {{ "{:.1f}".format(tendencia) }}%<br>
                                     {% endif %}
                                     {% if promedio_venta > 500 %}
-                                        • Ticket promedio: ${{ "{:,.2f}".format(promedio_venta) }}<br>
+                                        • {{ _('Ticket promedio:') }} ${{ "{:,.2f}".format(promedio_venta) }}<br>
                                     {% endif %}
-                                    • {{ total_transacciones }} transacciones
+                                    • {{ total_transacciones }} {{ _('transacciones') }}
                                     </small>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="alert alert-info p-2">
                                     <i class="fas fa-lightbulb"></i>
-                                    <strong>Recomendaciones:</strong><br>
+                                    <strong>{{ _('Recomendaciones:') }}</strong><br>
                                     <small>
                                     {% if tendencia < 0 %}
-                                        • Implementar promociones<br>
+                                        • {{ _('Implementar promociones') }}<br>
                                     {% endif %}
                                     {% if promedio_venta < 300 %}
-                                        • Crear combos<br>
+                                        • {{ _('Crear combos') }}<br>
                                     {% endif %}
-                                    • Optimizar stock
+                                    • {{ _('Optimizar stock') }}
                                     </small>
                                 </div>
                             </div>
@@ -510,8 +510,8 @@
         <div class="reporte-footer bg-light py-2 px-3 text-center mt-3">
             <small class="text-muted">
                 <i class="fas fa-sync-alt"></i>
-                Reporte generado el {{ fecha_inicio.strftime('%d/%m/%Y') if fecha_inicio else datetime.now().strftime('%d/%m/%Y') }} | 
-                Período: {{ periodo }}
+                {{ _('Reporte generado el') }} {{ fecha_inicio.strftime('%d/%m/%Y') if fecha_inicio else datetime.now().strftime('%d/%m/%Y') }} | 
+                {{ _('Período:') }} {{ periodo }}
             </small>
         </div>
     </div>
@@ -572,7 +572,7 @@
             } else if (urlActual.includes('cierre_caja')) {
                 window.location.href = `${urlActual}?fecha=${fechaInicio}`;
             } else {
-                window.location.href = `${urlActual}?fecha_inicio=${fecha_inicio}&fecha_fin=${fecha_fin}`;
+                window.location.href = `${urlActual}?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
             }
         }
 
@@ -581,7 +581,7 @@
         const categoriaChart = new Chart(categoriaCtx, {
             type: 'pie',
             data: {
-                labels: ['Panadería', 'Pastelería', 'Bebidas', 'Otros'],
+                labels: [{{ _('Panadería')|tojson }}, {{ _('Pastelería')|tojson }}, {{ _('Bebidas')|tojson }}, {{ _('Otros')|tojson }}],
                 datasets: [{
                     data: [40, 35, 15, 10],
                     backgroundColor: [
@@ -607,9 +607,9 @@
         const tendenciaChart = new Chart(tendenciaCtx, {
             type: 'line',
             data: {
-                labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
+                labels: [{{ _('Lun')|tojson }}, {{ _('Mar')|tojson }}, {{ _('Mié')|tojson }}, {{ _('Jue')|tojson }}, {{ _('Vie')|tojson }}, {{ _('Sáb')|tojson }}, {{ _('Dom')|tojson }}],
                 datasets: [{
-                    label: 'Ventas Diarias',
+                    label: {{ _('Ventas Diarias')|tojson }},
                     data: [1200, 1900, 1500, 2200, 1800, 2500, 2000],
                     borderColor: '#27ae60',
                     backgroundColor: 'rgba(39, 174, 96, 0.1)',
@@ -634,7 +634,7 @@
 
         // Auto-cierre después de 2 minutos (opcional)
         setTimeout(() => {
-            if (confirm('¿Deseas cerrar el reporte?')) {
+            if (confirm({{ _('¿Deseas cerrar el reporte?')|tojson }})) {
                 window.close();
             }
         }, 120000);

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-22 17:46-0500\n"
+"POT-Creation-Date: 2026-10-23 10:29-0500\n"
 "PO-Revision-Date: 2026-10-15 16:08-0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: pap\n"
@@ -30,14 +30,15 @@ msgstr "Inventario Externo"
 #: templates/productos_populares.html:527
 #: templates/productos_populares.html:554
 #: templates/reporte_inventario_externo.html:46
-#: templates/reporte_ventas_externas.html:98
+#: templates/reporte_ventas_externas.html:98 templates/ventas_periodo.html:417
 msgid "Producto"
 msgstr "Produkto"
 
 #: app.py:6526 app.py:6711 reportes.py:1108 reportes.py:3372 reportes.py:3399
 #: templates/reporte_activos.html:660 templates/reporte_activos.html:709
 #: templates/reporte_inventario_externo.html:47
-#: templates/reporte_ventas_externas.html:99
+#: templates/reporte_ventas_externas.html:99 templates/ventas_periodo.html:322
+#: templates/ventas_periodo.html:418
 msgid "Categoría"
 msgstr "Kategoria"
 
@@ -77,6 +78,7 @@ msgid "Reporte de Ventas Externas"
 msgstr "Reporte di Benta Externo"
 
 #: app.py:6711 templates/productos_populares.html:387
+#: templates/ventas_periodo.html:419
 msgid "Unidades"
 msgstr "Unid"
 
@@ -84,7 +86,7 @@ msgstr "Unid"
 #: templates/cierre_caja.html:539 templates/cierre_caja.html:794
 #: templates/productos_populares.html:388
 #: templates/productos_populares.html:446
-#: templates/reporte_ventas_externas.html:101
+#: templates/reporte_ventas_externas.html:101 templates/ventas_periodo.html:420
 msgid "Ingresos"
 msgstr "ENTRADANAN"
 
@@ -112,7 +114,7 @@ msgid ""
 "seleccionadas."
 msgstr "No a haña registronan di entrada òf gastu pa e fechanan skohí."
 
-#: reportes.py:103
+#: reportes.py:103 templates/ventas_periodo.html:491
 msgid "Recomendaciones:"
 msgstr "Rekomendashonnan:"
 
@@ -424,7 +426,8 @@ msgstr "ANÁLISIS DI GASTUNAN PA KATEGORIA"
 msgid "No hay datos de gastos para el período seleccionado."
 msgstr "No tin datonan di gastu pa e período skohí."
 
-#: reportes.py:1042
+#: reportes.py:1042 templates/ventas_periodo.html:344
+#: templates/ventas_periodo.html:584
 msgid "Otros"
 msgstr "Otronan"
 
@@ -449,6 +452,7 @@ msgid "DISTRIBUCIÓN DETALLADA DE GASTOS"
 msgstr "DISTRIBUSHON DETAYÁ DI GASTUNAN"
 
 #: reportes.py:1108 reportes.py:3068 templates/productos_populares.html:486
+#: templates/ventas_periodo.html:323
 msgid "Porcentaje"
 msgstr "Porsentahe"
 
@@ -550,7 +554,7 @@ msgid "No hay datos de ventas para el período seleccionado."
 msgstr "No tin datos di benta pa e período seleccioná."
 
 #: reportes.py:1315 templates/cierre_caja.html:509
-#: templates/cierre_caja.html:658
+#: templates/cierre_caja.html:658 templates/ventas_periodo.html:279
 msgid "Tendencia"
 msgstr "Tendensia"
 
@@ -570,31 +574,31 @@ msgstr "Benta Akumulá"
 msgid "Ventas Acumuladas ($)"
 msgstr "Benta Akumulá ($)"
 
-#: reportes.py:1342 reportes.py:1685
+#: reportes.py:1342 reportes.py:1685 templates/ventas_periodo.html:610
 msgid "Lun"
 msgstr "lun"
 
-#: reportes.py:1342 reportes.py:1685
+#: reportes.py:1342 reportes.py:1685 templates/ventas_periodo.html:610
 msgid "Mar"
 msgstr "mar"
 
-#: reportes.py:1342 reportes.py:1685
+#: reportes.py:1342 reportes.py:1685 templates/ventas_periodo.html:610
 msgid "Mié"
 msgstr "mié"
 
-#: reportes.py:1342 reportes.py:1685
+#: reportes.py:1342 reportes.py:1685 templates/ventas_periodo.html:610
 msgid "Jue"
 msgstr "jue"
 
-#: reportes.py:1342 reportes.py:1685
+#: reportes.py:1342 reportes.py:1685 templates/ventas_periodo.html:610
 msgid "Vie"
 msgstr "vie"
 
-#: reportes.py:1342 reportes.py:1685
+#: reportes.py:1342 reportes.py:1685 templates/ventas_periodo.html:610
 msgid "Sáb"
 msgstr "sáb"
 
-#: reportes.py:1342 reportes.py:1685
+#: reportes.py:1342 reportes.py:1685 templates/ventas_periodo.html:610
 msgid "Dom"
 msgstr "dom"
 
@@ -862,6 +866,7 @@ msgid "Métricas Clave"
 msgstr "Métrikanan Klave"
 
 #: reportes.py:1760 reportes.py:2254 templates/cierre_caja.html:724
+#: templates/ventas_periodo.html:368
 msgid "Valor"
 msgstr "Valor"
 
@@ -1219,6 +1224,7 @@ msgid "Reorden"
 msgstr "Reorden"
 
 #: reportes.py:2254 templates/reporte_activos.html:710
+#: templates/ventas_periodo.html:369
 msgid "Estado"
 msgstr "Estado"
 
@@ -1687,10 +1693,12 @@ msgid "Consultar fecha:"
 msgstr "Konsultá fecha:"
 
 #: templates/cierre_caja.html:467 templates/productos_populares.html:229
+#: templates/ventas_periodo.html:211
 msgid "Hoy"
 msgstr "Awe"
 
 #: templates/cierre_caja.html:468 templates/productos_populares.html:230
+#: templates/ventas_periodo.html:212
 msgid "Ayer"
 msgstr "Ayera"
 
@@ -1703,18 +1711,19 @@ msgid "RESUMEN EJECUTIVO"
 msgstr "5. RESÚMEN EHEKUTIVO"
 
 #: templates/cierre_caja.html:503 templates/cierre_caja.html:645
-#: templates/reporte_ventas_externas.html:63
+#: templates/reporte_ventas_externas.html:63 templates/ventas_periodo.html:258
 msgid "Total Ventas"
 msgstr "TOTAL DI BENTA"
 
 #: templates/cierre_caja.html:515 templates/cierre_caja.html:631
 #: templates/cierre_caja.html:671 templates/cierre_caja.html:704
+#: templates/ventas_periodo.html:265 templates/ventas_periodo.html:383
 msgid "Transacciones"
 msgstr "Kantidat di transakshonnan"
 
 #: templates/cierre_caja.html:521 templates/cierre_caja.html:680
 #: templates/cierre_caja.html:691 templates/cierre_caja.html:697
-#: templates/productos_populares.html:295
+#: templates/productos_populares.html:295 templates/ventas_periodo.html:292
 msgid "Salidas No Comerciales"
 msgstr "Salida No Komersial"
 
@@ -1824,45 +1833,46 @@ msgid "Productos Más Vendidos"
 msgstr "Produkto"
 
 #: templates/productos_populares.html:6 templates/reporte_activos.html:6
-#: templates/reporte_activos.html:576
+#: templates/reporte_activos.html:576 templates/ventas_periodo.html:6
+#: templates/ventas_periodo.html:329 templates/ventas_periodo.html:584
 msgid "Panadería"
 msgstr "Kantidat di Pagonan"
 
-#: templates/productos_populares.html:214
+#: templates/productos_populares.html:214 templates/ventas_periodo.html:196
 msgid "Seleccionar Período"
 msgstr "Dianan di e períodoo:"
 
 #: templates/productos_populares.html:217
-#: templates/reporte_ventas_externas.html:40
+#: templates/reporte_ventas_externas.html:40 templates/ventas_periodo.html:199
 msgid "Fecha Inicio"
 msgstr "Fecha Inisio"
 
 #: templates/productos_populares.html:222
-#: templates/reporte_ventas_externas.html:44
+#: templates/reporte_ventas_externas.html:44 templates/ventas_periodo.html:204
 msgid "Fecha Fin"
 msgstr "Fecha"
 
-#: templates/productos_populares.html:227
+#: templates/productos_populares.html:227 templates/ventas_periodo.html:209
 msgid "Período Rápido"
 msgstr "Produkto"
 
-#: templates/productos_populares.html:231
+#: templates/productos_populares.html:231 templates/ventas_periodo.html:213
 msgid "Esta Semana"
 msgstr "Patron Semanal"
 
-#: templates/productos_populares.html:232
+#: templates/productos_populares.html:232 templates/ventas_periodo.html:214
 msgid "Este Mes"
 msgstr "E Mes aki"
 
-#: templates/productos_populares.html:233
+#: templates/productos_populares.html:233 templates/ventas_periodo.html:215
 msgid "Mes Anterior"
 msgstr "Luna Pasá"
 
-#: templates/productos_populares.html:234
+#: templates/productos_populares.html:234 templates/ventas_periodo.html:216
 msgid "Personalizado"
 msgstr "Personalisa"
 
-#: templates/productos_populares.html:239
+#: templates/productos_populares.html:239 templates/ventas_periodo.html:221
 msgid "Actualizar"
 msgstr "Aktualisá"
 
@@ -1882,7 +1892,7 @@ msgstr "Personalisa"
 msgid "Actual"
 msgstr "Stock Aktual"
 
-#: templates/productos_populares.html:265
+#: templates/productos_populares.html:265 templates/ventas_periodo.html:246
 msgid "Exportar PDF"
 msgstr "Download PDF"
 
@@ -2230,11 +2240,11 @@ msgstr ""
 
 #: templates/reportes.html:221 templates/reportes.html:223
 msgid "Historial de Ventas"
-msgstr "HISTORIAL DI PAGONAN"
+msgstr "Historia di Benta"
 
 #: templates/reportes.html:225
 msgid "Ventas por período"
-msgstr "Bentanan di e periodo"
+msgstr "Benta pa periodo"
 
 #: templates/reportes.html:226
 msgid "Análisis detallado de ventas con desglose por producto y método de pago."
@@ -2501,3 +2511,155 @@ msgstr "Generando reporte..."
 #: templates/reportes.html:558
 msgid "Por favor espera, esto puede tomar unos segundos"
 msgstr "Por fabor warda, esaki por tuma un par di segundo"
+
+#: templates/ventas_periodo.html:6
+msgid "Reporte de Ventas por Período"
+msgstr "Bentanan di e periodo"
+
+#: templates/ventas_periodo.html:234
+msgid "REPORTE DE VENTAS POR PERÍODO"
+msgstr "Bentanan di e periodo"
+
+#: templates/ventas_periodo.html:238 templates/ventas_periodo.html:514
+msgid "Período:"
+msgstr "Dianan di e períodoo:"
+
+#: templates/ventas_periodo.html:260
+msgid "Ingresos reales (excluye donaciones)"
+msgstr "Ingreso real (no ta inklui donacion)"
+
+#: templates/ventas_periodo.html:267
+msgid "Total ventas + donaciones"
+msgstr "TOTAL DI BENTA"
+
+#: templates/ventas_periodo.html:272 templates/ventas_periodo.html:392
+msgid "Ticket Promedio"
+msgstr "Promedio"
+
+#: templates/ventas_periodo.html:274
+msgid "Por transacción (ventas reales)"
+msgstr "Pa transakshon (bentanan real)"
+
+#: templates/ventas_periodo.html:283
+msgid "vs período anterior"
+msgstr "Produkto"
+
+#: templates/ventas_periodo.html:294
+msgid "Transacciones de donación en el período"
+msgstr "Kantidat di transakshonnan"
+
+#: templates/ventas_periodo.html:299
+msgid "Productos Donados"
+msgstr "Produkto"
+
+#: templates/ventas_periodo.html:301
+msgid "Unidades donadas en el período"
+msgstr "Sin ingreso den e periodo"
+
+#: templates/ventas_periodo.html:310
+msgid "Distribución por Categoría"
+msgstr "Distribushon di Gastunan pa Kategoria"
+
+#: templates/ventas_periodo.html:324
+msgid "Ventas Estimadas"
+msgstr "Benta Akumulá"
+
+#: templates/ventas_periodo.html:334 templates/ventas_periodo.html:584
+msgid "Pastelería"
+msgstr "Kantidat di Pagonan"
+
+#: templates/ventas_periodo.html:339 templates/ventas_periodo.html:584
+msgid "Bebidas"
+msgstr "Bebida"
+
+#: templates/ventas_periodo.html:355
+msgid "Resumen de Desempeño"
+msgstr "Resúmen di Rendimentu"
+
+#: templates/ventas_periodo.html:367
+msgid "Métrica"
+msgstr "Métrikanan Klave"
+
+#: templates/ventas_periodo.html:374
+msgid "Ventas Totales"
+msgstr "Benta Real"
+
+#: templates/ventas_periodo.html:411
+msgid "Análisis de Productos por Categoría"
+msgstr "ANÁLISIS DI GASTUNAN PA KATEGORIA"
+
+#: templates/ventas_periodo.html:421
+msgid "Frecuencia"
+msgstr "Referensia"
+
+#: templates/ventas_periodo.html:422
+msgid "Desempeño"
+msgstr "Rendimentu"
+
+#: templates/ventas_periodo.html:442
+msgid "Alta"
+msgstr "Haltu"
+
+#: templates/ventas_periodo.html:444
+msgid "Media"
+msgstr "Promedio"
+
+#: templates/ventas_periodo.html:446
+msgid "Baja"
+msgstr "ABOU"
+
+#: templates/ventas_periodo.html:451
+msgid "Alto desempeño"
+msgstr "Rendimentu haltu"
+
+#: templates/ventas_periodo.html:453
+msgid "Medio desempeño"
+msgstr "Rendimentu medio"
+
+#: templates/ventas_periodo.html:455
+msgid "Bajo desempeño"
+msgstr "Rendimentu abou"
+
+#: templates/ventas_periodo.html:471
+msgid "Análisis Predictivo y Recomendaciones"
+msgstr "Analisis predictivo ku proyeccionnan di benta i recomendacionnan."
+
+#: templates/ventas_periodo.html:476
+msgid "Fortalezas:"
+msgstr "TOTALNAN"
+
+#: templates/ventas_periodo.html:479
+msgid "Crecimiento del"
+msgstr "Kresementu %"
+
+#: templates/ventas_periodo.html:482
+msgid "Ticket promedio:"
+msgstr "Promedio"
+
+#: templates/ventas_periodo.html:484
+msgid "transacciones"
+msgstr "Kantidat di transakshonnan"
+
+#: templates/ventas_periodo.html:494
+msgid "Implementar promociones"
+msgstr "Implementá promoshonnan"
+
+#: templates/ventas_periodo.html:497
+msgid "Crear combos"
+msgstr "Hasiá combos"
+
+#: templates/ventas_periodo.html:499
+msgid "Optimizar stock"
+msgstr "Optimisá stock"
+
+#: templates/ventas_periodo.html:513
+msgid "Reporte generado el"
+msgstr "Reporte generá automáticamente"
+
+#: templates/ventas_periodo.html:612
+msgid "Ventas Diarias"
+msgstr "Benta Real"
+
+#: templates/ventas_periodo.html:637
+msgid "¿Deseas cerrar el reporte?"
+msgstr "Bo kier sera e reporte?"

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-22 17:46-0500\n"
+"POT-Creation-Date: 2026-10-23 10:29-0500\n"
 "PO-Revision-Date: 2026-10-15 10:38-0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -30,14 +30,15 @@ msgstr "External Inventory Report"
 #: templates/productos_populares.html:527
 #: templates/productos_populares.html:554
 #: templates/reporte_inventario_externo.html:46
-#: templates/reporte_ventas_externas.html:98
+#: templates/reporte_ventas_externas.html:98 templates/ventas_periodo.html:417
 msgid "Producto"
 msgstr "Product"
 
 #: app.py:6526 app.py:6711 reportes.py:1108 reportes.py:3372 reportes.py:3399
 #: templates/reporte_activos.html:660 templates/reporte_activos.html:709
 #: templates/reporte_inventario_externo.html:47
-#: templates/reporte_ventas_externas.html:99
+#: templates/reporte_ventas_externas.html:99 templates/ventas_periodo.html:322
+#: templates/ventas_periodo.html:418
 msgid "Categoría"
 msgstr "Category"
 
@@ -77,6 +78,7 @@ msgid "Reporte de Ventas Externas"
 msgstr "External Sales Report"
 
 #: app.py:6711 templates/productos_populares.html:387
+#: templates/ventas_periodo.html:419
 msgid "Unidades"
 msgstr "Qty"
 
@@ -84,7 +86,7 @@ msgstr "Qty"
 #: templates/cierre_caja.html:539 templates/cierre_caja.html:794
 #: templates/productos_populares.html:388
 #: templates/productos_populares.html:446
-#: templates/reporte_ventas_externas.html:101
+#: templates/reporte_ventas_externas.html:101 templates/ventas_periodo.html:420
 msgid "Ingresos"
 msgstr "INCOME"
 
@@ -112,7 +114,7 @@ msgid ""
 "seleccionadas."
 msgstr "No income or expense records were found for the selected dates."
 
-#: reportes.py:103
+#: reportes.py:103 templates/ventas_periodo.html:491
 msgid "Recomendaciones:"
 msgstr "Recommendations:"
 
@@ -424,7 +426,8 @@ msgstr "EXPENSE ANALYSIS BY CATEGORY"
 msgid "No hay datos de gastos para el período seleccionado."
 msgstr "No expense data available for the selected period."
 
-#: reportes.py:1042
+#: reportes.py:1042 templates/ventas_periodo.html:344
+#: templates/ventas_periodo.html:584
 msgid "Otros"
 msgstr "Others"
 
@@ -449,6 +452,7 @@ msgid "DISTRIBUCIÓN DETALLADA DE GASTOS"
 msgstr "DETAILED EXPENSE BREAKDOWN"
 
 #: reportes.py:1108 reportes.py:3068 templates/productos_populares.html:486
+#: templates/ventas_periodo.html:323
 msgid "Porcentaje"
 msgstr "Percentage"
 
@@ -550,7 +554,7 @@ msgid "No hay datos de ventas para el período seleccionado."
 msgstr "No sales data available for the selected period."
 
 #: reportes.py:1315 templates/cierre_caja.html:509
-#: templates/cierre_caja.html:658
+#: templates/cierre_caja.html:658 templates/ventas_periodo.html:279
 msgid "Tendencia"
 msgstr "Trend"
 
@@ -570,31 +574,31 @@ msgstr "Cumulative Sales"
 msgid "Ventas Acumuladas ($)"
 msgstr "Cumulative Sales ($)"
 
-#: reportes.py:1342 reportes.py:1685
+#: reportes.py:1342 reportes.py:1685 templates/ventas_periodo.html:610
 msgid "Lun"
 msgstr "Mon"
 
-#: reportes.py:1342 reportes.py:1685
+#: reportes.py:1342 reportes.py:1685 templates/ventas_periodo.html:610
 msgid "Mar"
 msgstr "Tue"
 
-#: reportes.py:1342 reportes.py:1685
+#: reportes.py:1342 reportes.py:1685 templates/ventas_periodo.html:610
 msgid "Mié"
 msgstr "Wed"
 
-#: reportes.py:1342 reportes.py:1685
+#: reportes.py:1342 reportes.py:1685 templates/ventas_periodo.html:610
 msgid "Jue"
 msgstr "Thu"
 
-#: reportes.py:1342 reportes.py:1685
+#: reportes.py:1342 reportes.py:1685 templates/ventas_periodo.html:610
 msgid "Vie"
 msgstr "Fri"
 
-#: reportes.py:1342 reportes.py:1685
+#: reportes.py:1342 reportes.py:1685 templates/ventas_periodo.html:610
 msgid "Sáb"
 msgstr "Sat"
 
-#: reportes.py:1342 reportes.py:1685
+#: reportes.py:1342 reportes.py:1685 templates/ventas_periodo.html:610
 msgid "Dom"
 msgstr "Sun"
 
@@ -862,6 +866,7 @@ msgid "Métricas Clave"
 msgstr "Key Metrics"
 
 #: reportes.py:1760 reportes.py:2254 templates/cierre_caja.html:724
+#: templates/ventas_periodo.html:368
 msgid "Valor"
 msgstr "Value"
 
@@ -1211,6 +1216,7 @@ msgid "Reorden"
 msgstr "Reorder"
 
 #: reportes.py:2254 templates/reporte_activos.html:710
+#: templates/ventas_periodo.html:369
 msgid "Estado"
 msgstr "Status"
 
@@ -1671,10 +1677,12 @@ msgid "Consultar fecha:"
 msgstr "Check date:"
 
 #: templates/cierre_caja.html:467 templates/productos_populares.html:229
+#: templates/ventas_periodo.html:211
 msgid "Hoy"
 msgstr "Today"
 
 #: templates/cierre_caja.html:468 templates/productos_populares.html:230
+#: templates/ventas_periodo.html:212
 msgid "Ayer"
 msgstr "Yesterday"
 
@@ -1687,18 +1695,19 @@ msgid "RESUMEN EJECUTIVO"
 msgstr "5. EXECUTIVE SUMMARY"
 
 #: templates/cierre_caja.html:503 templates/cierre_caja.html:645
-#: templates/reporte_ventas_externas.html:63
+#: templates/reporte_ventas_externas.html:63 templates/ventas_periodo.html:258
 msgid "Total Ventas"
 msgstr "TOTAL SALES"
 
 #: templates/cierre_caja.html:515 templates/cierre_caja.html:631
 #: templates/cierre_caja.html:671 templates/cierre_caja.html:704
+#: templates/ventas_periodo.html:265 templates/ventas_periodo.html:383
 msgid "Transacciones"
 msgstr "Number of transactions"
 
 #: templates/cierre_caja.html:521 templates/cierre_caja.html:680
 #: templates/cierre_caja.html:691 templates/cierre_caja.html:697
-#: templates/productos_populares.html:295
+#: templates/productos_populares.html:295 templates/ventas_periodo.html:292
 msgid "Salidas No Comerciales"
 msgstr "Non-Commercial Outflows"
 
@@ -1808,45 +1817,46 @@ msgid "Productos Más Vendidos"
 msgstr "Product"
 
 #: templates/productos_populares.html:6 templates/reporte_activos.html:6
-#: templates/reporte_activos.html:576
+#: templates/reporte_activos.html:576 templates/ventas_periodo.html:6
+#: templates/ventas_periodo.html:329 templates/ventas_periodo.html:584
 msgid "Panadería"
 msgstr "Number of Payments"
 
-#: templates/productos_populares.html:214
+#: templates/productos_populares.html:214 templates/ventas_periodo.html:196
 msgid "Seleccionar Período"
 msgstr "Days in period:"
 
 #: templates/productos_populares.html:217
-#: templates/reporte_ventas_externas.html:40
+#: templates/reporte_ventas_externas.html:40 templates/ventas_periodo.html:199
 msgid "Fecha Inicio"
 msgstr "Start Date"
 
 #: templates/productos_populares.html:222
-#: templates/reporte_ventas_externas.html:44
+#: templates/reporte_ventas_externas.html:44 templates/ventas_periodo.html:204
 msgid "Fecha Fin"
 msgstr "Date"
 
-#: templates/productos_populares.html:227
+#: templates/productos_populares.html:227 templates/ventas_periodo.html:209
 msgid "Período Rápido"
 msgstr "Product"
 
-#: templates/productos_populares.html:231
+#: templates/productos_populares.html:231 templates/ventas_periodo.html:213
 msgid "Esta Semana"
 msgstr "Weekly Pattern"
 
-#: templates/productos_populares.html:232
+#: templates/productos_populares.html:232 templates/ventas_periodo.html:214
 msgid "Este Mes"
 msgstr "This Month"
 
-#: templates/productos_populares.html:233
+#: templates/productos_populares.html:233 templates/ventas_periodo.html:215
 msgid "Mes Anterior"
 msgstr "Last Month"
 
-#: templates/productos_populares.html:234
+#: templates/productos_populares.html:234 templates/ventas_periodo.html:216
 msgid "Personalizado"
 msgstr "Custom"
 
-#: templates/productos_populares.html:239
+#: templates/productos_populares.html:239 templates/ventas_periodo.html:221
 msgid "Actualizar"
 msgstr "Update"
 
@@ -1866,7 +1876,7 @@ msgstr "Custom"
 msgid "Actual"
 msgstr "Current Stock"
 
-#: templates/productos_populares.html:265
+#: templates/productos_populares.html:265 templates/ventas_periodo.html:246
 msgid "Exportar PDF"
 msgstr "Download PDF"
 
@@ -2212,11 +2222,11 @@ msgstr ""
 
 #: templates/reportes.html:221 templates/reportes.html:223
 msgid "Historial de Ventas"
-msgstr "PAYMENT HISTORY"
+msgstr "SALES HISTORY"
 
 #: templates/reportes.html:225
 msgid "Ventas por período"
-msgstr "Sales for the period"
+msgstr "Sales by period"
 
 #: templates/reportes.html:226
 msgid "Análisis detallado de ventas con desglose por producto y método de pago."
@@ -2483,3 +2493,155 @@ msgstr "Generating report..."
 #: templates/reportes.html:558
 msgid "Por favor espera, esto puede tomar unos segundos"
 msgstr "Please wait, this may take a few seconds"
+
+#: templates/ventas_periodo.html:6
+msgid "Reporte de Ventas por Período"
+msgstr "Sales for the period"
+
+#: templates/ventas_periodo.html:234
+msgid "REPORTE DE VENTAS POR PERÍODO"
+msgstr "Sales for the period"
+
+#: templates/ventas_periodo.html:238 templates/ventas_periodo.html:514
+msgid "Período:"
+msgstr "Days in period:"
+
+#: templates/ventas_periodo.html:260
+msgid "Ingresos reales (excluye donaciones)"
+msgstr "Real revenue (excludes donations)"
+
+#: templates/ventas_periodo.html:267
+msgid "Total ventas + donaciones"
+msgstr "TOTAL SALES"
+
+#: templates/ventas_periodo.html:272 templates/ventas_periodo.html:392
+msgid "Ticket Promedio"
+msgstr "Average"
+
+#: templates/ventas_periodo.html:274
+msgid "Por transacción (ventas reales)"
+msgstr "Per transaction (real sales)"
+
+#: templates/ventas_periodo.html:283
+msgid "vs período anterior"
+msgstr "Product"
+
+#: templates/ventas_periodo.html:294
+msgid "Transacciones de donación en el período"
+msgstr "Number of transactions"
+
+#: templates/ventas_periodo.html:299
+msgid "Productos Donados"
+msgstr "Product"
+
+#: templates/ventas_periodo.html:301
+msgid "Unidades donadas en el período"
+msgstr "No income in the period"
+
+#: templates/ventas_periodo.html:310
+msgid "Distribución por Categoría"
+msgstr "Expense Distribution by Category"
+
+#: templates/ventas_periodo.html:324
+msgid "Ventas Estimadas"
+msgstr "Cumulative Sales"
+
+#: templates/ventas_periodo.html:334 templates/ventas_periodo.html:584
+msgid "Pastelería"
+msgstr "Number of Payments"
+
+#: templates/ventas_periodo.html:339 templates/ventas_periodo.html:584
+msgid "Bebidas"
+msgstr "Beverages"
+
+#: templates/ventas_periodo.html:355
+msgid "Resumen de Desempeño"
+msgstr "Performance Summary"
+
+#: templates/ventas_periodo.html:367
+msgid "Métrica"
+msgstr "Key Metrics"
+
+#: templates/ventas_periodo.html:374
+msgid "Ventas Totales"
+msgstr "Real Sales"
+
+#: templates/ventas_periodo.html:411
+msgid "Análisis de Productos por Categoría"
+msgstr "EXPENSE ANALYSIS BY CATEGORY"
+
+#: templates/ventas_periodo.html:421
+msgid "Frecuencia"
+msgstr "Reference"
+
+#: templates/ventas_periodo.html:422
+msgid "Desempeño"
+msgstr "Performance"
+
+#: templates/ventas_periodo.html:442
+msgid "Alta"
+msgstr "High"
+
+#: templates/ventas_periodo.html:444
+msgid "Media"
+msgstr "Average"
+
+#: templates/ventas_periodo.html:446
+msgid "Baja"
+msgstr "LOW"
+
+#: templates/ventas_periodo.html:451
+msgid "Alto desempeño"
+msgstr "High performance"
+
+#: templates/ventas_periodo.html:453
+msgid "Medio desempeño"
+msgstr "Medium performance"
+
+#: templates/ventas_periodo.html:455
+msgid "Bajo desempeño"
+msgstr "Low performance"
+
+#: templates/ventas_periodo.html:471
+msgid "Análisis Predictivo y Recomendaciones"
+msgstr "Predictive analysis with sales projections and recommendations."
+
+#: templates/ventas_periodo.html:476
+msgid "Fortalezas:"
+msgstr "TOTALS"
+
+#: templates/ventas_periodo.html:479
+msgid "Crecimiento del"
+msgstr "Growth %"
+
+#: templates/ventas_periodo.html:482
+msgid "Ticket promedio:"
+msgstr "Average"
+
+#: templates/ventas_periodo.html:484
+msgid "transacciones"
+msgstr "Number of transactions"
+
+#: templates/ventas_periodo.html:494
+msgid "Implementar promociones"
+msgstr "Implement promotions"
+
+#: templates/ventas_periodo.html:497
+msgid "Crear combos"
+msgstr "Create combos"
+
+#: templates/ventas_periodo.html:499
+msgid "Optimizar stock"
+msgstr "Optimize stock"
+
+#: templates/ventas_periodo.html:513
+msgid "Reporte generado el"
+msgstr "Report generated automatically"
+
+#: templates/ventas_periodo.html:612
+msgid "Ventas Diarias"
+msgstr "Real Sales"
+
+#: templates/ventas_periodo.html:637
+msgid "¿Deseas cerrar el reporte?"
+msgstr "Do you want to close the report?"
