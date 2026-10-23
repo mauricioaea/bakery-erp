@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-23 10:29-0500\n"
+"POT-Creation-Date: 2026-10-23 15:33-0500\n"
 "PO-Revision-Date: 2026-10-15 16:08-0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: pap\n"
@@ -24,8 +24,8 @@ msgid "Reporte de Inventario Externo"
 msgstr "Inventario Externo"
 
 #: app.py:6526 app.py:6711 reportes.py:2254 reportes.py:3096
-#: templates/cierre_caja.html:537 templates/cierre_caja.html:572
-#: templates/productos_populares.html:385
+#: templates/analisis_predictivo.html:423 templates/cierre_caja.html:537
+#: templates/cierre_caja.html:572 templates/productos_populares.html:385
 #: templates/productos_populares.html:445
 #: templates/productos_populares.html:527
 #: templates/productos_populares.html:554
@@ -42,7 +42,7 @@ msgstr "Produkto"
 msgid "Categoría"
 msgstr "Kategoria"
 
-#: app.py:6526
+#: app.py:6526 templates/analisis_predictivo.html:424
 msgid "Stock"
 msgstr "Total Kostu"
 
@@ -195,7 +195,8 @@ msgstr "NEGATIVO"
 msgid "Días del período:"
 msgstr "Dianan di e períodoo:"
 
-#: reportes.py:213
+#: reportes.py:213 templates/analisis_predictivo.html:356
+#: templates/analisis_predictivo.html:445
 msgid "días"
 msgstr "dianan"
 
@@ -451,8 +452,9 @@ msgstr "ANÁLISIS VISUAL DI GASTUNAN"
 msgid "DISTRIBUCIÓN DETALLADA DE GASTOS"
 msgstr "DISTRIBUSHON DETAYÁ DI GASTUNAN"
 
-#: reportes.py:1108 reportes.py:3068 templates/productos_populares.html:486
-#: templates/ventas_periodo.html:323
+#: reportes.py:1108 reportes.py:3068 templates/analisis_predictivo.html:482
+#: templates/analisis_predictivo.html:529
+#: templates/productos_populares.html:486 templates/ventas_periodo.html:323
 msgid "Porcentaje"
 msgstr "Porsentahe"
 
@@ -1616,12 +1618,14 @@ msgstr "Promedio pa Pago"
 msgid "DESGLOSE POR CATEGORÍA"
 msgstr "DESGLOSE PA KATEGORIA"
 
-#: reportes.py:3372 reportes.py:3534 templates/productos_populares.html:485
-#: templates/reporte_activos.html:661
+#: reportes.py:3372 reportes.py:3534 templates/analisis_predictivo.html:481
+#: templates/analisis_predictivo.html:528
+#: templates/productos_populares.html:485 templates/reporte_activos.html:661
 msgid "Cantidad"
 msgstr "Kantidat"
 
-#: reportes.py:3372 reportes.py:3534 templates/cierre_caja.html:675
+#: reportes.py:3372 reportes.py:3534 templates/analisis_predictivo.html:506
+#: templates/analisis_predictivo.html:553 templates/cierre_caja.html:675
 #: templates/productos_populares.html:504
 msgid "Total"
 msgstr "Total"
@@ -1676,6 +1680,311 @@ msgstr "Banco"
 msgid "DETALLE DE DEPÓSITOS"
 msgstr "DETAYE DI DEPOSITONAN"
 
+#: templates/analisis_predictivo.html:6 templates/reportes.html:456
+#: templates/reportes.html:458
+msgid "Análisis Predictivo"
+msgstr "ANALISIS VISUAL PREDIKTIVO"
+
+#: templates/analisis_predictivo.html:6 templates/productos_populares.html:6
+#: templates/reporte_activos.html:6 templates/reporte_activos.html:576
+#: templates/ventas_periodo.html:6 templates/ventas_periodo.html:329
+#: templates/ventas_periodo.html:584
+msgid "Panadería"
+msgstr "Kantidat di Pagonan"
+
+#: templates/analisis_predictivo.html:186
+#: templates/productos_populares.html:214 templates/ventas_periodo.html:196
+msgid "Seleccionar Período"
+msgstr "Dianan di e períodoo:"
+
+#: templates/analisis_predictivo.html:189
+#: templates/productos_populares.html:217
+#: templates/reporte_ventas_externas.html:40 templates/ventas_periodo.html:199
+msgid "Fecha Inicio"
+msgstr "Fecha Inisio"
+
+#: templates/analisis_predictivo.html:194
+#: templates/productos_populares.html:222
+#: templates/reporte_ventas_externas.html:44 templates/ventas_periodo.html:204
+msgid "Fecha Fin"
+msgstr "Fecha"
+
+#: templates/analisis_predictivo.html:199
+#: templates/productos_populares.html:227 templates/ventas_periodo.html:209
+msgid "Período Rápido"
+msgstr "Produkto"
+
+#: templates/analisis_predictivo.html:201 templates/cierre_caja.html:467
+#: templates/productos_populares.html:229 templates/ventas_periodo.html:211
+msgid "Hoy"
+msgstr "Awe"
+
+#: templates/analisis_predictivo.html:202 templates/cierre_caja.html:468
+#: templates/productos_populares.html:230 templates/ventas_periodo.html:212
+msgid "Ayer"
+msgstr "Ayera"
+
+#: templates/analisis_predictivo.html:203
+#: templates/productos_populares.html:231 templates/ventas_periodo.html:213
+msgid "Esta Semana"
+msgstr "Patron Semanal"
+
+#: templates/analisis_predictivo.html:204
+#: templates/productos_populares.html:232 templates/ventas_periodo.html:214
+msgid "Este Mes"
+msgstr "E Mes aki"
+
+#: templates/analisis_predictivo.html:205
+#: templates/productos_populares.html:233 templates/ventas_periodo.html:215
+msgid "Mes Anterior"
+msgstr "Luna Pasá"
+
+#: templates/analisis_predictivo.html:206
+#: templates/productos_populares.html:234 templates/ventas_periodo.html:216
+msgid "Personalizado"
+msgstr "Personalisa"
+
+#: templates/analisis_predictivo.html:211
+#: templates/productos_populares.html:239 templates/ventas_periodo.html:221
+msgid "Actualizar"
+msgstr "Aktualisá"
+
+#: templates/analisis_predictivo.html:227
+msgid "ANÁLISIS PREDICTIVO CON IA"
+msgstr "ANALISIS VISUAL PREDIKTIVO"
+
+#: templates/analisis_predictivo.html:228
+msgid "Proyecciones y Recomendaciones Inteligentes"
+msgstr "REKOMENDASHONNAN INTELIGENTE"
+
+#: templates/analisis_predictivo.html:231
+msgid "Fecha de análisis:"
+msgstr "Fecha di generashon:"
+
+#: templates/analisis_predictivo.html:233
+msgid "APRENDIZAJE AUTOMÁTICO ACTIVO"
+msgstr "APRENSÁ AUTOMÁTIKO AKTIVO"
+
+#: templates/analisis_predictivo.html:239
+#: templates/productos_populares.html:265 templates/ventas_periodo.html:246
+msgid "Exportar PDF"
+msgstr "Download PDF"
+
+#: templates/analisis_predictivo.html:252
+msgid "Alertas Inteligentes del Sistema"
+msgstr "Alerta Inteligente di Sistema"
+
+#: templates/analisis_predictivo.html:269
+msgid "Detectado automáticamente por el sistema"
+msgstr "Reporte generá automáticamente"
+
+#: templates/analisis_predictivo.html:274
+#: templates/analisis_predictivo.html:538 templates/ventas_periodo.html:442
+msgid "Alta"
+msgstr "Haltu"
+
+#: templates/analisis_predictivo.html:274
+#: templates/analisis_predictivo.html:543 templates/ventas_periodo.html:444
+msgid "Media"
+msgstr "Promedio"
+
+#: templates/analisis_predictivo.html:274
+#: templates/analisis_predictivo.html:548 templates/ventas_periodo.html:446
+msgid "Baja"
+msgstr "ABOU"
+
+#: templates/analisis_predictivo.html:292
+msgid "Impacto de Salidas No Comerciales en el Inventario"
+msgstr "Salida No Komersial"
+
+#: templates/analisis_predictivo.html:300 templates/cierre_caja.html:521
+#: templates/cierre_caja.html:680 templates/cierre_caja.html:691
+#: templates/cierre_caja.html:697 templates/productos_populares.html:295
+#: templates/ventas_periodo.html:292
+msgid "Salidas No Comerciales"
+msgstr "Salida No Komersial"
+
+#: templates/analisis_predictivo.html:301
+msgid "Últimos 30 días"
+msgstr "Último 30 dia"
+
+#: templates/analisis_predictivo.html:307 templates/ventas_periodo.html:299
+msgid "Productos Donados"
+msgstr "Produkto"
+
+#: templates/analisis_predictivo.html:308
+msgid "Unidades descargadas sin ingresos"
+msgstr "Sin ingreso den e periodo"
+
+#: templates/analisis_predictivo.html:314
+msgid "Nota para el análisis predictivo:"
+msgstr "ANALISIS VISUAL PREDIKTIVO"
+
+#: templates/analisis_predictivo.html:314
+msgid ""
+"Las donaciones están incluidas en los datos históricos utilizados para "
+"las proyecciones, lo que garantiza un cálculo preciso del inventario "
+"necesario."
+msgstr ""
+"E donacionnan ta inkluí den e datonan históriko ku ta uzá pa "
+"proyekshonnan, lokual ta garantisá un kálkulo presis di e inventario "
+"nesesario."
+
+#: templates/analisis_predictivo.html:316
+msgid "IA CONSIDERA DONACIONES"
+msgstr "3. KONSUMO INTERNO / DONASHONNAN"
+
+#: templates/analisis_predictivo.html:328
+msgid "Proyecciones de Ventas - Próximos 7 Días"
+msgstr "Promedio di Benta pa Dia"
+
+#: templates/analisis_predictivo.html:329
+msgid "Basado en análisis de tendencias históricas y patrones de venta"
+msgstr "ANÁLISIS DI TENDENSIA DI BENTA"
+
+#: templates/analisis_predictivo.html:340
+msgid "Stock actual:"
+msgstr "Stock Aktual"
+
+#: templates/analisis_predictivo.html:340
+#: templates/productos_populares.html:347
+msgid "unidades"
+msgstr "Unid"
+
+#: templates/analisis_predictivo.html:345
+msgid "rotación/día"
+msgstr "Rotashon Haltu"
+
+#: templates/analisis_predictivo.html:350
+msgid "proyección 7 días"
+msgstr "Pronóstiko di 7 dia"
+
+#: templates/analisis_predictivo.html:359
+msgid "stock restante"
+msgstr "Stock Aktual"
+
+#: templates/analisis_predictivo.html:365
+#: templates/analisis_predictivo.html:452
+msgid "Alto"
+msgstr "Haltu"
+
+#: templates/analisis_predictivo.html:365
+#: templates/analisis_predictivo.html:452
+msgid "Medio"
+msgstr "Promedio"
+
+#: templates/analisis_predictivo.html:365
+#: templates/analisis_predictivo.html:384
+#: templates/analisis_predictivo.html:452
+msgid "Bajo"
+msgstr "ABOU"
+
+#: templates/analisis_predictivo.html:381
+msgid "Nivel de stock:"
+msgstr "Dianan di Stock"
+
+#: templates/analisis_predictivo.html:383
+msgid "Crítico"
+msgstr "Aktivo"
+
+#: templates/analisis_predictivo.html:385
+msgid "Normal"
+msgstr "Real"
+
+#: templates/analisis_predictivo.html:386
+msgid "Excedente"
+msgstr "Sobrante"
+
+#: templates/analisis_predictivo.html:408
+msgid "Recomendación IA:"
+msgstr "Rekomendashonnan:"
+
+#: templates/analisis_predictivo.html:425
+#: templates/productos_populares.html:389
+#: templates/productos_populares.html:528
+#: templates/productos_populares.html:555
+msgid "Rotación/día"
+msgstr "Rotashon Haltu"
+
+#: templates/analisis_predictivo.html:426
+msgid "Proyección"
+msgstr "Promedio diario:"
+
+#: templates/analisis_predictivo.html:427
+msgid "Días Stock"
+msgstr "Dianan di Stock"
+
+#: templates/analisis_predictivo.html:428
+msgid "Riesgo"
+msgstr "Egresos"
+
+#: templates/analisis_predictivo.html:429
+msgid "Recomendación"
+msgstr "REKOMENDASHONNAN"
+
+#: templates/analisis_predictivo.html:470
+msgid "Distribución de Riesgos"
+msgstr "DISTRIBUSHON DETAYÁ DI GASTUNAN"
+
+#: templates/analisis_predictivo.html:480
+msgid "Tipo de Riesgo"
+msgstr "Tipo di Risko"
+
+#: templates/analisis_predictivo.html:491
+#: templates/analisis_predictivo.html:639
+msgid "Riesgo Alto"
+msgstr "Risku Haltu"
+
+#: templates/analisis_predictivo.html:496
+#: templates/analisis_predictivo.html:639
+msgid "Riesgo Medio"
+msgstr "Promedio"
+
+#: templates/analisis_predictivo.html:501
+#: templates/analisis_predictivo.html:639
+msgid "Riesgo Bajo"
+msgstr "Risku Medio"
+
+#: templates/analisis_predictivo.html:517
+msgid "Alertas por Prioridad"
+msgstr "Benta pa periodo"
+
+#: templates/analisis_predictivo.html:527
+msgid "Prioridad"
+msgstr "Unid"
+
+#: templates/analisis_predictivo.html:569
+msgid "Reporte generado automáticamente el"
+msgstr "Reporte generá automáticamente"
+
+#: templates/analisis_predictivo.html:570
+msgid "Sistema Panadería con IA"
+msgstr "Kantidat di Pagonan"
+
+#: templates/analisis_predictivo.html:570
+msgid "Análisis predictivo con aprendizaje automático"
+msgstr "ANALISIS PREDIKTIVO KU INTELIGENSIA ARTIFISIAL"
+
+#: templates/analisis_predictivo.html:663
+msgid "Alertas Altas"
+msgstr "Benta Real"
+
+#: templates/analisis_predictivo.html:663
+msgid "Alertas Medias"
+msgstr "Alerta di Perdida:"
+
+#: templates/analisis_predictivo.html:663
+msgid "Alertas Bajas"
+msgstr "Risku Abou"
+
+#: templates/analisis_predictivo.html:665
+msgid "Cantidad de Alertas"
+msgstr "Kantidat di Pagonan"
+
+#: templates/analisis_predictivo.html:686 templates/ventas_periodo.html:637
+msgid "¿Deseas cerrar el reporte?"
+msgstr "Bo kier sera e reporte?"
+
 #: templates/cierre_caja.html:434
 msgid "REPORTE DE CIERRE"
 msgstr "Reporte imprimibel"
@@ -1691,16 +2000,6 @@ msgstr "AWE"
 #: templates/cierre_caja.html:466
 msgid "Consultar fecha:"
 msgstr "Konsultá fecha:"
-
-#: templates/cierre_caja.html:467 templates/productos_populares.html:229
-#: templates/ventas_periodo.html:211
-msgid "Hoy"
-msgstr "Awe"
-
-#: templates/cierre_caja.html:468 templates/productos_populares.html:230
-#: templates/ventas_periodo.html:212
-msgid "Ayer"
-msgstr "Ayera"
 
 #: templates/cierre_caja.html:483
 msgid "Consulta histórica"
@@ -1720,12 +2019,6 @@ msgstr "TOTAL DI BENTA"
 #: templates/ventas_periodo.html:265 templates/ventas_periodo.html:383
 msgid "Transacciones"
 msgstr "Kantidat di transakshonnan"
-
-#: templates/cierre_caja.html:521 templates/cierre_caja.html:680
-#: templates/cierre_caja.html:691 templates/cierre_caja.html:697
-#: templates/productos_populares.html:295 templates/ventas_periodo.html:292
-msgid "Salidas No Comerciales"
-msgstr "Salida No Komersial"
 
 #: templates/cierre_caja.html:538 templates/cierre_caja.html:573
 msgid "Unid"
@@ -1832,50 +2125,6 @@ msgstr "Kantidat di Pagonan"
 msgid "Productos Más Vendidos"
 msgstr "Produkto"
 
-#: templates/productos_populares.html:6 templates/reporte_activos.html:6
-#: templates/reporte_activos.html:576 templates/ventas_periodo.html:6
-#: templates/ventas_periodo.html:329 templates/ventas_periodo.html:584
-msgid "Panadería"
-msgstr "Kantidat di Pagonan"
-
-#: templates/productos_populares.html:214 templates/ventas_periodo.html:196
-msgid "Seleccionar Período"
-msgstr "Dianan di e períodoo:"
-
-#: templates/productos_populares.html:217
-#: templates/reporte_ventas_externas.html:40 templates/ventas_periodo.html:199
-msgid "Fecha Inicio"
-msgstr "Fecha Inisio"
-
-#: templates/productos_populares.html:222
-#: templates/reporte_ventas_externas.html:44 templates/ventas_periodo.html:204
-msgid "Fecha Fin"
-msgstr "Fecha"
-
-#: templates/productos_populares.html:227 templates/ventas_periodo.html:209
-msgid "Período Rápido"
-msgstr "Produkto"
-
-#: templates/productos_populares.html:231 templates/ventas_periodo.html:213
-msgid "Esta Semana"
-msgstr "Patron Semanal"
-
-#: templates/productos_populares.html:232 templates/ventas_periodo.html:214
-msgid "Este Mes"
-msgstr "E Mes aki"
-
-#: templates/productos_populares.html:233 templates/ventas_periodo.html:215
-msgid "Mes Anterior"
-msgstr "Luna Pasá"
-
-#: templates/productos_populares.html:234 templates/ventas_periodo.html:216
-msgid "Personalizado"
-msgstr "Personalisa"
-
-#: templates/productos_populares.html:239 templates/ventas_periodo.html:221
-msgid "Actualizar"
-msgstr "Aktualisá"
-
 #: templates/productos_populares.html:253
 msgid "PRODUCTOS MÁS VENDIDOS"
 msgstr "Produkto"
@@ -1891,10 +2140,6 @@ msgstr "Personalisa"
 #: templates/productos_populares.html:259
 msgid "Actual"
 msgstr "Stock Aktual"
-
-#: templates/productos_populares.html:265 templates/ventas_periodo.html:246
-msgid "Exportar PDF"
-msgstr "Download PDF"
 
 #: templates/productos_populares.html:280
 msgid "Información de Salidas No Comerciales en el Período"
@@ -1929,7 +2174,7 @@ msgstr "Aktualisashonnan di IA Apliká"
 msgid ""
 "Se actualizaron automáticamente %(num)s rotaciones de productos usando "
 "aprendizaje automático."
-msgstr ""
+msgstr "Alerta Haltu"
 
 #: templates/productos_populares.html:321
 msgid "Top 10 Productos Más Vendidos"
@@ -1938,10 +2183,6 @@ msgstr "Produkto"
 #: templates/productos_populares.html:322
 msgid "Ranking basado en unidades vendidas"
 msgstr "Ranking basá riba unidadnan bendí"
-
-#: templates/productos_populares.html:347
-msgid "unidades"
-msgstr "Unid"
 
 #: templates/productos_populares.html:352
 msgid "ingresos"
@@ -1959,12 +2200,6 @@ msgstr "dianan"
 #: templates/productos_populares.html:484
 msgid "Tipo"
 msgstr "Tipo"
-
-#: templates/productos_populares.html:389
-#: templates/productos_populares.html:528
-#: templates/productos_populares.html:555
-msgid "Rotación/día"
-msgstr "Rotashon Haltu"
 
 #: templates/productos_populares.html:433
 msgid "Top 5 por Ingresos"
@@ -2151,8 +2386,8 @@ msgstr "No tin aktivo registrá"
 #: templates/reporte_activos.html:758
 msgid "Registra algunos activos para ver análisis y estadísticas en este reporte."
 msgstr ""
-"Registrá algun aktivo pa mira e análisis i estadístikanan den e reporte "
-"aki."
+"Alerta MedioRegistrá algun aktivo pa mira e análisis i estadístikanan den"
+" e reporte aki."
 
 #: templates/reporte_activos.html:760
 msgid "Registrar Primer Activo"
@@ -2236,7 +2471,7 @@ msgstr "HISTORIAL DI DEPOSITONAN BANKARIO"
 msgid ""
 "Consulta de depósitos por período, banco y estado de conciliación. Con "
 "exportación a PDF."
-msgstr ""
+msgstr "Alerta Abou"
 
 #: templates/reportes.html:221 templates/reportes.html:223
 msgid "Historial de Ventas"
@@ -2432,10 +2667,6 @@ msgstr ""
 msgid "Ver Reporte Web"
 msgstr "Wak Reporte Web"
 
-#: templates/reportes.html:456 templates/reportes.html:458
-msgid "Análisis Predictivo"
-msgstr "ANALISIS VISUAL PREDIKTIVO"
-
 #: templates/reportes.html:460
 msgid "Predicciones y tendencias"
 msgstr "Prediccionnan i tendencianan"
@@ -2548,10 +2779,6 @@ msgstr "Produkto"
 msgid "Transacciones de donación en el período"
 msgstr "Kantidat di transakshonnan"
 
-#: templates/ventas_periodo.html:299
-msgid "Productos Donados"
-msgstr "Produkto"
-
 #: templates/ventas_periodo.html:301
 msgid "Unidades donadas en el período"
 msgstr "Sin ingreso den e periodo"
@@ -2595,18 +2822,6 @@ msgstr "Referensia"
 #: templates/ventas_periodo.html:422
 msgid "Desempeño"
 msgstr "Rendimentu"
-
-#: templates/ventas_periodo.html:442
-msgid "Alta"
-msgstr "Haltu"
-
-#: templates/ventas_periodo.html:444
-msgid "Media"
-msgstr "Promedio"
-
-#: templates/ventas_periodo.html:446
-msgid "Baja"
-msgstr "ABOU"
 
 #: templates/ventas_periodo.html:451
 msgid "Alto desempeño"
@@ -2659,7 +2874,3 @@ msgstr "Reporte generá automáticamente"
 #: templates/ventas_periodo.html:612
 msgid "Ventas Diarias"
 msgstr "Benta Real"
-
-#: templates/ventas_periodo.html:637
-msgid "¿Deseas cerrar el reporte?"
-msgstr "Bo kier sera e reporte?"
