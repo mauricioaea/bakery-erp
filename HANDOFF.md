@@ -1,7 +1,7 @@
 # 🗂️ CONTEXTO MAESTRO — PanaderíaPro (Bakery ERP)
 
-**Última actualización:** 18 de Octubre, 2026
-**Último commit:** `6b6204b` (feat DT-37 F4: migrar tesoreria_unificado a i18n)
+**Última actualización:** 23 de Octubre, 2026
+**Último commit:** `3ea5612` (feat DT-37 F5: migrar reporte_ventas_externas.html a i18n)
 **Sesión 2 Oct:** DT-11, DT-12, DT-13, DT-14, DT-16, DT-26, DT-27, DT-3, DT-4
 **Sesión 3 Oct:** DT-1, DT-6, DT-9, DT-20 Fase C (Tanda 1+2+3), DT-30, DT-31
 **Sesión 4 Oct:** DT-10, DT-22, DT-24, DT-17, DT-33, DT-34, DT-32, DT-18
@@ -15,6 +15,7 @@
 **Sesión 16 Oct (mañana):** DT-37 F4 partes 1-5 (`estado_resultados` + `flujo_caja` + `conciliacion_bancaria` + `analisis_gastos` + `analisis_inventarios`) + fix crítico de f-strings con emoji — **5/13 reportes migrados**
 **Sesión 16 Oct (noche):** DT-37 F4.6 (`ia_predictivo` método principal + 3 helpers) — **6/13 reportes migrados**
 **Sesión 18 Oct (mañana):** DT-37 F4.7 (`historial_pagos` + `historial_depositos`) + DT-37 F4.8 (`tesoreria_unificado` método principal + 4 helpers + `_generar_reporte_error`) — **10/10 reportes UI migrados**.
+**Sesión 20-23 Oct:** DT-37 F5 (i18n de reportes HTML en templates/). Migración de 6 templates: `reportes.html`, `cierre_caja.html`, `productos_populares.html`, `reporte_activos.html`, `reporte_inventario_externo.html` (+ fix export PDF), `reporte_ventas_externas.html` (+ fix export PDF). Corrección de `babel.cfg` y `app.py` (import `_`).
 
 ---
 
@@ -22,12 +23,12 @@
 
 - **Nombre:** PanaderíaPro (bakery-erp)
 - **Repo:** https://github.com/mauricioaea/bakery-erp
-- **Estado:** v1.7.0 — **11/11 módulos completados (100%)** + **DT-37 F4 100% en reportes.py** (10 reportes UI + 4 helpers + 1 huérfano pendiente: `libro_diario`). F5 (reportes HTML en `app.py`) pendiente.
+- **Estado:** v1.8.0 — **11/11 módulos completados (100%)** + **DT-37 F4 100% en reportes.py** (10 reportes UI + 4 helpers + 1 huérfano pendiente: `libro_diario`). **DT-37 F5 en curso** (6 de 11 templates HTML migrados).
 - **Arquitectura:** Multi-tenant con PostgreSQL (schemas por tenant)
-- **Próximo hito:** DT-37 F5 (i18n de reportes HTML en `app.py`) + Dockerización (Fase 3) + DT-CRÉDITOS.
+- **Próximo hito:** DT-37 F5 (faltan 5 templates HTML) + Dockerización (Fase 3) + DT-CRÉDITOS.
 - **Seguridad:** Producción-ready (CSRF con tokens firmados + Origin/Referer + logging centralizado)
 - **Observabilidad:** Producción-ready (logger con rotación de archivos, niveles configurables)
-- **i18n:** Operativo para reportes PDF en **es/en/pap** (10 de 10 reportes UI en `reportes.py` migrados).
+- **i18n:** Operativo para reportes PDF en **es/en/pap** (10 de 10 reportes UI en `reportes.py` migrados). Operativo para reportes HTML en **es/en/pap** (6 de 11 templates migrados).
 
 ---
 
@@ -54,18 +55,20 @@
 - `middleware_saas.py`, `tenant_decorators.py`, `tenant_context.py` — multi-tenant
 - `security_utils.py` — utilidades de seguridad multi-tenant
 - `migrations/sql/` — scripts SQL versionados
-- **`babel.cfg`** — config de extracción de strings
+- **`babel.cfg`** — config de extracción de strings (ACTUALIZADO en F5: `[jinja2: **.html]`)
 - **`locales/`** — catálogos de traducción
-  - `locales/messages.pot` — plantilla (**344 msgids**)
+  - `locales/messages.pot` — plantilla (**~555 msgids**)
   - `locales/es/LC_MESSAGES/messages.{po,mo}` — español (0 traducidos, fallback)
-  - `locales/en/LC_MESSAGES/messages.{po,mo}` — inglés (**344 traducidos, 100%**)
-  - `locales/pap/LC_MESSAGES/messages.{po,mo}` — papiamentu Curazao (**344 traducidos, 100%**)
+  - `locales/en/LC_MESSAGES/messages.{po,mo}` — inglés (**~548 traducidos, 98%**)
+  - `locales/pap/LC_MESSAGES/messages.{po,mo}` — papiamentu Curazao (**~548 traducidos, 98%**)
 - `templates/` (54 templates + `_csrf_head.html` partial + subcarpetas `secciones/`)
 - `static/js/` — incluye `csrf-auto-inject.js`
 - `logs/` — archivo rotativo `panaderia.log` (ignorado por git)
 - `.env` (protegido), `.env.example` (plantilla)
 - `requirements.txt` — incluye `Flask-WTF==1.3.0`, `WTForms==3.2.2`, `Flask-Babel==4.0.0`, `Babel==2.18.0`
 - `HANDOFF.md` — este archivo
+- **`_limpiar_fuzzy.py`** — script de utilidad (CRÍTICO en F5)
+- **`_ver_untraducciones.py`** — script de utilidad (diagnóstico i18n)
 
 ---
 
@@ -154,13 +157,19 @@
 | 8 | Activos Fijos | ✅ COMPLETO |
 | 9 | Gestión de Usuarios + Mi Perfil | ✅ COMPLETO |
 | 10 | Gestión Financiera | ✅ COMPLETO |
-| 11 | Reportes Profesionales | ✅ COMPLETO (i18n PDF: 100% en `reportes.py`; HTML: pendiente F5) |
+| 11 | Reportes Profesionales | ✅ COMPLETO (i18n PDF: 100% en `reportes.py`; HTML: 6/11 templates en F5) |
 
 ---
 
 ## 6️⃣ Últimos commits pusheados
 
 ```text
+3ea5612 feat(DT-37 F5): migrar reporte_ventas_externas.html a i18n (es/en/pap) + fix export PDF
+2f9a5fe feat(DT-37 F5): migrar reporte_inventario_externo.html a i18n (es/en/pap) + fix export PDF
+0ebb3de feat(DT-37 F5): migrar reporte_activos.html a i18n (es/en/pap) + fix placeholders
+a796290 feat(DT-37 F5): migrar productos_populares.html a i18n (es/en/pap) + fixes de script
+a0de295 feat(DT-37 F5): migrar reportes.html y cierre_caja.html a i18n (es/en/pap)
+d20e499 docs: HANDOFF v9.0 - DT-37 F4 completada en reportes.py (10/10 UI)
 6b6204b feat(DT-37 F4): migrar tesoreria_unificado a i18n (es/en/pap)
 89c2568 feat(DT-37 F4): migrar historial_pagos + historial_depositos a i18n (es/en/pap)
 b7d76b9 feat(DT-37 F4): migrar generar_reporte_ia_predictivo a i18n (es/en/pap)
@@ -203,7 +212,7 @@ Firma de tokens CSRF (flask-wtf).
 Firma de cookies seguras.
 
 Rutas críticas
-/reportes, /historial_pagos, /historial_depositos
+F4 (reportes.py — PDFs):
 
 /generar_reporte_tesoreria_unificado (✅ i18n es/en/pap)
 
@@ -221,7 +230,31 @@ Rutas críticas
 
 /generar_reporte_analisis_inventarios (✅ i18n es/en/pap)
 
-/reporte_produccion_diaria, /reporte_inventario_externo, /reporte_ventas_externas, /reporte/cierre_caja, /reporte/ventas, /reporte/productos_populares, /reporte/analisis_predictivo, /reporte/ventas_avanzado, /reporte_activos (⚠️ HTML, pendiente DT-37 F5).
+F5 (templates HTML — migradas):
+
+/reportes, /reporte/cierre_caja, /reporte/productos_populares, /reporte_activos, /reporte_inventario_externo (+ /exportar_inventario_externo), /reporte_ventas_externas (+ /exportar_ventas_externas) — todas ✅ i18n es/en/pap.
+
+F5 (templates HTML — pendientes):
+
+/reporte/ventas (ventas_periodo.html)
+
+/reporte_produccion_diaria (produccion_diaria.html o reporte_produccion.html)
+
+/reporte/analisis_predictivo (analisis_predictivo.html)
+
+/reporte/ventas_avanzado (ventas_avanzado.html)
+
+/reporte/cierre_diario (cierre_diario.html)
+
+F5 (parciales de secciones — pendientes):
+
+templates/secciones/resumen_ventas.html
+
+templates/secciones/analisis_ia.html
+
+templates/secciones/recomendaciones.html
+
+templates/secciones/analisis_productos.html
 
 🎯 Arquitectura del before_request (post-DT-25 + DT-37)
 Un solo before_request en app.py:1892 (antes_de_cada_peticion).
@@ -274,6 +307,7 @@ Auto-inyecta <input name="csrf_token"> en formularios POST.
 Envuelve window.fetch para agregar X-CSRFToken en AJAX POST.
 
 login.html tiene el token manual (funciona sin JS).
+
 Defensa en profundidad: _validar_origen_csrf() (Origin/Referer) sigue activo.
 
 🎯 Logging centralizado (post-DT-47)
@@ -297,12 +331,13 @@ Cero print() activos. Los 6 restantes son comentados o dentro de strings.
 
 .gitignore: logs/ y *.log ya están excluidos.
 
-🎯 i18n con Flask-Babel (post-DT-37 F3 + F4)
+🎯 i18n con Flask-Babel (post-DT-37 F3 + F4 + F5)
 Arquitectura de i18n:
 
 Inicialización en app.py:~1256:
 
 python
+from flask_babel import Babel, gettext as _
 from flask_babel import Babel
 
 def _get_locale():
@@ -314,21 +349,25 @@ babel = Babel(
     default_translation_directories=os.path.join(app.root_path, 'locales')
 )
 ⚠️ Lección clave: app.config['BABEL_TRANSLATION_DIRECTORIES'] aplicado después de Babel(app) es demasiado tarde → Babel ya leyó el default (translations/). Pasar default_translation_directories al constructor.
+⚠️ IMPORTANTE (F5): se agregó gettext as _ en la línea 1264 de app.py para poder usar _() en funciones de app.py (ej. exportar_inventario_externo, exportar_ventas_externas).
 
 _get_locale() resuelve el locale por request, leyendo g.idioma_tenant (cargado en el before_request).
 
-Pipeline i18n (comandos):
+Pipeline i18n actualizado (F5):
 
 cmd
 # 1. Marcar strings en código con _()
-# 2. Extraer strings (SOLO archivos específicos, NO '.'):
-pybabel extract -F babel.cfg -o locales/messages.pot app.py models.py reportes.py
+# 2. Extraer strings (incluyendo templates):
+pybabel extract -F babel.cfg -o locales/messages.pot app.py models.py reportes.py templates
 
 # 3. Actualizar catálogos existentes (después de agregar nuevos strings):
 pybabel update -i locales/messages.pot -d locales
 
-# 4. Traducir los msgstr en cada .po (es/, en/, pap/)
-# 5. Compilar .po -> .mo:
+# 4. 🚨 CRÍTICO: limpiar fuzzy DESPUÉS de update:
+python _limpiar_fuzzy.py
+
+# 5. Traducir los msgstr en cada .po (es/, en/, pap/)
+# 6. Compilar .po -> .mo:
 pybabel compile -d locales --statistics
 Idiomas soportados: es (base/fallback), en, pap (Papiamentu Curazao).
 
@@ -336,7 +375,7 @@ Cómo funciona el fallback:
 
 es.po tiene 0 traducciones → Babel devuelve el msgid original (que ya está en español).
 
-en.po y pap.po tienen 344 traducciones cada uno.
+en.po y pap.po tienen ~548 traducciones cada uno.
 
 Días en Papiamentu Curazao:
 
@@ -349,6 +388,16 @@ Viernes	djabièrnè
 Sábado	djasabra
 Domingo	djadumingu
 9️⃣ Deuda técnica acumulada
+✅ RESUELTAS el 23 de Octubre 2026 — DT-37 F5 (parte 1)
+#	Descripción	Commit
+DT-37 F5.1	Migrar reportes.html (menú principal)	a0de295
+DT-37 F5.2	Migrar cierre_caja.html	a0de295
+DT-37 F5.3	Migrar productos_populares.html	a796290
+DT-37 F5.4	Migrar reporte_activos.html	0ebb3de
+DT-37 F5.5	Migrar reporte_inventario_externo.html + fix export PDF	2f9a5fe
+DT-37 F5.6	Migrar reporte_ventas_externas.html + fix export PDF	3ea5612
+DT-babel-fix	babel.cfg corregido a [jinja2: **.html]	a0de295
+DT-app-import	from flask_babel import Babel, gettext as _ en app.py:1264	2f9a5fe
 ✅ RESUELTAS el 18 de Octubre 2026 — DT-37 F4.6 + F4.7 + F4.8
 #	Descripción	Commit
 DT-37 F4.6	Migrar ia_predictivo (método + 3 helpers)	b7d76b9
@@ -370,13 +419,16 @@ DT-37 F3	Reporte piloto (tendencia_ventas) migrado a i18n	9490e97 + 5860fdf
 DT-37 Papiamento	Catálogo pap completo (53 traducciones)	93a1e82
 🟡 Medias pendientes
 #	Ubicación	Descripción
-DT-37 F5	app.py + templates/	i18n de reportes HTML: /reporte_produccion_diaria, /reporte_inventario_externo, /reporte_ventas_externas, /reporte/cierre_caja, /reporte/ventas, /reporte/productos_populares, /reporte/analisis_predictivo, /reporte/ventas_avanzado, /reporte_activos. Estimación: ~4-6 h.
+DT-37 F5	app.py + templates/	i18n de 5 reportes HTML restantes: /reporte/ventas (ventas_periodo), /reporte_produccion_diaria (produccion_diaria o reporte_produccion), /reporte/analisis_predictivo, /reporte/ventas_avanzado, /reporte/cierre_diario. + 4 parciales de secciones/. Estimación: ~3-4 h.
+DT-37 F5-pulido	app.py / reportes.py	Gráficos de matplotlib (en reporte_activos.html y otros) tienen títulos en español hardcodeados en Python. Requiere i18n en las funciones que generan imágenes. Estimación: ~1 h por reporte.
 DT-37 F4.9	reportes.py:500	libro_diario: método huérfano (sin UI). Baja prioridad. ~30 min.
 DT-NUEVA-1	migrations/sql/	Sincronizar CREATE TABLE con idioma para tenants nuevos (obligatorio antes del próximo tenant).
 DT-nueva	reportes.py	Error 'ingreso' en generar_reporte_ia_predictivo (L1936). El PDF muestra "Las recomendaciones no están disponibles temporalmente por error técnico". El except ya está i18n-ready.
 DT-nueva	app.py:9066	Endpoint /generar_reporte_flujo_caja huérfano: existe pero ningún template lo invoca. Además tiene bug: generador.generar_reporte_flujo_caja(fecha_inicio, fecha_fin) le falta panaderia_id (L9092).
-🚨 DT-nueva-CRÍTICA	reportes.py (ReportLab)	Emojis 🔴 🟢 🟡 ⚪ 📦 📊 🚨 💡 📋 ✅ rotos en PDFs: la fuente Helvetica default de ReportLab no tiene glyphs de emoji → salen como n. Deuda cosmética global.
 DT-nueva	analisis_gastos (matplotlib)	Overlap de labels en pie chart cuando hay categorías con valores pequeños. Deuda cosmética.
+🚨 DT-nueva-CRÍTICA
+Ubicación	Descripción
+reportes.py (ReportLab)	Emojis 🔴 🟢 🟡 ⚪ 📦 📊 🚨 💡 📋 ✅ rotos en PDFs: la fuente Helvetica default de ReportLab no tiene glyphs de emoji → salen como n. Deuda cosmética global.
 🟢 Bajas pendientes
 #	Descripción
 DT-nueva	tenant_1.configuracion_sistema tiene 6 filas con panaderia_id = 1, 5, 22, 24, 27, 28 (posible data legacy).
@@ -388,7 +440,7 @@ DT-CRÉDITOS: Módulo completo de créditos/fiado. Detalle en sección 2️⃣0�
 Dockerización (Fase 3): ~22-32 h.
 
 🔟 Metodología de trabajo
-Reglas de oro
+Reglas de oro (heredadas de v9.0)
 Un paso a la vez con confirmación antes de continuar.
 
 Diagnóstico ANTES de modificar.
@@ -511,7 +563,7 @@ Los scripts de diagnóstico y reemplazo deben crear su propio backup con timesta
 
 En Flask-Babel 4.0, default_translation_directories DEBE pasarse al constructor Babel(app, ...).
 
-pybabel extract con . escanea TODO el proyecto (incluido venv/). Usar lista explícita: app.py models.py reportes.py.
+pybabel extract con . escanea TODO el proyecto (incluido venv/). Usar lista explícita: app.py models.py reportes.py templates.
 
 Jinja2 3.x eliminó jinja2.ext.autoescape y jinja2.ext.with_. NO declararlas en babel.cfg.
 
@@ -563,34 +615,68 @@ libro_diario y flujo_caja son reportes huérfanos (sin UI). Migrar flujo_caja fu
 
 Un % literal en un msgstr puede romper la compilación de Babel si el msgid no lo tiene o si el msgid tiene #, python-format. La solución es evitar el % en el texto (ej. cambiar "Menos del 50%" por "Menos de la mitad") en lugar de escapar con %%. Escapar con %% solo funciona si el msgid también lo tiene.
 
-Comandos útiles
-Encoding: chcp 65001
+🚨 NUEVAS Reglas de oro (Aprendidas en F5, 20-23 Oct 2026)
+babel.cfg: el pattern Jinja2 debe ser [jinja2: **.html], NO **/templates/**.html. El **/ inicial hace que Babel no matchee cuando se pasa templates como argumento a pybabel extract.
 
-psql: psql -U postgres -p 5433 -h localhost -d panaderia_master
+Proteger <style> y <script> ANTES de hacer reemplazos masivos en templates HTML. Usar placeholders __ESTILO_X__ y __SCRIPT_X__, restaurar al final. Evita romper funciones JS como generarPDF() o clases CSS como container.
 
-Ver estructura: psql -U postgres -p 5433 -h localhost -d panaderia_master -c "\d tenant_27.nombre_tabla"
+Reemplazos SOLO entre etiquetas HTML (>Texto<). Nunca reemplazar palabras sueltas ("con", "Productos"). Rompen clases CSS (container), variables JS (confirm) y atributos HTML.
 
-Seed Demo: python seed_demo.py --tenant=27 --reset-all
+Orden de reemplazos: primero los textos que contienen otros textos (ej. "Resumen de Salidas No Comerciales" antes que "Salidas No Comerciales"), para evitar anidación ({{ _("{{ _("...") }}") }}).
 
-Compilar / Servidor: python -m py_compile app.py / python app.py
+Emojis en HTML: si un emoji está antes del texto (📦 Reporte), incluirlo en el reemplazo (>📦 Texto<). Si el emoji se corrompe en el archivo (ej. ƒÆ░), eliminarlo del HTML para evitar romper Jinja2.
 
-Búsquedas: findstr /n /c:"patrón exacto" archivo.py
+El símbolo % NUNCA va dentro de _(). Siempre afuera: <th>% {{ _('del Total') }}</th>. Si el % está adentro, Babel lo trata como placeholder (%d, %o) y rompe la compilación con unsupported format character o KeyError.
 
-Extraer líneas (PowerShell): powershell -Command "Get-Content models.py | Select-Object -Skip 246 -First 20"
+🚨 #, fuzzy es el enemigo #1: cada pybabel update puede volver a insertar #, fuzzy en strings que ya tradujimos. Babel los IGNORA al compilar y muestra el español. SIEMPRE correr _limpiar_fuzzy.py DESPUÉS de pybabel update y ANTES de pybabel compile. Si el script no existe, recrearlo (ver sección de comandos útiles).
 
-Backup de BD: pg_dump -U postgres -p 5433 -h localhost -d panaderia_master -F c -f backup_pre_XXX.backup
+Verificar el .mo directamente: cuando el HTML está bien pero el texto no se traduce, hacer un script con gettext.GNUTranslations para leer el .mo y confirmar qué traducciones están adentro. Es más rápido que adivinar.
 
-Commit multilínea (Windows CMD): crear _commit_msg.txt, luego git commit -F _commit_msg.txt, luego del _commit_msg.txt
+Si una traducción no aplica aunque el .po está bien: buscar el bloque en el .po con Select-String -Context 0,2. Verificar que NO tenga #, fuzzy. Si el .po tiene DOS bloques con el mismo msgid, uno con #: y otro sin, el que no tiene referencia es el que Jinja2 ignora. Eliminar el huérfano.
 
-Pipeline i18n (DT-37):
+El caché de Flask/Python puede enmascarar cambios. Después de pybabel compile, SIEMPRE reiniciar el servidor y probar en modo incógnito (Ctrl+Shift+N). Si el problema persiste, borrar los .mo y recompilar.
 
+Migrar también los PDFs de exportación: si el template HTML tiene un botón "Exportar a CSV" / "Descargar PDF" que llama a una ruta en app.py (/exportar_X), esa función también debe migrarse. Buscar con findstr /n /c:"exportar_X" app.py y aplicar _() a los Paragraph(...) y a las cabeceras de Table(...).
+
+Preferir scripts de Python sobre copy-paste del chat. El mojibake del CMD/PowerShell al copiar acentos y emojis es un problema recurrente. Los scripts leen el archivo en UTF-8 directamente del disco, sin pasar por la consola.
+
+Comandos útiles (ACTUALIZADOS)
 cmd
-pybabel extract -F babel.cfg -o locales/messages.pot app.py models.py reportes.py
+# Pipeline i18n (F5)
+pybabel extract -F babel.cfg -o locales/messages.pot app.py models.py reportes.py templates
 pybabel update -i locales/messages.pot -d locales
+python _limpiar_fuzzy.py
 pybabel compile -d locales --statistics
-findstr /n /c:"#, fuzzy" locales\en\LC_MESSAGES\messages.po
-findstr /n /c:"#, fuzzy" locales\pap\LC_MESSAGES\messages.po
-powershell -Command "Select-String -Path reportes.py -Pattern 'f\".*\{_'"
+
+# Ver untraducciones en .po
+python _ver_untraducciones.py
+
+# Buscar traducción en .po con contexto
+powershell -Command "Select-String -Path locales\en\LC_MESSAGES\messages.po -Pattern 'msgid \"X\"' -Context 0,2"
+
+# Verificar .mo directamente (crear _test_mo.py)
+python _test_mo.py
+
+# Ver referencias de un template en el .po
+findstr /n /c:"#: templates/mi_template.html" locales\en\LC_MESSAGES\messages.po
+
+# Verificar si hay #, fuzzy
+findstr /c:"#, fuzzy" locales\en\LC_MESSAGES\messages.po
+findstr /c:"#, fuzzy" locales\pap\LC_MESSAGES\messages.po
+
+# Comandos heredados (sin cambios)
+chcp 65001
+psql -U postgres -p 5433 -h localhost -d panaderia_master
+python -m py_compile app.py
+python app.py
+findstr /n /c:"patrón exacto" archivo.py
+pg_dump -U postgres -p 5433 -h localhost -d panaderia_master -F c -f backup_pre_XXX.backup
+git commit -F _commit_msg.txt && del _commit_msg.txt
+Scripts de utilidad que DEBEN existir en el proyecto
+_limpiar_fuzzy.py — elimina líneas #, fuzzy de los .po. CRÍTICO después de cada update.
+
+_ver_untraducciones.py — muestra los msgids con msgstr "" en en.po.
+
 1️⃣1️⃣ Fase C.3 — Auditoría de columnas huérfanas (cerrada)
 Auditoría del 5 Oct, alineación ORM↔BD:
 
@@ -661,11 +747,13 @@ Fases: Backup → Diagnóstico (350 prints) → Configurar logger → Dry-run de
 Resultado: 355 print() → logger.info/debug/warning/error. Cero prints activos. Logger con rotación de archivo (5 MB × 5). Smoke test OK.
 Commit: 92f2d0d.
 
-2️⃣0️⃣ DT-37 — i18n reportes (COMPLETADA EN reportes.py)
+2️⃣0️⃣ DT-37 — i18n reportes
 Alcance: reportes.py (~3.600 líneas) genera PDFs con texto hardcodeado en español. Objetivo: multi-idioma con Flask-Babel.
-Estado: F0-F4 completadas para reportes.py. 10/10 reportes UI migrados. 1 huérfano pendiente (libro_diario). F5 (reportes HTML en app.py) pendiente.
 
-Resumen de migraciones
+Estado: F0-F4 completadas para reportes.py. 10/10 reportes UI migrados. 1 huérfano pendiente (libro_diario).
+F5 en curso: 6 de 11 templates HTML migrados.
+
+Resumen de migraciones (F4)
 Reporte	Commit	Fecha
 tendencia_ventas (piloto)	9490e97	15 Oct
 estado_resultados	41dc685 + 186d78b	16 Oct
@@ -678,30 +766,35 @@ historial_pagos	89c2568	18 Oct
 historial_depositos	89c2568	18 Oct
 tesoreria_unificado	6b6204b	18 Oct
 _generar_reporte_error (helper)	6b6204b	18 Oct
-Total: 344 msgids (100% traducidos en EN y PAP).
+Total F4: 344 msgids (100% traducidos en EN y PAP).
 
-F5 — Pendiente (Reportes HTML en app.py)
-Los siguientes reportes se generan como HTML/JS (no en reportes.py) y necesitan i18n con Flask-Babel en templates:
+Resumen de migraciones (F5 — en curso)
+Template	Commit	Fecha
+reportes.html (menú principal)	a0de295	20 Oct
+cierre_caja.html	a0de295	20 Oct
+productos_populares.html	a796290	21 Oct
+reporte_activos.html	0ebb3de	21 Oct
+reporte_inventario_externo.html	2f9a5fe	22 Oct
+reporte_ventas_externas.html	3ea5612	23 Oct
+Total F5 (parcial): ~555 msgids (98% traducidos en EN y PAP).
 
-/reporte_produccion_diaria
+F5 — Templates pendientes (estimación ~3-4 h)
+#	Template	Ruta
+7	ventas_periodo.html	/reporte/ventas
+8	produccion_diaria.html o reporte_produccion.html	/reporte_produccion_diaria
+9	analisis_predictivo.html	/reporte/analisis_predictivo
+10	ventas_avanzado.html	/reporte/ventas_avanzado
+11	cierre_diario.html	/reporte/cierre_diario
+4 parciales de secciones/: resumen_ventas.html, analisis_ia.html, recomendaciones.html, analisis_productos.html.
 
-/reporte_inventario_externo
+Fixes realizados en F5 (además de i18n)
+babel.cfg: corregido pattern Jinja2 a [jinja2: **.html].
 
-/reporte_ventas_externas
+app.py:1264: agregado from flask_babel import Babel, gettext as _.
 
-/reporte/cierre_caja
+app.py (exportar_inventario_externo): migrado a _() (título y cabeceras de tabla).
 
-/reporte/ventas
-
-/reporte/productos_populares
-
-/reporte/analisis_predictivo
-
-/reporte/ventas_avanzado
-
-/reporte/activos
-
-Estimación: ~4-6 h.
+app.py (exportar_ventas_externas): migrado a _() (título y cabeceras de tabla).
 
 2️⃣1️⃣ DT-CRÉDITOS — Módulo de créditos/fiado (PENDIENTE — feature)
 Origen: detectado durante DT-21 (5 Oct 2026). El POS tiene 3 modos:
@@ -739,16 +832,12 @@ Completo: 15-25 h (3-4 sesiones).
 
 Reutilizable
 ✅ Tabla clientes.
-
 ✅ POST /registrar_venta (con flag es_credito=true).
-
 ✅ Estructura del carrito.
 
 NO reutilizable
 ❌ Modal clienteModal (11 campos fiscales).
-
 ❌ /api/guardar-cliente.
-
 ❌ procesarVentaElectronica().
 
 Prioridad: Media-alta, después de Dockerización.
@@ -774,9 +863,10 @@ Premium: 3 usuarios.
 
 Básica: 1 usuario.
 
-Estimación de tiempos (18 Oct 2026)
+Estimación de tiempos (23 Oct 2026)
 Bloque	Estimación
-DT-37 F5 (reportes HTML)	~4-6 h
+DT-37 F5 (5 templates + 4 parciales)	~3-4 h
+DT-37 F5-pulido (gráficos matplotlib)	~1 h por reporte
 DT-37 F4.9 (libro_diario huérfano)	~30 min
 Auditoría f-strings emoji	✅ CERRADA (0 casos)
 Dockerización (Fase 3)	~22-32 h
@@ -807,22 +897,22 @@ Al iniciar un nuevo chat, pegar este archivo como contexto inicial.
 
 Instrucción sugerida:
 
-"Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el archivo HANDOFF.md v9.0 con el contexto maestro. Vamos a continuar desde donde lo dejamos. Por favor actúa como instructor guiando paso a paso, con la metodología de trabajo descrita en el HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/findstr, commit tras cada fix verificado. Al insertar bloques, muéstrame ANTES → DESPUÉS con número de línea exacto. Tú me das LUZ VERDE cuando los cambios estén 100% validados. Yo aplico los cambios en mi editor."
+"Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el archivo HANDOFF.md v9.1 con el contexto maestro. Vamos a continuar desde donde lo dejamos. Por favor actúa como instructor guiando paso a paso, con la metodología de trabajo descrita en el HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/findstr, commit tras cada fix verificado. Al insertar bloques, muéstrame ANTES → DESPUÉS con número de línea exacto. Tú me das LUZ VERDE cuando los cambios estén 100% validados. Yo aplico los cambios en mi editor."
 
 Próxima tarea sugerida:
 
-OPCIÓN A (recomendada): Arrancar DT-37 F5 (i18n de reportes HTML en app.py). ~4-6 h. Cierra el módulo de reportes 100%.
+OPCIÓN A (recomendada): Continuar DT-37 F5 (quedan 5 templates + 4 parciales). Estimación: ~3-4 h. Cierra el módulo de reportes 100%.
 
 OPCIÓN B: Dockerización (Fase 3). Sesión dedicada. ~22-32 h.
 
 OPCIÓN C: DT-CRÉDITOS. Sesión dedicada con cuestionario previo.
 
 ✅ Última validación
-Último commit: 6b6204b (tesoreria_unificado, pusheado).
+Último commit: 3ea5612 (reporte_ventas_externas.html, pusheado).
 
-Última sesión: 18 Oct 2026 (mañana) — DT-37 F4 completada para reportes.py.
+Última sesión: 23 Oct 2026 — DT-37 F5 (parte 1): 6/11 templates migrados.
 
-Working tree: clean (solo _ver_untraducciones.py untracked, script temporal).
+Working tree: clean.
 
 Servidor: detenido.
 
@@ -836,12 +926,12 @@ Seguridad: Producción-ready (CSRF con tokens firmados).
 
 Observabilidad: Producción-ready (logger con rotación).
 
-i18n: 3 idiomas (es/en/pap), 10/10 reportes UI en reportes.py migrados (+ 1 huérfano pendiente: libro_diario).
+i18n: 3 idiomas (es/en/pap). PDF reportes: 100%. HTML reportes: 6/11.
 
-DT-37: 🟡 F0-F3 ✅ | F4 reportes.py 100% ✅ | F5 (reportes HTML) PENDIENTE.
+DT-37: 🟡 F0-F3 ✅ | F4 reportes.py 100% ✅ | F5 (reportes HTML) EN CURSO (6/11).
 
 DT-19, DT-25, DT-28, DT-29, DT-42, DT-43, DT-45, DT-46, DT-47, DT-5-bis, DT-5-quinquies, DT-5-quater-bis: ✅ Resueltas.
 
-Pendientes: DT-37 F5, DT-37 F4.9 (libro_diario), Dockerización (Fase 3), DT-CRÉDITOS.
+Pendientes: DT-37 F5 (5 templates + 4 parciales + gráficos matplotlib), DT-37 F4.9 (libro_diario), Dockerización (Fase 3), DT-CRÉDITOS.
 
-Fin del HANDOFF.md — v9.0
+Fin del HANDOFF.md — v9.1
