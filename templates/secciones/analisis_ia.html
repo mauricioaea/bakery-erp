@@ -4,30 +4,29 @@
     <div class="col-12">
         <div class="metric-card metric-card-ml">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h4 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Alertas Inteligentes</h4>
-                <small class="text-muted">Detección automática por IA</small>
+                <h4 class="mb-0"><i class="fas fa-exclamation-triangle"></i> {{ _('Alertas Inteligentes') }}</h4>
+                <small class="text-muted">{{ _('Detección automática por IA') }}</small>
             </div>
-            
+
             <!-- 🆕 AGRUPACIÓN POR TIPO -->
             {% set alertas_stock = alertas|selectattr('tipo', 'equalto', 'STOCK_CRITICO')|list %}
             {% set alertas_ventas = alertas|selectattr('tipo', 'equalto', 'SIN_MOVIMIENTO')|list %}
-            
+
             <!-- 🔴 GRUPO 1: STOCK CRÍTICO -->
             {% if alertas_stock %}
             <div class="alert alert-danger mb-3" style="border-left: 5px solid #dc3545;">
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <div>
                         <h5 class="mb-1">
-                            <i class="fas fa-boxes"></i> 
-                            STOCK CRÍTICO
-                            <span class="badge bg-danger ms-2">{{ alertas_stock|length }} productos</span>
+                            <i class="fas fa-boxes"></i>
+                            {{ _('STOCK CRÍTICO') }}
+                            <span class="badge bg-danger ms-2">{{ alertas_stock|length }} {{ _('productos') }}</span>
                         </h5>
-                        <small class="text-muted">Productos por debajo del stock mínimo</small>
+                        <small class="text-muted">{{ _('Productos por debajo del stock mínimo') }}</small>
                     </div>
-                    <span class="badge bg-danger">PRIORIDAD ALTA</span>
+                    <span class="badge bg-danger">{{ _('PRIORIDAD ALTA') }}</span>
                 </div>
-                
-                <!-- Lista de productos (compacta) -->
+
                 <div class="row mt-2" style="font-size: 0.85rem;">
                     {% for alerta in alertas_stock %}
                     <div class="col-md-4 col-6 mb-1">
@@ -37,29 +36,28 @@
                     </div>
                     {% endfor %}
                 </div>
-                
+
                 <div class="mt-2 pt-2" style="border-top: 1px dashed #dc3545;">
-                    <small><strong>💡 Acción:</strong> Reabastece estos productos urgentemente</small>
+                    <small><strong>💡 {{ _('Acción:') }}</strong> {{ _('Reabastece estos productos urgentemente') }}</small>
                 </div>
             </div>
             {% endif %}
-            
+
             <!-- 🟡 GRUPO 2: SIN VENTAS RECIENTES -->
             {% if alertas_ventas %}
             <div class="alert alert-warning mb-3" style="border-left: 5px solid #ffc107;">
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <div>
                         <h5 class="mb-1">
-                            <i class="fas fa-chart-line"></i> 
-                            SIN VENTAS RECIENTES
-                            <span class="badge bg-warning text-dark ms-2">{{ alertas_ventas|length }} productos</span>
+                            <i class="fas fa-chart-line"></i>
+                            {{ _('SIN VENTAS RECIENTES') }}
+                            <span class="badge bg-warning text-dark ms-2">{{ alertas_ventas|length }} {{ _('productos') }}</span>
                         </h5>
-                        <small class="text-muted">Productos sin movimiento en los últimos 7 días</small>
+                        <small class="text-muted">{{ _('Productos sin movimiento en los últimos 7 días') }}</small>
                     </div>
-                    <span class="badge bg-warning text-dark">PRIORIDAD MEDIA</span>
+                    <span class="badge bg-warning text-dark">{{ _('PRIORIDAD MEDIA') }}</span>
                 </div>
-                
-                <!-- Lista de productos (compacta) -->
+
                 <div class="row mt-2" style="font-size: 0.85rem;">
                     {% for alerta in alertas_ventas %}
                     <div class="col-md-4 col-6 mb-1">
@@ -68,18 +66,18 @@
                     </div>
                     {% endfor %}
                 </div>
-                
+
                 <div class="mt-2 pt-2" style="border-top: 1px dashed #ffc107;">
-                    <small><strong>💡 Acción:</strong> Considera promociones para reactivar estos productos</small>
+                    <small><strong>💡 {{ _('Acción:') }}</strong> {{ _('Considera promociones para reactivar estos productos') }}</small>
                 </div>
             </div>
             {% endif %}
-            
+
             <!-- 📊 RESUMEN GENERAL -->
             <div class="text-center mt-3 pt-3" style="border-top: 1px solid #dee2e6;">
                 <small class="text-muted">
-                    <strong>📋 Total:</strong> {{ alertas|length }} alertas activas
-                    ({{ alertas_stock|length }} críticas, {{ alertas_ventas|length }} media)
+                    <strong>📋 {{ _('Total:') }}</strong> {{ alertas|length }} {{ _('alertas activas') }}
+                    ({{ alertas_stock|length }} {{ _('críticas,') }} {{ alertas_ventas|length }} {{ _('media') }})
                 </small>
             </div>
         </div>
@@ -89,9 +87,9 @@
 <div class="row mb-4 no-break">
     <div class="col-12">
         <div class="metric-card metric-card-ml">
-            <h4><i class="fas fa-check-circle text-success"></i> Alertas Inteligentes</h4>
+            <h4><i class="fas fa-check-circle text-success"></i> {{ _('Alertas Inteligentes') }}</h4>
             <div class="alert alert-success mt-3">
-                ✅ No hay alertas activas. ¡Todo en orden!
+                ✅ {{ _('No hay alertas activas. ¡Todo en orden!') }}
             </div>
         </div>
     </div>
@@ -102,34 +100,34 @@
 <!-- 🎓 FASE DE APRENDIZAJE DE LA IA              -->
 <!-- ============================================= -->
 <div class="alert alert-info mt-4 no-break" style="background: linear-gradient(135deg, #e7f3ff, #d1ecf1); border: 2px solid #17a2b8;">
-    <h5>🤖 ¿Cómo funciona la Inteligencia Artificial?</h5>
-    <p class="mb-3">La IA aprende de los datos históricos de tu panadería para generar predicciones precisas.</p>
-    
+    <h5>🤖 {{ _('¿Cómo funciona la Inteligencia Artificial?') }}</h5>
+    <p class="mb-3">{{ _('La IA aprende de los datos históricos de tu panadería para generar predicciones precisas.') }}</p>
+
     <!-- 🆕 BARRA DE PROGRESO DE APRENDIZAJE -->
     <div class="aprendizaje-container" style="background: white; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
         <div class="d-flex justify-content-between align-items-center mb-2">
-            <strong>🎓 Fase de Aprendizaje</strong>
-            <span class="badge bg-primary">Día {{ dias_actividad }} de 30</span>
+            <strong>🎓 {{ _('Fase de Aprendizaje') }}</strong>
+            <span class="badge bg-primary">{{ _('Día') }} {{ dias_actividad }} {{ _('de 30') }}</span>
         </div>
-        
+
         {% set progreso = (dias_actividad / 30 * 100)|round(0)|int %}
         {% set progreso = 100 if progreso > 100 else progreso %}
-        
+
         <div class="progress" style="height: 25px; border-radius: 12px; background: #e9ecef;">
-            <div class="progress-bar progress-bar-striped progress-bar-animated 
+            <div class="progress-bar progress-bar-striped progress-bar-animated
                         {% if progreso >= 100 %}bg-success
                         {% elif progreso >= 60 %}bg-info
                         {% elif progreso >= 30 %}bg-warning
-                        {% else %}bg-danger{% endif %}" 
-                 role="progressbar" 
+                        {% else %}bg-danger{% endif %}"
+                 role="progressbar"
                  style="width: {{ progreso }}%; font-size: 0.85rem; font-weight: bold;"
-                 aria-valuenow="{{ progreso }}" 
-                 aria-valuemin="0" 
+                 aria-valuenow="{{ progreso }}"
+                 aria-valuemin="0"
                  aria-valuemax="100">
                 {{ progreso }}%
             </div>
         </div>
-        
+
         <!-- 🆕 MÓDULOS QUE SE DESBLOQUEAN -->
         <div class="row mt-4 g-3">
             <div class="col-md-3 col-6">
@@ -140,12 +138,12 @@
                         <i class="fas fa-circle text-muted me-2" style="font-size: 1.3rem;"></i>
                     {% endif %}
                     <div>
-                        <div style="font-weight: 600; font-size: 0.9rem;">Análisis Básico</div>
-                        <div style="font-size: 0.75rem; color: #28a745;">✅ Activo</div>
+                        <div style="font-weight: 600; font-size: 0.9rem;">{{ _('Análisis Básico') }}</div>
+                        <div style="font-size: 0.75rem; color: #28a745;">✅ {{ _('Activo') }}</div>
                     </div>
                 </div>
             </div>
-            
+
             <div class="col-md-3 col-6">
                 <div class="d-flex align-items-center p-2" style="background: {% if dias_actividad >= 7 %}#f0fdf4{% else %}#fffbeb{% endif %}; border-radius: 8px; border-left: 4px solid {% if dias_actividad >= 7 %}#28a745{% else %}#f59e0b{% endif %};">
                     {% if dias_actividad >= 7 %}
@@ -154,14 +152,14 @@
                         <i class="fas fa-hourglass-half text-warning me-2" style="font-size: 1.3rem;"></i>
                     {% endif %}
                     <div>
-                        <div style="font-weight: 600; font-size: 0.9rem;">Tendencias</div>
+                        <div style="font-weight: 600; font-size: 0.9rem;">{{ _('Tendencias') }}</div>
                         <div style="font-size: 0.75rem; color: {% if dias_actividad >= 7 %}#28a745{% else %}#f59e0b{% endif %};">
-                            {% if dias_actividad >= 7 %}✅ Activo{% else %}⏳ Faltan {{ 7 - dias_actividad }} días{% endif %}
+                            {% if dias_actividad >= 7 %}✅ {{ _('Activo') }}{% else %}⏳ {{ _('Faltan') }} {{ 7 - dias_actividad }} {{ _('días') }}{% endif %}
                         </div>
                     </div>
                 </div>
             </div>
-            
+
             <div class="col-md-3 col-6">
                 <div class="d-flex align-items-center p-2" style="background: {% if dias_actividad >= 7 %}#f0fdf4{% else %}#fffbeb{% endif %}; border-radius: 8px; border-left: 4px solid {% if dias_actividad >= 7 %}#28a745{% else %}#f59e0b{% endif %};">
                     {% if dias_actividad >= 7 %}
@@ -170,14 +168,14 @@
                         <i class="fas fa-hourglass-half text-warning me-2" style="font-size: 1.3rem;"></i>
                     {% endif %}
                     <div>
-                        <div style="font-weight: 600; font-size: 0.9rem;">Predicciones</div>
+                        <div style="font-weight: 600; font-size: 0.9rem;">{{ _('Predicciones') }}</div>
                         <div style="font-size: 0.75rem; color: {% if dias_actividad >= 7 %}#28a745{% else %}#f59e0b{% endif %};">
-                            {% if dias_actividad >= 7 %}✅ Activo{% else %}⏳ Faltan {{ 7 - dias_actividad }} días{% endif %}
+                            {% if dias_actividad >= 7 %}✅ {{ _('Activo') }}{% else %}⏳ {{ _('Faltan') }} {{ 7 - dias_actividad }} {{ _('días') }}{% endif %}
                         </div>
                     </div>
                 </div>
             </div>
-            
+
             <div class="col-md-3 col-6">
                 <div class="d-flex align-items-center p-2" style="background: {% if dias_actividad >= 30 %}#f0fdf4{% else %}#fffbeb{% endif %}; border-radius: 8px; border-left: 4px solid {% if dias_actividad >= 30 %}#28a745{% else %}#f59e0b{% endif %};">
                     {% if dias_actividad >= 30 %}
@@ -186,17 +184,17 @@
                         <i class="fas fa-hourglass-half text-warning me-2" style="font-size: 1.3rem;"></i>
                     {% endif %}
                     <div>
-                        <div style="font-weight: 600; font-size: 0.9rem;">IA Completa</div>
+                        <div style="font-weight: 600; font-size: 0.9rem;">{{ _('IA Completa') }}</div>
                         <div style="font-size: 0.75rem; color: {% if dias_actividad >= 30 %}#28a745{% else %}#f59e0b{% endif %};">
-                            {% if dias_actividad >= 30 %}✅ Activo{% else %}⏳ Faltan {{ 30 - dias_actividad }} días{% endif %}
+                            {% if dias_actividad >= 30 %}✅ {{ _('Activo') }}{% else %}⏳ {{ _('Faltan') }} {{ 30 - dias_actividad }} {{ _('días') }}{% endif %}
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    
-    <small class="text-muted">💡 La IA se actualiza automáticamente cada día con tus nuevas ventas.</small>
+
+    <small class="text-muted">💡 {{ _('La IA se actualiza automáticamente cada día con tus nuevas ventas.') }}</small>
 </div>
 
 <!-- ============================================= -->
@@ -206,49 +204,49 @@
 <div class="row mt-4 no-break">
     <div class="col-12">
         <div class="metric-card metric-card-ml">
-            <h4><i class="fas fa-chart-line"></i> 📊 Análisis de Tendencias</h4>
+            <h4><i class="fas fa-chart-line"></i> 📊 {{ _('Análisis de Tendencias') }}</h4>
             <p class="text-muted">{{ analisis_tendencias.mensaje }}</p>
-            
+
             <div class="row mt-3">
                 <!-- Promedio diario -->
                 <div class="col-md-3 col-6">
                     <div class="text-center">
-                        <h6>📊 Promedio Diario</h6>
+                        <h6>📊 {{ _('Promedio Diario') }}</h6>
                         <p class="h4 text-primary">${{ "%.0f"|format(analisis_tendencias.promedio_diario) }}</p>
                     </div>
                 </div>
-                
+
                 <!-- Tendencia -->
                 <div class="col-md-3 col-6">
                     <div class="text-center">
-                        <h6>📈 Tendencia</h6>
+                        <h6>📈 {{ _('Tendencia') }}</h6>
                         <p class="h4 text-{{ analisis_tendencias.color_tendencia }}">
-                            {{ analisis_tendencias.icono_tendencia }} 
+                            {{ analisis_tendencias.icono_tendencia }}
                             {{ "%.1f"|format(analisis_tendencias.cambio_porcentaje) }}%
                         </p>
                     </div>
                 </div>
-                
+
                 <!-- Días pico -->
                 <div class="col-md-3 col-6">
                     <div class="text-center">
-                        <h6>🔥 Días Pico</h6>
+                        <h6>🔥 {{ _('Días Pico') }}</h6>
                         <p class="h4 text-warning">{{ analisis_tendencias.dias_pico }}</p>
                     </div>
                 </div>
-                
+
                 <!-- Días bajos -->
                 <div class="col-md-3 col-6">
                     <div class="text-center">
-                        <h6>❄️ Días Bajos</h6>
+                        <h6>❄️ {{ _('Días Bajos') }}</h6>
                         <p class="h4 text-info">{{ analisis_tendencias.dias_bajos }}</p>
                     </div>
                 </div>
             </div>
-            
+
             <!-- Recomendaciones -->
             <div class="mt-3">
-                <h6>💡 Recomendaciones IA</h6>
+                <h6>💡 {{ _('Recomendaciones IA') }}</h6>
                 {% for recomendacion in analisis_tendencias.recomendaciones %}
                     <div class="alert alert-{{ 'success' if 'creciendo' in recomendacion else 'warning' if 'disminuyendo' in recomendacion else 'info' }} alert-sm">
                         <small>{{ recomendacion }}</small>
@@ -262,12 +260,12 @@
 <div class="row mt-4 no-break">
     <div class="col-12">
         <div class="metric-card metric-card-ml">
-            <h4><i class="fas fa-chart-line"></i> 📊 Análisis de Tendencias</h4>
+            <h4><i class="fas fa-chart-line"></i> 📊 {{ _('Análisis de Tendencias') }}</h4>
             <div class="alert alert-info mt-3">
                 <i class="fas fa-info-circle me-2"></i>
-                <strong>{{ analisis_tendencias.mensaje if analisis_tendencias else 'Análisis de tendencias no disponible' }}</strong>
+                <strong>{{ analisis_tendencias.mensaje if analisis_tendencias else _('Análisis de tendencias no disponible') }}</strong>
                 <br>
-                <small>Se necesitan al menos 7 días de datos para generar un análisis de tendencias.</small>
+                <small>{{ _('Se necesitan al menos 7 días de datos para generar un análisis de tendencias.') }}</small>
             </div>
         </div>
     </div>
@@ -279,14 +277,14 @@
 <div class="row mt-4 no-break">
     <div class="col-12">
         <div class="metric-card metric-card-ml">
-            <h4><i class="fas fa-robot"></i> 🔮 Predicciones IA - Próximos 7 Días</h4>
+            <h4><i class="fas fa-robot"></i> 🔮 {{ _('Predicciones IA - Próximos 7 Días') }}</h4>
             <p class="text-muted">{{ predicciones_ml.mensaje }}</p>
             <p class="text-muted">
                 <span class="badge bg-{{ 'success' if predicciones_ml.tendencia == 'creciente' else 'danger' if predicciones_ml.tendencia == 'decreciente' else 'warning' }}">
                     {{ predicciones_ml.mensaje_tendencia }}
                 </span>
             </p>
-            
+
             <div class="row mt-3">
                 {% for prediccion in predicciones_ml.predicciones %}
                 <div class="col-md-3 col-6 mb-3">
@@ -298,18 +296,18 @@
                         </small>
                         <br>
                         <span class="badge bg-{{ 'success' if prediccion.confianza == 'Alta' else 'warning' if prediccion.confianza == 'Media' else 'danger' }}">
-                            {{ prediccion.confianza }} confianza
+                            {{ prediccion.confianza }} {{ _('confianza') }}
                         </span>
                     </div>
                 </div>
                 {% endfor %}
             </div>
-            
+
             <div class="mt-3 alert alert-info">
                 <i class="fas fa-info-circle me-2"></i>
                 <small>
-                    📊 Basado en {{ predicciones_ml.dias_historial }} días de datos históricos.
-                    El intervalo muestra el rango esperado de ventas.
+                    📊 {{ _('Basado en') }} {{ predicciones_ml.dias_historial }} {{ _('días de datos históricos.') }}
+                    {{ _('El intervalo muestra el rango esperado de ventas.') }}
                 </small>
             </div>
         </div>
@@ -319,12 +317,12 @@
 <div class="row mt-4 no-break">
     <div class="col-12">
         <div class="metric-card metric-card-ml">
-            <h4><i class="fas fa-robot"></i> 🔮 Predicciones IA - Próximos 7 Días</h4>
+            <h4><i class="fas fa-robot"></i> 🔮 {{ _('Predicciones IA - Próximos 7 Días') }}</h4>
             <div class="alert alert-info mt-3">
                 <i class="fas fa-info-circle me-2"></i>
-                <strong>{{ predicciones_ml.mensaje if predicciones_ml else 'Predicciones no disponibles' }}</strong>
+                <strong>{{ predicciones_ml.mensaje if predicciones_ml else _('Predicciones no disponibles') }}</strong>
                 <br>
-                <small>Se necesitan al menos 7 días de datos históricos para generar predicciones precisas.</small>
+                <small>{{ _('Se necesitan al menos 7 días de datos históricos para generar predicciones precisas.') }}</small>
             </div>
         </div>
     </div>
@@ -338,9 +336,9 @@
 <div class="row mt-4 no-break">
     <div class="col-12">
         <div class="metric-card metric-card-ml">
-            <h4><i class="fas fa-lightbulb"></i> 💡 Recomendaciones Personalizadas</h4>
+            <h4><i class="fas fa-lightbulb"></i> 💡 {{ _('Recomendaciones Personalizadas') }}</h4>
             <p class="text-muted">{{ recomendaciones_personalizadas.mensaje }}</p>
-            
+
             <div class="row mt-3">
                 {% for recomendacion in recomendaciones_personalizadas.recomendaciones %}
                 <div class="col-md-6 mb-3">
@@ -349,18 +347,18 @@
                             <h6 class="card-title">{{ recomendacion.titulo }}</h6>
                             <p class="card-text small">{{ recomendacion.mensaje }}</p>
                             <p class="card-text small text-muted">
-                                <strong>Acción recomendada:</strong> {{ recomendacion.accion }}
+                                <strong>{{ _('Acción recomendada:') }}</strong> {{ recomendacion.accion }}
                             </p>
                             {% if recomendacion.productos %}
                             <div class="mt-2">
                                 <small class="text-muted">
-                                    <strong>Productos:</strong> {{ recomendacion.productos|join(', ') }}
+                                    <strong>{{ _('Productos:') }}</strong> {{ recomendacion.productos|join(', ') }}
                                 </small>
                             </div>
                             {% endif %}
                             <div class="mt-2">
                                 <span class="badge {% if recomendacion.prioridad == 'alta' %}bg-danger{% elif recomendacion.prioridad == 'media' %}bg-warning text-dark{% else %}bg-info{% endif %}">
-                                    Prioridad {{ recomendacion.prioridad }}
+                                    {{ _('Prioridad') }} {{ recomendacion.prioridad }}
                                 </span>
                             </div>
                         </div>
@@ -375,7 +373,7 @@
 <div class="row mt-4 no-break">
     <div class="col-12">
         <div class="metric-card metric-card-ml">
-            <h4><i class="fas fa-lightbulb"></i> 💡 Recomendaciones Personalizadas</h4>
+            <h4><i class="fas fa-lightbulb"></i> 💡 {{ _('Recomendaciones Personalizadas') }}</h4>
             <div class="alert alert-info mt-3">
                 <i class="fas fa-info-circle me-2"></i>
                 <strong>{{ recomendaciones_personalizadas.mensaje }}</strong>

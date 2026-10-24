@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-23 21:39-0500\n"
+"POT-Creation-Date: 2026-10-23 23:03-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -204,6 +204,9 @@ msgstr ""
 
 #: reportes.py:213 templates/analisis_predictivo.html:356
 #: templates/analisis_predictivo.html:445
+#: templates/secciones/analisis_ia.html:157
+#: templates/secciones/analisis_ia.html:173
+#: templates/secciones/analisis_ia.html:189
 #: templates/secciones/resumen_ventas.html:89
 msgid "días"
 msgstr ""
@@ -557,8 +560,8 @@ msgid "No hay datos de ventas para el período seleccionado."
 msgstr ""
 
 #: reportes.py:1315 templates/cierre_caja.html:509
-#: templates/cierre_caja.html:658 templates/secciones/resumen_ventas.html:30
-#: templates/ventas_periodo.html:279
+#: templates/cierre_caja.html:658 templates/secciones/analisis_ia.html:222
+#: templates/secciones/resumen_ventas.html:30 templates/ventas_periodo.html:279
 msgid "Tendencia"
 msgstr ""
 
@@ -1898,6 +1901,7 @@ msgid "Alertas por Prioridad"
 msgstr ""
 
 #: templates/analisis_predictivo.html:527
+#: templates/secciones/analisis_ia.html:361
 msgid "Prioridad"
 msgstr ""
 
@@ -2320,6 +2324,10 @@ msgid "Activos por Valor de Compra (Top 10)"
 msgstr ""
 
 #: templates/reporte_activos.html:708 templates/reporte_activos.html:728
+#: templates/secciones/analisis_ia.html:142
+#: templates/secciones/analisis_ia.html:157
+#: templates/secciones/analisis_ia.html:173
+#: templates/secciones/analisis_ia.html:189
 msgid "Activo"
 msgstr ""
 
@@ -2909,6 +2917,203 @@ msgstr ""
 msgid "Ventas Diarias"
 msgstr ""
 
+#: templates/secciones/analisis_ia.html:7
+#: templates/secciones/analisis_ia.html:90
+msgid "Alertas Inteligentes"
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:8
+msgid "Detección automática por IA"
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:22
+msgid "STOCK CRÍTICO"
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:23
+#: templates/secciones/analisis_ia.html:54
+msgid "productos"
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:25
+msgid "Productos por debajo del stock mínimo"
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:27
+msgid "PRIORIDAD ALTA"
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:41
+#: templates/secciones/analisis_ia.html:71
+msgid "Acción:"
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:41
+msgid "Reabastece estos productos urgentemente"
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:53
+msgid "SIN VENTAS RECIENTES"
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:56
+msgid "Productos sin movimiento en los últimos 7 días"
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:58
+msgid "PRIORIDAD MEDIA"
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:71
+msgid "Considera promociones para reactivar estos productos"
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:79
+msgid "Total:"
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:79
+msgid "alertas activas"
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:80
+msgid "críticas,"
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:80
+msgid "media"
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:92
+msgid "No hay alertas activas. ¡Todo en orden!"
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:103
+msgid "¿Cómo funciona la Inteligencia Artificial?"
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:104
+msgid ""
+"La IA aprende de los datos históricos de tu panadería para generar "
+"predicciones precisas."
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:109
+msgid "Fase de Aprendizaje"
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:110
+msgid "Día"
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:110
+msgid "de 30"
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:141
+msgid "Análisis Básico"
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:155
+msgid "Tendencias"
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:157
+#: templates/secciones/analisis_ia.html:173
+#: templates/secciones/analisis_ia.html:189
+#: templates/secciones/recomendaciones.html:19
+#: templates/secciones/resumen_ventas.html:89
+#: templates/secciones/resumen_ventas.html:138
+msgid "Faltan"
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:171
+msgid "Predicciones"
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:187
+msgid "IA Completa"
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:197
+msgid "La IA se actualiza automáticamente cada día con tus nuevas ventas."
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:207
+#: templates/secciones/analisis_ia.html:263
+msgid "Análisis de Tendencias"
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:214
+msgid "Promedio Diario"
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:233
+msgid "Días Pico"
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:241
+msgid "Días Bajos"
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:249
+msgid "Recomendaciones IA"
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:266
+msgid "Análisis de tendencias no disponible"
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:268
+msgid ""
+"Se necesitan al menos 7 días de datos para generar un análisis de "
+"tendencias."
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:280
+#: templates/secciones/analisis_ia.html:320
+msgid "Predicciones IA - Próximos 7 Días"
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:299
+msgid "confianza"
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:309
+msgid "Basado en"
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:309
+msgid "días de datos históricos."
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:310
+msgid "El intervalo muestra el rango esperado de ventas."
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:323
+msgid "Predicciones no disponibles"
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:325
+msgid ""
+"Se necesitan al menos 7 días de datos históricos para generar "
+"predicciones precisas."
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:339
+#: templates/secciones/analisis_ia.html:376
+msgid "Recomendaciones Personalizadas"
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:350
+msgid "Acción recomendada:"
+msgstr ""
+
+#: templates/secciones/analisis_ia.html:355
+msgid "Productos:"
+msgstr ""
+
 #: templates/secciones/analisis_productos.html:50
 msgid "No hay datos de productos para el período seleccionado"
 msgstr ""
@@ -2928,12 +3133,6 @@ msgstr ""
 
 #: templates/secciones/recomendaciones.html:17
 msgid "para análisis de tendencias"
-msgstr ""
-
-#: templates/secciones/recomendaciones.html:19
-#: templates/secciones/resumen_ventas.html:89
-#: templates/secciones/resumen_ventas.html:138
-msgid "Faltan"
 msgstr ""
 
 #: templates/secciones/recomendaciones.html:19

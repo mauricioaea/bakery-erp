@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-23 21:39-0500\n"
+"POT-Creation-Date: 2026-10-23 23:03-0500\n"
 "PO-Revision-Date: 2026-10-15 16:08-0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: pap\n"
@@ -205,6 +205,9 @@ msgstr "Dianan di e períodoo:"
 
 #: reportes.py:213 templates/analisis_predictivo.html:356
 #: templates/analisis_predictivo.html:445
+#: templates/secciones/analisis_ia.html:157
+#: templates/secciones/analisis_ia.html:173
+#: templates/secciones/analisis_ia.html:189
 #: templates/secciones/resumen_ventas.html:89
 msgid "días"
 msgstr "dianan"
@@ -566,8 +569,8 @@ msgid "No hay datos de ventas para el período seleccionado."
 msgstr "No tin datos di benta pa e período seleccioná."
 
 #: reportes.py:1315 templates/cierre_caja.html:509
-#: templates/cierre_caja.html:658 templates/secciones/resumen_ventas.html:30
-#: templates/ventas_periodo.html:279
+#: templates/cierre_caja.html:658 templates/secciones/analisis_ia.html:222
+#: templates/secciones/resumen_ventas.html:30 templates/ventas_periodo.html:279
 msgid "Tendencia"
 msgstr "Tendensia"
 
@@ -1972,6 +1975,7 @@ msgid "Alertas por Prioridad"
 msgstr "Benta pa periodo"
 
 #: templates/analisis_predictivo.html:527
+#: templates/secciones/analisis_ia.html:361
 msgid "Prioridad"
 msgstr "Unid"
 
@@ -2394,6 +2398,10 @@ msgid "Activos por Valor de Compra (Top 10)"
 msgstr "Aktivo pa Balor di Kompra (Top 10)"
 
 #: templates/reporte_activos.html:708 templates/reporte_activos.html:728
+#: templates/secciones/analisis_ia.html:142
+#: templates/secciones/analisis_ia.html:157
+#: templates/secciones/analisis_ia.html:173
+#: templates/secciones/analisis_ia.html:189
 msgid "Activo"
 msgstr "Aktivo"
 
@@ -2985,6 +2993,205 @@ msgstr "Reporte generá automáticamente"
 msgid "Ventas Diarias"
 msgstr "Benta Real"
 
+#: templates/secciones/analisis_ia.html:7
+#: templates/secciones/analisis_ia.html:90
+msgid "Alertas Inteligentes"
+msgstr "Alerta Inteligente di Sistema"
+
+#: templates/secciones/analisis_ia.html:8
+msgid "Detección automática por IA"
+msgstr "Reporte generá automáticamente"
+
+#: templates/secciones/analisis_ia.html:22
+msgid "STOCK CRÍTICO"
+msgstr "Stock Mínimo"
+
+#: templates/secciones/analisis_ia.html:23
+#: templates/secciones/analisis_ia.html:54
+msgid "productos"
+msgstr "Produkto"
+
+#: templates/secciones/analisis_ia.html:25
+msgid "Productos por debajo del stock mínimo"
+msgstr "REVISÁ RESETANAN DI PRODUKTONAN KU ROTASHON ABOU (<6 biaha/aña)"
+
+#: templates/secciones/analisis_ia.html:27
+msgid "PRIORIDAD ALTA"
+msgstr "Unid"
+
+#: templates/secciones/analisis_ia.html:41
+#: templates/secciones/analisis_ia.html:71
+msgid "Acción:"
+msgstr "Rotashon Haltu"
+
+#: templates/secciones/analisis_ia.html:41
+msgid "Reabastece estos productos urgentemente"
+msgstr "Restoká e produktonan urgentemente"
+
+#: templates/secciones/analisis_ia.html:53
+msgid "SIN VENTAS RECIENTES"
+msgstr "Benta Real"
+
+#: templates/secciones/analisis_ia.html:56
+msgid "Productos sin movimiento en los últimos 7 días"
+msgstr "Produktonan sin movementu den e último 7 dianan"
+
+#: templates/secciones/analisis_ia.html:58
+msgid "PRIORIDAD MEDIA"
+msgstr "Unid"
+
+#: templates/secciones/analisis_ia.html:71
+msgid "Considera promociones para reactivar estos productos"
+msgstr "AKSHON: Redusí kompranan i konsiderá promoshonnan pa e produktonan aki"
+
+#: templates/secciones/analisis_ia.html:79
+msgid "Total:"
+msgstr "Total"
+
+#: templates/secciones/analisis_ia.html:79
+msgid "alertas activas"
+msgstr "Benta Real"
+
+#: templates/secciones/analisis_ia.html:80
+msgid "críticas,"
+msgstr "Aktivo"
+
+#: templates/secciones/analisis_ia.html:80
+msgid "media"
+msgstr "Promedio"
+
+#: templates/secciones/analisis_ia.html:92
+msgid "No hay alertas activas. ¡Todo en orden!"
+msgstr "No tin alertanan krítiko - Inventario na estado óptimo"
+
+#: templates/secciones/analisis_ia.html:103
+msgid "¿Cómo funciona la Inteligencia Artificial?"
+msgstr "ANALISIS PREDIKTIVO KU INTELIGENSIA ARTIFISIAL"
+
+#: templates/secciones/analisis_ia.html:104
+msgid ""
+"La IA aprende de los datos históricos de tu panadería para generar "
+"predicciones precisas."
+msgstr "Mas datonan históriko nesesario (14+ dia) pa pronóstikonan konfiabel."
+
+#: templates/secciones/analisis_ia.html:109
+msgid "Fase de Aprendizaje"
+msgstr "Fase di Aprensá"
+
+#: templates/secciones/analisis_ia.html:110
+msgid "Día"
+msgstr "dianan"
+
+#: templates/secciones/analisis_ia.html:110
+msgid "de 30"
+msgstr "di 30"
+
+#: templates/secciones/analisis_ia.html:141
+msgid "Análisis Básico"
+msgstr "ANALISIS VISUAL PREDIKTIVO"
+
+#: templates/secciones/analisis_ia.html:155
+msgid "Tendencias"
+msgstr "Tendensia"
+
+#: templates/secciones/analisis_ia.html:157
+#: templates/secciones/analisis_ia.html:173
+#: templates/secciones/analisis_ia.html:189
+#: templates/secciones/recomendaciones.html:19
+#: templates/secciones/resumen_ventas.html:89
+#: templates/secciones/resumen_ventas.html:138
+msgid "Faltan"
+msgstr "Haltu"
+
+#: templates/secciones/analisis_ia.html:171
+msgid "Predicciones"
+msgstr "REKOMENDASHONNAN"
+
+#: templates/secciones/analisis_ia.html:187
+msgid "IA Completa"
+msgstr "Wak Lista Kompletu"
+
+#: templates/secciones/analisis_ia.html:197
+msgid "La IA se actualiza automáticamente cada día con tus nuevas ventas."
+msgstr "E IA ta aktualisá automátikamente tur dia ku bo bentananan nobo."
+
+#: templates/secciones/analisis_ia.html:207
+#: templates/secciones/analisis_ia.html:263
+msgid "Análisis de Tendencias"
+msgstr "ANÁLISIS VISUAL DI TENDENSIA"
+
+#: templates/secciones/analisis_ia.html:214
+msgid "Promedio Diario"
+msgstr "Promedio diario:"
+
+#: templates/secciones/analisis_ia.html:233
+msgid "Días Pico"
+msgstr "Dianan di Stock"
+
+#: templates/secciones/analisis_ia.html:241
+msgid "Días Bajos"
+msgstr "Risku Abou"
+
+#: templates/secciones/analisis_ia.html:249
+msgid "Recomendaciones IA"
+msgstr "REKOMENDASHONNAN"
+
+#: templates/secciones/analisis_ia.html:266
+msgid "Análisis de tendencias no disponible"
+msgstr "ANÁLISIS DI TENDENSIA DI BENTA"
+
+#: templates/secciones/analisis_ia.html:268
+msgid ""
+"Se necesitan al menos 7 días de datos para generar un análisis de "
+"tendencias."
+msgstr ""
+"Ta nesesitá al menos 7 dia di datonan pa generá un análisis di "
+"tendensia."
+
+#: templates/secciones/analisis_ia.html:280
+#: templates/secciones/analisis_ia.html:320
+msgid "Predicciones IA - Próximos 7 Días"
+msgstr "Promedio di Benta pa Dia"
+
+#: templates/secciones/analisis_ia.html:299
+msgid "confianza"
+msgstr "konfiansa"
+
+#: templates/secciones/analisis_ia.html:309
+msgid "Basado en"
+msgstr "Basá riba"
+
+#: templates/secciones/analisis_ia.html:309
+msgid "días de datos históricos."
+msgstr "dianan di datonan históriko."
+
+#: templates/secciones/analisis_ia.html:310
+msgid "El intervalo muestra el rango esperado de ventas."
+msgstr "E intervalo ta mustra e rango di bentananan sperá."
+
+#: templates/secciones/analisis_ia.html:323
+msgid "Predicciones no disponibles"
+msgstr "Proyekshonnan no disponibel pa eror técniko"
+
+#: templates/secciones/analisis_ia.html:325
+msgid ""
+"Se necesitan al menos 7 días de datos históricos para generar "
+"predicciones precisas."
+msgstr "Mas datonan históriko nesesario (14+ dia) pa pronóstikonan konfiabel."
+
+#: templates/secciones/analisis_ia.html:339
+#: templates/secciones/analisis_ia.html:376
+msgid "Recomendaciones Personalizadas"
+msgstr "REKOMENDASHONNAN"
+
+#: templates/secciones/analisis_ia.html:350
+msgid "Acción recomendada:"
+msgstr "PLAN DI AKSION REKOMENDÁ"
+
+#: templates/secciones/analisis_ia.html:355
+msgid "Productos:"
+msgstr "Produkto"
+
 #: templates/secciones/analisis_productos.html:50
 msgid "No hay datos de productos para el período seleccionado"
 msgstr "No tin datonan di produktonan pa e periodo skohí."
@@ -3005,12 +3212,6 @@ msgstr "% Akumulá"
 #: templates/secciones/recomendaciones.html:17
 msgid "para análisis de tendencias"
 msgstr "ANÁLISIS VISUAL DI TENDENSIA"
-
-#: templates/secciones/recomendaciones.html:19
-#: templates/secciones/resumen_ventas.html:89
-#: templates/secciones/resumen_ventas.html:138
-msgid "Faltan"
-msgstr "Haltu"
 
 #: templates/secciones/recomendaciones.html:19
 msgid "días para comparar períodos"
