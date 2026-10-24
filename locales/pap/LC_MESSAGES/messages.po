@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-23 20:40-0500\n"
+"POT-Creation-Date: 2026-10-23 21:39-0500\n"
 "PO-Revision-Date: 2026-10-15 16:08-0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: pap\n"
@@ -205,6 +205,7 @@ msgstr "Dianan di e períodoo:"
 
 #: reportes.py:213 templates/analisis_predictivo.html:356
 #: templates/analisis_predictivo.html:445
+#: templates/secciones/resumen_ventas.html:89
 msgid "días"
 msgstr "dianan"
 
@@ -483,7 +484,7 @@ msgstr "Kategoria ku Mayor Gastu:"
 msgid "Dominancia de Categoría Principal:"
 msgstr "Dominansia di Kategoria Prinsipal:"
 
-#: reportes.py:1157
+#: reportes.py:1157 templates/secciones/resumen_ventas.html:148
 msgid "del total"
 msgstr "di e total"
 
@@ -565,7 +566,8 @@ msgid "No hay datos de ventas para el período seleccionado."
 msgstr "No tin datos di benta pa e período seleccioná."
 
 #: reportes.py:1315 templates/cierre_caja.html:509
-#: templates/cierre_caja.html:658 templates/ventas_periodo.html:279
+#: templates/cierre_caja.html:658 templates/secciones/resumen_ventas.html:30
+#: templates/ventas_periodo.html:279
 msgid "Tendencia"
 msgstr "Tendensia"
 
@@ -1791,6 +1793,7 @@ msgstr "Reporte generá automáticamente"
 #: templates/analisis_predictivo.html:274
 #: templates/analisis_predictivo.html:538
 #: templates/secciones/analisis_productos.html:29
+#: templates/secciones/resumen_ventas.html:103
 #: templates/ventas_periodo.html:442
 msgid "Alta"
 msgstr "Haltu"
@@ -1865,6 +1868,7 @@ msgstr "Stock Aktual"
 #: templates/analisis_predictivo.html:340
 #: templates/productos_populares.html:347 templates/reporte_produccion.html:157
 #: templates/reporte_produccion.html:184
+#: templates/secciones/resumen_ventas.html:178
 msgid "unidades"
 msgstr "Unid"
 
@@ -1905,6 +1909,7 @@ msgid "Crítico"
 msgstr "Aktivo"
 
 #: templates/analisis_predictivo.html:385
+#: templates/secciones/resumen_ventas.html:101
 msgid "Normal"
 msgstr "Real"
 
@@ -2022,18 +2027,20 @@ msgstr "Konsultá fecha:"
 msgid "Consulta histórica"
 msgstr "Konsulta históriko"
 
-#: templates/cierre_caja.html:497
+#: templates/cierre_caja.html:497 templates/secciones/resumen_ventas.html:7
 msgid "RESUMEN EJECUTIVO"
 msgstr "5. RESÚMEN EHEKUTIVO"
 
 #: templates/cierre_caja.html:503 templates/cierre_caja.html:645
-#: templates/reporte_ventas_externas.html:63 templates/ventas_periodo.html:258
+#: templates/reporte_ventas_externas.html:63
+#: templates/secciones/resumen_ventas.html:12 templates/ventas_periodo.html:258
 msgid "Total Ventas"
 msgstr "TOTAL DI BENTA"
 
 #: templates/cierre_caja.html:515 templates/cierre_caja.html:631
 #: templates/cierre_caja.html:671 templates/cierre_caja.html:704
-#: templates/ventas_periodo.html:265 templates/ventas_periodo.html:383
+#: templates/secciones/resumen_ventas.html:18 templates/ventas_periodo.html:265
+#: templates/ventas_periodo.html:383
 msgid "Transacciones"
 msgstr "Kantidat di transakshonnan"
 
@@ -2480,6 +2487,7 @@ msgstr "Real"
 
 #: templates/reporte_produccion.html:155 templates/reporte_produccion.html:158
 #: templates/secciones/analisis_productos.html:24
+#: templates/secciones/resumen_ventas.html:177
 msgid "N/A"
 msgstr "N/A"
 
@@ -2851,6 +2859,8 @@ msgstr "Ingreso real (no ta inklui donacion)"
 msgid "Total ventas + donaciones"
 msgstr "TOTAL DI BENTA"
 
+#: templates/secciones/resumen_ventas.html:24
+#: templates/secciones/resumen_ventas.html:183
 #: templates/ventas_periodo.html:272 templates/ventas_periodo.html:392
 msgid "Ticket Promedio"
 msgstr "Promedio"
@@ -2861,6 +2871,7 @@ msgstr "Pa transakshon (bentanan real)"
 
 #: templates/secciones/recomendaciones.html:14
 #: templates/secciones/recomendaciones.html:22
+#: templates/secciones/resumen_ventas.html:196
 #: templates/ventas_periodo.html:283
 msgid "vs período anterior"
 msgstr "Produkto"
@@ -2987,6 +2998,7 @@ msgid "Fortalezas Identificadas"
 msgstr "Fortalesanan Identifiká"
 
 #: templates/secciones/recomendaciones.html:17
+#: templates/secciones/resumen_ventas.html:86
 msgid "Acumulando datos"
 msgstr "% Akumulá"
 
@@ -2995,6 +3007,8 @@ msgid "para análisis de tendencias"
 msgstr "ANÁLISIS VISUAL DI TENDENSIA"
 
 #: templates/secciones/recomendaciones.html:19
+#: templates/secciones/resumen_ventas.html:89
+#: templates/secciones/resumen_ventas.html:138
 msgid "Faltan"
 msgstr "Haltu"
 
@@ -3073,3 +3087,107 @@ msgstr "REKOMENDASHONNAN"
 #: templates/secciones/recomendaciones.html:79
 msgid "Optimizar mix de productos"
 msgstr "Optimalisá e horarionan di produkshon"
+
+#: templates/secciones/resumen_ventas.html:39
+msgid "En análisis"
+msgstr "Fecha di generashon:"
+
+#: templates/secciones/resumen_ventas.html:46
+msgid "Donaciones"
+msgstr "REKOMENDASHONNAN"
+
+#: templates/secciones/resumen_ventas.html:52
+msgid "Prod. Donados"
+msgstr "Produkto"
+
+#: templates/secciones/resumen_ventas.html:67
+msgid "ANÁLISIS DE DESEMPEÑO"
+msgstr "ANÁLISIS VISUAL DI GASTUNAN"
+
+#: templates/secciones/resumen_ventas.html:72
+msgid "Eficiencia Comercial"
+msgstr "Diferensia pa konsiliá"
+
+#: templates/secciones/resumen_ventas.html:77
+msgid "Excelente"
+msgstr "Sobrante"
+
+#: templates/secciones/resumen_ventas.html:79
+msgid "Buena"
+msgstr "Bon"
+
+#: templates/secciones/resumen_ventas.html:81
+msgid "Estable"
+msgstr "Estabil:"
+
+#: templates/secciones/resumen_ventas.html:83
+msgid "Por Mejorar"
+msgstr "Oportunidat di mehoramentu"
+
+#: templates/secciones/resumen_ventas.html:95
+msgid "Frecuencia Donaciones"
+msgstr "REKOMENDASHONNAN"
+
+#: templates/secciones/resumen_ventas.html:99
+msgid "Óptima"
+msgstr "Óptimo"
+
+#: templates/secciones/resumen_ventas.html:116
+msgid "RECOMENDACIÓN INMEDIATA"
+msgstr "Rekomendashonnan:"
+
+#: templates/secciones/resumen_ventas.html:124
+msgid "Mantener estrategia:"
+msgstr "Mantene strategianan aktual"
+
+#: templates/secciones/resumen_ventas.html:124
+msgid "Crecimiento positivo del"
+msgstr "Kresementu %"
+
+#: templates/secciones/resumen_ventas.html:129
+msgid "Revisar estrategia:"
+msgstr "Optimisá stock"
+
+#: templates/secciones/resumen_ventas.html:129
+msgid "Tendencia negativa del"
+msgstr "pa rebertí tendensia negativo"
+
+#: templates/secciones/resumen_ventas.html:135
+msgid "Acumulando datos:"
+msgstr "% Akumulá"
+
+#: templates/secciones/resumen_ventas.html:138
+msgid "días para generar recomendaciones basadas en tendencias"
+msgstr "REKOMENDASHONNAN"
+
+#: templates/secciones/resumen_ventas.html:148
+msgid "Optimizar donaciones:"
+msgstr "3. KONSUMO INTERNO / DONASHONNAN"
+
+#: templates/secciones/resumen_ventas.html:156
+msgid "Tip:"
+msgstr "Tipo"
+
+#: templates/secciones/resumen_ventas.html:156
+msgid "Registra más ventas para obtener mejores análisis"
+msgstr "Registrá mas bentananan pa haña mehor análisis"
+
+#: templates/secciones/resumen_ventas.html:170
+msgid "ANÁLISIS VISUAL"
+msgstr "ANÁLISIS VISUAL DI GASTUNAN"
+
+#: templates/secciones/resumen_ventas.html:176
+msgid "Producto Más Vendido"
+msgstr "PRODUKTONAN MAS VENDÍ"
+
+#: templates/secciones/resumen_ventas.html:185
+msgid "por transacción"
+msgstr "Kantidat di transakshonnan"
+
+#: templates/secciones/resumen_ventas.html:190
+msgid "Eficiencia"
+msgstr "Referensia"
+
+#: templates/secciones/resumen_ventas.html:201
+msgid "Datos insuficientes"
+msgstr "Datonan insufisiente"

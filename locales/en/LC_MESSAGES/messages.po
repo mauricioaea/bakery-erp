@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-23 20:40-0500\n"
+"POT-Creation-Date: 2026-10-23 21:39-0500\n"
 "PO-Revision-Date: 2026-10-15 10:38-0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -205,6 +205,7 @@ msgstr "Days in period:"
 
 #: reportes.py:213 templates/analisis_predictivo.html:356
 #: templates/analisis_predictivo.html:445
+#: templates/secciones/resumen_ventas.html:89
 msgid "días"
 msgstr "days"
 
@@ -483,7 +484,7 @@ msgstr "Highest Expense Category:"
 msgid "Dominancia de Categoría Principal:"
 msgstr "Main Category Dominance:"
 
-#: reportes.py:1157
+#: reportes.py:1157 templates/secciones/resumen_ventas.html:148
 msgid "del total"
 msgstr "of total"
 
@@ -565,7 +566,8 @@ msgid "No hay datos de ventas para el período seleccionado."
 msgstr "No sales data available for the selected period."
 
 #: reportes.py:1315 templates/cierre_caja.html:509
-#: templates/cierre_caja.html:658 templates/ventas_periodo.html:279
+#: templates/cierre_caja.html:658 templates/secciones/resumen_ventas.html:30
+#: templates/ventas_periodo.html:279
 msgid "Tendencia"
 msgstr "Trend"
 
@@ -1775,6 +1777,7 @@ msgstr "Report generated automatically"
 #: templates/analisis_predictivo.html:274
 #: templates/analisis_predictivo.html:538
 #: templates/secciones/analisis_productos.html:29
+#: templates/secciones/resumen_ventas.html:103
 #: templates/ventas_periodo.html:442
 msgid "Alta"
 msgstr "High"
@@ -1848,6 +1851,7 @@ msgstr "Current Stock"
 #: templates/analisis_predictivo.html:340
 #: templates/productos_populares.html:347 templates/reporte_produccion.html:157
 #: templates/reporte_produccion.html:184
+#: templates/secciones/resumen_ventas.html:178
 msgid "unidades"
 msgstr "Qty"
 
@@ -1888,6 +1892,7 @@ msgid "Crítico"
 msgstr "Active"
 
 #: templates/analisis_predictivo.html:385
+#: templates/secciones/resumen_ventas.html:101
 msgid "Normal"
 msgstr "Real"
 
@@ -2005,18 +2010,20 @@ msgstr "Check date:"
 msgid "Consulta histórica"
 msgstr "Historical query"
 
-#: templates/cierre_caja.html:497
+#: templates/cierre_caja.html:497 templates/secciones/resumen_ventas.html:7
 msgid "RESUMEN EJECUTIVO"
 msgstr "5. EXECUTIVE SUMMARY"
 
 #: templates/cierre_caja.html:503 templates/cierre_caja.html:645
-#: templates/reporte_ventas_externas.html:63 templates/ventas_periodo.html:258
+#: templates/reporte_ventas_externas.html:63
+#: templates/secciones/resumen_ventas.html:12 templates/ventas_periodo.html:258
 msgid "Total Ventas"
 msgstr "TOTAL SALES"
 
 #: templates/cierre_caja.html:515 templates/cierre_caja.html:631
 #: templates/cierre_caja.html:671 templates/cierre_caja.html:704
-#: templates/ventas_periodo.html:265 templates/ventas_periodo.html:383
+#: templates/secciones/resumen_ventas.html:18 templates/ventas_periodo.html:265
+#: templates/ventas_periodo.html:383
 msgid "Transacciones"
 msgstr "Number of transactions"
 
@@ -2461,6 +2468,7 @@ msgstr "Real"
 
 #: templates/reporte_produccion.html:155 templates/reporte_produccion.html:158
 #: templates/secciones/analisis_productos.html:24
+#: templates/secciones/resumen_ventas.html:177
 msgid "N/A"
 msgstr "N/A"
 
@@ -2832,6 +2840,8 @@ msgstr "Real revenue (excludes donations)"
 msgid "Total ventas + donaciones"
 msgstr "TOTAL SALES"
 
+#: templates/secciones/resumen_ventas.html:24
+#: templates/secciones/resumen_ventas.html:183
 #: templates/ventas_periodo.html:272 templates/ventas_periodo.html:392
 msgid "Ticket Promedio"
 msgstr "Average"
@@ -2842,6 +2852,7 @@ msgstr "Per transaction (real sales)"
 
 #: templates/secciones/recomendaciones.html:14
 #: templates/secciones/recomendaciones.html:22
+#: templates/secciones/resumen_ventas.html:196
 #: templates/ventas_periodo.html:283
 msgid "vs período anterior"
 msgstr "Product"
@@ -2968,6 +2979,7 @@ msgid "Fortalezas Identificadas"
 msgstr "Identified Strengths"
 
 #: templates/secciones/recomendaciones.html:17
+#: templates/secciones/resumen_ventas.html:86
 msgid "Acumulando datos"
 msgstr "% Accumulated"
 
@@ -2976,6 +2988,8 @@ msgid "para análisis de tendencias"
 msgstr "VISUAL TREND ANALYSIS"
 
 #: templates/secciones/recomendaciones.html:19
+#: templates/secciones/resumen_ventas.html:89
+#: templates/secciones/resumen_ventas.html:138
 msgid "Faltan"
 msgstr "High"
 
@@ -3054,3 +3068,107 @@ msgstr "RECOMMENDATIONS"
 #: templates/secciones/recomendaciones.html:79
 msgid "Optimizar mix de productos"
 msgstr "Optimize production schedules"
+
+#: templates/secciones/resumen_ventas.html:39
+msgid "En análisis"
+msgstr "Generation date:"
+
+#: templates/secciones/resumen_ventas.html:46
+msgid "Donaciones"
+msgstr "RECOMMENDATIONS"
+
+#: templates/secciones/resumen_ventas.html:52
+msgid "Prod. Donados"
+msgstr "Product"
+
+#: templates/secciones/resumen_ventas.html:67
+msgid "ANÁLISIS DE DESEMPEÑO"
+msgstr "VISUAL EXPENSE ANALYSIS"
+
+#: templates/secciones/resumen_ventas.html:72
+msgid "Eficiencia Comercial"
+msgstr "Difference to Reconcile"
+
+#: templates/secciones/resumen_ventas.html:77
+msgid "Excelente"
+msgstr "Surplus"
+
+#: templates/secciones/resumen_ventas.html:79
+msgid "Buena"
+msgstr "Good"
+
+#: templates/secciones/resumen_ventas.html:81
+msgid "Estable"
+msgstr "Stable:"
+
+#: templates/secciones/resumen_ventas.html:83
+msgid "Por Mejorar"
+msgstr "Opportunity for improvement"
+
+#: templates/secciones/resumen_ventas.html:95
+msgid "Frecuencia Donaciones"
+msgstr "RECOMMENDATIONS"
+
+#: templates/secciones/resumen_ventas.html:99
+msgid "Óptima"
+msgstr "Optimal"
+
+#: templates/secciones/resumen_ventas.html:116
+msgid "RECOMENDACIÓN INMEDIATA"
+msgstr "Recommendations:"
+
+#: templates/secciones/resumen_ventas.html:124
+msgid "Mantener estrategia:"
+msgstr "Maintain current strategies"
+
+#: templates/secciones/resumen_ventas.html:124
+msgid "Crecimiento positivo del"
+msgstr "Growth %"
+
+#: templates/secciones/resumen_ventas.html:129
+msgid "Revisar estrategia:"
+msgstr "Optimize stock"
+
+#: templates/secciones/resumen_ventas.html:129
+msgid "Tendencia negativa del"
+msgstr "to reverse negative trend"
+
+#: templates/secciones/resumen_ventas.html:135
+msgid "Acumulando datos:"
+msgstr "% Accumulated"
+
+#: templates/secciones/resumen_ventas.html:138
+msgid "días para generar recomendaciones basadas en tendencias"
+msgstr "RECOMMENDATIONS"
+
+#: templates/secciones/resumen_ventas.html:148
+msgid "Optimizar donaciones:"
+msgstr "3. INTERNAL CONSUMPTION / DONATIONS"
+
+#: templates/secciones/resumen_ventas.html:156
+msgid "Tip:"
+msgstr "Type"
+
+#: templates/secciones/resumen_ventas.html:156
+msgid "Registra más ventas para obtener mejores análisis"
+msgstr "Record more sales to get better analysis"
+
+#: templates/secciones/resumen_ventas.html:170
+msgid "ANÁLISIS VISUAL"
+msgstr "VISUAL EXPENSE ANALYSIS"
+
+#: templates/secciones/resumen_ventas.html:176
+msgid "Producto Más Vendido"
+msgstr "BEST SELLING PRODUCTS"
+
+#: templates/secciones/resumen_ventas.html:185
+msgid "por transacción"
+msgstr "Number of transactions"
+
+#: templates/secciones/resumen_ventas.html:190
+msgid "Eficiencia"
+msgstr "Reference"
+
+#: templates/secciones/resumen_ventas.html:201
+msgid "Datos insuficientes"
+msgstr "Insufficient data"
