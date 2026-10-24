@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-23 18:27-0500\n"
+"POT-Creation-Date: 2026-10-23 20:40-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2214,6 +2214,7 @@ msgid "Revisar recetas de productos con baja rotación"
 msgstr ""
 
 #: templates/productos_populares.html:604
+#: templates/secciones/recomendaciones.html:71
 msgid "Optimizar horarios de producción"
 msgstr ""
 
@@ -2782,6 +2783,8 @@ msgstr ""
 msgid "Por transacción (ventas reales)"
 msgstr ""
 
+#: templates/secciones/recomendaciones.html:14
+#: templates/secciones/recomendaciones.html:22
 #: templates/ventas_periodo.html:283
 msgid "vs período anterior"
 msgstr ""
@@ -2859,6 +2862,8 @@ msgstr ""
 msgid "Fortalezas:"
 msgstr ""
 
+#: templates/secciones/recomendaciones.html:14
+#: templates/secciones/recomendaciones.html:22
 #: templates/ventas_periodo.html:479
 msgid "Crecimiento del"
 msgstr ""
@@ -2867,10 +2872,12 @@ msgstr ""
 msgid "Ticket promedio:"
 msgstr ""
 
+#: templates/secciones/recomendaciones.html:52
 #: templates/ventas_periodo.html:484
 msgid "transacciones"
 msgstr ""
 
+#: templates/secciones/recomendaciones.html:46
 #: templates/ventas_periodo.html:494
 msgid "Implementar promociones"
 msgstr ""
@@ -2893,5 +2900,101 @@ msgstr ""
 
 #: templates/secciones/analisis_productos.html:50
 msgid "No hay datos de productos para el período seleccionado"
+msgstr ""
+
+#: templates/secciones/recomendaciones.html:5
+msgid "Recomendaciones Inteligentes"
+msgstr ""
+
+#: templates/secciones/recomendaciones.html:10
+msgid "Fortalezas Identificadas"
+msgstr ""
+
+#: templates/secciones/recomendaciones.html:17
+msgid "Acumulando datos"
+msgstr ""
+
+#: templates/secciones/recomendaciones.html:17
+msgid "para análisis de tendencias"
+msgstr ""
+
+#: templates/secciones/recomendaciones.html:19
+msgid "Faltan"
+msgstr ""
+
+#: templates/secciones/recomendaciones.html:19
+msgid "días para comparar períodos"
+msgstr ""
+
+#: templates/secciones/recomendaciones.html:26
+msgid "Ticket promedio saludable:"
+msgstr ""
+
+#: templates/secciones/recomendaciones.html:30
+msgid "Alto volumen de transacciones:"
+msgstr ""
+
+#: templates/secciones/recomendaciones.html:35
+msgid "Base estable para optimizaciones"
+msgstr ""
+
+#: templates/secciones/recomendaciones.html:43
+msgid "Oportunidades de Mejora"
+msgstr ""
+
+#: templates/secciones/recomendaciones.html:46
+msgid "para revertir tendencia negativa"
+msgstr ""
+
+#: templates/secciones/recomendaciones.html:49
+msgid "Crear combos y upselling"
+msgstr ""
+
+#: templates/secciones/recomendaciones.html:49
+msgid "para aumentar ticket promedio"
+msgstr ""
+
+#: templates/secciones/recomendaciones.html:52
+msgid "Optimizar gestión de donaciones:"
+msgstr ""
+
+#: templates/secciones/recomendaciones.html:54
+msgid "Revisar stock"
+msgstr ""
+
+#: templates/secciones/recomendaciones.html:54
+msgid "basado en proyecciones IA"
+msgstr ""
+
+#: templates/secciones/recomendaciones.html:64
+msgid "Plan de Acción Recomendado"
+msgstr ""
+
+#: templates/secciones/recomendaciones.html:67
+msgid "Acciones Inmediatas (1-3 días):"
+msgstr ""
+
+#: templates/secciones/recomendaciones.html:69
+msgid "Revisar alertas de stock crítico"
+msgstr ""
+
+#: templates/secciones/recomendaciones.html:70
+msgid "Analizar productos de bajo desempeño"
+msgstr ""
+
+#: templates/secciones/recomendaciones.html:75
+msgid "Acciones Estratégicas (1-2 semanas):"
+msgstr ""
+
+#: templates/secciones/recomendaciones.html:77
+msgid "Implementar recomendaciones de IA"
+msgstr ""
+
+#: templates/secciones/recomendaciones.html:78
+msgid "Crear promociones basadas en tendencias"
+msgstr ""
+
+#: templates/secciones/recomendaciones.html:79
+msgid "Optimizar mix de productos"
 msgstr ""
 

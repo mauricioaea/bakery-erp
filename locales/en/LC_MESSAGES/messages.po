@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-23 18:27-0500\n"
+"POT-Creation-Date: 2026-10-23 20:40-0500\n"
 "PO-Revision-Date: 2026-10-15 10:38-0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -2128,7 +2128,7 @@ msgstr "Best Selling Products"
 
 #: templates/productos_populares.html:253
 msgid "PRODUCTOS MÁS VENDIDOS"
-msgstr "BEST SELLING PRODUCTS"  
+msgstr "BEST SELLING PRODUCTS"
 
 #: templates/productos_populares.html:254
 msgid "Análisis de Rotación y Popularidad"
@@ -2271,6 +2271,7 @@ msgid "Revisar recetas de productos con baja rotación"
 msgstr "REVIEW RECIPES OF LOW-TURNOVER PRODUCTS (<6 times/year)"
 
 #: templates/productos_populares.html:604
+#: templates/secciones/recomendaciones.html:71
 msgid "Optimizar horarios de producción"
 msgstr "Optimize production schedules"
 
@@ -2839,6 +2840,8 @@ msgstr "Average"
 msgid "Por transacción (ventas reales)"
 msgstr "Per transaction (real sales)"
 
+#: templates/secciones/recomendaciones.html:14
+#: templates/secciones/recomendaciones.html:22
 #: templates/ventas_periodo.html:283
 msgid "vs período anterior"
 msgstr "Product"
@@ -2916,6 +2919,8 @@ msgstr "Predictive analysis with sales projections and recommendations."
 msgid "Fortalezas:"
 msgstr "TOTALS"
 
+#: templates/secciones/recomendaciones.html:14
+#: templates/secciones/recomendaciones.html:22
 #: templates/ventas_periodo.html:479
 msgid "Crecimiento del"
 msgstr "Growth %"
@@ -2924,10 +2929,12 @@ msgstr "Growth %"
 msgid "Ticket promedio:"
 msgstr "Average"
 
+#: templates/secciones/recomendaciones.html:52
 #: templates/ventas_periodo.html:484
 msgid "transacciones"
 msgstr "Number of transactions"
 
+#: templates/secciones/recomendaciones.html:46
 #: templates/ventas_periodo.html:494
 msgid "Implementar promociones"
 msgstr "Implement promotions"
@@ -2951,3 +2958,99 @@ msgstr "Real Sales"
 #: templates/secciones/analisis_productos.html:50
 msgid "No hay datos de productos para el período seleccionado"
 msgstr "No product data available for the selected period."
+
+#: templates/secciones/recomendaciones.html:5
+msgid "Recomendaciones Inteligentes"
+msgstr "SMART RECOMMENDATIONS"
+
+#: templates/secciones/recomendaciones.html:10
+msgid "Fortalezas Identificadas"
+msgstr "Identified Strengths"
+
+#: templates/secciones/recomendaciones.html:17
+msgid "Acumulando datos"
+msgstr "% Accumulated"
+
+#: templates/secciones/recomendaciones.html:17
+msgid "para análisis de tendencias"
+msgstr "VISUAL TREND ANALYSIS"
+
+#: templates/secciones/recomendaciones.html:19
+msgid "Faltan"
+msgstr "High"
+
+#: templates/secciones/recomendaciones.html:19
+msgid "días para comparar períodos"
+msgstr "NO DATA FOR THE PERIOD"
+
+#: templates/secciones/recomendaciones.html:26
+msgid "Ticket promedio saludable:"
+msgstr "Average"
+
+#: templates/secciones/recomendaciones.html:30
+msgid "Alto volumen de transacciones:"
+msgstr "Number of transactions"
+
+#: templates/secciones/recomendaciones.html:35
+msgid "Base estable para optimizaciones"
+msgstr "Stable base for optimizations"
+
+#: templates/secciones/recomendaciones.html:43
+msgid "Oportunidades de Mejora"
+msgstr "Opportunity for improvement"
+
+#: templates/secciones/recomendaciones.html:46
+msgid "para revertir tendencia negativa"
+msgstr "to reverse negative trend"
+
+#: templates/secciones/recomendaciones.html:49
+msgid "Crear combos y upselling"
+msgstr "Create combos"
+
+#: templates/secciones/recomendaciones.html:49
+msgid "para aumentar ticket promedio"
+msgstr "Average"
+
+#: templates/secciones/recomendaciones.html:52
+msgid "Optimizar gestión de donaciones:"
+msgstr "3. INTERNAL CONSUMPTION / DONATIONS"
+
+#: templates/secciones/recomendaciones.html:54
+msgid "Revisar stock"
+msgstr "Optimize stock"
+
+#: templates/secciones/recomendaciones.html:54
+msgid "basado en proyecciones IA"
+msgstr "based on AI projections"
+
+#: templates/secciones/recomendaciones.html:64
+msgid "Plan de Acción Recomendado"
+msgstr "RECOMMENDED ACTION PLAN"
+
+#: templates/secciones/recomendaciones.html:67
+msgid "Acciones Inmediatas (1-3 días):"
+msgstr "Immediate Actions (1-3 days):"
+
+#: templates/secciones/recomendaciones.html:69
+msgid "Revisar alertas de stock crítico"
+msgstr "Review critical stock alerts"
+
+#: templates/secciones/recomendaciones.html:70
+msgid "Analizar productos de bajo desempeño"
+msgstr "Analyze low-performing products"
+
+#: templates/secciones/recomendaciones.html:75
+msgid "Acciones Estratégicas (1-2 semanas):"
+msgstr "STRATEGIC RECOMMENDATIONS"
+
+#: templates/secciones/recomendaciones.html:77
+msgid "Implementar recomendaciones de IA"
+msgstr "Implement promotions"
+
+#: templates/secciones/recomendaciones.html:78
+msgid "Crear promociones basadas en tendencias"
+msgstr "RECOMMENDATIONS"
+
+#: templates/secciones/recomendaciones.html:79
+msgid "Optimizar mix de productos"
+msgstr "Optimize production schedules"
