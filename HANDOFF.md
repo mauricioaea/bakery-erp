@@ -1,7 +1,7 @@
 # 🗂️ CONTEXTO MAESTRO — PanaderíaPro (Bakery ERP)
 
-**Última actualización:** 23 de Octubre, 2026
-**Último commit:** `3ea5612` (feat DT-37 F5: migrar reporte_ventas_externas.html a i18n)
+**Última actualización:** 24 de Octubre, 2026
+**Último commit:** `c54d9eb` (feat DT-37 F5: migrar ventas_avanzado.html a i18n — F5 COMPLETADO 100%)
 **Sesión 2 Oct:** DT-11, DT-12, DT-13, DT-14, DT-16, DT-26, DT-27, DT-3, DT-4
 **Sesión 3 Oct:** DT-1, DT-6, DT-9, DT-20 Fase C (Tanda 1+2+3), DT-30, DT-31
 **Sesión 4 Oct:** DT-10, DT-22, DT-24, DT-17, DT-33, DT-34, DT-32, DT-18
@@ -16,6 +16,8 @@
 **Sesión 16 Oct (noche):** DT-37 F4.6 (`ia_predictivo` método principal + 3 helpers) — **6/13 reportes migrados**
 **Sesión 18 Oct (mañana):** DT-37 F4.7 (`historial_pagos` + `historial_depositos`) + DT-37 F4.8 (`tesoreria_unificado` método principal + 4 helpers + `_generar_reporte_error`) — **10/10 reportes UI migrados**.
 **Sesión 20-23 Oct:** DT-37 F5 (i18n de reportes HTML en templates/). Migración de 6 templates: `reportes.html`, `cierre_caja.html`, `productos_populares.html`, `reporte_activos.html`, `reporte_inventario_externo.html` (+ fix export PDF), `reporte_ventas_externas.html` (+ fix export PDF). Corrección de `babel.cfg` y `app.py` (import `_`).
+**Sesión 23 Oct (tarde):** DT-37 F5.7 (`ventas_periodo.html`) + fix multi-tenant nombre panadería (`config.nombre_panaderia`).
+**Sesión 24 Oct (tarde):** DT-37 F5 — migración de `analisis_predictivo.html`, `reporte_produccion.html`, y los 4 parciales de `secciones/` (`analisis_productos`, `recomendaciones`, `resumen_ventas`, `analisis_ia`) + padre `ventas_avanzado.html`. **F5 COMPLETADO AL 100%.**
 
 ---
 
@@ -23,12 +25,12 @@
 
 - **Nombre:** PanaderíaPro (bakery-erp)
 - **Repo:** https://github.com/mauricioaea/bakery-erp
-- **Estado:** v1.8.0 — **11/11 módulos completados (100%)** + **DT-37 F4 100% en reportes.py** (10 reportes UI + 4 helpers + 1 huérfano pendiente: `libro_diario`). **DT-37 F5 en curso** (6 de 11 templates HTML migrados).
+- **Estado:** v1.9.0 — **11/11 módulos completados (100%)** + **DT-37 F4 100% en reportes.py** (10 reportes UI + 4 helpers + 1 huérfano pendiente: `libro_diario`) + **DT-37 F5 100%** (14 archivos HTML migrados).
 - **Arquitectura:** Multi-tenant con PostgreSQL (schemas por tenant)
-- **Próximo hito:** DT-37 F5 (faltan 5 templates HTML) + Dockerización (Fase 3) + DT-CRÉDITOS.
+- **Próximo hito:** **Análisis pre-Dockerización** (sincronización modelos/app/BD) + Dockerización (Fase 3).
 - **Seguridad:** Producción-ready (CSRF con tokens firmados + Origin/Referer + logging centralizado)
 - **Observabilidad:** Producción-ready (logger con rotación de archivos, niveles configurables)
-- **i18n:** Operativo para reportes PDF en **es/en/pap** (10 de 10 reportes UI en `reportes.py` migrados). Operativo para reportes HTML en **es/en/pap** (6 de 11 templates migrados).
+- **i18n:** Operativo para reportes PDF en **es/en/pap** (10 de 10 reportes UI en `reportes.py` migrados). Operativo para reportes HTML en **es/en/pap** (14 de 14 archivos migrados = 100%).
 
 ---
 
@@ -57,18 +59,18 @@
 - `migrations/sql/` — scripts SQL versionados
 - **`babel.cfg`** — config de extracción de strings (ACTUALIZADO en F5: `[jinja2: **.html]`)
 - **`locales/`** — catálogos de traducción
-  - `locales/messages.pot` — plantilla (**~555 msgids**)
+  - `locales/messages.pot` — plantilla (**~771 msgids**)
   - `locales/es/LC_MESSAGES/messages.{po,mo}` — español (0 traducidos, fallback)
-  - `locales/en/LC_MESSAGES/messages.{po,mo}` — inglés (**~548 traducidos, 98%**)
-  - `locales/pap/LC_MESSAGES/messages.{po,mo}` — papiamentu Curazao (**~548 traducidos, 98%**)
-- `templates/` (54 templates + `_csrf_head.html` partial + subcarpetas `secciones/`)
+  - `locales/en/LC_MESSAGES/messages.{po,mo}` — inglés (**~767 traducidos, 99%**)
+  - `locales/pap/LC_MESSAGES/messages.{po,mo}` — papiamentu Curazao (**~766 traducidos, 99%**)
+- `templates/` (54 templates + `_csrf_head.html` partial + subcarpetas `secciones/` con 4 parciales)
 - `static/js/` — incluye `csrf-auto-inject.js`
 - `logs/` — archivo rotativo `panaderia.log` (ignorado por git)
 - `.env` (protegido), `.env.example` (plantilla)
 - `requirements.txt` — incluye `Flask-WTF==1.3.0`, `WTForms==3.2.2`, `Flask-Babel==4.0.0`, `Babel==2.18.0`
 - `HANDOFF.md` — este archivo
 - **`_limpiar_fuzzy.py`** — script de utilidad (CRÍTICO en F5)
-- **`_ver_untraducciones.py`** — script de utilidad (diagnóstico i18n)
+- **`_ver_untraducciones.py`** — script de utilidad (diagnóstico i18n — tiene bug conocido, ver DT-nueva-baja)
 
 ---
 
@@ -81,7 +83,7 @@
 
 **Tenant principal del Demo:** `tenant_27` ("Panadería Demo").
 **Tenants de producción real:** `tenant_1` (Principal) + `tenant_27` (Demo).
-**Estado de `tenant_1`:** ✅ Limpio.
+**Estado de `tenant_1`:** ✅ Limpio. (Usado como plantilla de referencia estructural).
 **Estado de `tenant_27`:** ✅ Re-seedeado el 5 Oct (9.968 filas) + ventas acumuladas del smoke test. `idioma = pap` (para pruebas de i18n).
 
 ### 📌 Arquitectura de `public.*` (post-DT-36)
@@ -147,23 +149,32 @@
 
 | # | Módulo | Estado |
 |---|--------|--------|
-| 1 | Punto de Venta | ✅ COMPLETO |
+| 1 | Punto de Venta | ✅ COMPLETO (⚠️ ver DT-nueva-media: anulación de recibos) |
 | 2 | Producción Diaria | ✅ COMPLETO |
 | 3 | Productos Externos | ✅ COMPLETO |
-| 4 | Recetas y Fórmulas | ✅ COMPLETO |
+| 4 | Recetas y Fórmulas | ✅ COMPLETO (⚠️ ver DT-nueva-recetas-toppings) |
 | 5 | Materias Primas | ✅ COMPLETO |
 | 6 | Proveedores | ✅ COMPLETO |
 | 7 | Gestión de Clientes (solo dev_master) | ✅ COMPLETO |
 | 8 | Activos Fijos | ✅ COMPLETO |
 | 9 | Gestión de Usuarios + Mi Perfil | ✅ COMPLETO |
 | 10 | Gestión Financiera | ✅ COMPLETO |
-| 11 | Reportes Profesionales | ✅ COMPLETO (i18n PDF: 100% en `reportes.py`; HTML: 6/11 templates en F5) |
+| 11 | Reportes Profesionales | ✅ COMPLETO (i18n PDF: 100% en `reportes.py`; HTML: 14/14 archivos en F5 = 100%) |
 
 ---
 
 ## 6️⃣ Últimos commits pusheados
 
 ```text
+c54d9eb feat(DT-37 F5): migrar ventas_avanzado.html a i18n (es/en/pap) — F5 COMPLETADO (100%)
+61edb44 feat(DT-37 F5): migrar secciones/analisis_ia.html a i18n (es/en/pap)
+ec2687e feat(DT-37 F5): migrar secciones/resumen_ventas.html a i18n (es/en/pap)
+84b9080 feat(DT-37 F5): migrar secciones/recomendaciones.html a i18n (es/en/pap)
+7582770 feat(DT-37 F5): migrar secciones/analisis_productos.html a i18n + corregir traducciones heredadas
+b660db7 feat(DT-37 F5): migrar reporte_produccion.html a i18n (es/en/pap)
+d0fd6bb feat(DT-37 F5): migrar analisis_predictivo.html a i18n + fix CSS @media print + badge traducción
+0af8fcf feat(DT-37 F5): migrar ventas_periodo.html a i18n (es/en/pap) + fix multi-tenant nombre panadería
+cf81b34 docs: HANDOFF v9.1 - DT-37 F5 parte 1 completada (6/11 templates)
 3ea5612 feat(DT-37 F5): migrar reporte_ventas_externas.html a i18n (es/en/pap) + fix export PDF
 2f9a5fe feat(DT-37 F5): migrar reporte_inventario_externo.html a i18n (es/en/pap) + fix export PDF
 0ebb3de feat(DT-37 F5): migrar reporte_activos.html a i18n (es/en/pap) + fix placeholders
@@ -232,29 +243,21 @@ F4 (reportes.py — PDFs):
 
 F5 (templates HTML — migradas):
 
-/reportes, /reporte/cierre_caja, /reporte/productos_populares, /reporte_activos, /reporte_inventario_externo (+ /exportar_inventario_externo), /reporte_ventas_externas (+ /exportar_ventas_externas) — todas ✅ i18n es/en/pap.
+/reportes, /reporte/cierre_caja, /reporte/productos_populares, /reporte_activos, /reporte_inventario_externo (+ /exportar_inventario_externo), /reporte_ventas_externas (+ /exportar_ventas_externas).
 
-F5 (templates HTML — pendientes):
+/reporte/ventas (ventas_periodo.html).
 
-/reporte/ventas (ventas_periodo.html)
+/reporte/analisis_predictivo (analisis_predictivo.html).
 
-/reporte_produccion_diaria (produccion_diaria.html o reporte_produccion.html)
+/reporte_produccion_diaria (reporte_produccion.html).
 
-/reporte/analisis_predictivo (analisis_predictivo.html)
+/reporte/ventas_avanzado (ventas_avanzado.html + 4 parciales).
 
-/reporte/ventas_avanzado (ventas_avanzado.html)
+Todas ✅ i18n es/en/pap.
 
-/reporte/cierre_diario (cierre_diario.html)
+F5 (templates HTML — huérfanos, no migrar):
 
-F5 (parciales de secciones — pendientes):
-
-templates/secciones/resumen_ventas.html
-
-templates/secciones/analisis_ia.html
-
-templates/secciones/recomendaciones.html
-
-templates/secciones/analisis_productos.html
+/cierre_diario (cierre_diario.html) — huérfano, no enlazado desde frontend. El cierre real se hace desde el POS.
 
 🎯 Arquitectura del before_request (post-DT-25 + DT-37)
 Un solo before_request en app.py:1892 (antes_de_cada_peticion).
@@ -338,7 +341,6 @@ Inicialización en app.py:~1256:
 
 python
 from flask_babel import Babel, gettext as _
-from flask_babel import Babel
 
 def _get_locale():
     return getattr(g, 'idioma_tenant', None) or 'es'
@@ -349,6 +351,7 @@ babel = Babel(
     default_translation_directories=os.path.join(app.root_path, 'locales')
 )
 ⚠️ Lección clave: app.config['BABEL_TRANSLATION_DIRECTORIES'] aplicado después de Babel(app) es demasiado tarde → Babel ya leyó el default (translations/). Pasar default_translation_directories al constructor.
+
 ⚠️ IMPORTANTE (F5): se agregó gettext as _ en la línea 1264 de app.py para poder usar _() en funciones de app.py (ej. exportar_inventario_externo, exportar_ventas_externas).
 
 _get_locale() resuelve el locale por request, leyendo g.idioma_tenant (cargado en el before_request).
@@ -375,7 +378,7 @@ Cómo funciona el fallback:
 
 es.po tiene 0 traducciones → Babel devuelve el msgid original (que ya está en español).
 
-en.po y pap.po tienen ~548 traducciones cada uno.
+en.po y pap.po tienen ~766 traducciones cada uno (99%).
 
 Días en Papiamentu Curazao:
 
@@ -383,11 +386,21 @@ ES	PAP Curazao
 Lunes	djaluna
 Martes	djamars
 Miércoles	djárason
-Jueves	djaweps
+Jueves	djаweps
 Viernes	djabièrnè
 Sábado	djasabra
 Domingo	djadumingu
 9️⃣ Deuda técnica acumulada
+✅ RESUELTAS el 24 de Octubre 2026 — DT-37 F5 (parte 2 y final)
+#	Descripción	Commit
+DT-37 F5.7	Migrar ventas_periodo.html + fix multi-tenant	0af8fcf
+DT-37 F5.8	Migrar analisis_predictivo.html + fix CSS @media print + badge traducción	d0fd6bb
+DT-37 F5.9	Migrar reporte_produccion.html	b660db7
+DT-37 F5.10	Migrar secciones/analisis_productos.html + fix traducciones heredadas	7582770
+DT-37 F5.11	Migrar secciones/recomendaciones.html	84b9080
+DT-37 F5.12	Migrar secciones/resumen_ventas.html	ec2687e
+DT-37 F5.13	Migrar secciones/analisis_ia.html	61edb44
+DT-37 F5.14	Migrar ventas_avanzado.html (padre) — F5 COMPLETADO	c54d9eb
 ✅ RESUELTAS el 23 de Octubre 2026 — DT-37 F5 (parte 1)
 #	Descripción	Commit
 DT-37 F5.1	Migrar reportes.html (menú principal)	a0de295
@@ -419,13 +432,15 @@ DT-37 F3	Reporte piloto (tendencia_ventas) migrado a i18n	9490e97 + 5860fdf
 DT-37 Papiamento	Catálogo pap completo (53 traducciones)	93a1e82
 🟡 Medias pendientes
 #	Ubicación	Descripción
-DT-37 F5	app.py + templates/	i18n de 5 reportes HTML restantes: /reporte/ventas (ventas_periodo), /reporte_produccion_diaria (produccion_diaria o reporte_produccion), /reporte/analisis_predictivo, /reporte/ventas_avanzado, /reporte/cierre_diario. + 4 parciales de secciones/. Estimación: ~3-4 h.
 DT-37 F5-pulido	app.py / reportes.py	Gráficos de matplotlib (en reporte_activos.html y otros) tienen títulos en español hardcodeados en Python. Requiere i18n en las funciones que generan imágenes. Estimación: ~1 h por reporte.
 DT-37 F4.9	reportes.py:500	libro_diario: método huérfano (sin UI). Baja prioridad. ~30 min.
 DT-NUEVA-1	migrations/sql/	Sincronizar CREATE TABLE con idioma para tenants nuevos (obligatorio antes del próximo tenant).
 DT-nueva	reportes.py	Error 'ingreso' en generar_reporte_ia_predictivo (L1936). El PDF muestra "Las recomendaciones no están disponibles temporalmente por error técnico". El except ya está i18n-ready.
 DT-nueva	app.py:9066	Endpoint /generar_reporte_flujo_caja huérfano: existe pero ningún template lo invoca. Además tiene bug: generador.generar_reporte_flujo_caja(fecha_inicio, fecha_fin) le falta panaderia_id (L9092).
 DT-nueva	analisis_gastos (matplotlib)	Overlap de labels en pie chart cuando hay categorías con valores pequeños. Deuda cosmética.
+DT-nueva-media-baja	app.py	i18n de diccionarios Python que alimentan reportes HTML: analisis_tendencias.mensaje, analisis_tendencias.recomendaciones, predicciones_ml.mensaje, predicciones_ml.mensaje_tendencia, recomendaciones_personalizadas.mensaje, recomendacion.titulo, recomendacion.mensaje, recomendacion.accion, recomendacion.prioridad, producto.nivel_riesgo, prediccion.confianza. Los textos siguen en español en reportes PAP/EN porque vienen de Python hardcodeado. NO es F5, es deuda de app.py. NO urgente, NO rompe nada.
+DT-nueva-baja	templates/	Mapeo Jinja2 de badges dinámicos (prioridad/nivel_riesgo/confianza) en analisis_predictivo.html, analisis_ia.html, ventas_avanzado.html. Ej: {{ {'ALTO': _('Alto'), 'MEDIO': _('Medio'), 'BAJO': _('Bajo')}[valor] }}.
+DT-nueva-baja	_ver_untraducciones.py	Bug: reporta 13 strings en EN cuando hay 44, y 0 en PAP cuando hay 53. Reescribir o reemplazar por findstr /c:"msgstr \"\"". Baja prioridad.
 🚨 DT-nueva-CRÍTICA
 Ubicación	Descripción
 reportes.py (ReportLab)	Emojis 🔴 🟢 🟡 ⚪ 📦 📊 🚨 💡 📋 ✅ rotos en PDFs: la fuente Helvetica default de ReportLab no tiene glyphs de emoji → salen como n. Deuda cosmética global.
@@ -434,13 +449,21 @@ reportes.py (ReportLab)	Emojis 🔴 🟢 🟡 ⚪ 📦 📊 🚨 💡 📋 ✅ r
 DT-nueva	tenant_1.configuracion_sistema tiene 6 filas con panaderia_id = 1, 5, 22, 24, 27, 28 (posible data legacy).
 DT-nueva	Imports redundantes de os en app.py (líneas 1225, 10519, 11009, 11958, 12323, 12429).
 DT-nueva	Fluho Neto en lugar de Flusho Neto en PAP (ajuste menor de traducción).
-🚨 Features pendientes
-DT-CRÉDITOS: Módulo completo de créditos/fiado. Detalle en sección 2️⃣0️⃣.
+DT-nueva	cierre_diario.html es huérfano. La ruta /cierre_diario (app.py:7165) existe pero NO está enlazada desde el frontend. El cierre diario real se hace desde el POS (punto_venta.html + pos-moderno.js → /api/cierre_diario/procesar y /api/cierre_diario/estado). Acción futura (decidir): eliminar templates/cierre_diario.html + la ruta /cierre_diario de app.py, o dejarla como utilidad oculta. NO migrar a i18n (no se usa).
+DT-nueva	produccion_diaria.html (58 KB, dashboard del módulo Producción Diaria, no es reporte HTML). Requiere sesión dedicada de i18n. Fuera de F5.
+DT-nueva	reportes.html:229 tiene el botón para ventas_periodo.html con el nombre "Historial de Ventas". Evaluar renombrar a "Ventas por Período".
+DT-nueva-cosmética	ventas_periodo.html tiene datos demo hardcodeados en tabla Distribución por Categoría (40/35/15/10) y gráficos. Deberían venir de Python.
+DT-nueva-traducción	al → Real en PAP (heredado). Mejor te o hasta.
+DT-nueva-traducción	Medio → Average/Promedio (heredado). Mejor Medium/Medio. Similar para Bajo → LOW/ABOU (heredado).
+🚨 Features pendientes (ver secciones 21, 22)
+Ajuste en lógica de recetas con toppings (sección 2️⃣1️⃣).
 
-Dockerización (Fase 3): ~22-32 h.
+Anulación de recibos POS (sección 2️⃣2️⃣).
+
+Análisis pre-Dockerización (sección 2️⃣3️⃣).
 
 🔟 Metodología de trabajo
-Reglas de oro (heredadas de v9.0)
+Reglas de oro (heredadas de v9.1)
 Un paso a la vez con confirmación antes de continuar.
 
 Diagnóstico ANTES de modificar.
@@ -519,7 +542,7 @@ Al dropear una tabla referenciada por otra que se CONSERVA, primero soltar la FK
 
 Un endpoint de borrado de tenant debe limpiar TODAS las tablas public.* que puedan tener datos del tenant.
 
-Al verificar COUNT(*) de tablas, NO confiar en pg_stat_user_tables.n_live_tup. Usar siempre COUNT(*) real.
+Al verificar COUNT() de tablas, NO confiar en pg_stat_user_tables.n_live_tup. Usar siempre COUNT() real.
 
 Cuando powershell -Command "Get-Content ... | Select-Object ..." corte la salida en un emoji UTF-8, usar findstr /n /r /c:"^" archivo.py > _dump.txt y luego Select-Object sobre ese archivo.
 
@@ -615,7 +638,7 @@ libro_diario y flujo_caja son reportes huérfanos (sin UI). Migrar flujo_caja fu
 
 Un % literal en un msgstr puede romper la compilación de Babel si el msgid no lo tiene o si el msgid tiene #, python-format. La solución es evitar el % en el texto (ej. cambiar "Menos del 50%" por "Menos de la mitad") en lugar de escapar con %%. Escapar con %% solo funciona si el msgid también lo tiene.
 
-🚨 NUEVAS Reglas de oro (Aprendidas en F5, 20-23 Oct 2026)
+🚨 NUEVAS Reglas de oro (Aprendidas en F5, 20-24 Oct 2026)
 babel.cfg: el pattern Jinja2 debe ser [jinja2: **.html], NO **/templates/**.html. El **/ inicial hace que Babel no matchee cuando se pasa templates como argumento a pybabel extract.
 
 Proteger <style> y <script> ANTES de hacer reemplazos masivos en templates HTML. Usar placeholders __ESTILO_X__ y __SCRIPT_X__, restaurar al final. Evita romper funciones JS como generarPDF() o clases CSS como container.
@@ -639,6 +662,12 @@ El caché de Flask/Python puede enmascarar cambios. Después de pybabel compile,
 Migrar también los PDFs de exportación: si el template HTML tiene un botón "Exportar a CSV" / "Descargar PDF" que llama a una ruta en app.py (/exportar_X), esa función también debe migrarse. Buscar con findstr /n /c:"exportar_X" app.py y aplicar _() a los Paragraph(...) y a las cabeceras de Table(...).
 
 Preferir scripts de Python sobre copy-paste del chat. El mojibake del CMD/PowerShell al copiar acentos y emojis es un problema recurrente. Los scripts leen el archivo en UTF-8 directamente del disco, sin pasar por la consola.
+
+config.nombre_panaderia ya está disponible globalmente en templates vía inject_user_permissions() (context processor en app.py:1636). No hay que agregarlo en cada render_template. Si un template muestra el nombre de la panadería hardcodeado, reemplazarlo por {{ config.nombre_panaderia }}.
+
+reporte_produccion.html es el reporte (/reporte_produccion_diaria). produccion_diaria.html (58 KB) es el dashboard del módulo Producción Diaria (no es un reporte HTML, no es F5).
+
+cierre_diario.html es huérfano (nadie lo enlaza desde frontend). El cierre real se hace desde el POS.
 
 Comandos útiles (ACTUALIZADOS)
 cmd
@@ -675,7 +704,7 @@ git commit -F _commit_msg.txt && del _commit_msg.txt
 Scripts de utilidad que DEBEN existir en el proyecto
 _limpiar_fuzzy.py — elimina líneas #, fuzzy de los .po. CRÍTICO después de cada update.
 
-_ver_untraducciones.py — muestra los msgids con msgstr "" en en.po.
+_ver_untraducciones.py — muestra los msgids con msgstr "" en en.po (tiene bug conocido, ver DT-nueva-baja).
 
 1️⃣1️⃣ Fase C.3 — Auditoría de columnas huérfanas (cerrada)
 Auditoría del 5 Oct, alineación ORM↔BD:
@@ -750,8 +779,7 @@ Commit: 92f2d0d.
 2️⃣0️⃣ DT-37 — i18n reportes
 Alcance: reportes.py (~3.600 líneas) genera PDFs con texto hardcodeado en español. Objetivo: multi-idioma con Flask-Babel.
 
-Estado: F0-F4 completadas para reportes.py. 10/10 reportes UI migrados. 1 huérfano pendiente (libro_diario).
-F5 en curso: 6 de 11 templates HTML migrados.
+Estado: ✅ F0-F5 COMPLETADAS AL 100%. 10/10 reportes UI migrados en reportes.py + 14/14 archivos HTML migrados en F5.
 
 Resumen de migraciones (F4)
 Reporte	Commit	Fecha
@@ -768,7 +796,7 @@ tesoreria_unificado	6b6204b	18 Oct
 _generar_reporte_error (helper)	6b6204b	18 Oct
 Total F4: 344 msgids (100% traducidos en EN y PAP).
 
-Resumen de migraciones (F5 — en curso)
+Resumen de migraciones (F5 — COMPLETADO)
 Template	Commit	Fecha
 reportes.html (menú principal)	a0de295	20 Oct
 cierre_caja.html	a0de295	20 Oct
@@ -776,16 +804,15 @@ productos_populares.html	a796290	21 Oct
 reporte_activos.html	0ebb3de	21 Oct
 reporte_inventario_externo.html	2f9a5fe	22 Oct
 reporte_ventas_externas.html	3ea5612	23 Oct
-Total F5 (parcial): ~555 msgids (98% traducidos en EN y PAP).
-
-F5 — Templates pendientes (estimación ~3-4 h)
-#	Template	Ruta
-7	ventas_periodo.html	/reporte/ventas
-8	produccion_diaria.html o reporte_produccion.html	/reporte_produccion_diaria
-9	analisis_predictivo.html	/reporte/analisis_predictivo
-10	ventas_avanzado.html	/reporte/ventas_avanzado
-11	cierre_diario.html	/reporte/cierre_diario
-4 parciales de secciones/: resumen_ventas.html, analisis_ia.html, recomendaciones.html, analisis_productos.html.
+ventas_periodo.html	0af8fcf	23 Oct
+analisis_predictivo.html	d0fd6bb	23 Oct
+reporte_produccion.html	b660db7	23 Oct
+secciones/analisis_productos.html	7582770	24 Oct
+secciones/recomendaciones.html	84b9080	24 Oct
+secciones/resumen_ventas.html	ec2687e	24 Oct
+secciones/analisis_ia.html	61edb44	24 Oct
+ventas_avanzado.html (padre)	c54d9eb	24 Oct
+Total F5: ~770 msgids en el .pot, ~767 traducidos en EN (99%), ~766 traducidos en PAP (99%).
 
 Fixes realizados en F5 (además de i18n)
 babel.cfg: corregido pattern Jinja2 a [jinja2: **.html].
@@ -796,55 +823,165 @@ app.py (exportar_inventario_externo): migrado a _() (título y cabeceras de tabl
 
 app.py (exportar_ventas_externas): migrado a _() (título y cabeceras de tabla).
 
-2️⃣1️⃣ DT-CRÉDITOS — Módulo de créditos/fiado (PENDIENTE — feature)
-Origen: detectado durante DT-21 (5 Oct 2026). El POS tiene 3 modos:
+ventas_periodo.html: fix multi-tenant nombre panadería ({{ config.nombre_panaderia }}).
 
-Venta POS.
+analisis_predictivo.html: fix CSS @media print duplicado/anidado.
 
-Venta electrónica.
+analisis_predictivo.html: badges nivel_riesgo/prioridad traducidos con ternario Jinja2.
 
-Falta: vender a crédito (fiado).
+analisis_productos.html: fix traducciones heredadas (Frecuencia, Productos Más Vendidos, No hay datos...).
 
-Alcance MVP
-Tablas nuevas: creditos, credito_detalle, abonos.
+2️⃣1️⃣ 🆕 Feature pendiente: Ajuste en lógica de recetas con toppings
+Origen: Detectado en sesión 24 Oct 2026 (feedback del usuario como panadero).
 
-POS: botón "Fiar" + modal simple de cliente.
+Problema: La lógica actual de ingredientes de receta NO tiene en cuenta los toppings. Cuando un producto tiene ingredientes opcionales o adicionales (ej. un pan con topping de chocolate, una torta con decoración, un postre con salsa), esos ingredientes adicionales no están siendo considerados en el cálculo de costos ni en la producción.
 
-Endpoints: /fiar_venta + /registrar_abono.
+Necesidad: Ampliar la lógica para que cuando se utilicen toppings, estos ingredientes sean contabilizados en:
 
-Sección nueva: "Créditos" con estado de cuenta + CxC.
+Cálculo de costo de producción.
 
-Decisiones de negocio pendientes (cuestionario previo)
-¿Inventario al fiar o al cobrar?
+Descuento de stock de materias primas.
 
-¿Cupo por cliente?
+Reporte de producción diaria.
 
-¿IVA al fiar o al cobrar?
+Análisis de rentabilidad por producto.
 
-¿Intereses por mora?
+Acción previa (al implementar): Solicitar al usuario (Mauricio) una descripción ampliada desde la perspectiva de panadero para entender el modelo mental del negocio: cómo se definen los toppings, si son opcionales o fijos, si afectan el precio de venta, si varían por producto, si hay toppings que se preparan como sub-recetas, etc.
 
-¿Cómo manejar cliente que no paga?
+Prioridad: Media-alta (afecta lógica de negocio core).
+Estimación: ~2-4 h (requiere sesión dedicada con cuestionario previo).
+Ubicación esperada: models.py (Receta, IngredienteReceta), app.py (cálculo de costos, producción), reportes.py (si aplica).
 
-Estimación
-MVP: 6-8 h (1-2 sesiones).
+2️⃣2️⃣ 🆕 Feature pendiente: Anulación de recibos POS
+Origen: Detectado en sesión 24 Oct 2026.
 
-Completo: 15-25 h (3-4 sesiones).
+Problema: Actualmente NO se pueden eliminar recibos POS del sistema. Si una compra queda mal registrada (por error del cajero, doble venta, venta cancelada, cliente que se arrepiente), NO hay forma de revertir la operación.
 
-Reutilizable
-✅ Tabla clientes.
-✅ POST /registrar_venta (con flag es_credito=true).
-✅ Estructura del carrito.
+Necesidad: Implementar un mecanismo para eliminar un recibo POS que:
 
-NO reutilizable
-❌ Modal clienteModal (11 campos fiscales).
-❌ /api/guardar-cliente.
-❌ procesarVentaElectronica().
+Revierta las cantidades facturadas al stock en vitrina (para que vuelvan a estar disponibles).
 
-Prioridad: Media-alta, después de Dockerización.
+Revierta los movimientos financieros asociados (si corresponde).
 
-2️⃣2️⃣ Notas estratégicas
+Registre el motivo de la eliminación (auditoría).
+
+Mantenga trazabilidad (quién lo eliminó, cuándo, por qué).
+
+No elimine físicamente el registro (soft delete o estado ANULADA), para mantener integridad contable.
+
+Acción previa (al implementar): Solicitar al usuario (Mauricio) ampliar la información sobre:
+
+¿Qué permisos debe tener el usuario para anular recibos (solo admin, admin + supervisor)?
+
+¿Debe quedar registro de la venta anulada para reportes (con signo negativo)?
+
+¿Aplica a ventas electrónicas también o solo a POS?
+
+¿Hay un límite de tiempo para anular (ej. solo del día en curso)?
+
+¿Cómo se refleja en el cierre de caja ya realizado?
+
+Prioridad: Media-alta (afecta operación diaria del POS).
+Estimación: ~3-5 h (requiere sesión dedicada con cuestionario previo).
+Ubicación esperada: models.py (Venta con estado), app.py (endpoint /anular_venta), templates/punto_venta.html (botón "Anular"), reportes.py (reflejar anuladas).
+
+2️⃣3️⃣ 🆕 Plan de trabajo: Análisis pre-Dockerización (SINCRONIZACIÓN MODELOS/APP/BD)
+Origen: Detectado en sesión 24 Oct 2026 (feedback del usuario antes de Dockerizar).
+
+Contexto: Antes de dockerizar el sistema, es CRÍTICO asegurar que:
+
+models.py ↔ app.py ↔ Base de datos están sincronizados.
+
+Todos los futuros tenants nazcan completos y actualizados (sin discrepancias).
+
+Crear tablas en orden correcto para que app.py funcione desde el primer arranque.
+
+No haya tablas/columnas huérfanas en ningún schema.
+
+tenant_27 (Demo para marketing) y tenant_1 (Plantilla de referencia) estén sincronizados estructuralmente.
+
+Objetivo final: Dejar el código y la BD limpios, sin discrepancias, listos para dockerizar con la garantía de que un tenant nuevo nace 100% funcional y estructuralmente correcto.
+
+Plan de trabajo propuesto (7 fases A-G)
+Fase A — Auditoría de modelos (models.py) (~2 h)
+
+□ Mapear TODOS los modelos definidos en models.py (clases, tablas, columnas, relaciones, FKs).
+□ Detectar modelos huérfanos (definidos pero sin uso en app.py ni en templates).
+□ Detectar columnas huérfanas (definidas en modelo pero nunca leídas/escritas).
+□ Detectar FKs mal definidas o ausentes.
+□ Documentar la estructura "canónica" de un tenant completo.
+Fase B — Auditoría de app.py (~2 h)
+
+□ Mapear TODAS las queries SQLAlchemy a modelos.
+□ Detectar queries a tablas/columnas que NO existen en models.py (bug oculto).
+□ Detectar funciones de creación de tenant (crear_tenant_saas()) — verificar que creen TODAS las tablas necesarias.
+□ Detectar rutas/endpoints que usen modelos no sincronizados.
+□ Verificar el orden de CREATE TABLE en crear_tenant_saas() (FKs antes que tablas dependientes).
+Fase C — Auditoría de BD (information_schema) (~2 h)
+
+□ Ejecutar information_schema.columns en tenant_1 y tenant_27 para mapear columnas reales.
+□ Comparar columnas de tenant_1 vs tenant_27 → detectar diferencias estructurales.
+□ Comparar models.py vs BD real → detectar discrepancias.
+□ Detectar tablas huérfanas en public.* (verificar estado post DT-36).
+□ Detectar tablas huérfanas en tenant_1 y tenant_27.
+□ Documentar la estructura "real" de la BD.
+Fase D — Sincronización (~3-4 h)
+
+□ Crear script SQL de migración para alinear tenant_1 ↔ tenant_27.
+□ Actualizar crear_tenant_saas() para que TODAS las tablas/columnas se creen en orden correcto.
+□ Actualizar models.py para eliminar huérfanos y agregar lo que falte.
+□ Actualizar migrations/sql/ con la migración de sincronización (especialmente CREATE TABLE ... idioma).
+□ Ejecutar migración en tenant_1 y tenant_27.
+□ Verificar con information_schema.columns que ambos están sincronizados.
+Fase E — Prueba de "tenant virgen" (~2 h)
+
+□ Crear tenant de prueba (ej. tenant_test) desde cero con crear_tenant_saas().
+□ Verificar que TODAS las tablas del modelo estén creadas.
+□ Verificar que information_schema.columns del tenant nuevo coincida con tenant_1 y tenant_27.
+□ Probar el flujo completo: login → dashboard → POS → venta → cierre → reporte.
+□ Si algo falla → corregir y repetir hasta que un tenant nuevo nazca 100% funcional.
+□ Borrar tenant_test (limpieza).
+Fase F — Documentación y limpieza (~2 h)
+
+□ Documentar la estructura canónica del tenant (tablas, columnas, FKs, orden de creación).
+□ Eliminar código huérfano (modelos sin uso, columnas sin referencias, endpoints muertos).
+□ Actualizar HANDOFF con la estructura canónica.
+□ Crear docs/ESTRUCTURA_TENANT.md con el mapa completo.
+Fase G — Preparación para Dockerización
+
+□ Verificar que requirements.txt esté completo y versionado.
+□ Verificar que los .mo estén commiteados.
+□ Verificar que .env.example tenga TODAS las variables necesarias.
+□ Confirmar que crear_tenant_saas() funciona en un entorno limpio.
+□ Crear Dockerfile + docker-compose.yml (Fase 3).
+Estimación de tiempos
+Fase	Estimación
+A — Auditoría de modelos	~2 h
+B — Auditoría de app.py	~2 h
+C — Auditoría de BD	~2 h
+D — Sincronización	~3-4 h
+E — Prueba de "tenant virgen"	~2 h
+F — Documentación y limpieza	~2 h
+Total pre-Dockerización	~13-15 h (2-3 sesiones)
+G — Dockerización (Fase 3)	~22-32 h (sesión(es) dedicada(s))
+Prioridad
+CRÍTICA — no dockerizar sin completar A-F. Es la base de todo el SaaS multi-tenant.
+
+Riesgos identificados
+Puede haber tablas/columnas en app.py que se crean "al vuelo" sin estar en models.py (verificar el arranque del servidor).
+
+Puede haber tenants antiguos (1 y 27) con estructura diferente a un tenant nuevo (verificar crear_tenant_saas()).
+
+Puede haber código huérfano de features abandonadas (limpiar).
+
+Puede haber dependencias ocultas entre tablas (verificar FKs).
+
+Recomendación de arranque
+Empezar por Fase C (auditoría de BD), porque da una foto concreta del estado actual y permite planificar el resto con datos reales. Una vez conocido el estado real, las fases A y B se vuelven más dirigidas (buscar exactamente lo que falta).
+
+2️⃣4️⃣ Notas estratégicas
 Objetivo del ERP
-ERP SaaS multi-tenant multi-país con: POS, inventario, producción, recetas, activos fijos, reportes con IA, finanzas, i18n multi-idioma (es/en/pap), multi-país, base para API REST + IA avanzada, módulo de créditos.
+ERP SaaS multi-tenant multi-país con: POS, inventario, producción, recetas (con toppings), activos fijos, reportes con IA, finanzas, i18n multi-idioma (es/en/pap), multi-país, base para API REST + IA avanzada, módulo de anulación de ventas.
 
 🎁 Tenant Demo
 Fases 1-12 completadas (~9.972 filas). Contraseña: demo2026. idioma = pap.
@@ -863,20 +1000,21 @@ Premium: 3 usuarios.
 
 Básica: 1 usuario.
 
-Estimación de tiempos (23 Oct 2026)
+Estimación de tiempos (24 Oct 2026)
 Bloque	Estimación
-DT-37 F5 (5 templates + 4 parciales)	~3-4 h
+DT-37 F5	✅ COMPLETADO (100%)
 DT-37 F5-pulido (gráficos matplotlib)	~1 h por reporte
 DT-37 F4.9 (libro_diario huérfano)	~30 min
-Auditoría f-strings emoji	✅ CERRADA (0 casos)
+i18n diccionarios app.py (DT-nueva-media-baja)	~2-4 h
+Pre-Dockerización (Fases A-F)	~13-15 h (2-3 sesiones)
 Dockerización (Fase 3)	~22-32 h
-DT-CRÉDITOS (MVP)	~6-8 h
-DT-CRÉDITOS (completo)	~15-25 h
+Feature: Ajuste recetas/toppings	~2-4 h
+Feature: Anulación recibos POS	~3-5 h
 Fase 4 (seguridad adicional)	~14-20 h
 Fase 5 (monetización)	~26-36 h
 Fases 6-8 (IA + integraciones)	~50-85 h
-🐳 Preparación para Dockerización
-El sistema está listo para Docker gracias a las DT cerradas:
+2️⃣5️⃣ 🐳 Preparación para Dockerización
+El sistema está listo para Docker una vez completadas las fases A-F de pre-Dockerización:
 
 ✅ CSRF con SECRET_KEY (portable entre entornos).
 
@@ -890,27 +1028,31 @@ El sistema está listo para Docker gracias a las DT cerradas:
 
 ✅ i18n con locales/ (portable, los .mo van en el repo).
 
-Próximo paso natural: crear Dockerfile + docker-compose.yml con PostgreSQL.
+🟡 Pre-Dockerización pendiente (fases A-F).
+
+🟡 Fase G: Dockerfile + docker-compose.yml (a crear).
 
 📞 Cómo continuar en un chat nuevo
 Al iniciar un nuevo chat, pegar este archivo como contexto inicial.
 
 Instrucción sugerida:
 
-"Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el archivo HANDOFF.md v9.1 con el contexto maestro. Vamos a continuar desde donde lo dejamos. Por favor actúa como instructor guiando paso a paso, con la metodología de trabajo descrita en el HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/findstr, commit tras cada fix verificado. Al insertar bloques, muéstrame ANTES → DESPUÉS con número de línea exacto. Tú me das LUZ VERDE cuando los cambios estén 100% validados. Yo aplico los cambios en mi editor."
+"Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el archivo HANDOFF.md v9.2 con el contexto maestro. Vamos a continuar desde donde lo dejamos. Por favor actúa como instructor guiando paso a paso, con la metodología de trabajo descrita en el HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/findstr, commit tras cada fix verificado. Al insertar bloques, muéstrame ANTES → DESPUÉS con número de línea exacto. Tú me das LUZ VERDE cuando los cambios estén 100% validados. Yo aplico los cambios en mi editor."
 
 Próxima tarea sugerida:
 
-OPCIÓN A (recomendada): Continuar DT-37 F5 (quedan 5 templates + 4 parciales). Estimación: ~3-4 h. Cierra el módulo de reportes 100%.
+OPCIÓN A (recomendada): Iniciar pre-Dockerización Fase C (auditoría de BD con information_schema). Es la foto real que permite planificar el resto.
 
-OPCIÓN B: Dockerización (Fase 3). Sesión dedicada. ~22-32 h.
+OPCIÓN B: Feature Ajuste recetas/toppings (con cuestionario previo).
 
-OPCIÓN C: DT-CRÉDITOS. Sesión dedicada con cuestionario previo.
+OPCIÓN C: Feature Anulación recibos POS (con cuestionario previo).
+
+OPCIÓN D: Cerrar DTs menores (i18n diccionarios app.py, badges dinámicos, _ver_untraducciones.py).
 
 ✅ Última validación
-Último commit: 3ea5612 (reporte_ventas_externas.html, pusheado).
+Último commit: c54d9eb (ventas_avanzado.html, pusheado).
 
-Última sesión: 23 Oct 2026 — DT-37 F5 (parte 1): 6/11 templates migrados.
+Última sesión: 24 Oct 2026 — DT-37 F5 COMPLETADO (100%).
 
 Working tree: clean.
 
@@ -926,12 +1068,22 @@ Seguridad: Producción-ready (CSRF con tokens firmados).
 
 Observabilidad: Producción-ready (logger con rotación).
 
-i18n: 3 idiomas (es/en/pap). PDF reportes: 100%. HTML reportes: 6/11.
+i18n: 3 idiomas (es/en/pap). PDF reportes: 100%. HTML reportes: 100% (F5 cerrado).
 
-DT-37: 🟡 F0-F3 ✅ | F4 reportes.py 100% ✅ | F5 (reportes HTML) EN CURSO (6/11).
+DT-37: ✅ F0-F5 COMPLETADAS (100%).
 
-DT-19, DT-25, DT-28, DT-29, DT-42, DT-43, DT-45, DT-46, DT-47, DT-5-bis, DT-5-quinquies, DT-5-quater-bis: ✅ Resueltas.
+Resueltas: DT-19, DT-25, DT-28, DT-29, DT-42, DT-43, DT-45, DT-46, DT-47, DT-5-bis, DT-5-quinquies, DT-5-quater-bis.
 
-Pendientes: DT-37 F5 (5 templates + 4 parciales + gráficos matplotlib), DT-37 F4.9 (libro_diario), Dockerización (Fase 3), DT-CRÉDITOS.
+Pendientes principales:
 
-Fin del HANDOFF.md — v9.1
+Pre-Dockerización (Fases A-F): ~13-15 h.
+
+Feature: Ajuste recetas/toppings: ~2-4 h.
+
+Feature: Anulación recibos POS: ~3-5 h.
+
+Dockerización (Fase 3): ~22-32 h.
+
+DTs menores (baja prioridad).
+
+Fin del HANDOFF.md — v9.2
