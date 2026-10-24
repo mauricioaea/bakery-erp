@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-23 23:03-0500\n"
+"POT-Creation-Date: 2026-10-24 08:44-0500\n"
 "PO-Revision-Date: 2026-10-15 16:08-0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: pap\n"
@@ -807,7 +807,7 @@ msgstr "Periodo di analisis: %(ini)s te %(fin)s"
 msgid "No hay datos suficientes para análisis predictivo."
 msgstr "No tin sufisiente datonan pa analisis predictivo."
 
-#: reportes.py:1648
+#: reportes.py:1648 templates/ventas_avanzado.html:576
 msgid "Ventas Reales"
 msgstr "Benta Real"
 
@@ -1702,8 +1702,9 @@ msgstr "ANALISIS VISUAL PREDIKTIVO"
 
 #: templates/analisis_predictivo.html:6 templates/productos_populares.html:6
 #: templates/reporte_activos.html:6 templates/reporte_activos.html:576
-#: templates/reporte_produccion.html:6 templates/ventas_periodo.html:6
-#: templates/ventas_periodo.html:329 templates/ventas_periodo.html:584
+#: templates/reporte_produccion.html:6 templates/ventas_avanzado.html:6
+#: templates/ventas_periodo.html:6 templates/ventas_periodo.html:329
+#: templates/ventas_periodo.html:584
 msgid "Panadería"
 msgstr "Kantidat di Pagonan"
 
@@ -1714,48 +1715,57 @@ msgstr "Dianan di e períodoo:"
 
 #: templates/analisis_predictivo.html:189
 #: templates/productos_populares.html:217
-#: templates/reporte_ventas_externas.html:40 templates/ventas_periodo.html:199
+#: templates/reporte_ventas_externas.html:40 templates/ventas_avanzado.html:302
+#: templates/ventas_periodo.html:199
 msgid "Fecha Inicio"
 msgstr "Fecha Inisio"
 
 #: templates/analisis_predictivo.html:194
 #: templates/productos_populares.html:222
-#: templates/reporte_ventas_externas.html:44 templates/ventas_periodo.html:204
+#: templates/reporte_ventas_externas.html:44 templates/ventas_avanzado.html:307
+#: templates/ventas_periodo.html:204
 msgid "Fecha Fin"
 msgstr "Fecha"
 
 #: templates/analisis_predictivo.html:199
-#: templates/productos_populares.html:227 templates/ventas_periodo.html:209
+#: templates/productos_populares.html:227 templates/ventas_avanzado.html:312
+#: templates/ventas_periodo.html:209
 msgid "Período Rápido"
 msgstr "Produkto"
 
 #: templates/analisis_predictivo.html:201 templates/cierre_caja.html:467
-#: templates/productos_populares.html:229 templates/ventas_periodo.html:211
+#: templates/productos_populares.html:229 templates/ventas_avanzado.html:314
+#: templates/ventas_periodo.html:211
 msgid "Hoy"
 msgstr "Awe"
 
 #: templates/analisis_predictivo.html:202 templates/cierre_caja.html:468
-#: templates/productos_populares.html:230 templates/ventas_periodo.html:212
+#: templates/productos_populares.html:230 templates/ventas_avanzado.html:315
+#: templates/ventas_periodo.html:212
 msgid "Ayer"
 msgstr "Ayera"
 
 #: templates/analisis_predictivo.html:203
-#: templates/productos_populares.html:231 templates/ventas_periodo.html:213
+#: templates/productos_populares.html:231 templates/ventas_avanzado.html:316
+#: templates/ventas_periodo.html:213
 msgid "Esta Semana"
 msgstr "Patron Semanal"
 
 #: templates/analisis_predictivo.html:204
-#: templates/productos_populares.html:232 templates/ventas_periodo.html:214
+#: templates/productos_populares.html:232 templates/ventas_avanzado.html:317
+#: templates/ventas_periodo.html:214
 msgid "Este Mes"
 msgstr "E Mes aki"
 
 #: templates/analisis_predictivo.html:205
-#: templates/productos_populares.html:233 templates/ventas_periodo.html:215
+#: templates/productos_populares.html:233 templates/ventas_avanzado.html:318
+#: templates/ventas_periodo.html:215
 msgid "Mes Anterior"
 msgstr "Luna Pasá"
 
 #: templates/analisis_predictivo.html:206
-#: templates/productos_populares.html:234 templates/ventas_periodo.html:216
+#: templates/productos_populares.html:234 templates/ventas_avanzado.html:319
+#: templates/ventas_periodo.html:216
 msgid "Personalizado"
 msgstr "Personalisa"
 
@@ -1781,7 +1791,8 @@ msgid "APRENDIZAJE AUTOMÁTICO ACTIVO"
 msgstr "APRENSÁ AUTOMÁTIKO AKTIVO"
 
 #: templates/analisis_predictivo.html:239
-#: templates/productos_populares.html:265 templates/ventas_periodo.html:246
+#: templates/productos_populares.html:265 templates/ventas_avanzado.html:287
+#: templates/ventas_periodo.html:246
 msgid "Exportar PDF"
 msgstr "Download PDF"
 
@@ -1822,7 +1833,7 @@ msgstr "Salida No Komersial"
 #: templates/analisis_predictivo.html:300 templates/cierre_caja.html:521
 #: templates/cierre_caja.html:680 templates/cierre_caja.html:691
 #: templates/cierre_caja.html:697 templates/productos_populares.html:295
-#: templates/ventas_periodo.html:292
+#: templates/ventas_avanzado.html:576 templates/ventas_periodo.html:292
 msgid "Salidas No Comerciales"
 msgstr "Salida No Komersial"
 
@@ -1983,7 +1994,7 @@ msgstr "Unid"
 msgid "Reporte generado automáticamente el"
 msgstr "Reporte generá automáticamente"
 
-#: templates/analisis_predictivo.html:570
+#: templates/analisis_predictivo.html:570 templates/ventas_avanzado.html:473
 msgid "Sistema Panadería con IA"
 msgstr "Kantidat di Pagonan"
 
@@ -2343,7 +2354,7 @@ msgstr "Dashboard"
 msgid "Ver Lista Completa"
 msgstr "Wak Lista Kompletu"
 
-#: templates/reporte_activos.html:602
+#: templates/reporte_activos.html:602 templates/ventas_avanzado.html:421
 msgid "Resumen Ejecutivo"
 msgstr "5. RESÚMEN EHEKUTIVO"
 
@@ -2847,6 +2858,98 @@ msgstr "Generando reporte..."
 msgid "Por favor espera, esto puede tomar unos segundos"
 msgstr "Por fabor warda, esaki por tuma un par di segundo"
 
+#: templates/ventas_avanzado.html:6
+msgid "Reporte Avanzado de Ventas + IA"
+msgstr "Reporte Avansá di Benta + IA"
+
+#: templates/ventas_avanzado.html:273
+msgid "PANADERÍA"
+msgstr "Kantidat di Pagonan"
+
+#: templates/ventas_avanzado.html:274
+msgid "Reporte Avanzado de Ventas con Inteligencia Artificial"
+msgstr "Reporte Avansá di Benta + IA"
+
+#: templates/ventas_avanzado.html:281
+msgid "ANÁLISIS IA ACTIVO"
+msgstr "ANALISIS VISUAL PREDIKTIVO"
+
+#: templates/ventas_avanzado.html:298
+msgid "Seleccionar Período de Análisis"
+msgstr "Dianan di e períodoo:"
+
+#: templates/ventas_avanzado.html:324
+msgid "Actualizar Reporte"
+msgstr "Aktualisá"
+
+#: templates/ventas_avanzado.html:338
+msgid "TOTAL VENTAS"
+msgstr "TOTAL DI BENTA"
+
+#: templates/ventas_avanzado.html:344
+msgid "TENDENCIA"
+msgstr "Tendensia"
+
+#: templates/ventas_avanzado.html:348
+msgid "TRANSACCIONES"
+msgstr "Kantidat di transakshonnan"
+
+#: templates/ventas_avanzado.html:352
+msgid "TICKET PROMEDIO"
+msgstr "Promedio"
+
+#: templates/ventas_avanzado.html:356
+msgid "DONACIONES"
+msgstr "REKOMENDASHONNAN"
+
+#: templates/ventas_avanzado.html:368
+msgid "TOP PRODUCTOS MÁS VENDIDOS"
+msgstr "Produkto"
+
+#: templates/ventas_avanzado.html:376
+msgid "No hay datos de productos"
+msgstr "Top productonan pa benta"
+
+#: templates/ventas_avanzado.html:387
+msgid "DISTRIBUCIÓN POR CATEGORÍA"
+msgstr "Distribushon di Gastunan pa Kategoria"
+
+#: templates/ventas_avanzado.html:395
+msgid "No hay datos por categoría"
+msgstr "ANÁLISIS DI GASTUNAN PA KATEGORIA"
+
+#: templates/ventas_avanzado.html:406
+msgid "VENTAS VS DONACIONES"
+msgstr "TOTAL DI BENTA"
+
+#: templates/ventas_avanzado.html:427
+msgid "Análisis Productos"
+msgstr "ANALISIS VISUAL PREDIKTIVO"
+
+#: templates/ventas_avanzado.html:433
+msgid "Inteligencia Artificial"
+msgstr "ANALISIS PREDIKTIVO KU INTELIGENSIA ARTIFISIAL"
+
+#: templates/ventas_avanzado.html:439
+msgid "Recomendaciones"
+msgstr "REKOMENDASHONNAN"
+
+#: templates/ventas_avanzado.html:472 templates/ventas_periodo.html:513
+msgid "Reporte generado el"
+msgstr "Reporte generá automáticamente"
+
+#: templates/ventas_avanzado.html:473
+msgid "Reporte Avanzado Unificado"
+msgstr "Reporte Avansá di Benta + IA"
+
+#: templates/ventas_avanzado.html:494
+msgid "Unidades Vendidas"
+msgstr "Kantidat Bendí"
+
+#: templates/ventas_avanzado.html:649
+msgid "Por favor seleccione ambas fechas"
+msgstr "Por fabor selekshoná tur dos fecha"
+
 #: templates/ventas_periodo.html:6
 msgid "Reporte de Ventas por Período"
 msgstr "Bentanan di e periodo"
@@ -2984,10 +3087,6 @@ msgstr "Hasiá combos"
 #: templates/ventas_periodo.html:499
 msgid "Optimizar stock"
 msgstr "Optimisá stock"
-
-#: templates/ventas_periodo.html:513
-msgid "Reporte generado el"
-msgstr "Reporte generá automáticamente"
 
 #: templates/ventas_periodo.html:612
 msgid "Ventas Diarias"
@@ -3144,9 +3243,7 @@ msgstr "ANÁLISIS DI TENDENSIA DI BENTA"
 msgid ""
 "Se necesitan al menos 7 días de datos para generar un análisis de "
 "tendencias."
-msgstr ""
-"Ta nesesitá al menos 7 dia di datonan pa generá un análisis di "
-"tendensia."
+msgstr "Ta nesesitá al menos 7 dia di datonan pa generá un análisis di tendensia."
 
 #: templates/secciones/analisis_ia.html:280
 #: templates/secciones/analisis_ia.html:320

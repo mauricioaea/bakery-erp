@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-23 23:03-0500\n"
+"POT-Creation-Date: 2026-10-24 08:44-0500\n"
 "PO-Revision-Date: 2026-10-15 10:38-0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -807,7 +807,7 @@ msgstr "Analysis period: %(ini)s to %(fin)s"
 msgid "No hay datos suficientes para análisis predictivo."
 msgstr "Not enough data available for predictive analysis."
 
-#: reportes.py:1648
+#: reportes.py:1648 templates/ventas_avanzado.html:576
 msgid "Ventas Reales"
 msgstr "Real Sales"
 
@@ -1686,8 +1686,9 @@ msgstr "VISUAL PREDICTIVE ANALYSIS"
 
 #: templates/analisis_predictivo.html:6 templates/productos_populares.html:6
 #: templates/reporte_activos.html:6 templates/reporte_activos.html:576
-#: templates/reporte_produccion.html:6 templates/ventas_periodo.html:6
-#: templates/ventas_periodo.html:329 templates/ventas_periodo.html:584
+#: templates/reporte_produccion.html:6 templates/ventas_avanzado.html:6
+#: templates/ventas_periodo.html:6 templates/ventas_periodo.html:329
+#: templates/ventas_periodo.html:584
 msgid "Panadería"
 msgstr "Number of Payments"
 
@@ -1698,48 +1699,57 @@ msgstr "Days in period:"
 
 #: templates/analisis_predictivo.html:189
 #: templates/productos_populares.html:217
-#: templates/reporte_ventas_externas.html:40 templates/ventas_periodo.html:199
+#: templates/reporte_ventas_externas.html:40 templates/ventas_avanzado.html:302
+#: templates/ventas_periodo.html:199
 msgid "Fecha Inicio"
 msgstr "Start Date"
 
 #: templates/analisis_predictivo.html:194
 #: templates/productos_populares.html:222
-#: templates/reporte_ventas_externas.html:44 templates/ventas_periodo.html:204
+#: templates/reporte_ventas_externas.html:44 templates/ventas_avanzado.html:307
+#: templates/ventas_periodo.html:204
 msgid "Fecha Fin"
 msgstr "Date"
 
 #: templates/analisis_predictivo.html:199
-#: templates/productos_populares.html:227 templates/ventas_periodo.html:209
+#: templates/productos_populares.html:227 templates/ventas_avanzado.html:312
+#: templates/ventas_periodo.html:209
 msgid "Período Rápido"
 msgstr "Product"
 
 #: templates/analisis_predictivo.html:201 templates/cierre_caja.html:467
-#: templates/productos_populares.html:229 templates/ventas_periodo.html:211
+#: templates/productos_populares.html:229 templates/ventas_avanzado.html:314
+#: templates/ventas_periodo.html:211
 msgid "Hoy"
 msgstr "Today"
 
 #: templates/analisis_predictivo.html:202 templates/cierre_caja.html:468
-#: templates/productos_populares.html:230 templates/ventas_periodo.html:212
+#: templates/productos_populares.html:230 templates/ventas_avanzado.html:315
+#: templates/ventas_periodo.html:212
 msgid "Ayer"
 msgstr "Yesterday"
 
 #: templates/analisis_predictivo.html:203
-#: templates/productos_populares.html:231 templates/ventas_periodo.html:213
+#: templates/productos_populares.html:231 templates/ventas_avanzado.html:316
+#: templates/ventas_periodo.html:213
 msgid "Esta Semana"
 msgstr "Weekly Pattern"
 
 #: templates/analisis_predictivo.html:204
-#: templates/productos_populares.html:232 templates/ventas_periodo.html:214
+#: templates/productos_populares.html:232 templates/ventas_avanzado.html:317
+#: templates/ventas_periodo.html:214
 msgid "Este Mes"
 msgstr "This Month"
 
 #: templates/analisis_predictivo.html:205
-#: templates/productos_populares.html:233 templates/ventas_periodo.html:215
+#: templates/productos_populares.html:233 templates/ventas_avanzado.html:318
+#: templates/ventas_periodo.html:215
 msgid "Mes Anterior"
 msgstr "Last Month"
 
 #: templates/analisis_predictivo.html:206
-#: templates/productos_populares.html:234 templates/ventas_periodo.html:216
+#: templates/productos_populares.html:234 templates/ventas_avanzado.html:319
+#: templates/ventas_periodo.html:216
 msgid "Personalizado"
 msgstr "Custom"
 
@@ -1765,7 +1775,8 @@ msgid "APRENDIZAJE AUTOMÁTICO ACTIVO"
 msgstr "AUTOMATIC LEARNING ACTIVE"
 
 #: templates/analisis_predictivo.html:239
-#: templates/productos_populares.html:265 templates/ventas_periodo.html:246
+#: templates/productos_populares.html:265 templates/ventas_avanzado.html:287
+#: templates/ventas_periodo.html:246
 msgid "Exportar PDF"
 msgstr "Download PDF"
 
@@ -1806,7 +1817,7 @@ msgstr "Non-Commercial Outflows"
 #: templates/analisis_predictivo.html:300 templates/cierre_caja.html:521
 #: templates/cierre_caja.html:680 templates/cierre_caja.html:691
 #: templates/cierre_caja.html:697 templates/productos_populares.html:295
-#: templates/ventas_periodo.html:292
+#: templates/ventas_avanzado.html:576 templates/ventas_periodo.html:292
 msgid "Salidas No Comerciales"
 msgstr "Non-Commercial Outflows"
 
@@ -1966,7 +1977,7 @@ msgstr "Qty"
 msgid "Reporte generado automáticamente el"
 msgstr "Report generated automatically"
 
-#: templates/analisis_predictivo.html:570
+#: templates/analisis_predictivo.html:570 templates/ventas_avanzado.html:473
 msgid "Sistema Panadería con IA"
 msgstr "Number of Payments"
 
@@ -2326,7 +2337,7 @@ msgstr "Dashboard"
 msgid "Ver Lista Completa"
 msgstr "View Full List"
 
-#: templates/reporte_activos.html:602
+#: templates/reporte_activos.html:602 templates/ventas_avanzado.html:421
 msgid "Resumen Ejecutivo"
 msgstr "5. EXECUTIVE SUMMARY"
 
@@ -2828,6 +2839,98 @@ msgstr "Generating report..."
 msgid "Por favor espera, esto puede tomar unos segundos"
 msgstr "Please wait, this may take a few seconds"
 
+#: templates/ventas_avanzado.html:6
+msgid "Reporte Avanzado de Ventas + IA"
+msgstr "Advanced Sales Report + AI"
+
+#: templates/ventas_avanzado.html:273
+msgid "PANADERÍA"
+msgstr "Number of Payments"
+
+#: templates/ventas_avanzado.html:274
+msgid "Reporte Avanzado de Ventas con Inteligencia Artificial"
+msgstr "Advanced Sales Report + AI"
+
+#: templates/ventas_avanzado.html:281
+msgid "ANÁLISIS IA ACTIVO"
+msgstr "VISUAL PREDICTIVE ANALYSIS"
+
+#: templates/ventas_avanzado.html:298
+msgid "Seleccionar Período de Análisis"
+msgstr "Days in period:"
+
+#: templates/ventas_avanzado.html:324
+msgid "Actualizar Reporte"
+msgstr "Update"
+
+#: templates/ventas_avanzado.html:338
+msgid "TOTAL VENTAS"
+msgstr "TOTAL SALES"
+
+#: templates/ventas_avanzado.html:344
+msgid "TENDENCIA"
+msgstr "Trend"
+
+#: templates/ventas_avanzado.html:348
+msgid "TRANSACCIONES"
+msgstr "Number of transactions"
+
+#: templates/ventas_avanzado.html:352
+msgid "TICKET PROMEDIO"
+msgstr "Average"
+
+#: templates/ventas_avanzado.html:356
+msgid "DONACIONES"
+msgstr "RECOMMENDATIONS"
+
+#: templates/ventas_avanzado.html:368
+msgid "TOP PRODUCTOS MÁS VENDIDOS"
+msgstr "Product"
+
+#: templates/ventas_avanzado.html:376
+msgid "No hay datos de productos"
+msgstr "Top products by sales"
+
+#: templates/ventas_avanzado.html:387
+msgid "DISTRIBUCIÓN POR CATEGORÍA"
+msgstr "Expense Distribution by Category"
+
+#: templates/ventas_avanzado.html:395
+msgid "No hay datos por categoría"
+msgstr "EXPENSE ANALYSIS BY CATEGORY"
+
+#: templates/ventas_avanzado.html:406
+msgid "VENTAS VS DONACIONES"
+msgstr "TOTAL SALES"
+
+#: templates/ventas_avanzado.html:427
+msgid "Análisis Productos"
+msgstr "VISUAL PREDICTIVE ANALYSIS"
+
+#: templates/ventas_avanzado.html:433
+msgid "Inteligencia Artificial"
+msgstr "PREDICTIVE ANALYSIS WITH ARTIFICIAL INTELLIGENCE"
+
+#: templates/ventas_avanzado.html:439
+msgid "Recomendaciones"
+msgstr "RECOMMENDATIONS"
+
+#: templates/ventas_avanzado.html:472 templates/ventas_periodo.html:513
+msgid "Reporte generado el"
+msgstr "Report generated automatically"
+
+#: templates/ventas_avanzado.html:473
+msgid "Reporte Avanzado Unificado"
+msgstr "Advanced Sales Report + AI"
+
+#: templates/ventas_avanzado.html:494
+msgid "Unidades Vendidas"
+msgstr "Quantity Sold"
+
+#: templates/ventas_avanzado.html:649
+msgid "Por favor seleccione ambas fechas"
+msgstr "Please select both dates"
+
 #: templates/ventas_periodo.html:6
 msgid "Reporte de Ventas por Período"
 msgstr "Sales for the period"
@@ -2965,10 +3068,6 @@ msgstr "Create combos"
 #: templates/ventas_periodo.html:499
 msgid "Optimizar stock"
 msgstr "Optimize stock"
-
-#: templates/ventas_periodo.html:513
-msgid "Reporte generado el"
-msgstr "Report generated automatically"
 
 #: templates/ventas_periodo.html:612
 msgid "Ventas Diarias"
@@ -3125,8 +3224,7 @@ msgstr "SALES TREND ANALYSIS"
 msgid ""
 "Se necesitan al menos 7 días de datos para generar un análisis de "
 "tendencias."
-msgstr ""
-"At least 7 days of data are needed to generate a trend analysis."
+msgstr "At least 7 days of data are needed to generate a trend analysis."
 
 #: templates/secciones/analisis_ia.html:280
 #: templates/secciones/analisis_ia.html:320

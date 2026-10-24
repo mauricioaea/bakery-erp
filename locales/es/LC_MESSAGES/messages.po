@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-23 23:03-0500\n"
+"POT-Creation-Date: 2026-10-24 08:44-0500\n"
 "PO-Revision-Date: 2026-10-15 10:37-0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es\n"
@@ -793,7 +793,7 @@ msgstr ""
 msgid "No hay datos suficientes para análisis predictivo."
 msgstr ""
 
-#: reportes.py:1648
+#: reportes.py:1648 templates/ventas_avanzado.html:576
 msgid "Ventas Reales"
 msgstr ""
 
@@ -1632,8 +1632,9 @@ msgstr ""
 
 #: templates/analisis_predictivo.html:6 templates/productos_populares.html:6
 #: templates/reporte_activos.html:6 templates/reporte_activos.html:576
-#: templates/reporte_produccion.html:6 templates/ventas_periodo.html:6
-#: templates/ventas_periodo.html:329 templates/ventas_periodo.html:584
+#: templates/reporte_produccion.html:6 templates/ventas_avanzado.html:6
+#: templates/ventas_periodo.html:6 templates/ventas_periodo.html:329
+#: templates/ventas_periodo.html:584
 msgid "Panadería"
 msgstr ""
 
@@ -1644,48 +1645,57 @@ msgstr ""
 
 #: templates/analisis_predictivo.html:189
 #: templates/productos_populares.html:217
-#: templates/reporte_ventas_externas.html:40 templates/ventas_periodo.html:199
+#: templates/reporte_ventas_externas.html:40 templates/ventas_avanzado.html:302
+#: templates/ventas_periodo.html:199
 msgid "Fecha Inicio"
 msgstr ""
 
 #: templates/analisis_predictivo.html:194
 #: templates/productos_populares.html:222
-#: templates/reporte_ventas_externas.html:44 templates/ventas_periodo.html:204
+#: templates/reporte_ventas_externas.html:44 templates/ventas_avanzado.html:307
+#: templates/ventas_periodo.html:204
 msgid "Fecha Fin"
 msgstr ""
 
 #: templates/analisis_predictivo.html:199
-#: templates/productos_populares.html:227 templates/ventas_periodo.html:209
+#: templates/productos_populares.html:227 templates/ventas_avanzado.html:312
+#: templates/ventas_periodo.html:209
 msgid "Período Rápido"
 msgstr ""
 
 #: templates/analisis_predictivo.html:201 templates/cierre_caja.html:467
-#: templates/productos_populares.html:229 templates/ventas_periodo.html:211
+#: templates/productos_populares.html:229 templates/ventas_avanzado.html:314
+#: templates/ventas_periodo.html:211
 msgid "Hoy"
 msgstr ""
 
 #: templates/analisis_predictivo.html:202 templates/cierre_caja.html:468
-#: templates/productos_populares.html:230 templates/ventas_periodo.html:212
+#: templates/productos_populares.html:230 templates/ventas_avanzado.html:315
+#: templates/ventas_periodo.html:212
 msgid "Ayer"
 msgstr ""
 
 #: templates/analisis_predictivo.html:203
-#: templates/productos_populares.html:231 templates/ventas_periodo.html:213
+#: templates/productos_populares.html:231 templates/ventas_avanzado.html:316
+#: templates/ventas_periodo.html:213
 msgid "Esta Semana"
 msgstr ""
 
 #: templates/analisis_predictivo.html:204
-#: templates/productos_populares.html:232 templates/ventas_periodo.html:214
+#: templates/productos_populares.html:232 templates/ventas_avanzado.html:317
+#: templates/ventas_periodo.html:214
 msgid "Este Mes"
 msgstr ""
 
 #: templates/analisis_predictivo.html:205
-#: templates/productos_populares.html:233 templates/ventas_periodo.html:215
+#: templates/productos_populares.html:233 templates/ventas_avanzado.html:318
+#: templates/ventas_periodo.html:215
 msgid "Mes Anterior"
 msgstr ""
 
 #: templates/analisis_predictivo.html:206
-#: templates/productos_populares.html:234 templates/ventas_periodo.html:216
+#: templates/productos_populares.html:234 templates/ventas_avanzado.html:319
+#: templates/ventas_periodo.html:216
 msgid "Personalizado"
 msgstr ""
 
@@ -1711,7 +1721,8 @@ msgid "APRENDIZAJE AUTOMÁTICO ACTIVO"
 msgstr ""
 
 #: templates/analisis_predictivo.html:239
-#: templates/productos_populares.html:265 templates/ventas_periodo.html:246
+#: templates/productos_populares.html:265 templates/ventas_avanzado.html:287
+#: templates/ventas_periodo.html:246
 msgid "Exportar PDF"
 msgstr ""
 
@@ -1752,7 +1763,7 @@ msgstr ""
 #: templates/analisis_predictivo.html:300 templates/cierre_caja.html:521
 #: templates/cierre_caja.html:680 templates/cierre_caja.html:691
 #: templates/cierre_caja.html:697 templates/productos_populares.html:295
-#: templates/ventas_periodo.html:292
+#: templates/ventas_avanzado.html:576 templates/ventas_periodo.html:292
 msgid "Salidas No Comerciales"
 msgstr ""
 
@@ -1910,7 +1921,7 @@ msgstr ""
 msgid "Reporte generado automáticamente el"
 msgstr ""
 
-#: templates/analisis_predictivo.html:570
+#: templates/analisis_predictivo.html:570 templates/ventas_avanzado.html:473
 msgid "Sistema Panadería con IA"
 msgstr ""
 
@@ -2270,7 +2281,7 @@ msgstr ""
 msgid "Ver Lista Completa"
 msgstr ""
 
-#: templates/reporte_activos.html:602
+#: templates/reporte_activos.html:602 templates/ventas_avanzado.html:421
 msgid "Resumen Ejecutivo"
 msgstr ""
 
@@ -2772,6 +2783,98 @@ msgstr ""
 msgid "Por favor espera, esto puede tomar unos segundos"
 msgstr ""
 
+#: templates/ventas_avanzado.html:6
+msgid "Reporte Avanzado de Ventas + IA"
+msgstr ""
+
+#: templates/ventas_avanzado.html:273
+msgid "PANADERÍA"
+msgstr ""
+
+#: templates/ventas_avanzado.html:274
+msgid "Reporte Avanzado de Ventas con Inteligencia Artificial"
+msgstr ""
+
+#: templates/ventas_avanzado.html:281
+msgid "ANÁLISIS IA ACTIVO"
+msgstr ""
+
+#: templates/ventas_avanzado.html:298
+msgid "Seleccionar Período de Análisis"
+msgstr ""
+
+#: templates/ventas_avanzado.html:324
+msgid "Actualizar Reporte"
+msgstr ""
+
+#: templates/ventas_avanzado.html:338
+msgid "TOTAL VENTAS"
+msgstr ""
+
+#: templates/ventas_avanzado.html:344
+msgid "TENDENCIA"
+msgstr ""
+
+#: templates/ventas_avanzado.html:348
+msgid "TRANSACCIONES"
+msgstr ""
+
+#: templates/ventas_avanzado.html:352
+msgid "TICKET PROMEDIO"
+msgstr ""
+
+#: templates/ventas_avanzado.html:356
+msgid "DONACIONES"
+msgstr ""
+
+#: templates/ventas_avanzado.html:368
+msgid "TOP PRODUCTOS MÁS VENDIDOS"
+msgstr ""
+
+#: templates/ventas_avanzado.html:376
+msgid "No hay datos de productos"
+msgstr ""
+
+#: templates/ventas_avanzado.html:387
+msgid "DISTRIBUCIÓN POR CATEGORÍA"
+msgstr ""
+
+#: templates/ventas_avanzado.html:395
+msgid "No hay datos por categoría"
+msgstr ""
+
+#: templates/ventas_avanzado.html:406
+msgid "VENTAS VS DONACIONES"
+msgstr ""
+
+#: templates/ventas_avanzado.html:427
+msgid "Análisis Productos"
+msgstr ""
+
+#: templates/ventas_avanzado.html:433
+msgid "Inteligencia Artificial"
+msgstr ""
+
+#: templates/ventas_avanzado.html:439
+msgid "Recomendaciones"
+msgstr ""
+
+#: templates/ventas_avanzado.html:472 templates/ventas_periodo.html:513
+msgid "Reporte generado el"
+msgstr ""
+
+#: templates/ventas_avanzado.html:473
+msgid "Reporte Avanzado Unificado"
+msgstr ""
+
+#: templates/ventas_avanzado.html:494
+msgid "Unidades Vendidas"
+msgstr ""
+
+#: templates/ventas_avanzado.html:649
+msgid "Por favor seleccione ambas fechas"
+msgstr ""
+
 #: templates/ventas_periodo.html:6
 msgid "Reporte de Ventas por Período"
 msgstr ""
@@ -2908,10 +3011,6 @@ msgstr ""
 
 #: templates/ventas_periodo.html:499
 msgid "Optimizar stock"
-msgstr ""
-
-#: templates/ventas_periodo.html:513
-msgid "Reporte generado el"
 msgstr ""
 
 #: templates/ventas_periodo.html:612
