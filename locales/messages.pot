@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-23 17:14-0500\n"
+"POT-Creation-Date: 2026-10-23 18:27-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -30,7 +30,9 @@ msgstr ""
 #: templates/productos_populares.html:554
 #: templates/reporte_inventario_externo.html:46
 #: templates/reporte_produccion.html:175
-#: templates/reporte_ventas_externas.html:98 templates/ventas_periodo.html:417
+#: templates/reporte_ventas_externas.html:98
+#: templates/secciones/analisis_productos.html:11
+#: templates/ventas_periodo.html:417
 msgid "Producto"
 msgstr ""
 
@@ -38,8 +40,9 @@ msgstr ""
 #: templates/reporte_activos.html:660 templates/reporte_activos.html:709
 #: templates/reporte_inventario_externo.html:47
 #: templates/reporte_produccion.html:177
-#: templates/reporte_ventas_externas.html:99 templates/ventas_periodo.html:322
-#: templates/ventas_periodo.html:418
+#: templates/reporte_ventas_externas.html:99
+#: templates/secciones/analisis_productos.html:12
+#: templates/ventas_periodo.html:322 templates/ventas_periodo.html:418
 msgid "Categoría"
 msgstr ""
 
@@ -79,6 +82,7 @@ msgid "Reporte de Ventas Externas"
 msgstr ""
 
 #: app.py:6711 templates/productos_populares.html:387
+#: templates/secciones/analisis_productos.html:13
 #: templates/ventas_periodo.html:419
 msgid "Unidades"
 msgstr ""
@@ -87,7 +91,9 @@ msgstr ""
 #: templates/cierre_caja.html:539 templates/cierre_caja.html:794
 #: templates/productos_populares.html:388
 #: templates/productos_populares.html:446
-#: templates/reporte_ventas_externas.html:101 templates/ventas_periodo.html:420
+#: templates/reporte_ventas_externas.html:101
+#: templates/secciones/analisis_productos.html:14
+#: templates/ventas_periodo.html:420
 msgid "Ingresos"
 msgstr ""
 
@@ -1712,17 +1718,23 @@ msgid "Detectado automáticamente por el sistema"
 msgstr ""
 
 #: templates/analisis_predictivo.html:274
-#: templates/analisis_predictivo.html:538 templates/ventas_periodo.html:442
+#: templates/analisis_predictivo.html:538
+#: templates/secciones/analisis_productos.html:29
+#: templates/ventas_periodo.html:442
 msgid "Alta"
 msgstr ""
 
 #: templates/analisis_predictivo.html:274
-#: templates/analisis_predictivo.html:543 templates/ventas_periodo.html:444
+#: templates/analisis_predictivo.html:543
+#: templates/secciones/analisis_productos.html:31
+#: templates/ventas_periodo.html:444
 msgid "Media"
 msgstr ""
 
 #: templates/analisis_predictivo.html:274
-#: templates/analisis_predictivo.html:548 templates/ventas_periodo.html:446
+#: templates/analisis_predictivo.html:548
+#: templates/secciones/analisis_productos.html:33
+#: templates/ventas_periodo.html:446
 msgid "Baja"
 msgstr ""
 
@@ -2053,6 +2065,7 @@ msgid "Sistema Panadería"
 msgstr ""
 
 #: templates/productos_populares.html:6
+#: templates/secciones/analisis_productos.html:5
 msgid "Productos Más Vendidos"
 msgstr ""
 
@@ -2389,6 +2402,7 @@ msgid "Hora"
 msgstr ""
 
 #: templates/reporte_produccion.html:155 templates/reporte_produccion.html:158
+#: templates/secciones/analisis_productos.html:24
 msgid "N/A"
 msgstr ""
 
@@ -2812,22 +2826,27 @@ msgstr ""
 msgid "Análisis de Productos por Categoría"
 msgstr ""
 
+#: templates/secciones/analisis_productos.html:15
 #: templates/ventas_periodo.html:421
 msgid "Frecuencia"
 msgstr ""
 
+#: templates/secciones/analisis_productos.html:16
 #: templates/ventas_periodo.html:422
 msgid "Desempeño"
 msgstr ""
 
+#: templates/secciones/analisis_productos.html:38
 #: templates/ventas_periodo.html:451
 msgid "Alto desempeño"
 msgstr ""
 
+#: templates/secciones/analisis_productos.html:40
 #: templates/ventas_periodo.html:453
 msgid "Medio desempeño"
 msgstr ""
 
+#: templates/secciones/analisis_productos.html:42
 #: templates/ventas_periodo.html:455
 msgid "Bajo desempeño"
 msgstr ""
@@ -2870,5 +2889,9 @@ msgstr ""
 
 #: templates/ventas_periodo.html:612
 msgid "Ventas Diarias"
+msgstr ""
+
+#: templates/secciones/analisis_productos.html:50
+msgid "No hay datos de productos para el período seleccionado"
 msgstr ""
 

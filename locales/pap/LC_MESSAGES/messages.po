@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-23 17:14-0500\n"
+"POT-Creation-Date: 2026-10-23 18:27-0500\n"
 "PO-Revision-Date: 2026-10-15 16:08-0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: pap\n"
@@ -31,7 +31,9 @@ msgstr "Inventario Externo"
 #: templates/productos_populares.html:554
 #: templates/reporte_inventario_externo.html:46
 #: templates/reporte_produccion.html:175
-#: templates/reporte_ventas_externas.html:98 templates/ventas_periodo.html:417
+#: templates/reporte_ventas_externas.html:98
+#: templates/secciones/analisis_productos.html:11
+#: templates/ventas_periodo.html:417
 msgid "Producto"
 msgstr "Produkto"
 
@@ -39,8 +41,9 @@ msgstr "Produkto"
 #: templates/reporte_activos.html:660 templates/reporte_activos.html:709
 #: templates/reporte_inventario_externo.html:47
 #: templates/reporte_produccion.html:177
-#: templates/reporte_ventas_externas.html:99 templates/ventas_periodo.html:322
-#: templates/ventas_periodo.html:418
+#: templates/reporte_ventas_externas.html:99
+#: templates/secciones/analisis_productos.html:12
+#: templates/ventas_periodo.html:322 templates/ventas_periodo.html:418
 msgid "Categoría"
 msgstr "Kategoria"
 
@@ -80,6 +83,7 @@ msgid "Reporte de Ventas Externas"
 msgstr "Reporte di Benta Externo"
 
 #: app.py:6711 templates/productos_populares.html:387
+#: templates/secciones/analisis_productos.html:13
 #: templates/ventas_periodo.html:419
 msgid "Unidades"
 msgstr "Unid"
@@ -88,7 +92,9 @@ msgstr "Unid"
 #: templates/cierre_caja.html:539 templates/cierre_caja.html:794
 #: templates/productos_populares.html:388
 #: templates/productos_populares.html:446
-#: templates/reporte_ventas_externas.html:101 templates/ventas_periodo.html:420
+#: templates/reporte_ventas_externas.html:101
+#: templates/secciones/analisis_productos.html:14
+#: templates/ventas_periodo.html:420
 msgid "Ingresos"
 msgstr "ENTRADANAN"
 
@@ -1783,17 +1789,23 @@ msgid "Detectado automáticamente por el sistema"
 msgstr "Reporte generá automáticamente"
 
 #: templates/analisis_predictivo.html:274
-#: templates/analisis_predictivo.html:538 templates/ventas_periodo.html:442
+#: templates/analisis_predictivo.html:538
+#: templates/secciones/analisis_productos.html:29
+#: templates/ventas_periodo.html:442
 msgid "Alta"
 msgstr "Haltu"
 
 #: templates/analisis_predictivo.html:274
-#: templates/analisis_predictivo.html:543 templates/ventas_periodo.html:444
+#: templates/analisis_predictivo.html:543
+#: templates/secciones/analisis_productos.html:31
+#: templates/ventas_periodo.html:444
 msgid "Media"
 msgstr "Promedio"
 
 #: templates/analisis_predictivo.html:274
-#: templates/analisis_predictivo.html:548 templates/ventas_periodo.html:446
+#: templates/analisis_predictivo.html:548
+#: templates/secciones/analisis_productos.html:33
+#: templates/ventas_periodo.html:446
 msgid "Baja"
 msgstr "ABOU"
 
@@ -2127,12 +2139,13 @@ msgid "Sistema Panadería"
 msgstr "Kantidat di Pagonan"
 
 #: templates/productos_populares.html:6
+#: templates/secciones/analisis_productos.html:5
 msgid "Productos Más Vendidos"
-msgstr "Produkto"
+msgstr "Produktonan Mas Vendí"
 
 #: templates/productos_populares.html:253
 msgid "PRODUCTOS MÁS VENDIDOS"
-msgstr "Produkto"
+msgstr "PRODUKTONAN MAS VENDÍ"
 
 #: templates/productos_populares.html:254
 msgid "Análisis de Rotación y Popularidad"
@@ -2465,6 +2478,7 @@ msgid "Hora"
 msgstr "Real"
 
 #: templates/reporte_produccion.html:155 templates/reporte_produccion.html:158
+#: templates/secciones/analisis_productos.html:24
 msgid "N/A"
 msgstr "N/A"
 
@@ -2888,22 +2902,27 @@ msgstr "Benta Real"
 msgid "Análisis de Productos por Categoría"
 msgstr "ANÁLISIS DI GASTUNAN PA KATEGORIA"
 
+#: templates/secciones/analisis_productos.html:15
 #: templates/ventas_periodo.html:421
 msgid "Frecuencia"
-msgstr "Referensia"
+msgstr "Frecuencia"
 
+#: templates/secciones/analisis_productos.html:16
 #: templates/ventas_periodo.html:422
 msgid "Desempeño"
 msgstr "Rendimentu"
 
+#: templates/secciones/analisis_productos.html:38
 #: templates/ventas_periodo.html:451
 msgid "Alto desempeño"
 msgstr "Rendimentu haltu"
 
+#: templates/secciones/analisis_productos.html:40
 #: templates/ventas_periodo.html:453
 msgid "Medio desempeño"
 msgstr "Rendimentu medio"
 
+#: templates/secciones/analisis_productos.html:42
 #: templates/ventas_periodo.html:455
 msgid "Bajo desempeño"
 msgstr "Rendimentu abou"
@@ -2947,3 +2966,7 @@ msgstr "Reporte generá automáticamente"
 #: templates/ventas_periodo.html:612
 msgid "Ventas Diarias"
 msgstr "Benta Real"
+
+#: templates/secciones/analisis_productos.html:50
+msgid "No hay datos de productos para el período seleccionado"
+msgstr "No tin datonan di produktonan pa e periodo skohí."
