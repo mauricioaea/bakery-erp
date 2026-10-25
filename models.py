@@ -1099,6 +1099,68 @@ class RecetaIngrediente(db.Model):
     # RELACIONES
     # =============================================
     materia_prima = db.relationship('MateriaPrima', backref='recetas_ingredientes')
+    
+class RecetaTopping(db.Model):
+    """
+    Toppings de receta: ingredientes decorativos o adicionales que se agregan
+    a un producto SIN afectar el peso total de la masa ni las unidades obtenidas.
+
+    Afectan:
+    - Costo real de la receta (para rentabilidad y utilidad).
+    - Descuento de stock en producción diaria.
+    - NO afectan el precio de venta (que ya está fijado en el POS).
+    - NO afectan el peso_total_masa ni unidades_obtenidas.
+
+    Puede ser:
+    - Materia prima directa (ej. chispas de chocolate) → materia_prima_id
+    - Sub-receta (ej. crema pastelera) → sub_receta_id
+    Solo una de las dos debe estar seteada.
+    """
+    __tablename__ = 'receta_toppings'
+
+    id = db.Column(db.Integer, primary_key=True)
+    receta_id = db.Column(db.Integer, db.ForeignKey('recetas.id'), nullable=False)
+    materia_prima_id = db.Column(db.Integer, db.ForeignKey('materias_primas.id'), nullable=True)
+    sub_receta_id = db.Column(db.Integer, db.ForeignKey('recetas.id'), nullable=True)
+
+    # ✅ IMPORTANTE: cantidad_por_unidad se interpreta como GRAMOS TOTALES DEL LOTE.
+    # (Aunque el nombre diga "por unidad", la semántica es: gramos necesarios para
+    # producir el lote completo de la receta, igual que los ingredientes base).
+    # Ejemplo: 450g de bocadillo para un lote de 26 almojábanas.
+    # Todo el sistema maneja gramos para consistencia con ingredientes base.
+    cantidad_por_unidad = db.Column(db.Float, nullable=False, default=0)
+    unidad_medida = db.Column(db.String(20), nullable=True, default='g')
+
+    # Snapshot de costos al momento de agregar el topping
+    costo_unitario = db.Column(db.Float, default=0)
+    costo_total = db.Column(db.Float, default=0)
+
+    # Multi-tenant
+    panaderia_id = db.Column(db.Integer, nullable=False)
+
+    # Soft delete
+    activo = db.Column(db.Boolean, default=True)
+
+    # Relaciones (foreign_keys explícito porque hay 2 FKs a 'recetas')
+    receta = db.relationship(
+        'Receta',
+        foreign_keys=[receta_id],
+        backref=db.backref('toppings', lazy=True, cascade='all, delete-orphan')
+    )
+    materia_prima = db.relationship(
+        'MateriaPrima',
+        foreign_keys=[materia_prima_id],
+        backref='toppings_como_materia_prima'
+    )
+    sub_receta = db.relationship(
+        'Receta',
+        foreign_keys=[sub_receta_id],
+        backref='toppings_como_sub_receta'
+    )
+
+    def __repr__(self):
+        tipo = 'MP' if self.materia_prima_id else ('SR' if self.sub_receta_id else 'SIN')
+        return f'<RecetaTopping receta={self.receta_id} tipo={tipo} cant/u={self.cantidad_por_unidad}>'
 
 class OrdenProduccion(db.Model):
     __tablename__ = 'ordenes_produccion'
@@ -1219,13 +1281,45 @@ class OrdenProduccion(db.Model):
         return False
 
     def _descontar_ingredientes(self):
-        """Descuenta las materias primas utilizadas en la producción"""
+        """Descuenta las materias primas utilizadas en la producción (ingredientes base + toppings)"""
         ingredientes = self.calcular_ingredientes_necesarios()
         
+        # 1. Descontar ingredientes base
         for nombre, datos in ingredientes.items():
             materia_prima = MateriaPrima.query.get(datos['materia_prima_id'])
             if materia_prima:
                 materia_prima.stock_actual -= datos['cantidad']
+                
+                # ✅ Registrar en historial de inventario
+                movimiento = HistorialInventario(
+                    materia_prima_id=materia_prima.id,
+                    orden_produccion_id=self.id,
+                    cantidad_utilizada=datos['cantidad'],
+                    tipo_movimiento='produccion',
+                    panaderia_id=self.panaderia_id
+                )
+                db.session.add(movimiento)
+        
+        # 2. Descontar toppings
+        if self.receta:
+            factor_escala = (self.cantidad_producir / self.receta.unidades_obtenidas) if self.receta.unidades_obtenidas > 0 else 0
+            
+            for topping in self.receta.toppings:
+                if topping.activo and topping.materia_prima_id:
+                    materia_prima_topping = MateriaPrima.query.get(topping.materia_prima_id)
+                    if materia_prima_topping:
+                        cantidad_necesaria_topping = topping.cantidad_por_unidad * factor_escala
+                        materia_prima_topping.stock_actual -= cantidad_necesaria_topping
+                        
+                        # ✅ Registrar en historial de inventario
+                        movimiento_topping = HistorialInventario(
+                            materia_prima_id=materia_prima_topping.id,
+                            orden_produccion_id=self.id,
+                            cantidad_utilizada=cantidad_necesaria_topping,
+                            tipo_movimiento='produccion',
+                            panaderia_id=self.panaderia_id
+                        )
+                        db.session.add(movimiento_topping)
 
     # ✅ MANTENER ESTE MÉTODO COMO RESPALDO
     def _crear_producto_desde_receta(self):
@@ -1279,11 +1373,22 @@ class HistorialInventario(db.Model):
     __tablename__ = 'historial_inventario'
     panaderia_id = db.Column(db.Integer, nullable=False)
     id = db.Column(db.Integer, primary_key=True)
+    
+    # ✅ producto_id: nullable (la BD ya fue alterada para permitir NULL)
+    producto_id = db.Column(db.Integer, db.ForeignKey('productos.id'), nullable=True)
+    
     materia_prima_id = db.Column(db.Integer, db.ForeignKey('materias_primas.id'), nullable=False)
     orden_produccion_id = db.Column(db.Integer, db.ForeignKey('ordenes_produccion.id'), nullable=False)
     cantidad_utilizada = db.Column(db.Float, nullable=False)
+    
+    # ✅ Campos preexistentes en la BD que faltaban en el modelo
+    cantidad_anterior = db.Column(db.Integer, nullable=True)
+    cantidad_nueva = db.Column(db.Integer, nullable=True)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=True)
+    observaciones = db.Column(db.Text, nullable=True)
+    
     fecha_movimiento = db.Column(db.DateTime, default=datetime.utcnow)
-    tipo_movimiento = db.Column(db.String(20), default='produccion')  # 'produccion', 'ajuste', 'compra'
+    tipo_movimiento = db.Column(db.String(20), default='produccion')
     
     # Relaciones
     materia_prima = db.relationship('MateriaPrima', backref='movimientos_inventario')

@@ -219,13 +219,16 @@ def crear_tablas_en_orden(schema_name):
         CREATE TABLE IF NOT EXISTS {schema_name}.historial_inventario (
             id SERIAL PRIMARY KEY,
             panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),
-            producto_id INTEGER NOT NULL REFERENCES {schema_name}.productos(id),
+            producto_id INTEGER REFERENCES {schema_name}.productos(id),
             cantidad_anterior INTEGER DEFAULT 0,
             cantidad_nueva INTEGER DEFAULT 0,
             tipo_movimiento VARCHAR(50),
             usuario_id INTEGER REFERENCES {schema_name}.usuarios(id),
             fecha_movimiento TIMESTAMP DEFAULT NOW(),
-            observaciones TEXT
+            observaciones TEXT,
+            materia_prima_id INTEGER REFERENCES {schema_name}.materias_primas(id),
+            orden_produccion_id INTEGER REFERENCES {schema_name}.ordenes_produccion(id),
+            cantidad_utilizada FLOAT DEFAULT 0
         )
     '''))
     
@@ -392,7 +395,27 @@ def crear_tablas_en_orden(schema_name):
             costo_total FLOAT DEFAULT 0
         )
     '''))
-    
+    # =============================================
+    # 20b. receta_toppings (depende de recetas, materias_primas y panaderias)
+    # =============================================
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.receta_toppings (
+            id SERIAL PRIMARY KEY,
+            receta_id INTEGER NOT NULL REFERENCES {schema_name}.recetas(id) ON DELETE CASCADE,
+            materia_prima_id INTEGER REFERENCES {schema_name}.materias_primas(id),
+            sub_receta_id INTEGER REFERENCES {schema_name}.recetas(id),
+            cantidad_por_unidad FLOAT NOT NULL DEFAULT 0,
+            unidad_medida VARCHAR(20),
+            costo_unitario FLOAT DEFAULT 0,
+            costo_total FLOAT DEFAULT 0,
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),
+            activo BOOLEAN DEFAULT TRUE,
+            CONSTRAINT chk_topping_tipo CHECK (
+                (materia_prima_id IS NOT NULL AND sub_receta_id IS NULL) OR
+                (materia_prima_id IS NULL AND sub_receta_id IS NOT NULL)
+            )
+        )
+    '''))
     # =============================================
     # 21. historial_precios_receta (depende de recetas y panaderias)
     # =============================================
@@ -1333,7 +1356,7 @@ from models import db, MODULOS_SISTEMA, ROLES_PERMISOS
 # 🆕 AHORA IMPORTAR TODOS LOS MODELOS GLOBALMENTE (ORDEN CORREGIDO)
 # 🔴 CRÍTICO: ConfiguracionPanaderia y Tenant DEBEN estar PRIMERO
 from models import ConfiguracionPanaderia, Tenant
-from models import Usuario, Producto, Venta, DetalleVenta, MateriaPrima, Receta, RecetaIngrediente, Panaderia
+from models import Usuario, Producto, Venta, DetalleVenta, MateriaPrima, Receta, RecetaIngrediente, RecetaTopping, Panaderia
 from models import OrdenProduccion, Categoria, Proveedor, HistorialCompra, HistorialInventario
 from models import ConfiguracionProduccion, HistorialRotacionProducto, ControlVidaUtil, Factura
 from models import ProductoExterno, CompraExterna, RegistroDiario, SaldoBanco, PagoIndividual, DepositoBancario
@@ -1744,8 +1767,7 @@ def set_tenant_schema(tenant_id):
         return False
 
 def verificar_y_crear_datos_tenant(tenant_id):
-    """Verifica y crea categorías y productos para un tenant específico"""
-    from models import db, Panaderia, Categoria, Producto
+    from models import db, Panaderia, Categoria, Producto, RecetaTopping
     from sqlalchemy import text
     
     try:
@@ -1760,7 +1782,6 @@ def verificar_y_crear_datos_tenant(tenant_id):
             # ✅ Crear panadería si no existe
             panaderia = Panaderia(
                 id=tenant_id,
-                panaderia_id=tenant_id,   # ✅ DT-20 Tanda 3 fix
                 nombre=f"Panadería {tenant_id}",
                 direccion="Dirección por defecto",
                 telefono="00000000"
@@ -4620,7 +4641,7 @@ def producir_receta(id):
         try:
             cantidad = int(request.form['cantidad'])
             
-            # Verificar stock disponible
+                        # Verificar stock disponible (ingredientes + toppings)
             ingredientes_insuficientes = []
             for ingrediente in receta.ingredientes:
                 cantidad_necesaria = (ingrediente.cantidad_gramos / receta.unidades_obtenidas) * cantidad
@@ -4632,11 +4653,30 @@ def producir_receta(id):
                         'unidad': ingrediente.materia_prima.unidad_medida
                     })
             
-            if ingredientes_insuficientes:
+            # ✅ NUEVO: Validar stock de toppings
+            toppings_insuficientes = []
+            for topping in receta.toppings.filter_by(activo=True).all():
+                if topping.materia_prima_id:
+                    materia_prima_topping = topping.materia_prima
+                    if materia_prima_topping:
+                        # ✅ CORREGIDO (Opción A): gramos por lote × (cantidad_producir / unidades_obtenidas_receta).
+                        # Ejemplo: receta de 26 unidades, orden de 52 unidades → 450g × (52/26) = 900g.
+                        factor_escala = (cantidad / receta.unidades_obtenidas) if receta.unidades_obtenidas > 0 else 0
+                        cantidad_necesaria_topping = topping.cantidad_por_unidad * factor_escala
+                        if materia_prima_topping.stock_actual < cantidad_necesaria_topping:
+                            toppings_insuficientes.append({
+                                'nombre': materia_prima_topping.nombre,
+                                'necesario': cantidad_necesaria_topping,
+                                'disponible': materia_prima_topping.stock_actual,
+                                'unidad': materia_prima_topping.unidad_medida
+                            })
+            
+            if ingredientes_insuficientes or toppings_insuficientes:
                 return render_template('produccion.html', 
                                      receta=receta,
                                      cantidad=cantidad,
-                                     ingredientes_insuficientes=ingredientes_insuficientes)
+                                     ingredientes_insuficientes=ingredientes_insuficientes,
+                                     toppings_insuficientes=toppings_insuficientes)
             
             # Crear registro de producción
             orden_produccion = OrdenProduccion(
@@ -4650,7 +4690,7 @@ def producir_receta(id):
             db.session.add(orden_produccion)
             db.session.flush()  # Para obtener el ID
             
-            # Descontar ingredientes del inventario y registrar en historial
+                        # Descontar ingredientes del inventario y registrar en historial
             for ingrediente in receta.ingredientes:
                 cantidad_necesaria = (ingrediente.cantidad_gramos / receta.unidades_obtenidas) * cantidad
                 
@@ -4663,9 +4703,32 @@ def producir_receta(id):
                     orden_produccion_id=orden_produccion.id,
                     cantidad_utilizada=cantidad_necesaria,
                     tipo_movimiento='produccion',
-                    panaderia_id=current_user.panaderia_id  # ✅ NUEVO: Asignar panaderia_id
+                    panaderia_id=current_user.panaderia_id
                 )
                 db.session.add(movimiento)
+
+            # ✅ NUEVO: Descontar toppings del inventario y registrar en historial
+            for topping in receta.toppings.filter_by(activo=True).all():
+                if topping.materia_prima_id:
+                    materia_prima_topping = topping.materia_prima
+                    if materia_prima_topping:
+                        # ✅ CORREGIDO (Opción A): gramos por lote × factor de escala.
+                        # Ejemplo: receta de 26 unidades, orden de 52 unidades → 450g × (52/26) = 900g.
+                        factor_escala = (cantidad / receta.unidades_obtenidas) if receta.unidades_obtenidas > 0 else 0
+                        cantidad_necesaria_topping = topping.cantidad_por_unidad * factor_escala
+                        
+                        # Actualizar stock
+                        materia_prima_topping.stock_actual -= cantidad_necesaria_topping
+                        
+                        # Registrar en historial de inventario
+                        movimiento_topping = HistorialInventario(
+                            materia_prima_id=materia_prima_topping.id,
+                            orden_produccion_id=orden_produccion.id,
+                            cantidad_utilizada=cantidad_necesaria_topping,
+                            tipo_movimiento='produccion',
+                            panaderia_id=current_user.panaderia_id
+                        )
+                        db.session.add(movimiento_topping)
             
             db.session.commit()
             flash(f'✅ Producción de {cantidad} unidades confirmada. Ingredientes descontados del inventario.', 'success')
@@ -4685,11 +4748,10 @@ def producir_receta(id):
 @modulo_requerido('produccion')
 @tenant_required  # ✅ NUEVO: Decorador multi-tenant
 def calcular_ingredientes(id):
-    """API para calcular ingredientes necesarios (AJAX)"""
+    """API para calcular ingredientes necesarios (AJAX) — ingredientes base + toppings"""
     if 'user_id' not in session:
         return jsonify({'error': 'No autorizado'}), 401
     
-    # ✅ CORREGIDO: Usar current_user.panaderia_id y filtrar receta
     receta = Receta.query.filter_by(id=id, panaderia_id=current_user.panaderia_id).first()
     
     if not receta:
@@ -4698,8 +4760,10 @@ def calcular_ingredientes(id):
     cantidad = request.args.get('cantidad', receta.unidades_obtenidas, type=int)
     
     ingredientes_calculados = []
+    
+    # 1. Ingredientes base
     for ingrediente in receta.ingredientes:
-        cantidad_necesaria = (ingrediente.cantidad_gramos / receta.unidades_obtenidas) * cantidad
+        cantidad_necesaria = (ingrediente.cantidad_gramos / receta.unidades_obtenidas) * cantidad if receta.unidades_obtenidas > 0 else 0
         suficiente = ingrediente.materia_prima.stock_actual >= cantidad_necesaria
         
         ingredientes_calculados.append({
@@ -4709,8 +4773,44 @@ def calcular_ingredientes(id):
             'cantidad_calculada': round(cantidad_necesaria, 2),
             'unidad': ingrediente.materia_prima.unidad_medida,
             'stock_disponible': ingrediente.materia_prima.stock_actual,
-            'suficiente': suficiente
+            'suficiente': suficiente,
+            'tipo': 'ingrediente'  # ← NUEVO
         })
+    
+    # 2. Toppings (gramos por lote × factor de escala)
+    if receta.unidades_obtenidas > 0:
+        factor_escala = cantidad / receta.unidades_obtenidas
+        for topping in receta.toppings:
+            if topping.activo and topping.materia_prima_id and topping.materia_prima:
+                cantidad_necesaria_topping = topping.cantidad_por_unidad * factor_escala
+                
+                # ✅ Los toppings SIEMPRE se manejan en gramos.
+                # Convertir el stock disponible a gramos si la MP está en otra unidad.
+                mp_topping = topping.materia_prima
+                factor_conversion = 1
+                if mp_topping.unidad_medida == 'kg':
+                    factor_conversion = 1000
+                elif mp_topping.unidad_medida == 'lb':
+                    factor_conversion = 453.592
+                elif mp_topping.unidad_medida == 'unidad':
+                    # Si la MP está en "unidad" pero es un topping, asumimos que el costo_promedio
+                    # ya está expresado por gramo (ej. Bocadillo: $7/g).
+                    # El stock también está en gramos (ej. 1750g).
+                    factor_conversion = 1
+                
+                stock_en_gramos = mp_topping.stock_actual * factor_conversion
+                suficiente = stock_en_gramos >= cantidad_necesaria_topping
+                
+                ingredientes_calculados.append({
+                    'id': f'topping_{topping.id}',
+                    'nombre': mp_topping.nombre,
+                    'cantidad_original': topping.cantidad_por_unidad,
+                    'cantidad_calculada': round(cantidad_necesaria_topping, 2),
+                    'unidad': 'g',  # ✅ SIEMPRE gramos para toppings
+                    'stock_disponible': round(stock_en_gramos, 2),
+                    'suficiente': suficiente,
+                    'tipo': 'topping'
+                })
     
     return jsonify(ingredientes_calculados)
 
@@ -4979,7 +5079,49 @@ def crear_receta():
             for ingrediente in ingredientes_data:
                 if peso_total_masa > 0:
                     ingrediente.porcentaje_aplicado = (ingrediente.cantidad_gramos / peso_total_masa) * 100
-            
+
+            # =============================================
+            # PROCESAR TOPPINGS (adicionales, no afectan peso ni unidades)
+            # =============================================
+            j = 0
+            while f'toppings[{j}][materia_prima_id]' in request.form:
+                topping_mp_id = request.form[f'toppings[{j}][materia_prima_id]']
+                # ✅ Los toppings se manejan en GRAMOS por unidad
+                cantidad_por_unidad = float(request.form.get(f'toppings[{j}][cantidad_gramos]', 0))
+                
+                if topping_mp_id and cantidad_por_unidad > 0:
+                    # Filtrar materia prima por tenant
+                    topping_mp = MateriaPrima.query.filter_by(
+                        id=topping_mp_id,
+                        panaderia_id=panaderia_actual
+                    ).first()
+                    
+                    if topping_mp:
+                        # ✅ CORREGIDO (Opción A): cantidad_por_unidad = GRAMOS POR LOTE.
+                        # El costo del lote se calcula directo: gramos_lote × costo_por_gramo.
+                        # El costo unitario se obtiene dividiendo el total entre las unidades producidas.
+                        unidades_para_costo = int(peso_total_masa / nueva_receta.peso_unidad_gramos) if nueva_receta.peso_unidad_gramos > 0 else 0
+                        
+                        costo_topping_total = cantidad_por_unidad * topping_mp.costo_promedio
+                        costo_topping_unitario = (costo_topping_total / unidades_para_costo) if unidades_para_costo > 0 else 0
+                        
+                        nuevo_topping = RecetaTopping(
+                            receta_id=nueva_receta.id,
+                            materia_prima_id=topping_mp.id,
+                            sub_receta_id=None,
+                            cantidad_por_unidad=cantidad_por_unidad,
+                            unidad_medida=topping_mp.unidad_medida,
+                            costo_unitario=costo_topping_unitario,
+                            costo_total=costo_topping_total,
+                            panaderia_id=panaderia_actual,
+                            activo=True
+                        )
+                        
+                        db.session.add(nuevo_topping)
+                        costo_total_materias_primas += costo_topping_total
+                
+                j += 1
+
             # ✅ CALCULAR UNIDADES CON MERMA DE MANEJO (SOLO ESTA AFECTA EL COSTO)
             # La pérdida por horneado NO afecta el número de unidades vendibles
             # Solo la merma por manejo (pan que se cae, quema, rompe) reduce las unidades
@@ -5163,7 +5305,48 @@ def editar_receta(id):
             for ingrediente in ingredientes_data:
                 if peso_total_masa > 0:
                     ingrediente.porcentaje_aplicado = (ingrediente.cantidad_gramos / peso_total_masa) * 100
+
+            # =============================================
+            # PROCESAR TOPPINGS (eliminar viejos, agregar nuevos)
+            # =============================================
+            RecetaTopping.query.filter_by(receta_id=receta.id).delete()
             
+            j = 0
+            while f'toppings[{j}][materia_prima_id]' in request.form:
+                topping_mp_id = request.form[f'toppings[{j}][materia_prima_id]']
+                # ✅ Los toppings se manejan en GRAMOS por unidad
+                cantidad_por_unidad = float(request.form.get(f'toppings[{j}][cantidad_gramos]', 0))
+                
+                if topping_mp_id and cantidad_por_unidad > 0:
+                    topping_mp = MateriaPrima.query.filter_by(
+                        id=topping_mp_id,
+                        panaderia_id=current_user.panaderia_id
+                    ).first()
+                    
+                    if topping_mp:
+                        # ✅ CORREGIDO (Opción A): gramos por lote.
+                        unidades_para_costo = int(peso_total_masa / receta.peso_unidad_gramos) if receta.peso_unidad_gramos > 0 else 0
+                        
+                        costo_topping_total = cantidad_por_unidad * topping_mp.costo_promedio
+                        costo_topping_unitario = (costo_topping_total / unidades_para_costo) if unidades_para_costo > 0 else 0
+                        
+                        nuevo_topping = RecetaTopping(
+                            receta_id=receta.id,
+                            materia_prima_id=topping_mp.id,
+                            sub_receta_id=None,
+                            cantidad_por_unidad=cantidad_por_unidad,
+                            unidad_medida=topping_mp.unidad_medida,
+                            costo_unitario=costo_topping_unitario,
+                            costo_total=costo_topping_total,
+                            panaderia_id=current_user.panaderia_id,
+                            activo=True
+                        )
+                        
+                        db.session.add(nuevo_topping)
+                        costo_total_materias_primas += costo_topping_total
+                
+                j += 1
+
             # ✅ CALCULAR UNIDADES CON MERMA DE MANEJO (SOLO ESTA AFECTA EL COSTO)
             # La pérdida por horneado NO afecta el número de unidades vendibles
             

@@ -390,6 +390,61 @@
                     ➕ Agregar Ingrediente
                 </button>
             </div>
+                <!-- ============================================= -->
+                <!-- TOPPINGS (adicionales, no afectan peso ni unidades) -->
+                <!-- ============================================= -->
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e9ecef;">
+                    <h5 style="margin-bottom: 10px;">
+                        <i class="fas fa-palette" style="color: #9b59b6;"></i> {{ _('Toppings (Adicionales)') }}
+                    </h5>
+                    <p style="font-size: 0.85rem; color: #6c757d; margin-bottom: 15px;">
+                        <i class="fas fa-info-circle"></i>
+                        {{ _('Ingredientes decorativos que se agregan al producto terminado. NO aumentan las unidades producidas, pero SÍ afectan el costo.') }}
+                    </p>
+
+                    <div id="toppings-container">
+                        <!-- Los toppings se agregarán aquí dinámicamente -->
+                        {% if receta and receta.toppings %}
+                            {% for topping in receta.toppings if topping.activo %}
+                            <div class="topping-row" style="display: flex; gap: 10px; margin-bottom: 10px;">
+                                <select name="toppings[{{ loop.index0 }}][materia_prima_id]" 
+                                        style="flex: 2;" 
+                                        onchange="actualizarCalculosCompletos()">
+                                    <option value="">{{ _('Seleccionar materia prima') }}</option>
+                                    {% for mp in materias_primas %}
+                                    <option value="{{ mp.id }}" 
+                                            data-precio="{{ mp.precio_compra }}" 
+                                            data-unidad="{{ mp.unidad_medida }}"
+                                            {% if topping.materia_prima_id == mp.id %}selected{% endif %}>
+                                        {{ mp.nombre }} ({{ mp.unidad_medida }})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <input type="number" name="toppings[{{ loop.index0 }}][cantidad_gramos]" 
+                                       step="0.1" placeholder="{{ _('Gramos (lote)') }}" min="0.1" 
+                                       value="{{ topping.cantidad_por_unidad }}"
+                                       style="flex: 1;"
+                                       oninput="actualizarCalculosCompletos()">
+                                <button type="button" onclick="removerTopping(this)" 
+                                        class="btn btn-remove" title="{{ _('Eliminar topping') }}">
+                                    ✕
+                                </button>
+                            </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div class="resumen-box" style="background: #f0e6f6; border-left: 4px solid #9b59b6;">
+                        <strong>🎨 {{ _('Resumen de toppings') }}:</strong>
+                        <span id="toppings-count">0</span> {{ _('toppings') }} |
+                        <span id="costo-toppings-resumen">$0</span> {{ _('costo toppings') }}
+                    </div>
+
+                    <button type="button" id="btn-agregar-topping" class="btn" style="margin-top: 15px; background: #9b59b6; color: white;">
+                        ➕ {{ _('Agregar Topping') }}
+                    </button>
+                </div>
+            </div>
 
             <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
                 <button type="submit" class="btn btn-success" style="padding: 12px 25px; font-size: 16px;">
@@ -442,11 +497,105 @@
         }
 
         // ✅ FUNCIÓN PARA ELIMINAR INGREDIENTE
-        function removerIngrediente(boton) {
+                function removerIngrediente(boton) {
             const item = boton.parentElement;
             item.remove();
             console.log('🗑️ Ingrediente eliminado');
             actualizarCalculosCompletos();
+        }
+
+        // =============================================
+        // FUNCIONES PARA TOPPINGS (T6.2)
+        // =============================================
+        function agregarTopping() {
+            const container = document.getElementById('toppings-container');
+            if (!container) {
+                console.error('❌ No se encontró #toppings-container');
+                return;
+            }
+
+            const index = container.children.length;
+
+            // Obtener opciones de los selects de ingredientes (que ya tienen las MPs)
+            let opcionesHTML = '<option value="">Seleccionar materia prima</option>';
+            const todasOpciones = document.querySelectorAll('#ingredientes-container select option[value]:not([value=""])');
+            const opcionesVistas = new Set();
+
+            todasOpciones.forEach(opt => {
+                const mpId = opt.value;
+                if (!opcionesVistas.has(mpId)) {
+                    opcionesVistas.add(mpId);
+                    const precio = opt.dataset.precio || '0';
+                    const unidad = opt.dataset.unidad || '';
+                    const nombre = opt.textContent.trim();
+                    opcionesHTML += `<option value="${mpId}" data-precio="${precio}" data-unidad="${unidad}">${nombre}</option>`;
+                }
+            });
+
+            const toppingHTML = `
+                <div class="topping-row" style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <select name="toppings[${index}][materia_prima_id]" 
+                            style="flex: 2;" 
+                            onchange="actualizarCalculosCompletos()">
+                        ${opcionesHTML}
+                    </select>
+                    <input type="number" name="toppings[${index}][cantidad_gramos]" 
+                           step="0.1" placeholder="Gramos (lote)" min="0.1"   
+                           style="flex: 1;"
+                           oninput="actualizarCalculosCompletos()">
+                    <button type="button" onclick="removerTopping(this)" 
+                            class="btn btn-remove" title="Eliminar topping">
+                        ✕
+                    </button>
+                </div>
+            `;
+
+            container.insertAdjacentHTML('beforeend', toppingHTML);
+            console.log(`✅ Topping #${index + 1} agregado`);
+            actualizarCalculosCompletos();
+        }
+
+        function removerTopping(boton) {
+            const item = boton.closest('.topping-row');
+            if (item) {
+                item.remove();
+                console.log('🗑️ Topping eliminado');
+                actualizarCalculosCompletos();
+            }
+        }
+
+        // ✅ CORREGIDO (Opción A): los toppings son GRAMOS POR LOTE (no por unidad).
+        // Calcula el costo total de toppings (gramos_lote × precio_por_gramo).
+        function calcularCostoToppings(unidades) {
+            const rows = document.querySelectorAll('.topping-row');
+            let costoToppings = 0;
+            let cantidadToppings = 0;
+
+            rows.forEach(row => {
+                const select = row.querySelector('select');
+                const input = row.querySelector('input[type="number"]');
+
+                if (select && select.value && input && input.value) {
+                    const option = select.options[select.selectedIndex];
+                    const precioUnitario = parseFloat(option.dataset.precio) || 0;
+                    const gramosLote = parseFloat(input.value) || 0;
+                    const unidadMedida = option.dataset.unidad || 'g';
+
+                    // Convertir el precio de la unidad de medida de la MP a precio por gramo.
+                    let factorConversion = 1;
+                    if (unidadMedida === 'kg') factorConversion = 1000;
+                    if (unidadMedida === 'lb') factorConversion = 453.592;
+
+                    // Costo = gramos_lote × (precio_unitario / factorConversion)
+                    const precioPorGramo = precioUnitario / factorConversion;
+                    const costoTopping = gramosLote * precioPorGramo;
+                    
+                    costoToppings += costoTopping;
+                    cantidadToppings++;
+                }
+            });
+
+            return { costoToppings, cantidadToppings };
         }
 
         // ✅ FUNCIÓN PARA CALCULAR COSTOS (SIN preciosMP)
@@ -484,9 +633,10 @@
         function actualizarCalculosCompletos() {
             console.log('📊 Ejecutando actualizarCalculosCompletos...');
             
+            // 1. Calcular ingredientes
             const { costoTotal, pesoTotal } = calcularCostoIngredientes();
             
-            // Calcular unidades obtenidas considerando pérdida por horneado
+            // 2. Calcular unidades obtenidas considerando pérdida por horneado
             const pesoUnidadInput = document.querySelector('input[name="peso_unidad_gramos"]');
             const porcentajePerdidaInput = document.querySelector('input[name="porcentaje_perdida"]');
             
@@ -497,20 +647,28 @@
             const pesoHorneado = pesoTotal * (1 - porcentajePerdida / 100);
             const unidadesObtenidas = pesoUnidad > 0 ? Math.floor(pesoHorneado / pesoUnidad) : 0;
             
-            // APLICAR FÓRMULAS DEL EXCEL: 45% CIF + 45% GANANCIA
-            const costoMP = costoTotal;
+            // 3. Calcular toppings (necesita unidades obtenidas)
+            const { costoToppings, cantidadToppings } = calcularCostoToppings(unidadesObtenidas);
+            
+            // 4. APLICAR FÓRMULAS DEL EXCEL: 45% CIF + 45% GANANCIA
+            //    Sumar toppings al costo de materias primas
+            const costoMP = costoTotal + costoToppings;
             const cif = costoMP * 0.45;
             const costoTotalConCIF = costoMP + cif;
             const ganancia = costoTotalConCIF * 0.45;
             const precioTotalPreparacion = costoTotalConCIF + ganancia;
             const precioVentaUnidad = unidadesObtenidas > 0 ? precioTotalPreparacion / unidadesObtenidas : 0;
             
-            // Actualizar displays usando función auxiliar segura
+            // 5. Actualizar displays de ingredientes y totales
             actualizarElemento('peso-total', pesoTotal.toFixed(1));
             actualizarElemento('unidades-total', unidadesObtenidas);
             actualizarElemento('costo-mp-resumen', `$${costoMP.toFixed(2)}`);
             
-            // Actualizar sección de cálculos
+            // 6. Actualizar displays de toppings
+            actualizarElemento('toppings-count', cantidadToppings);
+            actualizarElemento('costo-toppings-resumen', `$${costoToppings.toFixed(2)}`);
+            
+            // 7. Actualizar sección de cálculos
             actualizarElemento('costo-mp', `$${costoMP.toFixed(2)}`);
             actualizarElemento('costo-cif', `$${cif.toFixed(2)}`);
             actualizarElemento('costo-total', `$${costoTotalConCIF.toFixed(2)}`);
@@ -569,11 +727,18 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('✅ DOM completamente cargado - Sistema listo');
             
-            // Event listener DIRECTO al botón (más confiable)
+            // Event listener DIRECTO al botón "Agregar Ingrediente"
             const botonAgregar = document.getElementById('btn-agregar-ingrediente');
             if (botonAgregar) {
                 botonAgregar.addEventListener('click', agregarIngrediente);
-                console.log('🎯 Event listener agregado al botón');
+                console.log('🎯 Event listener agregado al botón de ingredientes');
+            }
+            
+            // Event listener al botón "Agregar Topping"
+            const botonAgregarTopping = document.getElementById('btn-agregar-topping');
+            if (botonAgregarTopping) {
+                botonAgregarTopping.addEventListener('click', agregarTopping);
+                console.log('🎨 Event listener agregado al botón de toppings');
             }
             
             // Agregar primer ingrediente si no hay ninguno

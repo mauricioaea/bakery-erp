@@ -819,6 +819,62 @@
             </div>
         </div>
 
+        <!-- ============================================= -->
+        <!-- TOPPINGS (adicionales, no afectan peso ni unidades) -->
+        <!-- ============================================= -->
+        {% set toppings_activos = receta.toppings | selectattr('activo', 'equalto', true) | list %}
+        {% if toppings_activos %}
+        <div class="card mb-4" style="border-radius: 16px; border: 1px solid rgba(0,0,0,0.04);">
+            <div class="card-header" style="background: #2c3e50; color: #ffffff; border-radius: 16px 16px 0 0; padding: 16px 24px;">
+                <h5 class="mb-0"><i class="fas fa-palette" style="color: #f5b81b;"></i> {{ _('Toppings (Adicionales)') }}</h5>
+            </div>
+            <div class="card-body" style="padding: 24px;">
+                <p class="text-muted mb-3" style="font-size: 0.85rem;">
+                    <i class="fas fa-info-circle"></i>
+                                    {{ _('Estos ingredientes se agregan al producto terminado. NO aumentan las unidades producidas, pero SÍ afectan el costo real.') }}
+                </p>
+                <div class="table-responsive">
+                    <table class="table table-receta">
+                        <thead>
+                            <tr>
+                                <th>{{ _('Topping') }}</th>
+                                <th class="text-center">{{ _('Cantidad (lote)') }}</th>
+                                <th class="text-end">{{ _('Costo/u') }}</th>
+                                <th class="text-end">{{ _('Costo Total Lote') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for topping in toppings_activos %}
+                            <tr>
+                                <td>
+                                    {% if topping.materia_prima_id %}
+                                        <i class="fas fa-box" style="color: #3498db;"></i>
+                                        {{ topping.materia_prima.nombre }}
+                                    {% elif topping.sub_receta_id %}
+                                        <i class="fas fa-book" style="color: #9b59b6;"></i>
+                                        {{ topping.sub_receta.nombre }} <small class="text-muted">({{ _('sub-receta') }})</small>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">{{ topping.cantidad_por_unidad|round(1) }}g (lote)</td>
+                                <td class="text-end">{{ topping.costo_unitario|currency }}</td>
+                                <td class="text-end">{{ topping.costo_total|currency }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3"><strong>{{ _('TOTAL TOPPINGS') }}</strong></td>
+                                <td class="text-end"><strong>
+                                    {{ toppings_activos|sum(attribute='costo_total')|currency }}
+                                </strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- ANÁLISIS DE COSTOS TEÓRICOS -->
         <div class="costos-card">
             <h5>📊 Análisis de Costos Teóricos</h5>

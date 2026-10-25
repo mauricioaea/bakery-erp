@@ -902,7 +902,14 @@
                     let suficientes = 0;
                     let insuficientes = 0;
                     
-                    data.forEach(ing => {
+                    // Separar ingredientes base y toppings
+                    const ingredientesBase = data.filter(item => item.tipo !== 'topping');
+                    const toppings = data.filter(item => item.tipo === 'topping');
+                    
+                    // ============================================
+                    // 1. INGREDIENTES BASE
+                    // ============================================
+                    ingredientesBase.forEach(ing => {
                         const div = document.createElement('div');
                         div.className = 'ing-item';
                         const estado = ing.suficiente ? '✅' : '❌';
@@ -915,6 +922,30 @@
                         if (ing.suficiente) suficientes++;
                         else insuficientes++;
                     });
+                    
+                    // ============================================
+                    // 2. TOPPINGS (si hay)
+                    // ============================================
+                    if (toppings.length > 0) {
+                        const divisor = document.createElement('div');
+                        divisor.style.cssText = 'margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ccc;';
+                        divisor.innerHTML = '<strong style="color: #9b59b6;">🎨 Toppings:</strong>';
+                        resumen.appendChild(divisor);
+                        
+                        toppings.forEach(topping => {
+                            const div = document.createElement('div');
+                            div.className = 'ing-item';
+                            const estado = topping.suficiente ? '✅' : '❌';
+                            const clase = topping.suficiente ? 'ing-suficiente' : 'ing-insuficiente';
+                            div.innerHTML = `
+                                <span style="color: #9b59b6;">${topping.nombre}</span>
+                                <span class="${clase}">${topping.cantidad_calculada} ${topping.unidad} ${estado}</span>
+                            `;
+                            resumen.appendChild(div);
+                            if (topping.suficiente) suficientes++;
+                            else insuficientes++;
+                        });
+                    }
                     
                     document.getElementById('contadorSuficientes').textContent = suficientes;
                     document.getElementById('contadorInsuficientes').textContent = insuficientes;
