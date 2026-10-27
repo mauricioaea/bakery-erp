@@ -1566,6 +1566,7 @@ class CierreDiario(db.Model):
     
     # ✅ MANTENER: Se usan en reportes IA y cierre de caja
     total_transacciones = db.Column(db.Integer, default=0)
+    total_anulaciones = db.Column(db.Float, default=0)  # 🆕 Feature Anulación POS
     productos_top = db.Column(db.Text)
     ventas_dia_anterior = db.Column(db.Float, default=0)
     tendencia = db.Column(db.Float, default=0)
