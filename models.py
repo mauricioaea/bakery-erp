@@ -38,7 +38,12 @@ class Usuario(UserMixin, db.Model):
     permisos_personalizados = db.relationship('PermisoUsuario', backref='usuario', lazy=True, cascade='all, delete-orphan')
     
     # 🆕 CORREGIDO: Cambiar nombre de relación para evitar conflicto
-    ventas_realizadas = db.relationship('Venta', backref='usuario_asociado', lazy=True)
+    ventas_realizadas = db.relationship(
+        'Venta',
+        foreign_keys='Venta.usuario_id',   # ← Feature Anulación POS: aclarar CUÁL FK usar
+        backref='usuario_asociado',
+        lazy=True
+    )
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -1025,10 +1030,68 @@ class Venta(db.Model):
     # ✅✅✅ RELACIONES CORREGIDAS - SIN CONFLICTOS
     # NO necesitas: usuario = db.relationship(...) - ya lo crea Usuario.ventas_realizadas
     cliente = db.relationship('Cliente', back_populates='ventas')  # ← back_populates COINCIDE
+    
+    # 🆕 Feature Anulación POS: relación con el usuario que anuló (opcional)
+    usuario_anulacion = db.relationship(
+        'Usuario',
+        foreign_keys=[usuario_anulacion_id],
+        lazy=True
+    )
 
     def __repr__(self):
         return f'<Venta {self.id} - ${self.total} - {self.tipo_documento} - {self.estado}>'
-    
+
+    def puede_anularse(self, usuario=None):
+        """
+        Determina si esta venta puede anularse en este momento.
+        
+        Retorna: (bool, str|None)
+          - (True, None) si se puede anular.
+          - (False, motivo_legible) si no se puede (para mostrar al usuario).
+        
+        Reglas de negocio (DT-Anulación POS):
+          1. Estado debe ser 'COMPLETADA'.
+          2. Debe estar dentro de las últimas 24 horas.
+          3. No debe existir cierre diario confirmado para el día de la venta.
+          4. Si el usuario es 'cajero', la venta debe ser suya (venta.usuario_id == usuario.id).
+        
+        Si se llama sin 'usuario', se omiten las validaciones de rol
+        (útil para templates donde current_user aún no está disponible).
+        """
+        from datetime import datetime, timedelta
+        
+        # Regla 1: estado
+        if self.estado != 'COMPLETADA':
+            return (False, f"La venta ya está en estado '{self.estado}'")
+        
+        # Regla 2: ventana de 24h
+        if not self.fecha_hora:
+            return (False, "La venta no tiene fecha registrada")
+        ahora = datetime.now(self.fecha_hora.tzinfo) if self.fecha_hora.tzinfo else datetime.now()
+        transcurrido = ahora - self.fecha_hora
+        if transcurrido > timedelta(hours=24):
+            return (False, "Han pasado más de 24 horas desde la venta")
+        
+        # Regla 3: cierre diario confirmado
+        # Import local para evitar dependencia circular
+        from models import CierreDiario  # noqa: F811
+        fecha_venta = self.fecha_hora.date()
+        cierre = CierreDiario.query.filter_by(
+            panaderia_id=self.panaderia_id,
+            fecha_cierre=fecha_venta,
+        ).filter(CierreDiario.estado == 'cerrado').first()
+        if cierre:
+            return (False, f"El cierre diario del {fecha_venta.strftime('%d/%m/%Y')} ya fue confirmado")
+        
+        # Regla 4: cajero solo anula sus propias ventas
+        if usuario is not None:
+            rol = getattr(usuario, 'rol', None)
+            if rol == 'cajero' and self.usuario_id != usuario.id:
+                return (False, "Solo puedes anular ventas registradas por ti")
+        
+        return (True, None)
+
+
 class DetalleVenta(db.Model):
     __tablename__ = 'detalle_venta'
     panaderia_id = db.Column(db.Integer, nullable=False)
