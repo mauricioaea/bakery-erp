@@ -1003,6 +1003,21 @@ class Venta(db.Model):
     es_donacion = db.Column(db.Boolean, default=False)
     motivo_donacion = db.Column(db.String(200), nullable=True)
     
+    # === 🆕 FEATURE ANULACIÓN POS (2026-10-26) ===
+    estado = db.Column(db.String(20), nullable=False, default='COMPLETADA')
+    motivo_anulacion = db.Column(db.String(50), nullable=True)
+    observacion_anulacion = db.Column(db.Text, nullable=True)
+    fecha_anulacion = db.Column(db.DateTime, nullable=True)
+    usuario_anulacion_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=True)
+
+    # Constantes de dominio
+    ESTADOS_VALIDOS = ('COMPLETADA', 'ANULADA')
+    MOTIVOS_ANULACION = (
+        'error_registro',        # El cajero registró mal producto/cantidad
+        'arrepentimiento',       # Cliente se arrepiente antes de salir
+        'cobro_duplicado',       # Misma transacción cobrada dos veces
+    )
+    
     # ✅ NUEVO: Relación con panadería para multicliente
     panaderia_id = db.Column(db.Integer, db.ForeignKey('panaderias.id'), nullable=False)
     panaderia = db.relationship('Panaderia', backref=db.backref('ventas_list', lazy=True))
@@ -1012,7 +1027,7 @@ class Venta(db.Model):
     cliente = db.relationship('Cliente', back_populates='ventas')  # ← back_populates COINCIDE
 
     def __repr__(self):
-        return f'<Venta {self.id} - ${self.total} - {self.tipo_documento}>'
+        return f'<Venta {self.id} - ${self.total} - {self.tipo_documento} - {self.estado}>'
     
 class DetalleVenta(db.Model):
     __tablename__ = 'detalle_venta'

@@ -100,3 +100,7 @@ warning_traceback.txt
 !migrations/sql/*.sql
 _*.py
 _*.md
+
+# Archivos generados por scripts de auditoría/diagnóstico
+_audit_resultado.txt
+_test_*.py
