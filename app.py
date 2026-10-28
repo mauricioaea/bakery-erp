@@ -2968,7 +2968,8 @@ def api_dashboard_metricas_hoy():
         ventas_hoy = Venta.query.filter(
             Venta.panaderia_id == panaderia_id,
             Venta.fecha_hora >= inicio_dia,
-            Venta.fecha_hora <= fin_dia
+            Venta.fecha_hora <= fin_dia,
+            Venta.estado == 'COMPLETADA'  # 🆕 Excluir anuladas
         ).all()
         
         # ✅ Calcular total del día
@@ -3869,6 +3870,24 @@ def recibo_pos(venta_id):
         traceback.print_exc()
         flash(f'Error al generar recibo: {str(e)}', 'error')
         return redirect(url_for('punto_venta'))
+    
+# ============================================================
+# PANTALLA DE VENTAS DEL DÍA (Para anulaciones manuales)
+# ============================================================
+@app.route('/ventas_del_dia')
+@login_required
+@modulo_requerido('punto_venta')
+def ventas_del_dia():
+    """Muestra las ventas de hoy para permitir anulaciones."""
+    panaderia_id = current_user.panaderia_id
+    hoy = datetime.now().date()
+    
+    ventas = Venta.query.filter(
+        Venta.panaderia_id == panaderia_id,
+        func.date(Venta.fecha_hora) == hoy
+    ).order_by(Venta.id.desc()).all()
+    
+    return render_template('ventas_del_dia.html', ventas=ventas, hoy=hoy)
     
 @app.route('/agregar_al_carrito', methods=['POST'])
 @login_required
@@ -7808,10 +7827,11 @@ def reporte_cierre_caja():
         usuario_actual = db.session.get(Usuario, session["user_id"])
         panaderia_id = usuario_actual.panaderia_id
         
-        # 🆕 CONSULTAS CON FILTRO MULTICLIENTE
+        # 🆕 CONSULTAS CON FILTRO MULTICLIENTE (Solo COMPLETADAS)
         ventas_dia = Venta.query.filter(
-            db.func.date(Venta.fecha_hora) == fecha_consultada,  # 🎯 SOLO POR FECHA
-            Venta.panaderia_id == panaderia_id
+            db.func.date(Venta.fecha_hora) == fecha_consultada,
+            Venta.panaderia_id == panaderia_id,
+            Venta.estado == 'COMPLETADA'  # 🆕 Excluir anuladas
         ).all()
         
         # 🎁 SEPARAR VENTAS NORMALES VS DONACIONES
@@ -7858,7 +7878,8 @@ def reporte_cierre_caja():
         detalles_dia = DetalleVenta.query.join(Venta).filter(
             Venta.fecha_hora >= inicio_dia,
             Venta.fecha_hora <= fin_dia,
-            Venta.panaderia_id == panaderia_id  # 🎯 FILTRO MULTICLIENTE
+            Venta.panaderia_id == panaderia_id,
+            Venta.estado == 'COMPLETADA'  # 🆕 Excluir anuladas
         ).all()
         
         

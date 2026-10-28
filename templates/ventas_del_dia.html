@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}Ventas del Día{% endblock %}
+
+{% block content %}
+<style>
+    /* Ocultar el menú lateral para que esta pantalla sea rápida y enfocada */
+    .sidebar { display: none !important; }
+    /* Expandir el contenido principal al 100% de la pantalla */
+    .col-md-9.ms-sm-auto.col-lg-10.px-md-4 { width: 100% !important; max-width: 100% !important; flex: 0 0 100% !important; }
+    /* Ajuste por si la clase es diferente en tu diseño */
+    main { width: 100% !important; max-width: 100% !important; padding: 0 !important; }
+</style>
+
+<div class="container mt-4" style="max-width: 1200px;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="fas fa-receipt"></i> Ventas del Día</h2>
+            <p class="text-muted mb-0">Haz clic en "Anular" si el cajero cometió un error.</p>
+        </div>
+        <div>
+            <h4 class="text-muted text-end mb-2">{{ hoy.strftime('%d/%m/%Y') }}</h4>
+            <a href="{{ url_for('punto_venta') }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-arrow-left"></i> Volver al POS
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <table class="table table-hover table-striped align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Recibo</th>
+                        <th>Hora</th>
+                        <th>Cajero</th>
+                        <th>Método</th>
+                        <th>Total</th>
+                        <th>Estado</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for venta in ventas %}
+                    <tr class="{% if venta.estado == 'ANULADA' %}table-danger opacity-75{% endif %}">
+                        <td><strong>POS-{{ "%06d" % venta.consecutivo_pos }}</strong></td>
+                        <td>{{ venta.fecha_hora.strftime('%H:%M:%S') }}</td>
+                        <td>{{ venta.usuario_asociado.nombre_completo if venta.usuario_asociado else 'N/A' }}</td>
+                        <td>{{ venta.metodo_pago | capitalize }}</td>
+                        <td>${{ "{:,.0f}".format(venta.total) }}</td>
+                        <td>
+                            {% if venta.estado == 'COMPLETADA' %}
+                                <span class="badge bg-success">Completada</span>
+                            {% else %}
+                                <span class="badge bg-danger mb-1">Anulada</span>
+                                <br>
+                                <small class="text-danger fw-bold d-block" style="max-width: 150px;">
+                                    Motivo: {{ venta.motivo_anulacion | replace('_', ' ') | title }}
+                                </small>
+                                {% if venta.observacion_anulacion %}
+                                <small class="text-muted fst-italic d-block text-truncate" style="max-width: 150px;" title="{{ venta.observacion_anulacion }}">
+                                    "{{ venta.observacion_anulacion }}"
+                                </small>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if venta.estado == 'COMPLETADA' %}
+                                <button class="btn btn-sm btn-danger" onclick="abrirModalAnulacion({{ venta.id }}, 'POS-{{ "%06d" % venta.consecutivo_pos }}')">
+                                    <i class="fas fa-ban"></i> Anular
+                                </button>
+                            {% else %}
+                                <button class="btn btn-sm btn-outline-secondary" disabled>
+                                    <i class="fas fa-check"></i> Procesada
+                                </button>
+                            {% endif %}
+                            
+                            <!-- Ver recibo (opcional, abre en pestaña nueva) -->
+                            <a href="{{ url_for('recibo_pos', venta_id=venta.id) }}" target="_blank" class="btn btn-sm btn-outline-primary" title="Ver Recibo">
+                                <i class="fas fa-print"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            <i class="fas fa-info-circle"></i> No hay ventas registradas hoy.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL DE ANULACIÓN -->
+<div class="modal fade" id="modalAnulacion" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fas fa-exclamation-triangle"></i> Anular Venta</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de anular el recibo <strong id="lblRecibo"></strong>?</p>
+                <p class="text-muted small">El stock de los productos regresará a la vitrina y esta venta no se contará en el cierre de caja.</p>
+                
+                <input type="hidden" id="ventaIdAnular">
+                
+                <div class="mb-3">
+                    <label class="form-label font-weight-bold">Motivo de anulación:</label>
+                    <select id="motivoAnulacion" class="form-select">
+                        <option value="error_registro">Error de registro (producto/cantidad incorrecta)</option>
+                        <option value="arrepentimiento">Cliente se arrepiente en el momento</option>
+                        <option value="cobro_duplicado">Cobro duplicado (doble cobro)</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label font-weight-bold">Observación (Obligatorio, mín. 10 letras):</label>
+                    <textarea id="observacionAnulacion" class="form-control" rows="3" placeholder="Explica brevemente el motivo..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="btnConfirmarAnulacion" onclick="ejecutarAnulacion()">
+                    <i class="fas fa-ban"></i> Confirmar Anulación
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let modalAnulacionObj;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar el modal de Bootstrap 5
+        modalAnulacionObj = new bootstrap.Modal(document.getElementById('modalAnulacion'));
+    });
+
+    function abrirModalAnulacion(ventaId, numeroRecibo) {
+        document.getElementById('ventaIdAnular').value = ventaId;
+        document.getElementById('lblRecibo').innerText = numeroRecibo;
+        document.getElementById('observacionAnulacion').value = ''; // Limpiar
+        document.getElementById('btnConfirmarAnulacion').disabled = false;
+        modalAnulacionObj.show();
+    }
+
+    function ejecutarAnulacion() {
+        const ventaId = document.getElementById('ventaIdAnular').value;
+        const motivo = document.getElementById('motivoAnulacion').value;
+        const observacion = document.getElementById('observacionAnulacion').value;
+        const btn = document.getElementById('btnConfirmarAnulacion');
+
+        if (observacion.trim().length < 10) {
+            alert("La observación debe tener al menos 10 caracteres.");
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Anulando...';
+
+        fetch(`/anular_venta/${ventaId}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ motivo: motivo, observacion: observacion })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                alert("✅ " + data.mensaje);
+                window.location.reload(); // Recargar la tabla para ver el cambio
+            } else {
+                alert("❌ Error: " + data.error);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-ban"></i> Confirmar Anulación';
+            }
+        })
+        .catch(e => {
+            alert("❌ Error de red: " + e);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-ban"></i> Confirmar Anulación';
+        });
+    }
+</script>
+{% endblock %}

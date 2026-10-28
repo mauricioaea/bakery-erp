@@ -395,7 +395,8 @@ class GeneradorReportes:
             ventas_normales = Venta.query.filter(
                 Venta.fecha_hora.between(fecha_inicio, fecha_fin),
                 Venta.es_donacion == False,
-                Venta.panaderia_id == panaderia_id
+                Venta.panaderia_id == panaderia_id,
+                Venta.estado == 'COMPLETADA'  # 🆕 Excluir anuladas
             ).all()
             
             ventas_efectivo = 0
@@ -425,7 +426,8 @@ class GeneradorReportes:
             ventas_donaciones = Venta.query.filter(
                 Venta.fecha_hora.between(fecha_inicio, fecha_fin),
                 Venta.es_donacion == True,
-                Venta.panaderia_id == panaderia_id
+                Venta.panaderia_id == panaderia_id,
+                Venta.estado == 'COMPLETADA'  # 🆕 Excluir anuladas
             ).all()
             
             total_donaciones = sum(v.total for v in ventas_donaciones) if ventas_donaciones else 0
@@ -1473,7 +1475,8 @@ class GeneradorReportes:
             ventas = Venta.query.filter(
                 Venta.fecha_hora >= fecha_inicio,
                 Venta.fecha_hora <= fecha_fin,
-                Venta.panaderia_id == panaderia_id
+                Venta.panaderia_id == panaderia_id,
+                Venta.estado == 'COMPLETADA'  # 🆕 Excluir anuladas
             ).all()
             
             # Agrupar por fecha
@@ -1874,7 +1877,8 @@ class GeneradorReportes:
                     DetalleVenta.producto_id == producto.id,
                     Venta.fecha_hora >= fecha_inicio,
                     Venta.fecha_hora <= fecha_fin,
-                    Venta.panaderia_id == panaderia_id
+                    Venta.panaderia_id == panaderia_id,
+                    Venta.estado == 'COMPLETADA'  # 🆕 Excluir anuladas
                 ).with_entities(func.sum(DetalleVenta.cantidad)).scalar() or 0
                 
                 if ventas > 0:
@@ -2442,7 +2446,8 @@ class GeneradorReportes:
             ventas_totales = DetalleVenta.query.join(Venta).filter(
                 DetalleVenta.producto_id == producto_id,
                 Venta.fecha_hora >= fecha_inicio,
-                Venta.panaderia_id == current_user.panaderia_id  # ✅ NUEVO FILTRO MULTI-TENANT
+                Venta.panaderia_id == current_user.panaderia_id,  # ✅ NUEVO FILTRO MULTI-TENANT
+                Venta.estado == 'COMPLETADA'  # 🆕 Excluir anuladas
             ).with_entities(db.func.sum(DetalleVenta.cantidad)).scalar() or 0
             
             demanda_promedio = ventas_totales / 30.0
@@ -2856,7 +2861,8 @@ class GeneradorReportes:
 
             registros_ventas = Venta.query.filter_by(panaderia_id=panaderia_id).filter(
                 Venta.fecha_hora >= _fecha_inicio_dt,
-                Venta.fecha_hora <= _fecha_fin_dt
+                Venta.fecha_hora <= _fecha_fin_dt,
+                Venta.estado == 'COMPLETADA'  # 🆕 Excluir anuladas
             ).all()
 
             # Separar ventas normales de donaciones
