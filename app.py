@@ -3261,10 +3261,187 @@ def registrar_venta():
         
     except Exception as e:
         db.session.rollback()
-        logger.error(f"❌ Error al registrar venta: {e}")
+        logger.error(f"❌ Error al registrar venta: {str(e)}")
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)})
+
+
+# ============================================================
+# FEATURE ANULACIÓN POS (DT-Anulación, Bloque 3)
+# ============================================================
+@app.route('/anular_venta/<int:venta_id>', methods=['POST'])
+@login_required
+@modulo_requerido('punto_venta')
+def anular_venta(venta_id):
+    """
+    Anula un recibo POS (soft-delete) y revierte stock + métricas.
+    
+    Reglas (ver Venta.puede_anularse en models.py):
+      - Solo estado COMPLETADA.
+      - Solo dentro de 24h desde fecha_hora.
+      - No si hay cierre diario confirmado para el día de la venta.
+      - Cajero solo anula sus propias ventas.
+      - NUNCA se anulan ventas ELECTRONICA (requieren nota crédito DIAN).
+    
+    Efectos (transaccionales):
+      - Venta.estado = 'ANULADA' + auditoría (motivo, observación, fecha, usuario).
+      - Producto.stock_actual += cantidad (por cada detalle interno).
+      - ProductoExterno.stock_actual += cantidad + revertir métricas.
+      - HistorialInventario: 1 registro por producto con tipo='anulacion_venta'.
+    """
+    # Import local para evitar tocar imports globales de app.py
+    from models import HistorialInventario
+    
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'No autorizado'}), 401
+    
+    try:
+        panaderia_id = current_user.panaderia_id
+        
+        # 1) Buscar la venta (multi-tenant)
+        venta = Venta.query.filter_by(
+            id=venta_id,
+            panaderia_id=panaderia_id
+        ).first()
+        if not venta:
+            return jsonify({'success': False, 'error': 'Venta no encontrada'}), 404
+        
+        # 2) Bloqueo de facturas electrónicas (SIEMPRE, por seguridad legal DIAN)
+        if venta.tipo_documento == 'ELECTRONICA':
+            return jsonify({
+                'success': False,
+                'error': 'No se pueden anular facturas electrónicas. Use nota crédito según normativa DIAN.'
+            }), 403
+        
+        # 3) Validaciones de negocio (helper centralizado)
+        puede, motivo_rechazo = venta.puede_anularse(current_user)
+        if not puede:
+            return jsonify({'success': False, 'error': motivo_rechazo}), 403
+        
+        # 4) Validar payload JSON
+        data = request.get_json(silent=True) or {}
+        motivo = (data.get('motivo') or '').strip()
+        observacion = (data.get('observacion') or '').strip()
+        
+        if motivo not in Venta.MOTIVOS_ANULACION:
+            return jsonify({
+                'success': False,
+                'error': f'Motivo inválido. Debe ser uno de: {", ".join(Venta.MOTIVOS_ANULACION)}'
+            }), 400
+        
+        if len(observacion) < 10:
+            return jsonify({
+                'success': False,
+                'error': 'La observación es obligatoria y debe tener al menos 10 caracteres'
+            }), 400
+        
+        # 5) Obtener detalles de la venta
+        detalles = DetalleVenta.query.filter_by(
+            venta_id=venta_id,
+            panaderia_id=panaderia_id
+        ).all()
+        
+        if not detalles:
+            return jsonify({
+                'success': False,
+                'error': 'La venta no tiene detalles registrados, no se puede anular'
+            }), 400
+        
+        # 6) Revertir stock + métricas + registrar historial (por cada detalle)
+        for detalle in detalles:
+            if detalle.producto_externo_id:
+                # --- Producto externo ---
+                pe = ProductoExterno.query.filter_by(
+                    id=detalle.producto_externo_id,
+                    panaderia_id=panaderia_id
+                ).first()
+                if pe:
+                    stock_anterior = pe.stock_actual or 0
+                    pe.stock_actual = stock_anterior + detalle.cantidad
+                    
+                    # Revertir métricas acumuladas (no bajar de 0)
+                    pe.total_ventas = max(0, (pe.total_ventas or 0) - detalle.cantidad)
+                    pe.total_ingresos = max(0.0, (pe.total_ingresos or 0.0) - (detalle.subtotal or 0.0))
+                    margen = (pe.precio_venta or 0) - (pe.precio_compra or 0)
+                    pe.utilidad_total = max(0.0, (pe.utilidad_total or 0.0) - (detalle.cantidad * margen))
+                    
+                    # Historial: externos van con producto_id=None
+                    hist = HistorialInventario(
+                        panaderia_id=panaderia_id,
+                        producto_id=None,
+                        materia_prima_id=None,
+                        cantidad_anterior=stock_anterior,
+                        cantidad_nueva=pe.stock_actual,
+                        tipo_movimiento='anulacion_venta',
+                        usuario_id=current_user.id,
+                        observaciones=(
+                            f"Anulación venta #{venta_id} — externo #{detalle.producto_externo_id} "
+                            f"— motivo: {motivo} — {observacion}"
+                        )
+                    )
+                    db.session.add(hist)
+            else:
+                # --- Producto interno ---
+                p = Producto.query.filter_by(
+                    id=detalle.producto_id,
+                    panaderia_id=panaderia_id
+                ).first()
+                if p:
+                    stock_anterior = p.stock_actual or 0
+                    p.stock_actual = stock_anterior + detalle.cantidad
+                    
+                    hist = HistorialInventario(
+                        panaderia_id=panaderia_id,
+                        producto_id=detalle.producto_id,
+                        materia_prima_id=None,
+                        cantidad_anterior=stock_anterior,
+                        cantidad_nueva=p.stock_actual,
+                        tipo_movimiento='anulacion_venta',
+                        usuario_id=current_user.id,
+                        observaciones=(
+                            f"Anulación venta #{venta_id} — motivo: {motivo} — {observacion}"
+                        )
+                    )
+                    db.session.add(hist)
+        
+        # 7) Marcar la venta como anulada con auditoría
+        venta.estado = 'ANULADA'
+        venta.motivo_anulacion = motivo
+        venta.observacion_anulacion = observacion
+        venta.fecha_anulacion = datetime.now()
+        venta.usuario_anulacion_id = current_user.id
+        
+        db.session.commit()
+        
+        logger.info(
+            f"✅ Venta #{venta_id} ANULADA por usuario {current_user.id} "
+            f"(motivo={motivo}) — stock revertido en {len(detalles)} productos"
+        )
+        
+        return jsonify({
+            'success': True,
+            'venta_id': venta_id,
+            'estado': 'ANULADA',
+            'mensaje': f'Venta #{venta_id} anulada correctamente. Stock revertido.'
+        })
+    
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"❌ Error al anular venta #{venta_id}: {str(e)}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': f'Error interno al anular la venta: {str(e)}'
+        }), 500
+
+
+# =============================================
+# 🆕 RUTAS API PARA GESTIÓN DE CLIENTES
+# =============================================
+
+@app.route('/api/guardar-cliente', methods=['POST'])
+    
+    
 # =============================================
 # 🆕 RUTAS API PARA GESTIÓN DE CLIENTES
 # =============================================
@@ -7399,14 +7576,23 @@ def realizar_cierre():
                 'error': 'Ya se realizó el cierre diario para hoy en esta panadería'
             }), 400
         
-        # ✅ OBTENER VENTAS DEL DÍA
+        # ✅ OBTENER VENTAS DEL DÍA (solo COMPLETADAS para los totales)
         ventas_hoy = Venta.query.filter(
             Venta.panaderia_id == panaderia_id,
             func.date(Venta.fecha_hora) == fecha_actual,
+            Venta.estado == 'COMPLETADA'  # 🆕 Excluir anuladas
+        ).all()
+        
+        # 🆕 OBTENER ANULADAS DEL DÍA (para auditoría)
+        ventas_anuladas = Venta.query.filter(
+            Venta.panaderia_id == panaderia_id,
+            func.date(Venta.fecha_hora) == fecha_actual,
+            Venta.estado == 'ANULADA'
         ).all()
         
         # ✅ CALCULAR TOTALES
         total_ventas = sum(venta.total for venta in ventas_hoy)
+        total_anulaciones = sum(venta.total for venta in ventas_anuladas)  # 🆕
         total_efectivo = sum(venta.total for venta in ventas_hoy 
                            if venta.metodo_pago == 'efectivo')
         total_transferencias = sum(venta.total for venta in ventas_hoy 
@@ -7423,6 +7609,7 @@ def realizar_cierre():
             total_tarjeta=total_tarjetas,
             total_transferencia=total_transferencias,
             total_transacciones=len(ventas_hoy),
+            total_anulaciones=total_anulaciones,  # 🆕
             total_donaciones=0,
             estado='cerrado',
             usuario_id=session['user_id'],
@@ -7583,11 +7770,11 @@ def obtener_ventas_dia(fecha, panaderia_id=None):
         if isinstance(fecha, str):
             fecha = datetime.strptime(fecha, '%Y-%m-%d').date()
         
-        # ✅ FILTRAR VENTAS SOLO DE ESTA PANADERÍA Y DÍA
+        # ✅ FILTRAR VENTAS SOLO DE ESTA PANADERÍA Y DÍA (excluyendo anuladas)
         ventas = Venta.query.filter(
             Venta.panaderia_id == panaderia_id,
             func.date(Venta.fecha_hora) == fecha,
-            1==1  # Filtro de estado eliminado porque el modelo no tiene este campo
+            Venta.estado == 'COMPLETADA'  # 🆕 Excluir anuladas
         ).all()
         
         return ventas
