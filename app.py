@@ -232,6 +232,29 @@ def crear_tablas_en_orden(schema_name):
         )
     '''))
     
+        
+    # =============================================
+    # 11.1. bajas_inventario (Feature Baja de Inventario — 28 Oct 2026)
+    # depende de: productos, usuarios, panaderias
+    # Registra pérdidas de productos de vitrina por VENCIMIENTO o ROTURA.
+    # ⚠️ NO confundir con Consumo Interno/Donaciones (flujo POS) ni con merma de fórmulas.
+    # =============================================
+    db.session.execute(text(f'''
+        CREATE TABLE IF NOT EXISTS {schema_name}.bajas_inventario (
+            id SERIAL PRIMARY KEY,
+            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),
+            producto_id INTEGER NOT NULL REFERENCES {schema_name}.productos(id),
+            cantidad INTEGER NOT NULL CHECK (cantidad > 0),
+            motivo VARCHAR(20) NOT NULL CHECK (motivo IN ('VENCIMIENTO', 'ROTURA')),
+            costo_unitario FLOAT NOT NULL DEFAULT 0,
+            costo_total FLOAT NOT NULL DEFAULT 0,
+            usuario_id INTEGER REFERENCES {schema_name}.usuarios(id),
+            fecha_baja TIMESTAMP NOT NULL DEFAULT NOW(),
+            observaciones TEXT,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW()
+        )
+    '''))
+    
     # =============================================
     # 12. historial_rotacion_producto (depende de productos y panaderias)
     # =============================================

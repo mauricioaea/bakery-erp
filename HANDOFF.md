@@ -1,7 +1,7 @@
 # 🗂️ CONTEXTO MAESTRO — PanaderíaPro (Bakery ERP)
 
-**Última actualización:** 24 de Octubre, 2026
-**Último commit:** `9e645ba` (feat: agregar toppings a recetas con calculo de costos, descuento de stock, historial de inventario y visualizacion en modal de produccion)
+**Última actualización:** 28 de Octubre, 2026
+**Último commit:** `4ecfde9` (feat(anulacion-pos): UI frontend, modal y blindaje de reportes financieros)
 **Sesión 2 Oct:** DT-11, DT-12, DT-13, DT-14, DT-16, DT-26, DT-27, DT-3, DT-4
 **Sesión 3 Oct:** DT-1, DT-6, DT-9, DT-20 Fase C (Tanda 1+2+3), DT-30, DT-31
 **Sesión 4 Oct:** DT-10, DT-22, DT-24, DT-17, DT-33, DT-34, DT-32, DT-18
@@ -19,6 +19,7 @@
 **Sesión 23 Oct (tarde):** DT-37 F5.7 (`ventas_periodo.html`) + fix multi-tenant nombre panadería (`config.nombre_panaderia`).
 **Sesión 24 Oct (tarde):** DT-37 F5 — migración de `analisis_predictivo.html`, `reporte_produccion.html`, y los 4 parciales de `secciones/` (`analisis_productos`, `recomendaciones`, `resumen_ventas`, `analisis_ia`) + padre `ventas_avanzado.html`. **F5 COMPLETADO AL 100%.**
 **Sesión 24 Oct (noche):** **Feature: Toppings en recetas.** Nueva tabla `receta_toppings` (con CHECK constraint), cálculo de costos (gramos por lote × $/gramo), descuento de stock (base + toppings) + historial de inventario, UI (formulario crear/editar, detalle, modal producción), endpoint `/api/calcular_ingredientes`. **Fixes preexistentes:** `Panaderia(panaderia_id=...)`, `producto_id NOT NULL`, `search_path`, modelo `HistorialInventario`, JS roto en `crear_receta.html` y `produccion_diaria.html`. Commit `9e645ba`.
+**Sesión 28 Oct (tarde):** **Feature: Anulación de Recibos POS.** Migraciones BD (campos de anulación en ventas y cierres), modelo `Venta.estado` + helper `puede_anularse()`, endpoint `/anular_venta`, UI `ventas_del_dia.html` + botón en navbar, blindaje de 11 consultas en reportes financieros y cierres. Commit `4ecfde9`.
 
 ---
 
@@ -26,7 +27,7 @@
 
 - **Nombre:** PanaderíaPro (bakery-erp)
 - **Repo:** https://github.com/mauricioaea/bakery-erp
-- **Estado:** v1.9.1 — **11/11 módulos completados (100%)** + **DT-37 F4 100%** + **DT-37 F5 100%** + **Feature Toppings 100%**.
+- **Estado:** v1.9.2 — **11/11 módulos completados (100%)** + **DT-37 F4 100%** + **DT-37 F5 100%** + **Feature Toppings 100%** + **Feature Anulación POS 100%**.
 - **Arquitectura:** Multi-tenant con PostgreSQL (schemas por tenant).
 - **Seguridad:** Producción-ready (CSRF con tokens firmados + Origin/Referer + logging centralizado).
 - **Observabilidad:** Producción-ready (logger con rotación de archivos, niveles configurables).
@@ -34,12 +35,11 @@
 
 ### 📋 Próximos pasos planificados (ver sección 2️⃣6️⃣)
 
-1. **Anulación de recibos POS** (~3-5 h) — Media-alta.
-2. **i18n de diccionarios Python** (~2-4 h) — Baja (si es necesario; sino dejar como está).
-3. **Auditoría ORM ↔ BD** (verificar con git que no haya discrepancias).
-4. **Crear tenant nuevo + smoke test** (verificar que todo funcione).
-5. **Pre-Dockerización (Fases A-F)** (~13-15 h) — CRÍTICA.
-6. **Dockerización (Fase G)** (~22-32 h).
+1. **i18n de diccionarios Python** (~2-4 h) — Baja (si es necesario; sino dejar como está).
+2. **Auditoría ORM ↔ BD** (verificar con git que no haya discrepancias).
+3. **Crear tenant nuevo + smoke test** (verificar que todo funcione).
+4. **Pre-Dockerización (Fases A-F)** (~13-15 h) — CRÍTICA.
+5. **Dockerización (Fase G)** (~22-32 h).
 
 ---
 
@@ -58,8 +58,8 @@
 - HTML5/CSS3, JavaScript vanilla, Bootstrap 5.1.3, Chart.js, Font Awesome 6
 
 ### Estructura de archivos
-- `app.py` (~12.700 líneas) — aplicación principal
-- `models.py` (~3.100 líneas) — modelos SQLAlchemy
+- `app.py` (~12.800 líneas) — aplicación principal
+- `models.py` (~3.200 líneas) — modelos SQLAlchemy
 - `reportes.py` (~3.600 líneas) — generación PDF
 - `seed_demo.py` (~450 líneas) — seed del Demo
 - `seeds/` — 11 fases del seed
@@ -67,13 +67,15 @@
 - `security_utils.py` — utilidades de seguridad multi-tenant
 - `migrations/sql/` — scripts SQL versionados
   - `2026-10-24_add_receta_toppings.sql` (nuevo)
+  - `2026-10-26_add_anulacion_ventas.sql` (nuevo)
+  - `2026-10-26_add_total_anulaciones_cierres.sql` (nuevo)
 - **`babel.cfg`** — config extracción strings (`[jinja2: **.html]`)
 - **`locales/`** — catálogos de traducción
   - `locales/messages.pot` — plantilla (**~771 msgids**)
   - `locales/es/LC_MESSAGES/messages.{po,mo}` — español (fallback)
   - `locales/en/LC_MESSAGES/messages.{po,mo}` — inglés (**~767 traducidos, 99%**)
   - `locales/pap/LC_MESSAGES/messages.{po,mo}` — papiamentu Curazao (**~766 traducidos, 99%**)
-- `templates/` (54 templates + `_csrf_head.html` partial + subcarpeta `secciones/` con 4 parciales)
+- `templates/` (55 templates + `_csrf_head.html` partial + subcarpeta `secciones/` con 4 parciales)
 - `static/js/` — incluye `csrf-auto-inject.js`
 - `logs/` — archivo rotativo `panaderia.log` (ignorado por git)
 - `.env` (protegido), `.env.example` (plantilla)
@@ -81,6 +83,7 @@
 - `HANDOFF.md` — este archivo
 - **`_limpiar_fuzzy.py`** — script de utilidad (CRÍTICO en F5)
 - **`_ver_untraducciones.py`** — script de utilidad (diagnóstico i18n — tiene bug conocido, ver DT-nueva-baja)
+- **`_audit_schema.py`** — script de utilidad (auditoría de BD profunda)
 
 ---
 
@@ -93,8 +96,8 @@
 
 **Tenant principal del Demo:** `tenant_27` ("Panadería Demo").
 **Tenants de producción real:** `tenant_1` (Principal) + `tenant_27` (Demo).
-**Estado de `tenant_1`:** ✅ Alineado (tiene `receta_toppings` + `historial_inventario` con 12 columnas + `producto_id` nullable).
-**Estado de `tenant_27`:** ✅ Re-seedeado el 5 Oct (9.968 filas) + ventas acumuladas + toppings. `idioma = pap`.
+**Estado de `tenant_1`:** ✅ Alineado (tiene `receta_toppings` + `historial_inventario` con 12 columnas + `producto_id` nullable + columnas de anulación).
+**Estado de `tenant_27`:** ✅ Re-seedeado el 5 Oct (9.968 filas) + ventas acumuladas + toppings + anulación. `idioma = pap`.
 
 ### 📌 Arquitectura de `public.*` (post-DT-36)
 
@@ -158,7 +161,7 @@
 
 | # | Módulo | Estado |
 |---|--------|--------|
-| 1 | Punto de Venta | ✅ COMPLETO (⚠️ ver Feature Anulación Recibos) |
+| 1 | Punto de Venta | ✅ COMPLETO (con anulación) |
 | 2 | Producción Diaria | ✅ COMPLETO (con toppings) |
 | 3 | Productos Externos | ✅ COMPLETO |
 | 4 | Recetas y Fórmulas | ✅ COMPLETO (**con toppings**) |
@@ -175,6 +178,10 @@
 ## 6️⃣ Últimos commits pusheados
 
 ```text
+4ecfde9 feat(anulacion-pos): UI frontend, modal y blindaje de reportes financieros (bloques 6 y 7)
+1513c9a fix(anulacion-pos): cierre diario y vista excluyen ventas anuladas (bloque 4/7)
+494f190 feat(anulacion-pos): helper Venta.puede_anularse() + fix FK ambigua (bloque 2/7)
+722beb5 feat(anulacion-pos): agregar total_anulaciones a cierres_diarios (bloque 1/7)
 9e645ba feat: agregar toppings a recetas con calculo de costos, descuento de stock, historial de inventario y visualizacion en modal de produccion
 f213e33 docs: HANDOFF v9.2 - DT-37 F5 COMPLETADO (100%) + nuevo plan pre-Dockerizacion (fases A-G) + 2 features pendientes (recetas/toppings, anulacion POS) - DT-CREDITOS eliminada
 c54d9eb feat(DT-37 F5): migrar ventas_avanzado.html a i18n (es/en/pap) — F5 COMPLETADO (100%)
@@ -199,7 +206,7 @@ a0de295 feat(DT-37 F5): migrar reportes.html y cierre_caja.html a i18n
 4	Recetas y fórmulas	✅	12 recetas / 80 ingredientes
 5	Productos	✅	12
 6	Producción diaria	✅	~2.416
-7	Ventas	✅	~7.033 (+4 del smoke test)
+7	Ventas	✅	~7.033 (+4 del smoke test) (+2 de anulación)
 8	Productos externos	✅	12
 9	Activos fijos	✅	36
 10	Movimientos financieros	✅	261
@@ -233,7 +240,23 @@ Feature Toppings (NUEVO):
 
 /api/calcular_ingredientes/<id> — API con toppings.
 
+Feature Anulación POS (NUEVO):
+
+/ventas_del_dia — Historial del día para anulación desde frontend.
+
+POST /anular_venta/<id> — Endpoint backend de anulación.
+
 9️⃣ Deuda técnica acumulada
+✅ RESUELTAS el 28 Octubre 2026 (tarde) — Feature Anulación POS
+#	Descripción	Commit
+Feature	Migración BD: campos de anulación en ventas y cierres	722beb5
+Feature	Modelo Venta.estado + helper puede_anularse()	494f190
+Bug	AmbiguousForeignKeysError en Usuario.ventas_realizadas	494f190
+Feature	Endpoint /anular_venta/<id> con reversión de stock	1513c9a
+Fix	realizar_cierre y obtener_ventas_dia excluyen anuladas	1513c9a
+Feature	UI: ventas_del_dia.html + botón en navbar	4ecfde9
+Fix	Blindaje de 11 consultas en reportes financieros	4ecfde9
+
 ✅ RESUELTAS el 24 Octubre 2026 (noche) — Feature Toppings
 #	Descripción	Commit
 Feature	Nueva tabla receta_toppings + CHECK constraint	9e645ba
@@ -251,6 +274,7 @@ Bug	Modelo HistorialInventario desalineado con BD	9e645ba
 Bug	JS roto en crear_receta.html (âO DEL FORMULARIO)	9e645ba
 Bug	JS roto en produccion_diaria.html (âPIDAS)	9e645ba
 Migración	SQL para tenants existentes (tenant_1, tenant_27)	9e645ba
+
 ✅ RESUELTAS el 24 Octubre 2026 (tarde) — DT-37 F5 (parte 2 y final)
 #	Descripción	Commit
 DT-37 F5.7	Migrar ventas_periodo.html + fix multi-tenant	0af8fcf
@@ -261,6 +285,7 @@ DT-37 F5.11	Migrar secciones/recomendaciones.html	84b9080
 DT-37 F5.12	Migrar secciones/resumen_ventas.html	ec2687e
 DT-37 F5.13	Migrar secciones/analisis_ia.html	61edb44
 DT-37 F5.14	Migrar ventas_avanzado.html (padre) — F5 COMPLETADO	c54d9eb
+
 ✅ RESUELTAS el 23 Octubre 2026 — DT-37 F5 (parte 1)
 #	Descripción	Commit
 DT-37 F5.1	Migrar reportes.html (menú principal)	a0de295
@@ -271,11 +296,13 @@ DT-37 F5.5	Migrar reporte_inventario_externo.html + fix export PDF	2f9a5fe
 DT-37 F5.6	Migrar reporte_ventas_externas.html + fix export PDF	3ea5612
 DT-babel-fix	babel.cfg corregido a [jinja2: **.html]	a0de295
 DT-app-import	from flask_babel import Babel, gettext as _ en app.py:1264	2f9a5fe
+
 ✅ RESUELTAS el 18 Octubre 2026 — DT-37 F4.6 + F4.7 + F4.8
 #	Descripción	Commit
 DT-37 F4.6	ia_predictivo (método + 3 helpers)	b7d76b9
 DT-37 F4.7	historial_pagos + historial_depositos	89c2568
 DT-37 F4.8	tesoreria_unificado (método + 4 helpers) + _generar_reporte_error	6b6204b
+
 ✅ RESUELTAS el 16 Octubre 2026 — DT-37 F4 (parte 1-5 + fix)
 #	Descripción	Commit
 DT-37 F4.1	estado_resultados	41dc685 + 186d78b
@@ -283,6 +310,7 @@ DT-37 F4.2	flujo_caja	8c53f4a
 DT-37 F4.3	conciliacion_bancaria	9ddc83f
 DT-37 F4.4	analisis_gastos	4cbc257
 DT-37 F4.5	analisis_inventarios	8430027
+
 ✅ RESUELTAS el 15 Octubre 2026 — DT-37 (parcial)
 #	Descripción	Commit
 DT-37 F0	Campo idioma en ConfiguracionSistema + migración BD + UI	85f8cf5
@@ -290,6 +318,7 @@ DT-37 F1	Instalación Flask-Babel + Babel	fbea5d8
 DT-37 F2	Babel(app) + _get_locale() + hook en before_request	fbea5d8
 DT-37 F3	Reporte piloto (tendencia_ventas) migrado a i18n	9490e97 + 5860fdf
 DT-37 Papiamento	Catálogo pap completo (53 traducciones)	93a1e82
+
 🟡 Medias pendientes
 #	Ubicación	Descripción
 DT-37 F5-pulido	app.py / reportes.py	Gráficos de matplotlib (en reporte_activos.html y otros) tienen títulos en español hardcodeados en Python. Requiere i18n en funciones que generan imágenes. Estimación: ~1 h por reporte.
@@ -315,6 +344,7 @@ DT-nueva-cosmética	ventas_periodo.html tiene datos demo hardcodeados en tabla D
 DT-nueva-traducción	al → Real en PAP (heredado). Mejor te o hasta.
 DT-nueva-traducción	Medio → Average/Promedio (heredado). Mejor Medium/Medio. Similar para Bajo → LOW/ABOU (heredado).
 DT-nueva	tenant_1 (plantilla de referencia) tiene una estructura de historial_inventario ligeramente diferente a tenant_27 (no tiene FK en orden_produccion_id). Evaluar alinear en la Fase A-F de pre-Dockerización.
+
 🔟 Metodología de trabajo
 Reglas de oro (heredadas de v9.2)
 Un paso a la vez con confirmación antes de continuar.
@@ -408,6 +438,13 @@ Verificar los Print de JavaScript en templates — el mojibake puede romper el J
 
 tenant_1 (plantilla) y tenant_27 (demo) DEBEN tener la misma estructura. Al agregar columnas/tablas, aplicar la migración a ambos.
 
+🚨 NUEVAS Reglas de oro (Aprendidas en Feature Anulación, 28 Oct 2026)
+1. **Soft-delete siempre:** Las ventas nunca se borran físicamente. Cambian de estado (`COMPLETADA` / `ANULADA`).
+2. **Filtrado universal:** Cada vez que se consulte la tabla `Venta` para reportes o cálculos de dinero, se DEBE inyectar `Venta.estado == 'COMPLETADA'`.
+3. **FKs ambiguas:** Al agregar una segunda FK a una tabla ya relacionada en SQLAlchemy, es obligatorio declarar `foreign_keys='Tabla.columna'` en el `relationship` para evitar `AmbiguousForeignKeysError`.
+4. **Cierre de caja blindado:** El sistema no permite anular ventas si el día ya tiene un cierre de caja (`CierreDiario`) confirmado.
+5. **Seguridad DIAN:** Las facturas electrónicas (`tipo_documento == 'ELECTRONICA'`) NUNCA se pueden anular en el POS; requieren nota crédito.
+
 Comandos útiles (ACTUALIZADOS)
 cmd
 # Pipeline i18n
@@ -429,6 +466,7 @@ psql -U postgres -p 5433 -h localhost -d panaderia_master -c "SELECT h.id, mp.no
 python _test_jinja.py <template.html>
 python _test_mo.py
 python _test_descuento.py
+python _audit_schema.py
 
 # Comandos heredados
 chcp 65001
@@ -438,6 +476,7 @@ python app.py
 findstr /n /c:"patrón exacto" archivo.py
 pg_dump -U postgres -p 5433 -h localhost -d panaderia_master -F c -f backup_pre_XXX.backup
 git commit -F _commit_msg.txt && del _commit_msg.txt
+
 Scripts de utilidad que DEBEN existir en el proyecto
 _limpiar_fuzzy.py — elimina líneas #, fuzzy de los .po. CRÍTICO.
 
@@ -548,38 +587,25 @@ JS roto en produccion_diaria.html (âPIDAS).
 Commit
 9e645ba
 
-2️⃣2️⃣ 🆕 Feature pendiente: Anulación de recibos POS
+2️⃣2️⃣ 🆕 Feature: Anulación de recibos POS (COMPLETADA 28 Oct 2026)
 Origen: Detectado en sesión 24 Oct 2026.
 
-Problema: Actualmente NO se pueden eliminar recibos POS del sistema. Si una compra queda mal registrada (por error del cajero, doble venta, venta cancelada, cliente que se arrepiente), NO hay forma de revertir la operación.
+Problema resuelto: Anular ventas POS sin romper la auditoría.
 
-Necesidad: Implementar un mecanismo para eliminar un recibo POS que:
+Alcance implementado:
+- **Soft-delete:** Las ventas NUNCA se borran. Cambian a estado `ANULADA`.
+- **Límite de tiempo:** Solo se puede anular dentro de las **24 horas** siguientes.
+- **Cierre de caja:** NO se puede anular si el día ya tiene un cierre de caja confirmado.
+- **Seguridad Legal:** Las facturas `ELECTRONICA` NUNCA se pueden anular (nota crédito DIAN).
+- **Permisos:** Cualquier cajero puede anular sus propias ventas de su turno.
+- **Frontend:** Botón "Ventas de Hoy" en navbar de POS. Pantalla `ventas_del_dia.html` con modal de anulación y recarga dinámica.
+- **Backend:** Endpoint `POST /anular_venta/<id>` (revierte stock de productos internos y externos + HistorialInventario).
+- **Blindaje Financiero:** 11 filtros `Venta.estado == 'COMPLETADA'` inyectados en el Dashboard, Cierre de Caja, Reporte Visual de Cierre, y todos los reportes PDF (`estado_resultados`, `flujo_caja`, `analisis_productos`, `rotacion`, etc).
+- **Migraciones:** `2026-10-26_add_anulacion_ventas.sql` y `2026-10-26_add_total_anulaciones_cierres.sql`.
+- **Modelos:** `Venta.estado` + método `puede_anularse()`. `CierreDiario.total_anulaciones`.
+- **Fixes:** `AmbiguousForeignKeysError` en `Usuario.ventas_realizadas`.
 
-Revierta las cantidades facturadas al stock en vitrina.
-
-Revierta los movimientos financieros asociados.
-
-Registre el motivo de la eliminación (auditoría).
-
-Mantenga trazabilidad (quién, cuándo, por qué).
-
-No elimine físicamente el registro (soft delete o estado ANULADA).
-
-Acción previa (al implementar): Solicitar al usuario (Mauricio) ampliar la información sobre:
-
-¿Qué permisos debe tener el usuario para anular recibos (solo admin, admin + supervisor)?
-
-¿Debe quedar registro de la venta anulada para reportes (con signo negativo)?
-
-¿Aplica a ventas electrónicas también o solo a POS?
-
-¿Hay un límite de tiempo para anular (ej. solo del día en curso)?
-
-¿Cómo se refleja en el cierre de caja ya realizado?
-
-Prioridad: Media-alta (afecta operación diaria del POS).
-Estimación: ~3-5 h (requiere sesión dedicada con cuestionario previo).
-Ubicación esperada: models.py (Venta con estado), app.py (endpoint /anular_venta), templates/punto_venta.html (botón "Anular"), reportes.py (reflejar anuladas).
+Commit: `4ecfde9`
 
 2️⃣3️⃣ 🆕 Plan de trabajo: Análisis pre-Dockerización (SINCRONIZACIÓN MODELOS/APP/BD)
 Origen: Detectado en sesión 24 Oct 2026 (feedback del usuario antes de Dockerizar).
@@ -696,11 +722,11 @@ Premium: 3 usuarios.
 
 Básica: 1 usuario.
 
-Estimación de tiempos (24 Oct 2026)
+Estimación de tiempos (28 Oct 2026)
 Bloque	Estimación
 DT-37 F5	✅ COMPLETADO (100%)
 Feature Toppings	✅ COMPLETADO (24 Oct 2026)
-Feature Anulación POS	~3-5 h (próxima sesión)
+Feature Anulación POS	✅ COMPLETADO (28 Oct 2026)
 i18n diccionarios Python	~2-4 h (baja prioridad)
 Auditoría ORM ↔ BD	~1-2 h
 Tenant test + smoke test	~1-2 h
@@ -725,42 +751,33 @@ El sistema está listo para Docker una vez completadas las fases A-F de pre-Dock
 
 ✅ Feature Toppings completa.
 
+✅ Feature Anulación POS completa.
+
 🟡 Pre-Dockerización pendiente (fases A-F).
 
 🟡 Fase G: Dockerfile + docker-compose.yml (a crear).
 
 2️⃣6️⃣ 🆕 PLAN DE TRABAJO — Próximas sesiones (orden prioritario)
-Orden definido por Mauricio (24 Oct 2026):
+Orden definido por Mauricio (28 Oct 2026):
 
-Fase 1 — Anulación de recibos POS (~3-5 h)
-Prioridad: Media-alta.
-Requisito: Cuestionario previo (ver sección 2️⃣2️⃣).
-Entregable: Funcionalidad completa de anulación (revertir stock + movimientos + trazabilidad).
+Fase 1 — Auditoría ORM ↔ BD (~1-2 h)
+Objetivo: Verificar con `_audit_schema.py` que no haya discrepancias entre models.py y la BD real (tenant_1 y tenant_27).
+Entregable: Reporte de discrepancias + fixes.
 
 Fase 2 — i18n de diccionarios Python (~2-4 h)
 Prioridad: Baja (si es necesario; sino dejar como está).
 Alcance: Migrar los diccionarios de app.py que alimentan reportes HTML (analisis_tendencias.mensaje, recomendacion.titulo, etc.). Ver DT-nueva-media-baja.
 Decisión: Evaluar si vale la pena o se deja como deuda aceptada.
 
-Fase 3 — Auditoría ORM ↔ BD (sincronización) (~1-2 h)
-Objetivo: Verificar con git y information_schema que no haya discrepancias entre:
-
-models.py (modelo ORM).
-
-app.py (CREATE TABLE manuales).
-
-BD real (tenant_1 y tenant_27).
-Entregable: Reporte de discrepancias + fixes.
-
-Fase 4 — Tenant test + smoke test (~1-2 h)
+Fase 3 — Tenant test + smoke test (~1-2 h)
 Objetivo: Crear un tenant nuevo desde cero con crear_tenant_saas() y verificar que TODAS las funcionalidades funcionen.
 Entregable: Confirmación de que un tenant nuevo nace 100% funcional.
 
-Fase 5 — Pre-Dockerización (Fases A-F) (~13-15 h)
+Fase 4 — Pre-Dockerización (Fases A-F) (~13-15 h)
 Prioridad: CRÍTICA (bloqueante para dockerizar).
 Alcance: Ver sección 2️⃣3️⃣.
 
-Fase 6 — Dockerización (Fase G) (~22-32 h)
+Fase 5 — Dockerización (Fase G) (~22-32 h)
 Prioridad: Alta.
 Alcance: Crear Dockerfile + docker-compose.yml con PostgreSQL.
 
@@ -769,15 +786,13 @@ Al iniciar un nuevo chat, pegar este archivo como contexto inicial.
 
 Instrucción sugerida:
 
-"Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el archivo HANDOFF.md v9.3 con el contexto maestro. Vamos a continuar desde donde lo dejamos. Por favor actúa como instructor guiando paso a paso, con la metodología de trabajo descrita en el HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/findstr, commit tras cada fix verificado. Al insertar bloques, muéstrame ANTES → DESPUÉS con número de línea exacto. Tú me das LUZ VERDE cuando los cambios estén 100% validados. Yo aplico los cambios en mi editor."
+"Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el archivo HANDOFF.md v9.4 con el contexto maestro. Vamos a continuar desde donde lo dejamos. Por favor actúa como instructor guiando paso a paso, con la metodología de trabajo descrita en el HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/findstr, commit tras cada fix verificado. Al insertar bloques, muéstrame ANTES → DESPUÉS con número de línea exacto. Tú me das LUZ VERDE cuando los cambios estén 100% validados. Yo aplico los cambios en mi editor."
 
 Próxima tarea (orden definido por Mauricio):
 
-Anulación de recibos POS (~3-5 h) — empezar con cuestionario previo.
+Auditoría ORM ↔ BD (~1-2 h) — verificar sincronización.
 
 i18n de diccionarios Python (~2-4 h) — evaluar si es necesario.
-
-Auditoría ORM ↔ BD (~1-2 h) — verificar sincronización.
 
 Tenant test + smoke test (~1-2 h) — verificar tenant nuevo.
 
@@ -786,9 +801,9 @@ Pre-Dockerización (Fases A-F) (~13-15 h) — CRÍTICA.
 Dockerización (Fase G) (~22-32 h).
 
 ✅ Última validación
-Último commit: 9e645ba (Feature Toppings, pusheado).
+Último commit: `4ecfde9` (Feature Anulación POS, pusheado).
 
-Última sesión: 24 Oct 2026 — Feature Toppings COMPLETADA (100%).
+Última sesión: 28 Oct 2026 — Feature Anulación POS COMPLETADA (100%).
 
 Working tree: clean.
 
@@ -810,15 +825,15 @@ DT-37: ✅ F0-F5 COMPLETADAS (100%).
 
 Feature Toppings: ✅ COMPLETADA (100%).
 
-Resueltas: DT-19, DT-25, DT-28, DT-29, DT-42, DT-43, DT-45, DT-46, DT-47, DT-5-bis, DT-5-quinquies, DT-5-quater-bis, DT-37 F0-F5, Feature Toppings.
+Feature Anulación POS: ✅ COMPLETADA (100%).
+
+Resueltas: DT-19, DT-25, DT-28, DT-29, DT-42, DT-43, DT-45, DT-46, DT-47, DT-5-bis, DT-5-quinquies, DT-5-quater-bis, DT-37 F0-F5, Feature Toppings, Feature Anulación POS.
 
 Pendientes principales:
 
-Feature Anulación POS: ~3-5 h.
+Auditoría ORM ↔ BD: ~1-2 h.
 
 i18n diccionarios Python: ~2-4 h (baja).
-
-Auditoría ORM ↔ BD: ~1-2 h.
 
 Tenant test + smoke test: ~1-2 h.
 
@@ -826,4 +841,4 @@ Pre-Dockerización (Fases A-F): ~13-15 h.
 
 Dockerización (Fase G): ~22-32 h.
 
-Fin del HANDOFF.md — v9.3
+Fin del HANDOFF.md — v9.4

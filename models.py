@@ -1472,6 +1472,64 @@ class HistorialInventario(db.Model):
     materia_prima = db.relationship('MateriaPrima', backref='movimientos_inventario')
     orden_produccion = db.relationship('OrdenProduccion', backref='movimientos_inventario')
 
+
+
+
+# =============================================
+# BAJA DE INVENTARIO (Feature 28 Oct 2026)
+# =============================================
+class BajaInventario(db.Model):
+    """
+    Baja de inventario: registra pérdidas de productos de VITRINA
+    (solo tipo_producto='produccion') por VENCIMIENTO o ROTURA/Daño.
+
+    ⚠️ NO confundir con:
+    - Consumo Interno / Donaciones (flujo POS existente, uso autorizado).
+    - Merma de fórmulas/recetas (pérdida en producción, otro módulo).
+
+    Impacto:
+    - Descuenta stock de productos (vitrina).
+    - Registra movimiento 'BAJA_INVENTARIO' en historial_inventario.
+    - Alimenta el gasto "Pérdidas por Baja de Inventario" en estado_resultados.
+    - NO afecta efectivo físico (no entra al cierre de caja como movimiento).
+
+    Multi-tenant: cada baja tiene panaderia_id.
+    """
+    __tablename__ = 'bajas_inventario'
+
+    id = db.Column(db.Integer, primary_key=True)
+    panaderia_id = db.Column(db.Integer, nullable=False)
+
+    # FK al producto de vitrina dado de baja
+    producto_id = db.Column(db.Integer, db.ForeignKey('productos.id'), nullable=False)
+    cantidad = db.Column(db.Integer, nullable=False)
+
+    # Motivo: solo VENCIMIENTO o ROTURA (CHECK en BD)
+    # ❌ PROHIBIDO: 'DONADO', 'CONSUMO_INTERNO' (esos van por POS)
+    motivo = db.Column(db.String(20), nullable=False)
+
+    # Snapshot de costos al momento de la baja
+    # (no se recalcula si el producto cambia de costo_compra después)
+    costo_unitario = db.Column(db.Float, nullable=False, default=0)
+    costo_total = db.Column(db.Float, nullable=False, default=0)
+
+    # Trazabilidad
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=True)
+    fecha_baja = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    observaciones = db.Column(db.Text, nullable=True)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    # ⚠️ NO declaramos relationship('Producto') ni relationship('Usuario') aquí.
+    # Razón: evitar AmbiguousForeignKeysError (lección del 28 Oct).
+    # Si en el futuro se necesita navegación (baja.producto.nombre), se agrega
+    # con foreign_keys='BajaInventario.producto_id' explícito.
+    #
+    # Navegación por FK en query explícita cuando se necesite:
+    #   BajaInventario.query.join(Producto, BajaInventario.producto_id == Producto.id)
+
+
+# =============================================
 # =============================================
 # NUEVOS MODELOS PARA STOCK Y PRODUCCIÓN DIARIA
 # =============================================
