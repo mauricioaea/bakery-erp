@@ -1,0 +1,336 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Baja de Inventario') }}{% endblock %}
+
+{% block content %}
+<style>
+    /* Ocultar el menú lateral para que esta pantalla sea rápida y enfocada */
+    .sidebar { display: none !important; }
+    .col-md-9.ms-sm-auto.col-lg-10.px-md-4 { width: 100% !important; max-width: 100% !important; flex: 0 0 100% !important; }
+    main { width: 100% !important; max-width: 100% !important; padding: 0 !important; }
+</style>
+
+<div class="container mt-4" style="max-width: 1100px;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="fas fa-box-open text-warning"></i> {{ _('Baja de Inventario') }}</h2>
+            <p class="text-muted mb-0">Registra productos de vitrina vencidos o dañados para mantener el inventario exacto.</p>
+        </div>
+        <div>
+            <h4 class="text-muted text-end mb-2">{{ hoy.strftime('%d/%m/%Y') }}</h4>
+            <a href="{{ url_for('punto_venta') }}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-left"></i> Volver al POS
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- ============================================================ -->
+        <!-- COLUMNA IZQUIERDA: Selector de productos (carrito) -->
+        <!-- ============================================================ -->
+        <div class="col-md-7">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <i class="fas fa-cart-plus"></i> {{ _('Agregar Producto') }}
+                </div>
+                <div class="card-body">
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-7">
+                            <label class="form-label small">Producto de vitrina</label>
+                            <select id="selectProducto" class="form-select">
+                                <option value="">{{ _('-- Cargando... --') }}</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small">{{ _('Cantidad') }}</label>
+                            <input type="number" id="inputCantidad" class="form-control" min="1" value="1">
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="button" class="btn btn-success w-100" onclick="agregarItem()">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <table class="table table-sm align-middle" id="tablaCarrito">
+                        <thead class="table-light">
+                            <tr>
+                                <th>{{ _('Producto') }}</th>
+                                <th class="text-center" style="width: 80px;">{{ _('Cant.') }}</th>
+                                <th class="text-end" style="width: 100px;">{{ _('Costo U.') }}</th>
+                                <th class="text-end" style="width: 100px;">{{ _('Subtotal') }}</th>
+                                <th class="text-center" style="width: 50px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="carritoTbody">
+                            <tr id="filaVacia"><td colspan="5" class="text-center text-muted py-3"><em>Sin productos seleccionados</em></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- COLUMNA DERECHA: Motivo + Observaciones + Total + Botón -->
+        <!-- ============================================================ -->
+        <div class="col-md-5">
+            <div class="card shadow-sm">
+                <div class="card-header bg-danger text-white">
+                    <i class="fas fa-exclamation-triangle"></i> Datos de la Baja
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">{{ _('Motivo') }} <span class="text-danger">*</span></label>
+                        <select id="selectMotivo" class="form-select">
+                            <option value="">{{ _('-- Seleccionar --') }}</option>
+                            <option value="VENCIMIENTO">{{ _('Vencimiento (fecha caducada)') }}</option>
+                            <option value="ROTURA">{{ _('Rotura / Daño (producto destruido)') }}</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">{{ _('Observaciones') }}</label>
+                        <textarea id="inputObservaciones" class="form-control" rows="3" placeholder="{{ _('Detalle opcional (ej. lote X, producto aplastado por caja...)') }}"></textarea>
+                    </div>
+
+                    <hr>
+
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">{{ _('Productos') }}:</span>
+                        <strong id="lblCantidadItems">0</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="text-muted">{{ _('Costo total de pérdida') }}:</span>
+                        <strong class="text-danger fs-5" id="lblCostoTotal">$0.00</strong>
+                    </div>
+
+                    <button type="button" class="btn btn-danger w-100 btn-lg" id="btnRegistrarBaja" onclick="registrarBaja()" disabled>
+                        <i class="fas fa-check-circle"></i> {{ _('Registrar Baja') }}
+                    </button>
+                </div>
+            </div>
+
+            <!-- Panel inferior: bajas del día -->
+            <div class="card shadow-sm mt-3">
+                <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-list"></i> {{ _('Historial de Bajas') }} <small class="opacity-75">({{ fecha_actual_str }})</small></span>
+                </div>
+                
+                <!-- Filtro -->
+                <div class="card-body border-bottom bg-light p-2">
+                    <form method="GET" action="{{ url_for('baja_inventario') }}" class="d-flex gap-2">
+                        <input type="date" name="fecha" class="form-control form-control-sm" value="{{ filtro_fecha }}">
+                        <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-search"></i></button>
+                        <a href="{{ url_for('baja_inventario', ver='todo') }}" class="btn btn-sm btn-outline-secondary" title="Ver todo el historial"><i class="fas fa-list-ul"></i></a>
+                        <a href="{{ url_for('baja_inventario') }}" class="btn btn-sm btn-outline-success" title="Hoy"><i class="fas fa-calendar-day"></i></a>
+                    </form>
+                </div>
+                <div class="card-body p-2">
+                    {% if bajas_hoy %}
+                        <ul class="list-unstyled mb-0 small">
+                        {% for b in bajas_hoy %}
+                            <li class="border-bottom py-1">
+                                <i class="fas fa-times-circle text-danger"></i>
+                                <strong>{{ b.cantidad }}×</strong> {{ b._nombre_producto }} <!-- ✅ Nombre real -->
+                                <span class="text-muted small">({{ b.motivo }})</span>
+                                <span class="float-end">${{ '%.2f'|format(b.costo_total or 0) }}</span>
+                                {% if b.observaciones %}
+                                    <br><small class="text-muted ms-3 fst-italic">{{ b.observaciones }}</small>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                        </ul>
+                        <div class="d-flex justify-content-between mt-2 pt-2 border-top">
+                            <strong>Total del período:</strong>
+                            <strong class="text-danger">${{ '%.2f'|format(total_bajas_hoy or 0) }}</strong>
+                        </div>
+                    {% else %}
+                        <p class="text-muted small mb-0 text-center py-2"><em>Sin bajas registradas hoy</em></p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ============================================================
+    // Estado del carrito
+    // ============================================================
+    let productosDisponibles = [];
+    let carrito = [];
+
+    // ============================================================
+    // Cargar productos de vitrina al iniciar
+    // ============================================================
+    document.addEventListener('DOMContentLoaded', function() {
+        fetch('/api/productos_vitrina')
+            .then(r => r.json())
+            .then(data => {
+                if (!data.success) {
+                    alert('Error cargando productos: ' + (data.error || 'desconocido'));
+                    return;
+                }
+                productosDisponibles = data.productos || [];
+                const select = document.getElementById('selectProducto');
+                select.innerHTML = '<option value="">-- Seleccionar producto --</option>';
+                productosDisponibles.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.textContent = `${p.nombre} (stock: ${p.stock_actual})`;
+                    select.appendChild(opt);
+                });
+            })
+            .catch(e => {
+                alert('Error de red cargando productos: ' + e);
+            });
+    });
+
+    // ============================================================
+    // Agregar item al carrito
+    // ============================================================
+    function agregarItem() {
+        const select = document.getElementById('selectProducto');
+        const inputCant = document.getElementById('inputCantidad');
+        const productoId = parseInt(select.value);
+        const cantidad = parseInt(inputCant.value);
+
+        if (!productoId) {
+            alert('Selecciona un producto.');
+            return;
+        }
+        if (!cantidad || cantidad <= 0) {
+            alert('La cantidad debe ser mayor a 0.');
+            return;
+        }
+
+        const producto = productosDisponibles.find(p => p.id === productoId);
+        if (!producto) {
+            alert('Producto no encontrado.');
+            return;
+        }
+
+        // Validar stock disponible
+        const existente = carrito.find(c => c.producto_id === productoId);
+        const cantidadYaEnCarrito = existente ? existente.cantidad : 0;
+        if ((cantidadYaEnCarrito + cantidad) > producto.stock_actual) {
+            alert(`Stock insuficiente. Disponible: ${producto.stock_actual}, ya en carrito: ${cantidadYaEnCarrito}.`);
+            return;
+        }
+
+        if (existente) {
+            existente.cantidad += cantidad;
+            existente.subtotal = existente.cantidad * existente.costo_unitario;
+        } else {
+            carrito.push({
+                producto_id: productoId,
+                nombre: producto.nombre,
+                cantidad: cantidad,
+                costo_unitario: producto.costo_compra,
+                subtotal: cantidad * producto.costo_compra,
+            });
+        }
+
+        // Limpiar form
+        select.value = '';
+        inputCant.value = 1;
+        renderCarrito();
+    }
+
+    // ============================================================
+    // Quitar item del carrito
+    // ============================================================
+    function quitarItem(idx) {
+        carrito.splice(idx, 1);
+        renderCarrito();
+    }
+
+    // ============================================================
+    // Renderizar tabla + totales
+    // ============================================================
+    function renderCarrito() {
+        const tbody = document.getElementById('carritoTbody');
+        const filaVacia = document.getElementById('filaVacia');
+
+        if (carrito.length === 0) {
+            tbody.innerHTML = '<tr id="filaVacia"><td colspan="5" class="text-center text-muted py-3"><em>{{ _("Sin productos seleccionados") }}</em></td></tr>';
+            document.getElementById('lblCantidadItems').textContent = '0';
+            document.getElementById('lblCostoTotal').textContent = '$0.00';
+            document.getElementById('btnRegistrarBaja').disabled = true;
+            return;
+        }
+
+        tbody.innerHTML = '';
+        let total = 0;
+        carrito.forEach((item, idx) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${item.nombre}</td>
+                <td class="text-center">${item.cantidad}</td>
+                <td class="text-end">$${item.costo_unitario.toFixed(2)}</td>
+                <td class="text-end">$${item.subtotal.toFixed(2)}</td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="quitarItem(${idx})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+            total += item.subtotal;
+        });
+
+        document.getElementById('lblCantidadItems').textContent = carrito.length;
+        document.getElementById('lblCostoTotal').textContent = '$' + total.toFixed(2);
+        document.getElementById('btnRegistrarBaja').disabled = false;
+    }
+
+    // ============================================================
+    // Registrar la baja
+    // ============================================================
+    function registrarBaja() {
+        const motivo = document.getElementById('selectMotivo').value;
+        const observaciones = document.getElementById('inputObservaciones').value.trim();
+        const btn = document.getElementById('btnRegistrarBaja');
+
+        if (!motivo) {
+            alert('Selecciona un motivo (VENCIMIENTO o ROTURA).');
+            return;
+        }
+        if (carrito.length === 0) {
+            alert('No hay productos en el carrito.');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registrando...';
+
+        const payload = {
+            items: carrito.map(c => ({ producto_id: c.producto_id, cantidad: c.cantidad })),
+            motivo: motivo,
+            observaciones: observaciones,
+        };
+
+        fetch('/registrar_baja', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload),
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                alert('✅ ' + (data.message || 'Baja registrada.'));
+                window.location.reload();
+            } else {
+                alert('❌ ' + (data.error || 'Error desconocido.'));
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-check-circle"></i> Registrar Baja';
+            }
+        })
+        .catch(e => {
+            alert('❌ Error de red: ' + e);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-check-circle"></i> Registrar Baja';
+        });
+    }
+</script>
+{% endblock %}

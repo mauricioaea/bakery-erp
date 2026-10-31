@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-24 08:44-0500\n"
+"POT-Creation-Date: 2026-10-30 19:04-0500\n"
 "PO-Revision-Date: 2026-10-15 10:38-0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -18,14 +18,15 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
-#: app.py:6521 templates/reporte_inventario_externo.html:6
+#: app.py:6984 templates/reporte_inventario_externo.html:6
 #: templates/reporte_inventario_externo.html:35
 msgid "Reporte de Inventario Externo"
 msgstr "External Inventory Report"
 
-#: app.py:6526 app.py:6711 reportes.py:2254 reportes.py:3096
-#: templates/analisis_predictivo.html:423 templates/cierre_caja.html:537
-#: templates/cierre_caja.html:572 templates/productos_populares.html:385
+#: app.py:6989 app.py:7174 reportes.py:2300 reportes.py:3144
+#: templates/analisis_predictivo.html:423 templates/baja_inventario.html:58
+#: templates/cierre_caja.html:537 templates/cierre_caja.html:572
+#: templates/productos_populares.html:385
 #: templates/productos_populares.html:445
 #: templates/productos_populares.html:527
 #: templates/productos_populares.html:554
@@ -37,7 +38,7 @@ msgstr "External Inventory Report"
 msgid "Producto"
 msgstr "Product"
 
-#: app.py:6526 app.py:6711 reportes.py:1108 reportes.py:3372 reportes.py:3399
+#: app.py:6989 app.py:7174 reportes.py:1142 reportes.py:3420 reportes.py:3447
 #: templates/reporte_activos.html:660 templates/reporte_activos.html:709
 #: templates/reporte_inventario_externo.html:47
 #: templates/reporte_produccion.html:177
@@ -47,49 +48,49 @@ msgstr "Product"
 msgid "Categoría"
 msgstr "Category"
 
-#: app.py:6526 templates/analisis_predictivo.html:424
+#: app.py:6989 templates/analisis_predictivo.html:424
 msgid "Stock"
 msgstr "Total Cost"
 
-#: app.py:6526
+#: app.py:6989
 msgid "Stock Mín"
 msgstr "Minimum Stock"
 
-#: app.py:6526 templates/reporte_inventario_externo.html:50
+#: app.py:6989 templates/reporte_inventario_externo.html:50
 msgid "Precio Compra"
 msgstr "Inventory Value"
 
-#: app.py:6527 templates/reporte_inventario_externo.html:51
+#: app.py:6990 templates/reporte_inventario_externo.html:51
 msgid "Precio Venta"
 msgstr "Sale Price"
 
-#: app.py:6527 app.py:6711 templates/cierre_caja.html:541
-#: templates/cierre_caja.html:808 templates/reporte_inventario_externo.html:52
+#: app.py:6990 app.py:7174 templates/cierre_caja.html:541
+#: templates/cierre_caja.html:839 templates/reporte_inventario_externo.html:52
 #: templates/reporte_ventas_externas.html:103
 msgid "Utilidad"
 msgstr "Profit"
 
-#: app.py:6527 app.py:6711
+#: app.py:6990 app.py:7174
 msgid "Margen %"
 msgstr "Margin"
 
-#: app.py:6527
+#: app.py:6990
 msgid "Valor Inv."
 msgstr "Inventory Value"
 
-#: app.py:6687 templates/reporte_ventas_externas.html:6
+#: app.py:7150 templates/reporte_ventas_externas.html:6
 #: templates/reporte_ventas_externas.html:35
 msgid "Reporte de Ventas Externas"
 msgstr "External Sales Report"
 
-#: app.py:6711 templates/productos_populares.html:387
+#: app.py:7174 templates/productos_populares.html:387
 #: templates/secciones/analisis_productos.html:13
 #: templates/ventas_periodo.html:419
 msgid "Unidades"
 msgstr "Qty"
 
-#: app.py:6711 reportes.py:287 reportes.py:2683 reportes.py:3223
-#: templates/cierre_caja.html:539 templates/cierre_caja.html:794
+#: app.py:7174 reportes.py:297 reportes.py:2730 reportes.py:3271
+#: templates/cierre_caja.html:539 templates/cierre_caja.html:825
 #: templates/productos_populares.html:388
 #: templates/productos_populares.html:446
 #: templates/reporte_ventas_externas.html:101
@@ -98,7 +99,7 @@ msgstr "Qty"
 msgid "Ingresos"
 msgstr "INCOME"
 
-#: app.py:6711 templates/cierre_caja.html:540 templates/cierre_caja.html:801
+#: app.py:7174 templates/cierre_caja.html:540 templates/cierre_caja.html:832
 #: templates/reporte_ventas_externas.html:102
 msgid "Costo"
 msgstr "Total Cost"
@@ -107,103 +108,107 @@ msgstr "Total Cost"
 msgid "ESTADO DE RESULTADOS"
 msgstr "INCOME STATEMENT"
 
-#: reportes.py:89 reportes.py:278 reportes.py:1015 reportes.py:1281
+#: reportes.py:89 reportes.py:288 reportes.py:1049 reportes.py:1325
 #, python-format
 msgid "Período: %(inicio)s a %(fin)s"
 msgstr "Period: %(inicio)s to %(fin)s"
 
-#: reportes.py:100
+#: reportes.py:104
 msgid "SIN DATOS PARA EL PERÍODO"
 msgstr "NO DATA FOR THE PERIOD"
 
-#: reportes.py:101
+#: reportes.py:105
 msgid ""
 "No se encontraron registros de ingresos o gastos para las fechas "
 "seleccionadas."
 msgstr "No income or expense records were found for the selected dates."
 
-#: reportes.py:103 templates/ventas_periodo.html:491
+#: reportes.py:107 templates/ventas_periodo.html:491
 msgid "Recomendaciones:"
 msgstr "Recommendations:"
 
-#: reportes.py:104
+#: reportes.py:108
 msgid "Verifique que las fechas sean correctas"
 msgstr "Verify that the dates are correct"
 
-#: reportes.py:105
+#: reportes.py:109
 msgid "Confirme que existan ventas registradas en el período"
 msgstr "Confirm that there are sales registered in the period"
 
-#: reportes.py:106
+#: reportes.py:110
 msgid "Verifique los cierres de caja del período"
 msgstr "Verify the cash closings for the period"
 
-#: reportes.py:109 reportes.py:263 reportes.py:354 reportes.py:1181
-#: reportes.py:1444 reportes.py:2287 reportes.py:3440 reportes.py:3602
+#: reportes.py:113 reportes.py:273 reportes.py:364 reportes.py:1215
+#: reportes.py:1488 reportes.py:2333 reportes.py:3488 reportes.py:3650
 #, python-format
 msgid "Generado el: %(fecha)s"
 msgstr "Generated on: %(fecha)s"
 
-#: reportes.py:117
+#: reportes.py:121
 msgid "INGRESOS"
 msgstr "INCOME"
 
-#: reportes.py:118 reportes.py:148 reportes.py:709 reportes.py:2683
-#: reportes.py:3035 reportes.py:3181 reportes.py:3399
+#: reportes.py:122 reportes.py:152 reportes.py:743 reportes.py:2730
+#: reportes.py:3083 reportes.py:3229 reportes.py:3447
 msgid "Concepto"
 msgstr "Concept"
 
-#: reportes.py:118 reportes.py:148 reportes.py:709 reportes.py:737
-#: reportes.py:770 reportes.py:1108 reportes.py:3035 reportes.py:3068
-#: reportes.py:3154 reportes.py:3181 reportes.py:3399 reportes.py:3561
+#: reportes.py:122 reportes.py:152 reportes.py:743 reportes.py:771
+#: reportes.py:804 reportes.py:1142 reportes.py:3083 reportes.py:3116
+#: reportes.py:3202 reportes.py:3229 reportes.py:3447 reportes.py:3609
 msgid "Monto"
 msgstr "Amount"
 
-#: reportes.py:126
+#: reportes.py:130
 msgid "TOTAL INGRESOS"
 msgstr "TOTAL INCOME"
 
-#: reportes.py:147
+#: reportes.py:151
 msgid "GASTOS"
 msgstr "EXPENSES"
 
-#: reportes.py:157 reportes.py:1119 reportes.py:3157
+#: reportes.py:163 reportes.py:1258
+msgid "Pérdidas por Baja de Inventario"
+msgstr "Inventory Losses"
+
+#: reportes.py:167 reportes.py:1153 reportes.py:3205
 msgid "TOTAL GASTOS"
 msgstr "TOTAL EXPENSES"
 
-#: reportes.py:181
+#: reportes.py:191
 msgid "RESULTADO NETO DEL PERÍODO"
 msgstr "NET RESULT FOR THE PERIOD"
 
-#: reportes.py:196
+#: reportes.py:206
 msgid "ANÁLISIS DE RENTABILIDAD"
 msgstr "PROFITABILITY ANALYSIS"
 
-#: reportes.py:207
+#: reportes.py:217
 msgid "Margen de Ganancia Neto:"
 msgstr "Net Profit Margin:"
 
-#: reportes.py:208
+#: reportes.py:218
 msgid "Relación Gastos/Ingresos:"
 msgstr "Expense/Income Ratio:"
 
-#: reportes.py:209
+#: reportes.py:219
 msgid "Rentabilidad:"
 msgstr "Profitability:"
 
-#: reportes.py:210
+#: reportes.py:220
 msgid "POSITIVA"
 msgstr "POSITIVE"
 
-#: reportes.py:211
+#: reportes.py:221
 msgid "NEGATIVA"
 msgstr "NEGATIVE"
 
-#: reportes.py:212
+#: reportes.py:222
 msgid "Días del período:"
 msgstr "Days in period:"
 
-#: reportes.py:213 templates/analisis_predictivo.html:356
+#: reportes.py:223 templates/analisis_predictivo.html:356
 #: templates/analisis_predictivo.html:445
 #: templates/secciones/analisis_ia.html:157
 #: templates/secciones/analisis_ia.html:173
@@ -212,315 +217,315 @@ msgstr "Days in period:"
 msgid "días"
 msgstr "days"
 
-#: reportes.py:214
+#: reportes.py:224
 msgid "Ingresos promedio por día:"
 msgstr "Average daily income:"
 
-#: reportes.py:227
+#: reportes.py:237
 msgid "RECOMENDACIONES"
 msgstr "RECOMMENDATIONS"
 
-#: reportes.py:230
+#: reportes.py:240
 msgid "Alerta de Pérdidas:"
 msgstr "Loss Alert:"
 
-#: reportes.py:231
+#: reportes.py:241
 msgid "Se recomienda revisar gastos operativos"
 msgstr "Reviewing operating expenses is recommended"
 
-#: reportes.py:232
+#: reportes.py:242
 msgid "Gastos Elevados:"
 msgstr "High Expenses:"
 
-#: reportes.py:233
+#: reportes.py:243
 msgid "Considerar optimización de costos"
 msgstr "Consider cost optimization"
 
-#: reportes.py:234
+#: reportes.py:244
 msgid "Alta Rentabilidad:"
 msgstr "High Profitability:"
 
-#: reportes.py:235
+#: reportes.py:245
 msgid "Buen desempeño financiero"
 msgstr "Good financial performance"
 
-#: reportes.py:236
+#: reportes.py:246
 msgid "Rentabilidad Moderada:"
 msgstr "Moderate Profitability:"
 
-#: reportes.py:237
+#: reportes.py:247
 msgid "Oportunidad de mejora"
 msgstr "Opportunity for improvement"
 
-#: reportes.py:238
+#: reportes.py:248
 msgid "Rentabilidad Baja:"
 msgstr "Low Profitability:"
 
-#: reportes.py:239
+#: reportes.py:249
 msgid "Evaluar estrategias de crecimiento"
 msgstr "Evaluate growth strategies"
 
-#: reportes.py:240
+#: reportes.py:250
 msgid "Estable:"
 msgstr "Stable:"
 
-#: reportes.py:241
+#: reportes.py:251
 msgid "Mantener estrategias actuales"
 msgstr "Maintain current strategies"
 
-#: reportes.py:277
+#: reportes.py:287
 msgid "REPORTE DE FLUJO DE CAJA"
 msgstr "CASH FLOW REPORT"
 
-#: reportes.py:285
+#: reportes.py:295
 msgid "No hay datos de flujo de caja para el período seleccionado."
 msgstr "No cash flow data available for the selected period."
 
-#: reportes.py:287 reportes.py:737 reportes.py:770 reportes.py:2683
-#: reportes.py:3223 reportes.py:3399 reportes.py:3561
+#: reportes.py:297 reportes.py:771 reportes.py:804 reportes.py:2730
+#: reportes.py:3271 reportes.py:3447 reportes.py:3609
 #: templates/reporte_produccion.html:146
 msgid "Fecha"
 msgstr "Date"
 
-#: reportes.py:287
+#: reportes.py:297
 msgid "Gastos"
 msgstr "EXPENSES"
 
-#: reportes.py:287 reportes.py:3184
+#: reportes.py:297 reportes.py:3232
 msgid "Flujo Neto"
 msgstr "Net Flow"
 
-#: reportes.py:287
+#: reportes.py:297
 msgid "Saldo Acumulado"
 msgstr "CUMULATIVE BALANCE"
 
-#: reportes.py:304 reportes.py:2702
+#: reportes.py:314 reportes.py:2749
 msgid "TOTALES"
 msgstr "TOTALS"
 
-#: reportes.py:331
+#: reportes.py:341
 msgid "ANÁLISIS DE FLUJO DE CAJA"
 msgstr "CASH FLOW ANALYSIS"
 
-#: reportes.py:338
+#: reportes.py:348
 msgid "Flujo neto total:"
 msgstr "Total net flow:"
 
-#: reportes.py:339
+#: reportes.py:349
 msgid "Promedio diario:"
 msgstr "Daily average:"
 
-#: reportes.py:340
+#: reportes.py:350
 msgid "Días con flujo positivo:"
 msgstr "Days with positive flow:"
 
-#: reportes.py:341
+#: reportes.py:351
 msgid "de"
 msgstr "of"
 
-#: reportes.py:342
+#: reportes.py:352
 msgid "Saldo final del período:"
 msgstr "ENDING BALANCE FOR THE PERIOD:"
 
-#: reportes.py:689
+#: reportes.py:723
 msgid "CONCILIACIÓN BANCARIA"
 msgstr "BANK RECONCILIATION"
 
-#: reportes.py:690
+#: reportes.py:724
 #, python-format
 msgid "Fecha de Corte: %(fecha)s"
 msgstr "Cut-off Date: %(fecha)s"
 
-#: reportes.py:706
+#: reportes.py:740
 msgid "COMPARACIÓN DE SALDOS"
 msgstr "BALANCE COMPARISON"
 
-#: reportes.py:710
+#: reportes.py:744
 msgid "Saldo según Extracto Bancario"
 msgstr "Balance per Bank Statement"
 
-#: reportes.py:711 reportes.py:807
+#: reportes.py:745 reportes.py:841
 msgid "Saldo según Sistema"
 msgstr "Balance per System"
 
-#: reportes.py:712
+#: reportes.py:746
 msgid "Diferencia a Conciliar"
 msgstr "Difference to Reconcile"
 
-#: reportes.py:736
+#: reportes.py:770
 msgid "DEPÓSITOS EN TRÁNSITO"
 msgstr "DEPOSITS IN TRANSIT"
 
-#: reportes.py:737
+#: reportes.py:771
 msgid "Descripción"
 msgstr "Description"
 
-#: reportes.py:737 reportes.py:2683 reportes.py:3561
+#: reportes.py:771 reportes.py:2730 reportes.py:3609
 msgid "Referencia"
 msgstr "Reference"
 
-#: reportes.py:748
+#: reportes.py:782
 msgid "TOTAL DEPÓSITOS EN TRÁNSITO"
 msgstr "TOTAL DEPOSITS IN TRANSIT"
 
-#: reportes.py:769
+#: reportes.py:803
 msgid "CHEQUES PENDIENTES DE COBRO"
 msgstr "OUTSTANDING CHECKS"
 
-#: reportes.py:770
+#: reportes.py:804
 msgid "Beneficiario"
 msgstr "Payee"
 
-#: reportes.py:770
+#: reportes.py:804
 msgid "N° Cheque"
 msgstr "Check #"
 
-#: reportes.py:781
+#: reportes.py:815
 msgid "TOTAL CHEQUES PENDIENTES"
 msgstr "TOTAL OUTSTANDING CHECKS"
 
-#: reportes.py:800
+#: reportes.py:834
 msgid "RESUMEN DE CONCILIACIÓN"
 msgstr "RECONCILIATION SUMMARY"
 
-#: reportes.py:808
+#: reportes.py:842
 msgid "(+) Depósitos en Tránsito"
 msgstr "(+) Deposits in Transit"
 
-#: reportes.py:809
+#: reportes.py:843
 msgid "(-) Cheques Pendientes"
 msgstr "(-) Outstanding Checks"
 
-#: reportes.py:810
+#: reportes.py:844
 msgid "SALDO CONCILIADO"
 msgstr "RECONCILED BALANCE"
 
-#: reportes.py:811
+#: reportes.py:845
 msgid "Saldo según Extracto"
 msgstr "Balance per Statement"
 
-#: reportes.py:812
+#: reportes.py:846
 msgid "DIFERENCIA FINAL"
 msgstr "FINAL DIFFERENCE"
 
-#: reportes.py:833
+#: reportes.py:867
 msgid "Estado de la Conciliación:"
 msgstr "Reconciliation Status:"
 
-#: reportes.py:834
+#: reportes.py:868
 msgid "CONCILIACIÓN EXITOSA"
 msgstr "RECONCILIATION SUCCESSFUL"
 
-#: reportes.py:835
+#: reportes.py:869
 msgid "CONCILIACIÓN PENDIENTE"
 msgstr "RECONCILIATION PENDING"
 
-#: reportes.py:836
+#: reportes.py:870
 msgid "Fecha de generación:"
 msgstr "Generation date:"
 
-#: reportes.py:837
+#: reportes.py:871
 msgid "Preparado por:"
 msgstr "Prepared by:"
 
-#: reportes.py:852
+#: reportes.py:886
 msgid "Documento para fines de auditoría interna"
 msgstr "Document for internal audit purposes"
 
-#: reportes.py:865
+#: reportes.py:899
 #, python-format
 msgid "Error al generar reporte: %(error)s"
 msgstr "Error generating report: %(error)s"
 
-#: reportes.py:1014
+#: reportes.py:1048
 msgid "ANÁLISIS DE GASTOS POR CATEGORÍA"
 msgstr "EXPENSE ANALYSIS BY CATEGORY"
 
-#: reportes.py:1022
+#: reportes.py:1056
 msgid "No hay datos de gastos para el período seleccionado."
 msgstr "No expense data available for the selected period."
 
-#: reportes.py:1042 templates/ventas_periodo.html:344
+#: reportes.py:1076 templates/ventas_periodo.html:344
 #: templates/ventas_periodo.html:584
 msgid "Otros"
 msgstr "Others"
 
-#: reportes.py:1061
+#: reportes.py:1095
 msgid "Distribución de Gastos por Categoría"
 msgstr "Expense Distribution by Category"
 
-#: reportes.py:1078
+#: reportes.py:1112
 msgid "Monto ($)"
 msgstr "Amount ($)"
 
-#: reportes.py:1079
+#: reportes.py:1113
 msgid "Top 10 Categorías por Monto Gastado"
 msgstr "Top 10 Categories by Amount Spent"
 
-#: reportes.py:1094
+#: reportes.py:1128
 msgid "ANÁLISIS VISUAL DE GASTOS"
 msgstr "VISUAL EXPENSE ANALYSIS"
 
-#: reportes.py:1106
+#: reportes.py:1140
 msgid "DISTRIBUCIÓN DETALLADA DE GASTOS"
 msgstr "DETAILED EXPENSE BREAKDOWN"
 
-#: reportes.py:1108 reportes.py:3068 templates/analisis_predictivo.html:482
+#: reportes.py:1142 reportes.py:3116 templates/analisis_predictivo.html:482
 #: templates/analisis_predictivo.html:529
 #: templates/productos_populares.html:486 templates/ventas_periodo.html:323
 msgid "Porcentaje"
 msgstr "Percentage"
 
-#: reportes.py:1144
+#: reportes.py:1178
 msgid "ANÁLISIS DETALLADO"
 msgstr "DETAILED ANALYSIS"
 
-#: reportes.py:1154
+#: reportes.py:1188
 msgid "Total de Gastos Analizados:"
 msgstr "Total Expenses Analyzed:"
 
-#: reportes.py:1155
+#: reportes.py:1189
 msgid "Categoría con Mayor Gasto:"
 msgstr "Highest Expense Category:"
 
-#: reportes.py:1156
+#: reportes.py:1190
 msgid "Dominancia de Categoría Principal:"
 msgstr "Main Category Dominance:"
 
-#: reportes.py:1157 templates/secciones/resumen_ventas.html:148
+#: reportes.py:1191 templates/secciones/resumen_ventas.html:148
 msgid "del total"
 msgstr "of total"
 
-#: reportes.py:1158
+#: reportes.py:1192
 msgid "Porcentaje de Top 3 Categorías:"
 msgstr "Top 3 Categories Percentage:"
 
-#: reportes.py:1159
+#: reportes.py:1193
 msgid "Número de Categorías:"
 msgstr "Number of Categories:"
 
-#: reportes.py:1160
+#: reportes.py:1194
 msgid "Gasto Promedio por Categoría:"
 msgstr "Average Expense per Category:"
 
-#: reportes.py:1174
+#: reportes.py:1208
 msgid "RECOMENDACIONES ESTRATÉGICAS"
 msgstr "STRATEGIC RECOMMENDATIONS"
 
-#: reportes.py:1196
+#: reportes.py:1230
 msgid "ERROR AL GENERAR REPORTE DE GASTOS"
 msgstr "ERROR GENERATING EXPENSE REPORT"
 
-#: reportes.py:1197 reportes.py:2303
+#: reportes.py:1231 reportes.py:2349
 #, python-format
 msgid "Error: %(error)s"
 msgstr "Error: %(error)s"
 
-#: reportes.py:1229
+#: reportes.py:1273
 msgid "No hay suficientes datos para generar recomendaciones."
 msgstr "Not enough data to generate recommendations."
 
-#: reportes.py:1237
+#: reportes.py:1281
 #, python-format
 msgid ""
 "La categoría '%(cat)s' representa el %(pct).1f%% de tus gastos totales. "
@@ -529,7 +534,7 @@ msgstr ""
 "The '%(cat)s' category represents %(pct).1f%% of your total expenses. "
 "Consider optimizing this area."
 
-#: reportes.py:1241
+#: reportes.py:1285
 msgid ""
 "Tus gastos están distribuidos en múltiples categorías. Esto indica una "
 "buena diversificación."
@@ -537,7 +542,7 @@ msgstr ""
 "Your expenses are distributed across multiple categories. This indicates "
 "good diversification."
 
-#: reportes.py:1245
+#: reportes.py:1289
 msgid ""
 "Tus gastos totales son significativos. Recomendamos revisar contratos y "
 "negociar mejores términos con proveedores."
@@ -545,7 +550,7 @@ msgstr ""
 "Your total expenses are significant. We recommend reviewing contracts and"
 " negotiating better terms with suppliers."
 
-#: reportes.py:1252
+#: reportes.py:1296
 #, python-format
 msgid ""
 "La categoría '%(cat)s' representa el %(pct).1f%% de tus gastos. Vale la "
@@ -554,79 +559,79 @@ msgstr ""
 "The '%(cat)s' category represents %(pct).1f%% of your expenses. It's "
 "worth reviewing."
 
-#: reportes.py:1255
+#: reportes.py:1299
 msgid ""
 "Tus gastos parecen estar bien distribuidos. Continúa con el monitoreo "
 "regular."
 msgstr "Your expenses seem well distributed. Continue with regular monitoring."
 
-#: reportes.py:1279
+#: reportes.py:1323
 msgid "ANÁLISIS DE TENDENCIA DE VENTAS"
 msgstr "SALES TREND ANALYSIS"
 
-#: reportes.py:1290
+#: reportes.py:1334
 msgid "No hay datos de ventas para el período seleccionado."
 msgstr "No sales data available for the selected period."
 
-#: reportes.py:1315 templates/cierre_caja.html:509
+#: reportes.py:1359 templates/cierre_caja.html:509
 #: templates/cierre_caja.html:658 templates/secciones/analisis_ia.html:222
 #: templates/secciones/resumen_ventas.html:30 templates/ventas_periodo.html:279
 msgid "Tendencia"
 msgstr "Trend"
 
-#: reportes.py:1318
+#: reportes.py:1362
 msgid "Evolución de Ventas Diarias"
 msgstr "Daily Sales Evolution"
 
-#: reportes.py:1319 reportes.py:1669
+#: reportes.py:1363 reportes.py:1714
 msgid "Ventas ($)"
 msgstr "Sales ($)"
 
-#: reportes.py:1328
+#: reportes.py:1372
 msgid "Ventas Acumuladas"
 msgstr "Cumulative Sales"
 
-#: reportes.py:1329
+#: reportes.py:1373
 msgid "Ventas Acumuladas ($)"
 msgstr "Cumulative Sales ($)"
 
-#: reportes.py:1342 reportes.py:1685 templates/ventas_periodo.html:610
+#: reportes.py:1386 reportes.py:1730 templates/ventas_periodo.html:610
 msgid "Lun"
 msgstr "Mon"
 
-#: reportes.py:1342 reportes.py:1685 templates/ventas_periodo.html:610
+#: reportes.py:1386 reportes.py:1730 templates/ventas_periodo.html:610
 msgid "Mar"
 msgstr "Tue"
 
-#: reportes.py:1342 reportes.py:1685 templates/ventas_periodo.html:610
+#: reportes.py:1386 reportes.py:1730 templates/ventas_periodo.html:610
 msgid "Mié"
 msgstr "Wed"
 
-#: reportes.py:1342 reportes.py:1685 templates/ventas_periodo.html:610
+#: reportes.py:1386 reportes.py:1730 templates/ventas_periodo.html:610
 msgid "Jue"
 msgstr "Thu"
 
-#: reportes.py:1342 reportes.py:1685 templates/ventas_periodo.html:610
+#: reportes.py:1386 reportes.py:1730 templates/ventas_periodo.html:610
 msgid "Vie"
 msgstr "Fri"
 
-#: reportes.py:1342 reportes.py:1685 templates/ventas_periodo.html:610
+#: reportes.py:1386 reportes.py:1730 templates/ventas_periodo.html:610
 msgid "Sáb"
 msgstr "Sat"
 
-#: reportes.py:1342 reportes.py:1685 templates/ventas_periodo.html:610
+#: reportes.py:1386 reportes.py:1730 templates/ventas_periodo.html:610
 msgid "Dom"
 msgstr "Sun"
 
-#: reportes.py:1350
+#: reportes.py:1394
 msgid "Promedio de Ventas por Día"
 msgstr "Average Sales by Day"
 
-#: reportes.py:1351 reportes.py:1698
+#: reportes.py:1395 reportes.py:1743
 msgid "Ventas Promedio ($)"
 msgstr "Average Sales ($)"
 
-#: reportes.py:1360 reportes.py:1710
+#: reportes.py:1404 reportes.py:1755
 msgid ""
 "Se necesitan más datos\n"
 "para análisis semanal"
@@ -634,19 +639,19 @@ msgstr ""
 "More data needed\n"
 "for weekly analysis"
 
-#: reportes.py:1363
+#: reportes.py:1407
 msgid "Análisis Semanal (Datos Insuficientes)"
 msgstr "Weekly Analysis (Insufficient Data)"
 
-#: reportes.py:1373
+#: reportes.py:1417
 msgid "ANÁLISIS VISUAL DE TENDENCIAS"
 msgstr "VISUAL TREND ANALYSIS"
 
-#: reportes.py:1385
+#: reportes.py:1429
 msgid "ESTADÍSTICAS PRINCIPALES"
 msgstr "MAIN STATISTICS"
 
-#: reportes.py:1400
+#: reportes.py:1444
 #, python-format
 msgid ""
 "<b>Período Analizado:</b> %(dias)s días | <b>Ventas Totales:</b> "
@@ -659,197 +664,197 @@ msgstr ""
 "$%(maxima)s %(fecha_mejor)s<br/><b>Min Sale:</b> $%(minima)s "
 "%(fecha_peor)s | <b>Variability:</b> $%(variabilidad)s"
 
-#: reportes.py:1426
+#: reportes.py:1470
 msgid "DETECCIÓN DE PATRONES"
 msgstr "PATTERN DETECTION"
 
-#: reportes.py:1435
+#: reportes.py:1479
 msgid "PROYECCIÓN Y RECOMENDACIONES"
 msgstr "FORECAST AND RECOMMENDATIONS"
 
-#: reportes.py:1460
+#: reportes.py:1504
 msgid "ERROR AL GENERAR REPORTE DE TENDENCIA"
 msgstr "ERROR GENERATING TREND REPORT"
 
-#: reportes.py:1507
+#: reportes.py:1552
 msgid ""
 "Se necesitan más datos (mínimo 7 días) para detectar patrones "
 "significativos."
 msgstr "More data needed (minimum 7 days) to detect significant patterns."
 
-#: reportes.py:1522
+#: reportes.py:1567
 #, python-format
 msgid "Tendencia creciente fuerte: +%(pct).1f%% en el período"
 msgstr "Strong growth trend: +%(pct).1f%% in the period"
 
-#: reportes.py:1524
+#: reportes.py:1569
 #, python-format
 msgid "Ligera tendencia creciente: +%(pct).1f%% en el período"
 msgstr "Slight growth trend: +%(pct).1f%% in the period"
 
-#: reportes.py:1526
+#: reportes.py:1571
 #, python-format
 msgid "Tendencia decreciente preocupante: %(pct).1f%% en el período"
 msgstr "Concerning declining trend: %(pct).1f%% in the period"
 
-#: reportes.py:1528
+#: reportes.py:1573
 #, python-format
 msgid "Ligera tendencia decreciente: %(pct).1f%% en el período"
 msgstr "Slight declining trend: %(pct).1f%% in the period"
 
-#: reportes.py:1530
+#: reportes.py:1575
 msgid "Ventas estables sin crecimiento significativo"
 msgstr "Stable sales without significant growth"
 
-#: reportes.py:1539
+#: reportes.py:1584
 msgid "Lunes"
 msgstr "Monday"
 
-#: reportes.py:1539
+#: reportes.py:1584
 msgid "Martes"
 msgstr "Tuesday"
 
-#: reportes.py:1539
+#: reportes.py:1584
 msgid "Miércoles"
 msgstr "Wednesday"
 
-#: reportes.py:1540
+#: reportes.py:1585
 msgid "Jueves"
 msgstr "Thursday"
 
-#: reportes.py:1540
+#: reportes.py:1585
 msgid "Viernes"
 msgstr "Friday"
 
-#: reportes.py:1540
+#: reportes.py:1585
 msgid "Sábado"
 msgstr "Saturday"
 
-#: reportes.py:1540
+#: reportes.py:1585
 msgid "Domingo"
 msgstr "Sunday"
 
-#: reportes.py:1543
+#: reportes.py:1588
 #, python-format
 msgid "Día más fuerte: %(dia)s"
 msgstr "Strongest day: %(dia)s"
 
-#: reportes.py:1544
+#: reportes.py:1589
 #, python-format
 msgid "Día más débil: %(dia)s"
 msgstr "Weakest day: %(dia)s"
 
-#: reportes.py:1553
+#: reportes.py:1598
 #, python-format
 msgid "Se detectaron %(n)s días con ventas atípicas (fuera del rango normal)"
 msgstr "%(n)s days with atypical sales detected (outside normal range)"
 
-#: reportes.py:1559
+#: reportes.py:1604
 msgid "Análisis de patrones no disponible por error técnico"
 msgstr "Pattern analysis not available due to technical error"
 
-#: reportes.py:1566
+#: reportes.py:1611
 msgid ""
 "Se necesitan más datos históricos (mínimo 14 días) para proyecciones "
 "confiables."
 msgstr "More historical data needed (minimum 14 days) for reliable forecasts."
 
-#: reportes.py:1578
+#: reportes.py:1623
 #, python-format
 msgid "Venta promedio actual: $%(monto)s"
 msgstr "Current average sale: $%(monto)s"
 
-#: reportes.py:1579
+#: reportes.py:1624
 #, python-format
 msgid "Venta promedio última semana: $%(monto)s"
 msgstr "Last week's average sale: $%(monto)s"
 
-#: reportes.py:1582
+#: reportes.py:1627
 #, python-format
 msgid "Tendencia positiva: las ventas de la última semana son %(pct).1f%% mayores"
 msgstr "Positive trend: last week's sales are %(pct).1f%% higher"
 
-#: reportes.py:1583
+#: reportes.py:1628
 msgid "Recomendación: Mantener estrategias actuales y considerar expansión"
 msgstr "Recommendation: Maintain current strategies and consider expansion"
 
-#: reportes.py:1585
+#: reportes.py:1630
 #, python-format
 msgid "Alerta: las ventas de la última semana son %(pct).1f%% menores"
 msgstr "Alert: last week's sales are %(pct).1f%% lower"
 
-#: reportes.py:1586
+#: reportes.py:1631
 msgid "Recomendación: Revisar estrategias de marketing y promociones"
 msgstr "Recommendation: Review marketing and promotion strategies"
 
-#: reportes.py:1588
+#: reportes.py:1633
 msgid "Ventas estables: sin cambios significativos en la última semana"
 msgstr "Stable sales: no significant changes in the last week"
 
-#: reportes.py:1589
+#: reportes.py:1634
 msgid "Recomendación: Enfocarse en retención de clientes y eficiencia operativa"
 msgstr "Recommendation: Focus on customer retention and operational efficiency"
 
-#: reportes.py:1595
+#: reportes.py:1640
 msgid "Proyecciones no disponibles por error técnico"
 msgstr "Forecasts not available due to technical error"
 
-#: reportes.py:1618
+#: reportes.py:1663
 msgid "ANÁLISIS PREDICTIVO CON INTELIGENCIA ARTIFICIAL"
 msgstr "PREDICTIVE ANALYSIS WITH ARTIFICIAL INTELLIGENCE"
 
-#: reportes.py:1619
+#: reportes.py:1664
 #, python-format
 msgid "Período de análisis: %(ini)s a %(fin)s"
 msgstr "Analysis period: %(ini)s to %(fin)s"
 
-#: reportes.py:1627
+#: reportes.py:1672
 msgid "No hay datos suficientes para análisis predictivo."
 msgstr "Not enough data available for predictive analysis."
 
-#: reportes.py:1648 templates/ventas_avanzado.html:576
+#: reportes.py:1693 templates/ventas_avanzado.html:576
 msgid "Ventas Reales"
 msgstr "Real Sales"
 
-#: reportes.py:1659
+#: reportes.py:1704
 msgid "Ajuste"
 msgstr "Adjustment"
 
-#: reportes.py:1661
+#: reportes.py:1706
 msgid "Proyección 7 días"
 msgstr "7-day forecast"
 
-#: reportes.py:1666
+#: reportes.py:1711
 msgid "Rango probable"
 msgstr "Probable range"
 
-#: reportes.py:1668
+#: reportes.py:1713
 msgid "Tendencia y Proyección"
 msgstr "Trend and Forecast"
 
-#: reportes.py:1695
+#: reportes.py:1740
 #, python-format
 msgid "Promedio: $%(val)s"
 msgstr "Average: $%(val)s"
 
-#: reportes.py:1697 reportes.py:1713
+#: reportes.py:1742 reportes.py:1758
 msgid "Patrón Semanal"
 msgstr "Weekly Pattern"
 
-#: reportes.py:1730
+#: reportes.py:1775
 msgid "Crecimiento Diario (%)"
 msgstr "Daily Growth (%)"
 
-#: reportes.py:1731
+#: reportes.py:1776
 msgid "Crecimiento %"
 msgstr "Growth %"
 
-#: reportes.py:1737
+#: reportes.py:1782
 #, python-format
 msgid "Promedio: %(val)s%%"
 msgstr "Average: %(val)s%%"
 
-#: reportes.py:1740
+#: reportes.py:1785
 msgid ""
 "Insuficientes datos\n"
 "para análisis de crecimiento"
@@ -857,36 +862,36 @@ msgstr ""
 "Insufficient data\n"
 "for growth analysis"
 
-#: reportes.py:1743
+#: reportes.py:1788
 msgid "Crecimiento Diario"
 msgstr "Daily Growth"
 
-#: reportes.py:1754
+#: reportes.py:1799
 msgid "Máxima"
 msgstr "Maximum"
 
-#: reportes.py:1754
+#: reportes.py:1799
 msgid "Mínima"
 msgstr "Minimum"
 
-#: reportes.py:1754
+#: reportes.py:1799
 msgid "Promedio"
 msgstr "Average"
 
-#: reportes.py:1754
+#: reportes.py:1799
 msgid "Estabilidad"
 msgstr "Stability"
 
-#: reportes.py:1759 reportes.py:1776
+#: reportes.py:1804 reportes.py:1821
 msgid "Métricas Clave"
 msgstr "Key Metrics"
 
-#: reportes.py:1760 reportes.py:2254 templates/cierre_caja.html:724
+#: reportes.py:1805 reportes.py:2300 templates/cierre_caja.html:724
 #: templates/ventas_periodo.html:368
 msgid "Valor"
 msgstr "Value"
 
-#: reportes.py:1773
+#: reportes.py:1818
 msgid ""
 "Datos insuficientes\n"
 "para métricas"
@@ -894,43 +899,43 @@ msgstr ""
 "Insufficient data\n"
 "for metrics"
 
-#: reportes.py:1786
+#: reportes.py:1831
 msgid "ANÁLISIS VISUAL PREDICTIVO"
 msgstr "VISUAL PREDICTIVE ANALYSIS"
 
-#: reportes.py:1798
+#: reportes.py:1843
 msgid "RECOMENDACIONES INTELIGENTES"
 msgstr "SMART RECOMMENDATIONS"
 
-#: reportes.py:1817
+#: reportes.py:1862
 msgid "PREDICCIONES PARA PRÓXIMA SEMANA"
 msgstr "PREDICTIONS FOR NEXT WEEK"
 
-#: reportes.py:1827
+#: reportes.py:1872
 msgid "PLAN DE ACCIÓN RECOMENDADO"
 msgstr "RECOMMENDED ACTION PLAN"
 
-#: reportes.py:1836
+#: reportes.py:1881
 #, python-format
 msgid "Generado por Sistema IA el: %(fecha)s"
 msgstr "Generated by AI System on: %(fecha)s"
 
-#: reportes.py:1851
+#: reportes.py:1896
 msgid "ERROR AL GENERAR REPORTE DE IA"
 msgstr "ERROR GENERATING AI REPORT"
 
-#: reportes.py:1852
+#: reportes.py:1897
 #, python-format
 msgid "Error: %(err)s"
 msgstr "Error: %(err)s"
 
-#: reportes.py:1900
+#: reportes.py:1946
 msgid ""
 "Se necesitan más datos históricos (mínimo 7 días) para recomendaciones "
 "precisas."
 msgstr "More historical data needed (minimum 7 days) for precise recommendations."
 
-#: reportes.py:1915
+#: reportes.py:1961
 msgid ""
 "**Tendencia muy positiva**: Considera aumentar capacidad de producción y "
 "expandir horarios"
@@ -938,13 +943,13 @@ msgstr ""
 "**Very positive trend**: Consider increasing production capacity and "
 "expanding hours"
 
-#: reportes.py:1916
+#: reportes.py:1962
 msgid ""
 "**Oportunidad de inversión**: Buen momento para invertir en nuevo "
 "equipamiento"
 msgstr "**Investment opportunity**: Good time to invest in new equipment"
 
-#: reportes.py:1918
+#: reportes.py:1964
 msgid ""
 "**Crecimiento estable**: Mantén las estrategias actuales y enfócate en "
 "retención de clientes"
@@ -952,19 +957,19 @@ msgstr ""
 "**Stable growth**: Maintain current strategies and focus on customer "
 "retention"
 
-#: reportes.py:1920
+#: reportes.py:1966
 msgid ""
 "**Alerta de decrecimiento**: Revisa estrategias de marketing y considera "
 "promociones"
 msgstr "**Decrease alert**: Review marketing strategies and consider promotions"
 
-#: reportes.py:1922
+#: reportes.py:1968
 msgid ""
 "**Estabilidad detectada**: Enfócate en eficiencia operativa y reducción "
 "de costos"
 msgstr "**Stability detected**: Focus on operational efficiency and cost reduction"
 
-#: reportes.py:1928
+#: reportes.py:1974
 msgid ""
 "**Alta variabilidad**: Implementa estrategias para suavizar ventas "
 "(promociones en días bajos)"
@@ -972,24 +977,24 @@ msgstr ""
 "**High variability**: Implement strategies to smooth sales (promotions on"
 " low days)"
 
-#: reportes.py:1930
+#: reportes.py:1976
 msgid ""
 "**Variabilidad moderada**: Analiza causas de fluctuaciones para optimizar"
 " inventario"
 msgstr "**Moderate variability**: Analyze fluctuation causes to optimize inventory"
 
-#: reportes.py:1932
+#: reportes.py:1978
 msgid ""
 "**Baja variabilidad**: Excelente para planeación de producción e "
 "inventario"
 msgstr "**Low variability**: Excellent for production and inventory planning"
 
-#: reportes.py:1940
+#: reportes.py:1986
 #, python-format
 msgid "**Más vendido**: %(prod)s (%(vend)s unidades)"
 msgstr "**Best seller**: %(prod)s (%(vend)s units)"
 
-#: reportes.py:1943
+#: reportes.py:1989
 msgid ""
 "**Optimización horaria**: Analiza datos de hora pico para ajustar "
 "personal y producción"
@@ -997,185 +1002,185 @@ msgstr ""
 "**Time optimization**: Analyze peak hour data to adjust staff and "
 "production"
 
-#: reportes.py:1944
+#: reportes.py:1990
 msgid ""
 "**Análisis continuo**: Monitorea estas métricas semanalmente para ajustar"
 " estrategias"
 msgstr "**Continuous analysis**: Monitor these metrics weekly to adjust strategies"
 
-#: reportes.py:1950
+#: reportes.py:1996
 msgid "Las recomendaciones no están disponibles temporalmente por error técnico"
 msgstr "Recommendations temporarily unavailable due to a technical error"
 
-#: reportes.py:1957
+#: reportes.py:2003
 msgid "Se necesitan más datos históricos (14+ días) para predicciones confiables."
 msgstr "More historical data needed (14+ days) for reliable predictions."
 
-#: reportes.py:1969
+#: reportes.py:2015
 #, python-format
 msgid "Ventas proyectadas: $%(min)s - $%(max)s"
 msgstr "Projected sales: $%(min)s - $%(max)s"
 
-#: reportes.py:1970
+#: reportes.py:2016
 #, python-format
 msgid "Crecimiento esperado: %(val)s%%"
 msgstr "Expected growth: %(val)s%%"
 
-#: reportes.py:1974
+#: reportes.py:2020
 msgid "Expectativa: Crecimiento continuo en próxima semana"
 msgstr "Expectation: Continued growth next week"
 
-#: reportes.py:1975
+#: reportes.py:2021
 msgid "Recomendación: Prepara inventario adicional"
 msgstr "Recommendation: Prepare additional inventory"
 
-#: reportes.py:1977
+#: reportes.py:2023
 msgid "Expectativa: Ventas estables o leve decrecimiento"
 msgstr "Expectation: Stable or slightly decreasing sales"
 
-#: reportes.py:1978
+#: reportes.py:2024
 msgid "Recomendación: Enfócate en promociones estratégicas"
 msgstr "Recommendation: Focus on strategic promotions"
 
-#: reportes.py:1980
+#: reportes.py:2026
 msgid "Días clave: Viernes y Sábado mostrarán mayor actividad"
 msgstr "Key days: Friday and Saturday will show higher activity"
 
-#: reportes.py:1981
+#: reportes.py:2027
 msgid "Considera: Factores externos como clima y eventos locales"
 msgstr "Consider: External factors such as weather and local events"
 
-#: reportes.py:1987
+#: reportes.py:2033
 msgid "Las predicciones no están disponibles temporalmente"
 msgstr "Predictions temporarily unavailable"
 
-#: reportes.py:1994
+#: reportes.py:2040
 msgid "Recolecta más datos para generar un plan de acción personalizado."
 msgstr "Collect more data to generate a personalized action plan."
 
-#: reportes.py:2004
+#: reportes.py:2050
 msgid "Implementar promociones en días de baja demanda identificados"
 msgstr "Implement promotions on identified low-demand days"
 
-#: reportes.py:2005
+#: reportes.py:2051
 msgid "Optimizar inventario para reducir desperdicios en días lentos"
 msgstr "Optimize inventory to reduce waste on slow days"
 
-#: reportes.py:2006
+#: reportes.py:2052
 msgid "Crear paquetes especiales para estimular ventas en horarios bajos"
 msgstr "Create special packages to stimulate sales during low hours"
 
-#: reportes.py:2008
+#: reportes.py:2054
 msgid "Mantener niveles actuales de producción e inventario"
 msgstr "Maintain current production and inventory levels"
 
-#: reportes.py:2009
+#: reportes.py:2055
 msgid "Enfocar esfuerzos en mejorar margen de utilidad"
 msgstr "Focus efforts on improving profit margin"
 
-#: reportes.py:2010
+#: reportes.py:2056
 msgid "Explorar nuevos productos o servicios complementarios"
 msgstr "Explore new products or complementary services"
 
-#: reportes.py:2013
+#: reportes.py:2059
 msgid "Revisar y ajustar horarios de personal según patrones de venta"
 msgstr "Review and adjust staff schedules according to sales patterns"
 
-#: reportes.py:2014
+#: reportes.py:2060
 msgid "Optimizar compras de materias primas basado en tendencias"
 msgstr "Optimize raw material purchases based on trends"
 
-#: reportes.py:2015
+#: reportes.py:2061
 msgid "Programar mantenimiento preventivo en horarios de baja demanda"
 msgstr "Schedule preventive maintenance during low-demand hours"
 
-#: reportes.py:2016
+#: reportes.py:2062
 msgid "Capacitar equipo en técnicas de ventas y servicio al cliente"
 msgstr "Train team in sales techniques and customer service"
 
-#: reportes.py:2022
+#: reportes.py:2068
 msgid "Plan de acción no disponible temporalmente"
 msgstr "Action plan temporarily unavailable"
 
-#: reportes.py:2044
+#: reportes.py:2090
 msgid "ANÁLISIS DE INVENTARIOS Y GESTIÓN DE STOCK"
 msgstr "INVENTORY ANALYSIS AND STOCK MANAGEMENT"
 
-#: reportes.py:2045
+#: reportes.py:2091
 #, python-format
 msgid "Período de análisis: %(inicio)s a %(fin)s"
 msgstr "Analysis period: %(inicio)s to %(fin)s"
 
-#: reportes.py:2053
+#: reportes.py:2099
 msgid "No hay datos de inventarios disponibles para análisis."
 msgstr "No inventory data available for analysis."
 
-#: reportes.py:2079 reportes.py:2254
+#: reportes.py:2125 reportes.py:2300
 #: templates/reporte_inventario_externo.html:48
 msgid "Stock Actual"
 msgstr "Current Stock"
 
-#: reportes.py:2081 templates/reporte_inventario_externo.html:49
+#: reportes.py:2127 templates/reporte_inventario_externo.html:49
 msgid "Stock Mínimo"
 msgstr "Minimum Stock"
 
-#: reportes.py:2083
+#: reportes.py:2129
 msgid "Stock Máximo"
 msgstr "Maximum Stock"
 
-#: reportes.py:2089
+#: reportes.py:2135
 msgid "Niveles de Stock por Producto"
 msgstr "Stock Levels by Product"
 
-#: reportes.py:2090
+#: reportes.py:2136
 msgid "Cantidad en Stock"
 msgstr "Stock Quantity"
 
-#: reportes.py:2109 templates/reporte_inventario_externo.html:54
+#: reportes.py:2155 templates/reporte_inventario_externo.html:54
 msgid "Valor Inventario"
 msgstr "Inventory Value"
 
-#: reportes.py:2111
+#: reportes.py:2157
 msgid "% Acumulado"
-msgstr "% Accumulated"
+msgstr "Accumulated %%"
 
-#: reportes.py:2113
+#: reportes.py:2159
 msgid "Análisis ABC - Valor de Inventario"
 msgstr "ABC Analysis - Inventory Value"
 
-#: reportes.py:2114
+#: reportes.py:2160
 msgid "Valor del Inventario ($)"
 msgstr "Inventory Value ($)"
 
-#: reportes.py:2115
+#: reportes.py:2161
 msgid "Productos (ordenados por valor)"
 msgstr "Products (sorted by value)"
 
-#: reportes.py:2121
+#: reportes.py:2167
 msgid "Límite A/B (80%)"
 msgstr "A/B Limit (80%)"
 
-#: reportes.py:2122
+#: reportes.py:2168
 msgid "Límite B/C (95%)"
 msgstr "B/C Limit (95%)"
 
-#: reportes.py:2142
+#: reportes.py:2188
 msgid "Índice de Rotación de Inventario"
 msgstr "Inventory Turnover Ratio"
 
-#: reportes.py:2143
+#: reportes.py:2189
 msgid "Rotación (veces/año)"
 msgstr "Turnover (times/year)"
 
-#: reportes.py:2148
+#: reportes.py:2194
 msgid "Alta Rotación"
 msgstr "High Turnover"
 
-#: reportes.py:2149
+#: reportes.py:2195
 msgid "Media Rotación"
 msgstr "Medium Turnover"
 
-#: reportes.py:2152
+#: reportes.py:2198
 msgid ""
 "Datos de rotación\n"
 "no disponibles"
@@ -1183,151 +1188,151 @@ msgstr ""
 "Rotation data\n"
 "not available"
 
-#: reportes.py:2155
+#: reportes.py:2201
 msgid "Índice de Rotación"
 msgstr "Turnover Ratio"
 
-#: reportes.py:2181
+#: reportes.py:2227
 msgid "Días de Stock Disponible"
 msgstr "Days of Stock Available"
 
-#: reportes.py:2182
+#: reportes.py:2228
 msgid "Días de Stock"
 msgstr "Days of Stock"
 
-#: reportes.py:2187
+#: reportes.py:2233
 msgid "Límite Crítico (7 días)"
 msgstr "Critical Limit (7 days)"
 
-#: reportes.py:2188
+#: reportes.py:2234
 msgid "Límite Alerta (14 días)"
 msgstr "Alert Limit (14 days)"
 
-#: reportes.py:2199
+#: reportes.py:2245
 msgid "ANÁLISIS VISUAL DE INVENTARIOS"
 msgstr "VISUAL INVENTORY ANALYSIS"
 
-#: reportes.py:2211
+#: reportes.py:2257
 msgid "RESUMEN EJECUTIVO DE INVENTARIOS"
 msgstr "EXECUTIVE SUMMARY OF INVENTORIES"
 
-#: reportes.py:2229
+#: reportes.py:2275
 msgid "ALERTAS DE INVENTARIO"
 msgstr "INVENTORY ALERTS"
 
-#: reportes.py:2239
+#: reportes.py:2285
 msgid "RECOMENDACIONES DE OPTIMIZACIÓN"
 msgstr "OPTIMIZATION RECOMMENDATIONS"
 
-#: reportes.py:2249
+#: reportes.py:2295
 msgid "PUNTOS DE REORDEN SUGERIDOS"
 msgstr "SUGGESTED REORDER POINTS"
 
-#: reportes.py:2254
+#: reportes.py:2300
 msgid "Mínimo"
 msgstr "Minimum"
 
-#: reportes.py:2254
+#: reportes.py:2300
 msgid "Reorden"
 msgstr "Reorder"
 
-#: reportes.py:2254 templates/reporte_activos.html:710
+#: reportes.py:2300 templates/reporte_activos.html:710
 #: templates/ventas_periodo.html:369
 msgid "Estado"
 msgstr "Status"
 
-#: reportes.py:2259
+#: reportes.py:2305
 msgid "OK"
 msgstr "OK"
 
-#: reportes.py:2259
+#: reportes.py:2305
 msgid "BAJO"
 msgstr "LOW"
 
-#: reportes.py:2302
+#: reportes.py:2348
 msgid "ERROR AL GENERAR REPORTE DE INVENTARIOS"
 msgstr "ERROR GENERATING INVENTORY REPORT"
 
-#: reportes.py:2569
+#: reportes.py:2616
 #, python-format
 msgid "Total de productos en inventario: %(total)s"
 msgstr "Total products in inventory: %(total)s"
 
-#: reportes.py:2570
+#: reportes.py:2617
 #, python-format
 msgid "Valor total del inventario: $%(valor)s"
 msgstr "Total inventory value: $%(valor)s"
 
-#: reportes.py:2571
+#: reportes.py:2618
 #, python-format
 msgid "Productos con stock bajo: %(n)s (%(pct).1f%%)"
 msgstr "Products with low stock: %(n)s (%(pct).1f%%)"
 
-#: reportes.py:2572
+#: reportes.py:2619
 #, python-format
 msgid "Productos sobre stock máximo: %(n)s (%(pct).1f%%)"
 msgstr "Products over maximum stock: %(n)s (%(pct).1f%%)"
 
-#: reportes.py:2573
+#: reportes.py:2620
 #, python-format
 msgid "Stock promedio por producto: %(avg).1f unidades"
 msgstr "Average stock per product: %(avg).1f units"
 
-#: reportes.py:2574
+#: reportes.py:2621
 #, python-format
 msgid "Eficiencia general de inventario: %(pct).1f%%"
 msgstr "Overall inventory efficiency: %(pct).1f%%"
 
-#: reportes.py:2580
+#: reportes.py:2627
 msgid "Resumen no disponible temporalmente"
 msgstr "Summary temporarily unavailable"
 
-#: reportes.py:2591
+#: reportes.py:2638
 #, python-format
 msgid "STOCK CRÍTICO: %(nombre)s - Solo %(stock)s unidades (mínimo: %(min)s)"
 msgstr "CRITICAL STOCK: %(nombre)s - Only %(stock)s units (minimum: %(min)s)"
 
-#: reportes.py:2597
+#: reportes.py:2644
 #, python-format
 msgid "EXCESO DE STOCK: %(nombre)s - %(stock)s unidades (máximo: %(max)s)"
 msgstr "OVERSTOCK: %(nombre)s - %(stock)s units (maximum: %(max)s)"
 
-#: reportes.py:2603
+#: reportes.py:2650
 #, python-format
 msgid "MOVIMIENTO LENTO: %(nombre)s - Demanda baja con stock alto"
 msgstr "SLOW MOVEMENT: %(nombre)s - Low demand with high stock"
 
-#: reportes.py:2606
+#: reportes.py:2653
 msgid "No hay alertas críticas - Inventario en estado óptimo"
 msgstr "No critical alerts - Inventory in optimal state"
 
-#: reportes.py:2611
+#: reportes.py:2658
 msgid "Sistema de alertas no disponible temporalmente"
 msgstr "Alert system temporarily unavailable"
 
-#: reportes.py:2626
+#: reportes.py:2673
 #, python-format
 msgid ""
 "ENFOQUE EN PRODUCTOS A: %(n)s productos representan el 80%% del valor del"
 " inventario"
 msgstr "FOCUS ON A PRODUCTS: %(n)s products represent 80%% of inventory value"
 
-#: reportes.py:2627
+#: reportes.py:2674
 msgid ""
 "CONTROL ESTRICTO: Implementar conteos cíclicos frecuentes para productos "
 "de alto valor"
 msgstr "STRICT CONTROL: Implement frequent cycle counts for high-value products"
 
-#: reportes.py:2633
+#: reportes.py:2680
 #, python-format
 msgid "OPTIMIZAR: %(n)s productos con baja rotación (<6 veces/año)"
 msgstr "OPTIMIZE: %(n)s products with low turnover (<6 times/year)"
 
-#: reportes.py:2634
+#: reportes.py:2681
 msgid "ACCIÓN: Reducir compras y considerar promociones para estos productos"
 msgstr "ACTION: Reduce purchases and consider promotions for these products"
 
-#: reportes.py:2639
+#: reportes.py:2686
 msgid ""
 "OPTIMIZACIÓN FINANCIERA: Considerar reducir inventario para liberar "
 "capital de trabajo"
@@ -1335,34 +1340,34 @@ msgstr ""
 "FINANCIAL OPTIMIZATION: Consider reducing inventory to free working "
 "capital"
 
-#: reportes.py:2644
+#: reportes.py:2691
 #, python-format
 msgid "COMPRAS PENDIENTES: %(n)s productos requieren reabastecimiento urgente"
 msgstr "PENDING PURCHASES: %(n)s products require urgent restocking"
 
-#: reportes.py:2647
+#: reportes.py:2694
 msgid "MEJORA CONTINUA: Establecer revisiones periódicas de puntos de reorden"
 msgstr "CONTINUOUS IMPROVEMENT: Establish periodic reorder point reviews"
 
-#: reportes.py:2648
+#: reportes.py:2695
 msgid ""
 "TECNOLOGÍA: Considerar sistema de código de barras para conteos más "
 "eficientes"
 msgstr "TECHNOLOGY: Consider a barcode system for more efficient counts"
 
-#: reportes.py:2654
+#: reportes.py:2701
 msgid "Recomendaciones no disponibles temporalmente"
 msgstr "Recommendations temporarily unavailable"
 
-#: reportes.py:2660
+#: reportes.py:2707
 msgid "positivo"
 msgstr "positive"
 
-#: reportes.py:2660
+#: reportes.py:2707
 msgid "negativo"
 msgstr "negative"
 
-#: reportes.py:2663
+#: reportes.py:2710
 #, python-format
 msgid ""
 "<b>Análisis de Flujo:</b><br/>- El flujo neto del período es "
@@ -1373,19 +1378,19 @@ msgstr ""
 "<b>%(estado)s</b>.<br/>- %(pct)s%% of days had positive flow.<br/>- The "
 "final cash balance is <b>$%(saldo)s</b>."
 
-#: reportes.py:2679
+#: reportes.py:2726
 msgid "No hay movimientos para mostrar."
 msgstr "No movements to show."
 
-#: reportes.py:2683
+#: reportes.py:2730
 msgid "Egresos"
 msgstr "Expenses"
 
-#: reportes.py:2683
+#: reportes.py:2730
 msgid "Saldo"
 msgstr "Balance"
 
-#: reportes.py:2737
+#: reportes.py:2784
 msgid ""
 "<b>Atención:</b> Saldo negativo detectado. Se recomienda revisar gastos "
 "operativos y considerar ajustes en el flujo de efectivo."
@@ -1393,7 +1398,7 @@ msgstr ""
 "<b>Warning:</b> Negative balance detected. Review operating expenses and "
 "consider adjustments to cash flow."
 
-#: reportes.py:2739
+#: reportes.py:2786
 msgid ""
 "<b>Monitoreo:</b> Saldo bajo identificado. Se sugiere vigilancia cercana "
 "del flujo de caja en los próximos días."
@@ -1401,7 +1406,7 @@ msgstr ""
 "<b>Monitoring:</b> Low balance identified. Close monitoring of cash flow "
 "is suggested in the coming days."
 
-#: reportes.py:2745
+#: reportes.py:2792
 msgid ""
 "<b>Oportunidad:</b> Menos de la mitad de los días muestran flujo "
 "positivo. Evaluar estrategias para mejorar la consistencia de ingresos."
@@ -1409,7 +1414,7 @@ msgstr ""
 "<b>Opportunity:</b> Less than half of days show positive flow. Evaluate "
 "strategies to improve income consistency."
 
-#: reportes.py:2747
+#: reportes.py:2794
 msgid ""
 "<b>Fortalecimiento:</b> Alta consistencia en flujos positivos. Considerar"
 " oportunidades de reinversión o crecimiento."
@@ -1417,7 +1422,7 @@ msgstr ""
 "<b>Strengthening:</b> High consistency in positive flows. Consider "
 "reinvestment or growth opportunities."
 
-#: reportes.py:2751
+#: reportes.py:2798
 msgid ""
 "<b>Observación:</b> Baja actividad transaccional en el período. Validar "
 "completitud de registros."
@@ -1425,7 +1430,7 @@ msgstr ""
 "<b>Observation:</b> Low transactional activity in the period. Validate "
 "completeness of records."
 
-#: reportes.py:2755
+#: reportes.py:2802
 msgid ""
 "<b>Estabilidad:</b> La posición de tesorería se mantiene estable. "
 "Continuar con las prácticas actuales de gestión."
@@ -1433,7 +1438,7 @@ msgstr ""
 "<b>Stability:</b> The treasury position remains stable. Continue with "
 "current management practices."
 
-#: reportes.py:2800
+#: reportes.py:2847
 #, python-format
 msgid ""
 "<b>Total Ingresos:</b> $%(ingresos)s<br/><b>Total Egresos:</b> "
@@ -1448,83 +1453,83 @@ msgstr ""
 "Positive Flow:</b> %(dias_pos)s (%(pct_pos)s%%)<br/><b>Total "
 "Movements:</b> %(total_mov)s"
 
-#: reportes.py:2824
+#: reportes.py:2871
 #, python-format
 msgid "Error: %(msg)s"
 msgstr "Error: %(msg)s"
 
-#: reportes.py:2999
+#: reportes.py:3047
 msgid "REPORTE UNIFICADO DE TESORERIA"
 msgstr "UNIFIED TREASURY REPORT"
 
-#: reportes.py:3000
+#: reportes.py:3048
 #, python-format
 msgid "Periodo: %(ini)s a %(fin)s"
 msgstr "Period: %(ini)s to %(fin)s"
 
-#: reportes.py:3002
+#: reportes.py:3050
 #, python-format
 msgid "Consecutivo: %(val)s"
 msgstr "Sequence: %(val)s"
 
-#: reportes.py:3003
+#: reportes.py:3051
 #, python-format
 msgid "Emitido: %(fecha)s"
 msgstr "Issued: %(fecha)s"
 
-#: reportes.py:3030
+#: reportes.py:3078
 msgid "1. INGRESOS OPERACIONALES"
 msgstr "1. OPERATING INCOME"
 
-#: reportes.py:3036
+#: reportes.py:3084
 msgid "Ventas del periodo"
 msgstr "Sales for the period"
 
-#: reportes.py:3037
+#: reportes.py:3085
 msgid "Cantidad de transacciones"
 msgstr "Number of transactions"
 
-#: reportes.py:3038
+#: reportes.py:3086
 msgid "TOTAL INGRESOS OPERACIONALES"
 msgstr "TOTAL OPERATING INCOME"
 
-#: reportes.py:3065
+#: reportes.py:3113
 msgid "2. INGRESOS POR METODO DE PAGO"
 msgstr "2. INCOME BY PAYMENT METHOD"
 
-#: reportes.py:3068
+#: reportes.py:3116
 msgid "Metodo"
 msgstr "Method"
 
-#: reportes.py:3072 reportes.py:3232
+#: reportes.py:3120 reportes.py:3280
 msgid "TOTAL"
 msgstr "TOTAL"
 
-#: reportes.py:3092
+#: reportes.py:3140
 msgid "3. CONSUMO INTERNO / DONACIONES"
 msgstr "3. INTERNAL CONSUMPTION / DONATIONS"
 
-#: reportes.py:3096
+#: reportes.py:3144 templates/baja_inventario.html:59
 msgid "Cant."
 msgstr "Qty."
 
-#: reportes.py:3096
+#: reportes.py:3144
 msgid "Costo Unit."
 msgstr "Unit Cost"
 
-#: reportes.py:3096
+#: reportes.py:3144
 msgid "Total Costo"
 msgstr "Total Cost"
 
-#: reportes.py:3107
+#: reportes.py:3155
 msgid "TOTAL COSTO CONSUMO"
 msgstr "TOTAL CONSUMPTION COST"
 
-#: reportes.py:3127
+#: reportes.py:3175
 msgid "Sin consumo interno ni donaciones en el periodo."
 msgstr "No internal consumption or donations in the period."
 
-#: reportes.py:3141
+#: reportes.py:3189
 msgid ""
 "<b>Nota:</b> El consumo interno y las donaciones no generan ingresos. El "
 "costo de produccion se deduce del inventario y se registra como gasto "
@@ -1536,146 +1541,146 @@ msgstr ""
 "expense. Consult your local tax advisor for the applicable tax treatment "
 "in your country."
 
-#: reportes.py:3151
+#: reportes.py:3199
 msgid "4. GASTOS DEL PERIODO"
 msgstr "4. PERIOD EXPENSES"
 
-#: reportes.py:3154
+#: reportes.py:3202
 msgid "Categoria"
 msgstr "Category"
 
-#: reportes.py:3177
+#: reportes.py:3225
 msgid "5. RESUMEN EJECUTIVO"
 msgstr "5. EXECUTIVE SUMMARY"
 
-#: reportes.py:3182
+#: reportes.py:3230
 msgid "Total Ingresos"
 msgstr "Total Income"
 
-#: reportes.py:3183
+#: reportes.py:3231
 msgid "Total Gastos"
 msgstr "Total Expenses"
 
-#: reportes.py:3188 reportes.py:3190
+#: reportes.py:3236 reportes.py:3238
 msgid "Utilidad Neta del Periodo"
 msgstr "Net Profit for the Period"
 
-#: reportes.py:3188
+#: reportes.py:3236
 #, python-format
 msgid "$%(val)s (PERDIDA)"
 msgstr "$%(val)s (LOSS)"
 
-#: reportes.py:3220
+#: reportes.py:3268
 msgid "6. DETALLE DE INGRESOS DIARIOS"
 msgstr "6. DAILY INCOME DETAIL"
 
-#: reportes.py:3231
+#: reportes.py:3279
 msgid "Sin ingresos en el periodo"
 msgstr "No income in the period"
 
-#: reportes.py:3261
+#: reportes.py:3309
 msgid "Firma del responsable"
 msgstr "Responsible signature"
 
-#: reportes.py:3289
+#: reportes.py:3337
 msgid "HISTORIAL DE PAGOS"
 msgstr "PAYMENT HISTORY"
 
-#: reportes.py:3291 reportes.py:3462
+#: reportes.py:3339 reportes.py:3510
 #, python-format
 msgid "Período: %(ini)s a %(fin)s"
 msgstr "Period: %(ini)s to %(fin)s"
 
-#: reportes.py:3299
+#: reportes.py:3347
 #, python-format
 msgid "<b>Categoría:</b> %(val)s"
 msgstr "<b>Category:</b> %(val)s"
 
-#: reportes.py:3304
+#: reportes.py:3352
 #, python-format
 msgid "<b>Proveedor:</b> %(val)s"
 msgstr "<b>Supplier:</b> %(val)s"
 
-#: reportes.py:3332
+#: reportes.py:3380
 msgid "No hay pagos para el período y filtros seleccionados."
 msgstr "No payments for the selected period and filters."
 
-#: reportes.py:3342
+#: reportes.py:3390
 msgid "Total Pagado"
 msgstr "Total Paid"
 
-#: reportes.py:3342
+#: reportes.py:3390
 msgid "Cantidad de Pagos"
 msgstr "Number of Payments"
 
-#: reportes.py:3342
+#: reportes.py:3390
 msgid "Promedio por Pago"
 msgstr "Average per Payment"
 
-#: reportes.py:3371
+#: reportes.py:3419
 msgid "DESGLOSE POR CATEGORÍA"
 msgstr "BREAKDOWN BY CATEGORY"
 
-#: reportes.py:3372 reportes.py:3534 templates/analisis_predictivo.html:481
-#: templates/analisis_predictivo.html:528
+#: reportes.py:3420 reportes.py:3582 templates/analisis_predictivo.html:481
+#: templates/analisis_predictivo.html:528 templates/baja_inventario.html:45
 #: templates/productos_populares.html:485 templates/reporte_activos.html:661
 #: templates/reporte_produccion.html:148
 msgid "Cantidad"
 msgstr "Quantity"
 
-#: reportes.py:3372 reportes.py:3534 templates/analisis_predictivo.html:506
+#: reportes.py:3420 reportes.py:3582 templates/analisis_predictivo.html:506
 #: templates/analisis_predictivo.html:553 templates/cierre_caja.html:675
 #: templates/productos_populares.html:504
 msgid "Total"
 msgstr "Total"
 
-#: reportes.py:3397
+#: reportes.py:3445
 msgid "DETALLE DE PAGOS"
 msgstr "PAYMENT DETAIL"
 
-#: reportes.py:3399 reportes.py:3561
+#: reportes.py:3447 reportes.py:3609
 msgid "Método"
 msgstr "Method"
 
-#: reportes.py:3460
+#: reportes.py:3508
 msgid "HISTORIAL DE DEPÓSITOS BANCARIOS"
 msgstr "BANK DEPOSITS HISTORY"
 
-#: reportes.py:3470
+#: reportes.py:3518
 #, python-format
 msgid "<b>Banco:</b> %(val)s"
 msgstr "<b>Bank:</b> %(val)s"
 
-#: reportes.py:3472
+#: reportes.py:3520
 #, python-format
 msgid "<b>Estado:</b> %(val)s"
 msgstr "<b>Status:</b> %(val)s"
 
-#: reportes.py:3495
+#: reportes.py:3543
 msgid "No hay depósitos para el período y filtros seleccionados."
 msgstr "No deposits for the selected period and filters."
 
-#: reportes.py:3504
+#: reportes.py:3552
 msgid "Total Depositado"
 msgstr "Total Deposited"
 
-#: reportes.py:3504
+#: reportes.py:3552
 msgid "Cantidad de Depósitos"
 msgstr "Number of Deposits"
 
-#: reportes.py:3504
+#: reportes.py:3552
 msgid "Promedio por Depósito"
 msgstr "Average per Deposit"
 
-#: reportes.py:3533
+#: reportes.py:3581
 msgid "DESGLOSE POR BANCO"
 msgstr "BREAKDOWN BY BANK"
 
-#: reportes.py:3534 reportes.py:3561
+#: reportes.py:3582 reportes.py:3609
 msgid "Banco"
 msgstr "Bank"
 
-#: reportes.py:3559
+#: reportes.py:3607
 msgid "DETALLE DE DEPÓSITOS"
 msgstr "DEPOSIT DETAIL"
 
@@ -2005,6 +2010,71 @@ msgstr "Number of Payments"
 msgid "¿Deseas cerrar el reporte?"
 msgstr "Do you want to close the report?"
 
+#: templates/baja_inventario.html:3 templates/baja_inventario.html:16
+msgid "Baja de Inventario"
+msgstr "Inventory Decrease"
+
+#: templates/baja_inventario.html:34
+msgid "Agregar Producto"
+msgstr "Add Product"
+
+#: templates/baja_inventario.html:41
+msgid "-- Cargando... --"
+msgstr "-- Loading... --"
+
+#: templates/baja_inventario.html:60
+msgid "Costo U."
+msgstr "Unit Cost"
+
+#: templates/baja_inventario.html:61
+msgid "Subtotal"
+msgstr "Subtotal"
+
+#: templates/baja_inventario.html:83
+msgid "Motivo"
+msgstr "Reason"
+
+#: templates/baja_inventario.html:85
+msgid "-- Seleccionar --"
+msgstr "-- Select --"
+
+#: templates/baja_inventario.html:86
+msgid "Vencimiento (fecha caducada)"
+msgstr ""
+
+#: templates/baja_inventario.html:87
+msgid "Rotura / Daño (producto destruido)"
+msgstr ""
+
+#: templates/baja_inventario.html:92
+msgid "Observaciones"
+msgstr "Observations"
+
+#: templates/baja_inventario.html:93
+msgid "Detalle opcional (ej. lote X, producto aplastado por caja...)"
+msgstr ""
+
+#: templates/baja_inventario.html:99 templates/cierre_caja.html:711
+#: templates/productos_populares.html:299
+msgid "Productos"
+msgstr "Products"
+
+#: templates/baja_inventario.html:103
+msgid "Costo total de pérdida"
+msgstr "Total loss cost"
+
+#: templates/baja_inventario.html:108
+msgid "Registrar Baja"
+msgstr "Register Decrease"
+
+#: templates/baja_inventario.html:116
+msgid "Historial de Bajas"
+msgstr "Decrease History"
+
+#: templates/baja_inventario.html:256
+msgid "Sin productos seleccionados"
+msgstr "No products selected"
+
 #: templates/cierre_caja.html:434
 msgid "REPORTE DE CIERRE"
 msgstr "Printable report"
@@ -2051,11 +2121,11 @@ msgstr "Qty"
 msgid "Margen"
 msgstr "Margin"
 
-#: templates/cierre_caja.html:574 templates/cierre_caja.html:851
+#: templates/cierre_caja.html:574 templates/cierre_caja.html:882
 msgid "Valor Mercado"
 msgstr "Inventory Value"
 
-#: templates/cierre_caja.html:575 templates/cierre_caja.html:858
+#: templates/cierre_caja.html:575 templates/cierre_caja.html:889
 msgid "Costo Real"
 msgstr "Real Cost"
 
@@ -2091,57 +2161,137 @@ msgstr "Real Sales"
 msgid "vs ayer"
 msgstr "vs yesterday"
 
-#: templates/cierre_caja.html:711 templates/productos_populares.html:299
-msgid "Productos"
-msgstr "Product"
+#: templates/cierre_caja.html:739
+msgid "Bajas de Inventario del Turno"
+msgstr "Inventory Decrease of the Shift"
 
-#: templates/cierre_caja.html:733 templates/cierre_caja.html:738
+#: templates/cierre_caja.html:740
+msgid "Informativo"
+msgstr "Informative"
+
+#: templates/cierre_caja.html:747
+msgid "Costo Total de Pérdida"
+msgstr "Total Loss Cost"
+
+#: templates/cierre_caja.html:754
+msgid "No afecta el efectivo físico de la caja"
+msgstr ""
+
+#: templates/cierre_caja.html:764 templates/cierre_caja.html:769
 msgid "Ventas por Método de Pago"
 msgstr "2. INCOME BY PAYMENT METHOD"
 
-#: templates/cierre_caja.html:758
+#: templates/cierre_caja.html:789
 msgid "No hay ventas registradas"
 msgstr "No movements to show."
 
-#: templates/cierre_caja.html:780
+#: templates/cierre_caja.html:811
 msgid "Producto vendido"
 msgstr "Product"
 
-#: templates/cierre_caja.html:787 templates/cierre_caja.html:844
+#: templates/cierre_caja.html:818 templates/cierre_caja.html:875
 msgid "Unid."
 msgstr "Qty."
 
-#: templates/cierre_caja.html:816
+#: templates/cierre_caja.html:847
 msgid "No hay productos vendidos"
 msgstr "Top products by sales"
 
-#: templates/cierre_caja.html:837
+#: templates/cierre_caja.html:868
 msgid "Producto donado"
 msgstr "Product"
 
-#: templates/cierre_caja.html:865
+#: templates/cierre_caja.html:896
 msgid "Pérdida"
 msgstr "Loss"
 
-#: templates/cierre_caja.html:890
+#: templates/cierre_caja.html:921
 msgid "Real"
 msgstr "Real"
 
-#: templates/cierre_caja.html:903
+#: templates/cierre_caja.html:934
 msgid "Neta"
 msgstr "Status"
 
-#: templates/cierre_caja.html:916
+#: templates/cierre_caja.html:947
 msgid "Inventario"
 msgstr "Inventory Value"
 
-#: templates/cierre_caja.html:927 templates/reporte_produccion.html:196
+#: templates/cierre_caja.html:958 templates/reporte_produccion.html:196
 msgid "Generado el"
 msgstr "Generated on"
 
-#: templates/cierre_caja.html:927
+#: templates/cierre_caja.html:958
 msgid "Sistema Panadería"
 msgstr "Number of Payments"
+
+#: templates/crear_receta.html:398 templates/detalle_receta.html:829
+msgid "Toppings (Adicionales)"
+msgstr "TOTAL OPERATING INCOME"
+
+#: templates/crear_receta.html:402
+msgid ""
+"Ingredientes decorativos que se agregan al producto terminado. NO "
+"aumentan las unidades producidas, pero SÍ afectan el costo."
+msgstr ""
+
+#: templates/crear_receta.html:413
+msgid "Seleccionar materia prima"
+msgstr "Days in period:"
+
+#: templates/crear_receta.html:424
+msgid "Gramos (lote)"
+msgstr ""
+
+#: templates/crear_receta.html:429
+msgid "Eliminar topping"
+msgstr ""
+
+#: templates/crear_receta.html:438
+msgid "Resumen de toppings"
+msgstr "RECONCILIATION SUMMARY"
+
+#: templates/crear_receta.html:439
+msgid "toppings"
+msgstr "Total Income"
+
+#: templates/crear_receta.html:440
+msgid "costo toppings"
+msgstr ""
+
+#: templates/crear_receta.html:444
+msgid "Agregar Topping"
+msgstr ""
+
+#: templates/detalle_receta.html:834
+msgid ""
+"Estos ingredientes se agregan al producto terminado. NO aumentan las "
+"unidades producidas, pero SÍ afectan el costo real."
+msgstr ""
+
+#: templates/detalle_receta.html:840
+msgid "Topping"
+msgstr ""
+
+#: templates/detalle_receta.html:841
+msgid "Cantidad (lote)"
+msgstr "Quantity"
+
+#: templates/detalle_receta.html:842
+msgid "Costo/u"
+msgstr "Total Cost"
+
+#: templates/detalle_receta.html:843
+msgid "Costo Total Lote"
+msgstr "Real Cost"
+
+#: templates/detalle_receta.html:855
+msgid "sub-receta"
+msgstr "Sale Price"
+
+#: templates/detalle_receta.html:866
+msgid "TOTAL TOPPINGS"
+msgstr "Total Income"
 
 #: templates/productos_populares.html:6
 #: templates/secciones/analisis_productos.html:5
@@ -2966,7 +3116,7 @@ msgstr "Per transaction (real sales)"
 #: templates/secciones/resumen_ventas.html:196
 #: templates/ventas_periodo.html:283
 msgid "vs período anterior"
-msgstr "Product"
+msgstr "vs previous period"
 
 #: templates/ventas_periodo.html:294
 msgid "Transacciones de donación en el período"
@@ -3045,7 +3195,7 @@ msgstr "TOTALS"
 #: templates/secciones/recomendaciones.html:22
 #: templates/ventas_periodo.html:479
 msgid "Crecimiento del"
-msgstr "Growth %"
+msgstr "Growth of"
 
 #: templates/ventas_periodo.html:482
 msgid "Ticket promedio:"
@@ -3285,7 +3435,7 @@ msgstr "Identified Strengths"
 #: templates/secciones/recomendaciones.html:17
 #: templates/secciones/resumen_ventas.html:86
 msgid "Acumulando datos"
-msgstr "% Accumulated"
+msgstr "Accumulating data"
 
 #: templates/secciones/recomendaciones.html:17
 msgid "para análisis de tendencias"
@@ -3421,7 +3571,7 @@ msgstr "Maintain current strategies"
 
 #: templates/secciones/resumen_ventas.html:124
 msgid "Crecimiento positivo del"
-msgstr "Growth %"
+msgstr "Positive growth of"
 
 #: templates/secciones/resumen_ventas.html:129
 msgid "Revisar estrategia:"
@@ -3433,7 +3583,7 @@ msgstr "to reverse negative trend"
 
 #: templates/secciones/resumen_ventas.html:135
 msgid "Acumulando datos:"
-msgstr "% Accumulated"
+msgstr "Accumulating data:"
 
 #: templates/secciones/resumen_ventas.html:138
 msgid "días para generar recomendaciones basadas en tendencias"

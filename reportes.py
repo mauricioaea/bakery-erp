@@ -94,7 +94,11 @@ class GeneradorReportes:
         gastos = self._obtener_gastos_periodo(panaderia_id, fecha_inicio, fecha_fin)
         
         total_ingresos = sum(ingresos.values()) if ingresos else 0
-        total_gastos = sum(gastos.values()) if gastos else 0
+        total_gastos_base = sum(gastos.values()) if gastos else 0
+        
+        # ✅ INYECCIÓN: Sumar Bajas de Inventario a los gastos
+        total_bajas = self._obtener_bajas_periodo(panaderia_id, fecha_inicio, fecha_fin)
+        total_gastos = total_gastos_base + total_bajas
         
         if total_ingresos == 0 and total_gastos == 0:
             elements.append(Paragraph("📊 " + _('SIN DATOS PARA EL PERÍODO'), self.estilo_subtitulo))
@@ -146,14 +150,20 @@ class GeneradorReportes:
         # Tabla de Gastos
         elements.append(Paragraph(_("GASTOS"), self.estilo_subtitulo))
         data_gastos = [[_('Concepto'), _('Monto')]]
-        total_gastos = 0
-        
+        # ⚠️ NO re-inicializar total_gastos aquí. Ya viene calculado
+        # con la suma de gastos base + bajas (línea ~95).
+
         for categoria, monto in gastos.items():
             if monto > 0:
                 categoria_formateada = categoria.replace('_', ' ').title()
                 data_gastos.append([categoria_formateada, f"${monto:,.0f}"])
-                total_gastos += monto
         
+        # ✅ INYECCIÓN: Mostrar la línea de Bajas si hay pérdidas
+        if total_bajas > 0:
+            concepto_bajas = _("Pérdidas por Baja de Inventario")
+            data_gastos.append([concepto_bajas, f"${total_bajas:,.0f}"])
+        
+        # Usamos total_gastos (que ya incluye las bajas) para el TOTAL
         data_gastos.append([_('TOTAL GASTOS'), f"${total_gastos:,.0f}"])
         
         tabla_gastos = Table(data_gastos, colWidths=[4*inch, 2*inch])
@@ -477,6 +487,28 @@ class GeneradorReportes:
         except Exception as e:
             print(f"Error al obtener gastos: {e}")
             return {}
+    
+    def _obtener_bajas_periodo(self, panaderia_id, fecha_inicio, fecha_fin):
+        """Obtiene el total de pérdidas por Bajas de Inventario en el período."""
+        try:
+            from models import BajaInventario
+            # Convertimos fechas si vienen como string
+            if isinstance(fecha_inicio, str):
+                fecha_inicio = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+            if isinstance(fecha_fin, str):
+                fecha_fin = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
+
+            # SQLAlchemy 2.0 style
+            total = db.session.query(func.sum(BajaInventario.costo_total)).filter(
+                BajaInventario.panaderia_id == panaderia_id,
+                func.date(BajaInventario.fecha_baja) >= fecha_inicio,
+                func.date(BajaInventario.fecha_baja) <= fecha_fin
+            ).scalar()
+            
+            return float(total or 0)
+        except Exception as e:
+            print(f"Error al obtener bajas: {e}")
+            return 0.0
     
     def _obtener_flujo_caja_periodo(self, panaderia_id, fecha_inicio, fecha_fin):
         """Obtiene datos para flujo de caja diario - CON FILTRO MULTI-TENANT"""
@@ -1217,6 +1249,16 @@ class GeneradorReportes:
             for pago in pagos:
                 categoria = pago.categoria or 'Otros'
                 gastos[categoria] = gastos.get(categoria, 0) + pago.monto
+            
+            # ✅ INYECCIÓN: Agregar Bajas de Inventario como categoría de gasto
+            # El gráfico de torta y la tabla la mostrarán automáticamente.
+            try:
+                total_bajas = self._obtener_bajas_periodo(panaderia_id, fecha_inicio, fecha_fin)
+                if total_bajas > 0:
+                    categoria_bajas = _("Pérdidas por Baja de Inventario")
+                    gastos[categoria_bajas] = gastos.get(categoria_bajas, 0) + total_bajas
+            except Exception as e_bajas:
+                print(f"Error al agregar bajas a gastos por categoría: {e_bajas}")
             
             return gastos
         except Exception as e:

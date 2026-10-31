@@ -227,7 +227,7 @@ def crear_tablas_en_orden(schema_name):
             fecha_movimiento TIMESTAMP DEFAULT NOW(),
             observaciones TEXT,
             materia_prima_id INTEGER REFERENCES {schema_name}.materias_primas(id),
-            orden_produccion_id INTEGER REFERENCES {schema_name}.ordenes_produccion(id),
+            orden_produccion_id INTEGER,  -- ⚠️ FK diferida (ver ALTER TABLE después de ordenes_produccion)
             cantidad_utilizada FLOAT DEFAULT 0
         )
     '''))
@@ -589,7 +589,17 @@ def crear_tablas_en_orden(schema_name):
             panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id)
         )
     '''))
-    
+    # =============================================
+    # 27.1. FK DIFERIDA: historial_inventario → ordenes_produccion
+    # ✅ Fix 31 Oct 2026: No se puede crear la FK inline en historial_inventario
+    # porque ordenes_produccion se crea después. Se difiere hasta acá.
+    # Patrón estándar de migraciones PostgreSQL (evita dependencia circular).
+    # =============================================
+    db.session.execute(text(f'''
+        ALTER TABLE {schema_name}.historial_inventario
+            ADD CONSTRAINT fk_historial_inventario_orden_produccion
+            FOREIGN KEY (orden_produccion_id) REFERENCES {schema_name}.ordenes_produccion(id)
+    '''))
     # =============================================
     # 28. activos_fijos (depende de panaderias)
     # =============================================
@@ -1380,7 +1390,7 @@ from models import db, MODULOS_SISTEMA, ROLES_PERMISOS
 # 🔴 CRÍTICO: ConfiguracionPanaderia y Tenant DEBEN estar PRIMERO
 from models import ConfiguracionPanaderia, Tenant
 from models import Usuario, Producto, Venta, DetalleVenta, MateriaPrima, Receta, RecetaIngrediente, RecetaTopping, Panaderia
-from models import OrdenProduccion, Categoria, Proveedor, HistorialCompra, HistorialInventario
+from models import OrdenProduccion, Categoria, Proveedor, HistorialCompra, HistorialInventario, BajaInventario
 from models import ConfiguracionProduccion, HistorialRotacionProducto, ControlVidaUtil, Factura
 from models import ProductoExterno, CompraExterna, RegistroDiario, SaldoBanco, PagoIndividual, DepositoBancario
 from models import JornadaVentas, CierreDiario, obtener_jornada_activa, cerrar_jornada_actual, obtener_ventas_dia, obtener_historial_cierres
@@ -3911,7 +3921,68 @@ def ventas_del_dia():
     ).order_by(Venta.id.desc()).all()
     
     return render_template('ventas_del_dia.html', ventas=ventas, hoy=hoy)
+
+@app.route('/baja_inventario')
+@login_required
+@modulo_requerido('punto_venta')
+def baja_inventario():
+    """
+    Pantalla para registrar Bajas de Inventario (pérdidas de productos de vitrina
+    por VENCIMIENTO o ROTURA).
     
+    Soporta filtro por fecha (?fecha=YYYY-MM-DD) o ver todo (?ver=todo).
+    """
+    panaderia_id = current_user.panaderia_id
+    hoy = datetime.now().date()
+    
+    # ---- Filtro de fecha ----
+    filtro_fecha = request.args.get('fecha')
+    ver_todo = request.args.get('ver') == 'todo'
+    
+    query = db.session.query(BajaInventario, Producto.nombre).join(
+        Producto, BajaInventario.producto_id == Producto.id
+    ).filter(BajaInventario.panaderia_id == panaderia_id)
+
+    if ver_todo:
+        # Ver todo el historial (últimos 100 registros)
+        query = query.order_by(BajaInventario.fecha_baja.desc()).limit(100)
+        fecha_actual_str = "Todo el Historial"
+    elif filtro_fecha:
+        try:
+            fecha_dt = datetime.strptime(filtro_fecha, '%Y-%m-%d').date()
+            query = query.filter(func.date(BajaInventario.fecha_baja) == fecha_dt)
+            fecha_actual_str = fecha_dt.strftime('%d/%m/%Y')
+        except ValueError:
+            query = query.filter(func.date(BajaInventario.fecha_baja) == hoy)
+            fecha_actual_str = hoy.strftime('%d/%m/%Y')
+    else:
+        # Por defecto: hoy
+        query = query.filter(func.date(BajaInventario.fecha_baja) == hoy)
+        fecha_actual_str = hoy.strftime('%d/%m/%Y')
+        filtro_fecha = hoy.strftime('%Y-%m-%d')
+
+    resultados = query.all()
+    
+    # Formatear lista para el template (incluyendo nombre del producto)
+    bajas_hoy = []
+    total_bajas_hoy = 0
+    for baja, prod_nombre in resultados:
+        # Adjuntamos el nombre al objeto en memoria para usarlo en el template
+        baja._nombre_producto = prod_nombre
+        bajas_hoy.append(baja)
+        total_bajas_hoy += (baja.costo_total or 0)
+
+    return render_template(
+        'baja_inventario.html',
+        bajas_hoy=bajas_hoy,
+        total_bajas_hoy=total_bajas_hoy,
+        cantidad_bajas_hoy=len(bajas_hoy),
+        hoy=hoy,
+        fecha_actual_str=fecha_actual_str,
+        filtro_fecha=filtro_fecha,
+        ver_todo=ver_todo
+    )
+        
 @app.route('/agregar_al_carrito', methods=['POST'])
 @login_required
 @modulo_requerido('punto_venta')
@@ -8112,7 +8183,19 @@ def reporte_cierre_caja():
                 'cantidad_productos': cantidad_productos
             })
                
+        # ✅ INYECCIÓN: Calcular bajas del turno (informativo, no afecta caja)
+        try:
+            from models import BajaInventario
+            total_bajas_turno = db.session.query(func.sum(BajaInventario.costo_total)).filter(
+                BajaInventario.panaderia_id == panaderia_id,
+                func.date(BajaInventario.fecha_baja) == fecha_consultada,
+            ).scalar() or 0.0
+        except Exception as e_bajas:
+            print(f"Error calculando bajas del turno: {e_bajas}")
+            total_bajas_turno = 0.0
+
         # 🆕 ENVIAR DATOS COMPLETOS AL TEMPLATE
+        
         return render_template('cierre_caja.html',
                             fecha=fecha_consultada,
                             hoy=hoy,
@@ -8141,7 +8224,9 @@ def reporte_cierre_caja():
                             utilidades_por_producto=utilidades_por_producto,
                             # 🆕 NUEVAS VARIABLES PARA PDF SEPARADO
                             productos_vendidos=productos_vendidos_final,
-                            productos_donados_detalle=productos_donados_final)
+                            productos_donados_detalle=productos_donados_final,
+                            total_bajas_turno=total_bajas_turno) # ✅ INYECCIÓN
+                             
                             
     
     except Exception as e:
@@ -13067,6 +13152,180 @@ def api_stock_vitrina_actualizado():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+
+
+# ============================================
+# API: BAJA DE INVENTARIO (Feature 30 Oct 2026)
+# ============================================
+
+@app.route('/api/productos_vitrina', methods=['GET'])
+@login_required
+@modulo_requerido('punto_venta')
+def api_productos_vitrina():
+    """
+    Devuelve la lista de productos de vitrina (tipo_producto='produccion')
+    con stock > 0, para poblar el carrito de Baja de Inventario.
+    """
+    try:
+        panaderia_id = obtener_panaderia_actual()
+        if not panaderia_id:
+            return jsonify({'success': False, 'error': 'No autorizado'}), 401
+
+        productos = Producto.query.filter_by(
+            panaderia_id=panaderia_id,
+            activo=True,
+            tipo_producto='produccion',
+        ).filter(Producto.stock_actual > 0).order_by(Producto.nombre).all()
+
+        productos_list = []
+        for p in productos:
+            # Calcular costo real: si tiene receta, usar costo_total/unidades_obtenidas
+            costo_real = float(p.costo_compra or 0)
+            if p.receta_id:
+                receta = Receta.query.get(p.receta_id)
+                if receta and receta.unidades_obtenidas and receta.unidades_obtenidas > 0:
+                    costo_real = float(receta.costo_total or 0) / float(receta.unidades_obtenidas)
+
+            productos_list.append({
+                'id': p.id,
+                'nombre': p.nombre,
+                'stock_actual': int(p.stock_actual or 0),
+                'precio_venta': float(p.precio_venta or 0),
+                'costo_compra': costo_real,  # ← ahora envía el costo real (receta o compra)
+                'categoria_id': p.categoria_id,
+            })
+
+        return jsonify({'success': True, 'productos': productos_list})
+    except Exception as e:
+        logger.exception(f"Error en /api/productos_vitrina: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/registrar_baja', methods=['POST'])
+@login_required
+@modulo_requerido('punto_venta')
+def registrar_baja():
+    """
+    Registra una baja de inventario (pérdida de producto de vitrina).
+
+    Entrada JSON:
+      - items: lista de { producto_id, cantidad }
+      - motivo: 'VENCIMIENTO' | 'ROTURA'
+      - observaciones: string libre (opcional)
+
+    Transacción atómica:
+      1. Descuenta stock de productos.
+      2. Registra movimiento BAJA_INVENTARIO en historial_inventario.
+      3. Inserta en bajas_inventario.
+
+    ⚠️ Si algo falla, rollback total. Nada queda a medias.
+    """
+    try:
+        panaderia_id = obtener_panaderia_actual()
+        if not panaderia_id:
+            return jsonify({'success': False, 'error': 'No autorizado'}), 401
+
+        data = request.get_json() or {}
+        items = data.get('items', [])
+        motivo = (data.get('motivo') or '').upper()
+        observaciones = (data.get('observaciones') or '').strip()
+
+        # ---- Validaciones básicas ----
+        if not items:
+            return jsonify({'success': False, 'error': 'No hay productos para dar de baja'}), 400
+
+        if motivo not in ('VENCIMIENTO', 'ROTURA'):
+            return jsonify({'success': False, 'error': 'Motivo inválido. Debe ser VENCIMIENTO o ROTURA.'}), 400
+
+        usuario_id = getattr(current_user, 'id', None)
+        total_costo_baja = 0.0
+        bajas_registradas = []
+
+        # ---- Procesar cada item ----
+        for item in items:
+            producto_id = item.get('producto_id')
+            cantidad = int(item.get('cantidad', 0))
+
+            if cantidad <= 0:
+                db.session.rollback()
+                return jsonify({'success': False, 'error': 'La cantidad debe ser mayor a 0'}), 400
+
+            producto = Producto.query.filter_by(
+                id=producto_id,
+                panaderia_id=panaderia_id,
+                activo=True,
+            ).first()
+
+            if not producto:
+                db.session.rollback()
+                return jsonify({'success': False, 'error': f'Producto no encontrado: ID {producto_id}'}), 404
+
+            if producto.tipo_producto != 'produccion':
+                db.session.rollback()
+                return jsonify({'success': False, 'error': f'El producto {producto.nombre} no es de vitrina'}), 400
+
+            stock_actual = int(producto.stock_actual or 0)
+            if cantidad > stock_actual:
+                db.session.rollback()
+                return jsonify({
+                    'success': False,
+                    'error': f'Stock insuficiente para {producto.nombre}. Disponible: {stock_actual}, solicitado: {cantidad}'
+                }), 400
+
+            # Snapshot de costos
+            # Para productos de producción (con receta): costo real = costo_total / unidades_obtenidas
+            # Para productos externos (sin receta): costo_compra
+            costo_unitario = float(producto.costo_compra or 0)
+            if producto.receta_id:
+                receta = Receta.query.get(producto.receta_id)
+                if receta and receta.unidades_obtenidas and receta.unidades_obtenidas > 0:
+                    costo_unitario = float(receta.costo_total or 0) / float(receta.unidades_obtenidas)
+
+            costo_total_item = costo_unitario * cantidad
+
+            # 1. Descontar stock del producto
+            nueva_cantidad = stock_actual - cantidad
+            producto.stock_actual = nueva_cantidad
+
+            # 2. Insertar en bajas_inventario (registro de la pérdida)
+            # ⚠️ NO escribimos en HistorialInventario: esa tabla es para movimientos
+            #    de producción (siempre ligados a orden_produccion_id + materia_prima_id).
+            #    Una baja de vitrina NO es producción: su historial vive en bajas_inventario.
+            baja = BajaInventario(
+                panaderia_id=panaderia_id,
+                producto_id=producto.id,
+                cantidad=cantidad,
+                motivo=motivo,
+                costo_unitario=costo_unitario,
+                costo_total=costo_total_item,
+                usuario_id=usuario_id,
+                observaciones=observaciones or None,
+            )
+            db.session.add(baja)
+            bajas_registradas.append(baja)
+
+            total_costo_baja += costo_total_item
+
+        # ---- Commit atómico ----
+        db.session.commit()
+
+        logger.info(
+            f"[BAJA_INVENTARIO] Tenant {panaderia_id} | "
+            f"{len(bajas_registradas)} producto(s) | motivo={motivo} | "
+            f"costo_total=${total_costo_baja:.2f} | usuario_id={usuario_id}"
+        )
+
+        return jsonify({
+            'success': True,
+            'message': f'Baja registrada: {len(bajas_registradas)} producto(s), costo total ${total_costo_baja:.2f}',
+            'bajas_count': len(bajas_registradas),
+            'costo_total': round(total_costo_baja, 2),
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.exception(f"Error en /registrar_baja: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 # ============================================
 # FIN ENDPOINTS NUEVOS
 # ============================================
