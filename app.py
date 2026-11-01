@@ -1544,6 +1544,11 @@ def load_user(user_id):
                 user.activo = user_data[8] if user_data[8] is not None else True
                 user.fecha_creacion = user_data[9]
                 user.tenant_id = tenant_id
+                # ✅ FIX DE RAÍZ (1 Nov 2026): re-attachear a la db.session.
+                # Sin esto, current_user es detached y db.session.commit() NO
+                # persiste cambios en current_user (ver DT-nueva-CRÍTICA-3).
+                # merge() busca por PK y devuelve una copia attached del objeto.
+                user = db.session.merge(user)
 
         # =============================================
         # 2. FALLBACK: BUSCAR EN PUBLIC (solo para dev_master)
@@ -1570,6 +1575,9 @@ def load_user(user_id):
                 user.email = user_data[6]
                 user.telefono = user_data[7]
                 user.tenant_id = 1
+                # ✅ FIX DE RAÍZ (1 Nov 2026): re-attachear a la db.session.
+                # Mismo motivo que en el branch tenant de arriba.
+                user = db.session.merge(user)
 
     except Exception as e:
         # Rollback defensivo: si una query falla, liberamos la sesión para
@@ -11316,6 +11324,10 @@ def mi_perfil():
             current_user.telefono = request.form.get('telefono', '')
 
             # Cambio de contraseña
+            # ✅ Fix de raíz (1 Nov 2026): current_user ya es attached gracias a
+            # db.session.merge() en load_user (L~1546 y ~1572). Por eso
+            # current_user.set_password() + db.session.commit() persiste
+            # correctamente. Sin necesidad de SQL directo.
             nueva_password = request.form.get('nueva_password', '')
             if nueva_password:
                 password_actual = request.form.get('password_actual', '')
