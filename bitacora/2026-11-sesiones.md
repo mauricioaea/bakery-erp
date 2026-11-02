@@ -63,7 +63,7 @@
 
 ## Sesión 1 Nov 2026 (noche) — DT-nueva-CRÍTICA-1: depósitos CONCILIADOS inmutables
 
-**Commit:** `PENDIENTE_HASH` (se asigna al commitear)
+**Commit:** `5d289fd` (se asigna al commitear)
 
 ### Contexto
 CRÍTICA-1 era la siguiente tarea tras el fix de `current_user` detached (`6173cfe`). Bug: el botón "Ver" de un depósito con `estado='CONCILIADO'` abría el **mismo modal editable** que "Editar", y el backend `editar_deposito_bancario()` **no validaba el estado**. Un `POST` directo (curl/Postman) permitía modificar monto/fecha/referencia de un depósito ya conciliado — vulnerabilidad contable.
@@ -117,9 +117,9 @@ CRÍTICA-1 era la siguiente tarea tras el fix de `current_user` detached (`6173c
 
 | # | Descripción | Commit |
 |---|-------------|--------|
-| Bug CRÍTICA-1 | `editar_deposito_bancario()` sin validación de estado → early-return 403 + `logger.warning` con usuario | `PENDIENTE_HASH` |
-| Fix preexistente | `from datetime import date` local redundante + mal indentado en `editar_deposito_bancario()` (bug latente `NameError`) | `PENDIENTE_HASH` |
-| Feature frontend | `setModalModoLectura()` + botón "Ver" del CONCILIADO como solo-lectura (`btn-secondary`, sin Guardar) | `PENDIENTE_HASH` |
+| Bug CRÍTICA-1 | `editar_deposito_bancario()` sin validación de estado → early-return 403 + `logger.warning` con usuario | `5d289fd` |
+| Fix preexistente | `from datetime import date` local redundante + mal indentado en `editar_deposito_bancario()` (bug latente `NameError`) | `5d289fd` |
+| Feature frontend | `setModalModoLectura()` + botón "Ver" del CONCILIADO como solo-lectura (`btn-secondary`, sin Guardar) | `5d289fd` |
 | QA | Smoke test 7/7 (UI + backend 403 + log + no-regresión) | — |
 
 ### Hallazgos nuevos (anotados, NO tocados — Fase D)
@@ -128,4 +128,4 @@ CRÍTICA-1 era la siguiente tarea tras el fix de `current_user` detached (`6173c
 3. **DT-nueva-MEDIA (whitelist `estado` backend):** `editar_deposito_bancario()` acepta `data['estado']` sin validar contra `{'REGISTRADO', 'CONCILIADO', 'ANULADO'}`. Persistiría cualquier string. No explota visualmente pero es un hueco. Anotar para Fase D (mismo commit que el punto 2).
 
 ### Estado al cierre
-- Último commit: `PENDIENTE_HASH`. Próxima tarea: **DT-nueva-MEDIA-ALTA** (donaciones suman en "Ingresos" del reporte Análisis Productos).
+- Último commit: `5d289fd`. Próxima tarea: **DT-nueva-MEDIA-ALTA** (donaciones suman en "Ingresos" del reporte Análisis Productos).

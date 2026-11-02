@@ -1,10 +1,10 @@
 # 🗂️ CONTEXTO MAESTRO — PanaderíaPro (Bakery ERP) — v9.7
 
 **Última actualización:** 1 de Noviembre, 2026 (noche)
-**Último commit:** `PENDIENTE_HASH` (fix de raíz: CRÍTICA-1 — depósitos CONCILIADOS inmutables)
+**Último commit:** `5d289fd` (fix de raíz: CRÍTICA-1 — depósitos CONCILIADOS inmutables)
 **HANDOFF anterior:** `HANDOFF_v9.5.md` (histórico congelado, ver raíz del proyecto)
 **Bitácoras históricas:** `bitacora/2026-10-sesiones.md`, `bitacora/2026-11-sesiones.md`
-**Sesión 1 Nov (noche):** Fix CRÍTICA-1 (depósitos CONCILIADOS editables) — backend 403 + frontend solo-lectura + smoke test 7/7. Commit `PENDIENTE_HASH`.
+**Sesión 1 Nov (noche):** Fix CRÍTICA-1 (depósitos CONCILIADOS editables) — backend 403 + frontend solo-lectura + smoke test 7/7. Commit `5d289fd`.
 **Sesión 1 Nov (mañana):** Fix de raíz `current_user` detached (`db.session.merge()` en `load_user`) + test de regresión 6/6 + commit `6173cfe`.
 **Sesión 31 Oct:** Feature Baja de Inventario + fix FK diferida en `crear_tenant_saas()` + smoke test tenants nuevos (commits `ba48503` + `52696be`).
 
@@ -103,14 +103,14 @@
 - Toppings: `9e645ba` — tabla `receta_toppings`, costos por gramos/lote, descuento de stock, `/api/calcular_ingredientes`.
 - Anulación POS: `4ecfde9` — soft-delete `Venta.estado`, `/ventas_del_dia`, `POST /anular_venta/<id>`, blindaje de 11 consultas.
 - Baja de Inventario: `ba48503` + `52696be` — `bajas_inventario` (motivo `VENCIMIENTO`/`ROTURA`), `/baja_inventario`, `/api/productos_vitrina`, `POST /registrar_baja`, costo desde receta; integrado en Estado de Resultados, Análisis de Gastos y Cierre de Caja.
-- **Fix CRÍTICA-1 (1 Nov noche):** `PENDIENTE_HASH` — depósitos CONCILIADOS inmutables (backend 403 + frontend solo-lectura).
+- **Fix CRÍTICA-1 (1 Nov noche):** `5d289fd` — depósitos CONCILIADOS inmutables (backend 403 + frontend solo-lectura).
 
 ---
 
 ## 6️⃣ Últimos commits
 
 ```text
-PENDIENTE_HASH fix(CRITICA-1): bloquear edición de depósitos CONCILIADOS (auditoría contable)
+5d289fd fix(CRITICA-1): bloquear edición de depósitos CONCILIADOS (auditoría contable)
 45e4655 docs: HANDOFF v9.6 liviano + bitacora mensual (oct/nov) + HANDOFF_v9.5 historico congelado
 6173cfe fix: current_user detached — db.session.merge() en load_user (CRÍTICA-3 resuelta)
 52696be cierre Feature Baja de Inventario + fix FK diferida fk_historial_inventario_orden_produccion
@@ -121,7 +121,7 @@ ba48503 feat(baja-inventario): schema BD + modelo ORM + migracion base
 722beb5 feat(anulacion-pos): agregar total_anulaciones a cierres_diarios
 9e645ba feat: toppings en recetas (costos, stock, historial, modal de produccion)
 7️⃣ Deuda técnica PENDIENTE
-Tablas de DT resueltas (incluidas CRÍTICA-3 6173cfe y CRÍTICA-1 PENDIENTE_HASH): ver bitacora/.
+Tablas de DT resueltas (incluidas CRÍTICA-3 6173cfe y CRÍTICA-1 5d289fd): ver bitacora/.
 
 Prioridad	DT	Descripción corta
 🚨 CRÍTICA	DT-nueva-CRÍTICA-2	base_datos = tenant_{subdominio} vs schema real tenant_{id}
@@ -252,7 +252,7 @@ Bajas: filas legacy en tenant_1.configuracion_sistema · imports redundantes de 
 - Toppings: siempre en gramos; `factor_escala = cantidad_producir / unidades_obtenidas`.
 - Al agregar una nueva fuente de pérdidas/gastos (como bajas), actualizar `estado_resultados` y `analisis_gastos` en el MISMO commit.
 - Verificar los `print` y strings de JS en templates: el mojibake puede romper el JS y mostrarlo como texto plano.
-- **Depósitos bancarios:** `CONCILIADO` es inmutable (CRÍTICA-1, `PENDIENTE_HASH`). Editar un depósito conciliado → 403. No relajar esta validación sin auditoría.
+- **Depósitos bancarios:** `CONCILIADO` es inmutable (CRÍTICA-1, `5d289fd`). Editar un depósito conciliado → 403. No relajar esta validación sin auditoría.
 
 ### Comandos útiles
 
@@ -306,7 +306,7 @@ Demo: fases 1-12 completas (~9.972 filas), contraseña demo2026, idioma = pap.
 
 1️⃣1️⃣ Estado actual (resumen ejecutivo)
 Aspecto	Estado
-Último commit	PENDIENTE_HASH en origin/main (a pushear)
+Último commit	5d289fd en origin/main (a pushear)
 Módulos	11/11 completos (100%)
 Fix 1 Nov (noche)	✅ CRÍTICA-1 aplicada, smoke test 7/7, pusheada tras commit
 Fix 1 Nov (mañana)	✅ CRÍTICA-3 aplicada (6173cfe), test 6/6
