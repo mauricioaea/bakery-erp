@@ -10347,15 +10347,26 @@ def editar_deposito_bancario(deposito_id):
                 'error': 'Depósito no encontrado'
             }), 404
 
+        # 🔒 CRÍTICA-1: los depósitos CONCILIADOS son inmutables (auditoría contable).
+        # Para desconciliar se requerirá un endpoint dedicado con auditoría.
+        if deposito.estado == 'CONCILIADO':
+            logger.warning(
+                f"⛔ Intento de editar depósito CONCILIADO id={deposito_id} "
+                f"por usuario={current_user.username} — bloqueado."
+            )
+            return jsonify({
+                'success': False,
+                'error': 'No se puede editar un depósito CONCILIADO. Contacte al administrador si necesita desconciliarlo.'
+            }), 403
+
         # Actualizar campos permitidos
         if 'fecha_deposito' in data:
-            from datetime import date
-        fecha_deposito = datetime.strptime(data['fecha_deposito'], '%Y-%m-%d').date()
-        
-        # 🔒 VALIDACIÓN: No permitir fechas futuras
-        hoy = date.today()
-        if fecha_deposito > hoy:
-            return jsonify({'success': False, 'error': 'No se pueden registrar depósitos con fecha futura. La fecha debe ser hoy o anterior.'}), 400
+            fecha_deposito = datetime.strptime(data['fecha_deposito'], '%Y-%m-%d').date()
+
+            # 🔒 VALIDACIÓN: No permitir fechas futuras
+            hoy = date.today()
+            if fecha_deposito > hoy:
+                return jsonify({'success': False, 'error': 'No se pueden registrar depósitos con fecha futura. La fecha debe ser hoy o anterior.'}), 400
         if 'monto' in data:
             deposito.monto = float(data['monto'])
         if 'descripcion' in data:

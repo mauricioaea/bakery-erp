@@ -824,8 +824,9 @@
                     <button class="btn btn-danger btn-sm" onclick="confirmarEliminarDeposito(${deposito.id})">Eliminar</button>
                 `;
             } else {
+                // 🔒 CRÍTICA-1: CONCILIADO (o cualquier estado no editable) → solo lectura
                 acciones = `
-                    <button class="btn btn-info btn-sm" onclick="abrirModalDeposito('editar', ${deposito.id})">Ver</button>
+                    <button class="btn btn-secondary btn-sm" onclick="abrirModalDeposito('ver', ${deposito.id})">Ver</button>
                 `;
             }
 
@@ -904,7 +905,8 @@
             form.reset();
             document.getElementById('depositoId').value = '';
             document.getElementById('fechaDeposito').value = new Date().toISOString().split('T')[0];
-        } else if (accion === 'editar' && id) {
+            setModalModoLectura(false); // 🔒 CRÍTICA-1: reset a editable
+        } else if ((accion === 'editar' || accion === 'ver') && id) {
             titulo.textContent = 'Editar Depósito Bancario';
             fetch(`/depositos_bancarios/${id}`)
                 .then(response => response.json())
@@ -919,11 +921,34 @@
                         document.getElementById('cuentaDeposito').value = d.cuenta_bancaria || '';
                         document.getElementById('metodoDeposito').value = d.metodo_deposito || 'efectivo';
                         document.getElementById('estadoDeposito').value = d.estado || 'REGISTRADO';
+
+                        // 🔒 CRÍTICA-1: si está CONCILIADO → modo solo lectura
+                        const esConciliado = (d.estado === 'CONCILIADO');
+                        setModalModoLectura(esConciliado);
+                        titulo.textContent = esConciliado
+                            ? 'Ver Depósito (Conciliado — solo lectura)'
+                            : 'Editar Depósito Bancario';
                     }
                 })
                 .catch(error => console.error('Error:', error));
         }
         modal.style.display = 'block';
+    }
+
+    // 🔒 CRÍTICA-1: alterna el modal entre editable y solo-lectura.
+    // Deshabilita todos los inputs y oculta el botón Guardar cuando el depósito está CONCILIADO.
+    function setModalModoLectura(soloLectura) {
+        const campos = [
+            'fechaDeposito', 'montoDeposito', 'descripcionDeposito',
+            'bancoDeposito', 'referenciaDeposito', 'cuentaDeposito',
+            'metodoDeposito', 'estadoDeposito'
+        ];
+        campos.forEach(campoId => {
+            const el = document.getElementById(campoId);
+            if (el) el.disabled = soloLectura;
+        });
+        const btnGuardar = document.getElementById('btnGuardarDeposito');
+        if (btnGuardar) btnGuardar.style.display = soloLectura ? 'none' : '';
     }
 
     function cerrarModalDeposito() {
