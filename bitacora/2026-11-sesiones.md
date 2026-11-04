@@ -129,3 +129,58 @@ CRÍTICA-1 era la siguiente tarea tras el fix de `current_user` detached (`6173c
 
 ### Estado al cierre
 - Último commit: `5d289fd`. Próxima tarea: **DT-nueva-MEDIA-ALTA** (donaciones suman en "Ingresos" del reporte Análisis Productos).
+---
+
+## Sesión 3 Nov — Fix MEDIA-ALTA + auditoría de cadena financiera
+
+**Objetivo:** Cerrar DT-nueva-MEDIA-ALTA (donaciones sumaban en "Ingresos" del reporte Análisis Productos).
+
+### Diagnóstico
+- Bug detectado en 3 endpoints: `reporte_ventas`, `reporte_productos_populares`, `reporte_ventas_avanzado`.
+- Las queries de `DetalleVenta.join(Venta)` NO filtraban `es_donacion == False` ni `estado == 'COMPLETADA'`.
+- Auditoría extendida reveló 11 bugs adicionales en cadena financiera (cierre diario, tendencia, proyección, comparativas, alertas, análisis de rotación).
+
+### Fix aplicado (15 bloques)
+**app.py:**
+- 7714 cierre diario: filtra donaciones de totales
+- 7963 comparativa día anterior: agrega `estado`
+- 8296 call site `calcular_tendencia_ventas`
+- 8298 + 8386 + 8748 reportes de ventas (fix original MEDIA-ALTA)
+- 8385 `fecha_fin_inclusive` + 8393, 8432, 8470 (`< fecha_fin_inclusive`)
+- 8510 call site `calcular_proyeccion_ventas`
+- 8731 call site `calcular_tendencia_ventas`
+- 8926 `obtener_ventas_del_dia`: 3 filtros
+
+**models.py:**
+- 1725 `calcular_tendencia_ventas`: firma extendida + 3 filtros
+- 1799 `calcular_rotacion_automatica`: 3 filtros
+- 1877 `calcular_proyeccion_ventas`: firma extendida + 3 filtros
+- 2080 `obtener_productos_sin_ventas_recientes`: + 2 filtros
+
+**reportes.py:**
+- 1516 `_obtener_datos_tendencia_ventas`: + `es_donacion`
+
+**templates:**
+- `ventas_periodo.html`: nueva columna "Donaciones"
+- `productos_populares.html`: nueva columna "Donaciones"
+
+### Test (validado con PDFs)
+- Inyectadas 1 venta donación ($4,500) + 1 venta normal ($3,000) en tenant_27.
+- **Historial de Ventas:** Total $3,000 (no $7,500). ✅
+- **Productos Populares:** 2 transacciones donación, 2 productos. Fila "almojábanas 2" con `(3)` en Donaciones, ingresos $3,000. ✅
+- **Reporte Avanzado + IA:** TOTAL VENTAS $3,000, DONACIONES 1. ✅
+- **Análisis Predictivo:** muestra donaciones correctamente. ✅
+- **Tendencia de Ventas:** carga OK. ✅
+
+### DTs nuevas detectadas
+- `DT-nueva-BAJA`: endpoint huérfano `reporte_ventas_periodo` vs `reporte_ventas`.
+- `DT-nueva-MEDIA-BAJA`: `cerrar_jornada_ventas` (models.py:2166) sin filtros — verificar por diseño.
+
+### DTs cerradas
+- ✅ `DT-nueva-MEDIA-ALTA` (donaciones en "Ingresos").
+- ✅ `DT-nueva-MEDIA (fecha_fin a medianoche)` — se aplicó `fecha_fin_inclusive` en `reporte_productos_populares`.
+
+### Notas
+- Backup: `backup_pre_donaciones_test.backup` (por si acaso).
+- 4 archivos de código modificados: `app.py`, `models.py`, `reportes.py`, + 2 templates.
+- Commit pendiente de push tras auditoría.

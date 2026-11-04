@@ -1722,7 +1722,7 @@ class PermisoUsuario(db.Model):
 # FUNCIONES DE APOYO PARA ANÁLISIS ML (agregar al final de models.py)
 # =============================================
 
-def calcular_tendencia_ventas(fecha_inicio, fecha_fin):
+def calcular_tendencia_ventas(fecha_inicio, fecha_fin, panaderia_id=None):
     """Calcula tendencia de ventas usando datos históricos"""
     try:
         # Período anterior para comparación (misma duración)
@@ -1730,15 +1730,23 @@ def calcular_tendencia_ventas(fecha_inicio, fecha_fin):
         fecha_inicio_anterior = fecha_inicio - timedelta(days=dias_periodo)
         fecha_fin_anterior = fecha_inicio - timedelta(days=1)
         
+        # Base query común con filtros completos
+        base_query = Venta.query.filter(
+            Venta.estado == 'COMPLETADA',       # ✅ excluye anuladas
+            Venta.es_donacion == False          # ✅ excluye donaciones
+        )
+        if panaderia_id is not None:
+            base_query = base_query.filter(Venta.panaderia_id == panaderia_id)  # ✅ multi-tenant
+        
         # Ventas período actual
-        ventas_actual = Venta.query.filter(
+        ventas_actual = base_query.filter(
             db.func.date(Venta.fecha_hora) >= fecha_inicio,
             db.func.date(Venta.fecha_hora) <= fecha_fin
         ).all()
         total_actual = sum(venta.total for venta in ventas_actual)
         
         # Ventas período anterior
-        ventas_anterior = Venta.query.filter(
+        ventas_anterior = base_query.filter(
             db.func.date(Venta.fecha_hora) >= fecha_inicio_anterior,
             db.func.date(Venta.fecha_hora) <= fecha_fin_anterior
         ).all()
@@ -1788,16 +1796,22 @@ def analizar_productos_periodo(detalles):
     
     return productos
 
-def calcular_rotacion_automatica(producto_id):
+def calcular_rotacion_automatica(producto_id, panaderia_id=None):
     """Calcula la rotación automática de un producto basado en ventas históricas"""
     try:
         # Obtener ventas de los últimos 30 días
         fecha_inicio = datetime.now() - timedelta(days=30)
         
-        ventas = DetalleVenta.query.join(Venta).filter(
+        query = DetalleVenta.query.join(Venta).filter(
             DetalleVenta.producto_id == producto_id,
-            Venta.fecha_hora >= fecha_inicio
-        ).all()
+            Venta.fecha_hora >= fecha_inicio,
+            Venta.estado == 'COMPLETADA',       # ✅ excluye anuladas
+            Venta.es_donacion == False          # ✅ excluye donaciones
+        )
+        if panaderia_id is not None:
+            query = query.filter(Venta.panaderia_id == panaderia_id)  # ✅ multi-tenant
+        
+        ventas = query.all()
         
         # Calcular total vendido en el período
         total_vendido = sum(detalle.cantidad for detalle in ventas)
@@ -1866,7 +1880,7 @@ def calcular_rotacion_automatica_por_nombre(nombre_producto):
         print(f"Error calculando rotación para {nombre_producto}: {e}")
         return 0
 
-def calcular_proyeccion_ventas(producto_id, dias_proyeccion=7):
+def calcular_proyeccion_ventas(producto_id, dias_proyeccion=7, panaderia_id=None):
     """Calcula proyección de ventas usando datos históricos y ML"""
     try:
         from datetime import datetime, timedelta
@@ -1876,10 +1890,17 @@ def calcular_proyeccion_ventas(producto_id, dias_proyeccion=7):
         # Obtener ventas históricas (últimos 60 días)
         fecha_inicio = datetime.now().date() - timedelta(days=60)
         
-        ventas = DetalleVenta.query.join(Venta).filter(
+        # Query con filtros completos
+        query = DetalleVenta.query.join(Venta).filter(
             DetalleVenta.producto_id == producto_id,
-            Venta.fecha_hora >= fecha_inicio
-        ).all()
+            Venta.fecha_hora >= fecha_inicio,
+            Venta.estado == 'COMPLETADA',       # ✅ excluye anuladas
+            Venta.es_donacion == False          # ✅ excluye donaciones
+        )
+        if panaderia_id is not None:
+            query = query.filter(Venta.panaderia_id == panaderia_id)  # ✅ multi-tenant
+        
+        ventas = query.all()
         
         if not ventas:
             return {'proyeccion': 0, 'rotacion_actual': 0, 'dias_stock': 999, 'nivel_riesgo': 'BAJO'}
@@ -2063,8 +2084,10 @@ def obtener_productos_sin_ventas_recientes(panaderia_id=None, dias=7):
     try:
         # 🔍 Obtener todos los IDs de ventas recientes del tenant actual
         ventas_recientes = Venta.query.filter(
-            Venta.panaderia_id == panaderia_id,  # ✅ FILTRO POR TENANT
-            Venta.fecha_hora >= fecha_limite
+            Venta.panaderia_id == panaderia_id,
+            Venta.fecha_hora >= fecha_limite,
+            Venta.estado == 'COMPLETADA',       # ✅ excluye anuladas
+            Venta.es_donacion == False          # ✅ excluye donaciones
         ).with_entities(Venta.id).all()
         
         venta_ids = [vr[0] for vr in ventas_recientes]

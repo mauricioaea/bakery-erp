@@ -7711,14 +7711,15 @@ def realizar_cierre():
             Venta.estado == 'ANULADA'
         ).all()
         
-        # ✅ CALCULAR TOTALES
-        total_ventas = sum(venta.total for venta in ventas_hoy)
+        # ✅ CALCULAR TOTALES (excluyendo donaciones)
+        ventas_hoy_normales = [v for v in ventas_hoy if not v.es_donacion]
+        total_ventas = sum(venta.total for venta in ventas_hoy_normales)
         total_anulaciones = sum(venta.total for venta in ventas_anuladas)  # 🆕
-        total_efectivo = sum(venta.total for venta in ventas_hoy 
+        total_efectivo = sum(venta.total for venta in ventas_hoy_normales 
                            if venta.metodo_pago == 'efectivo')
-        total_transferencias = sum(venta.total for venta in ventas_hoy 
+        total_transferencias = sum(venta.total for venta in ventas_hoy_normales 
                                  if venta.metodo_pago == 'transferencia')
-        total_tarjetas = sum(venta.total for venta in ventas_hoy 
+        total_tarjetas = sum(venta.total for venta in ventas_hoy_normales 
                            if venta.metodo_pago == 'tarjeta')
         
         # ✅ CREAR REGISTRO DE CIERRE DIARIO
@@ -7963,7 +7964,8 @@ def reporte_cierre_caja():
         dia_anterior = fecha_consultada - timedelta(days=1)
         ventas_dia_anterior = Venta.query.filter(
             db.func.date(Venta.fecha_hora) == dia_anterior,
-            Venta.panaderia_id == panaderia_id  # 🎯 FILTRO MULTICLIENTE
+            Venta.panaderia_id == panaderia_id,  # 🎯 FILTRO MULTICLIENTE
+            Venta.estado == 'COMPLETADA'         # ✅ excluye anuladas
         ).all()
         
         ventas_dia_anterior_normales = [v for v in ventas_dia_anterior if not v.es_donacion]
@@ -8292,16 +8294,51 @@ def reporte_ventas():
     total_ventas = total_ventas_normales
     promedio_venta = total_ventas_normales / len(ventas_normales) if ventas_normales else 0
     
-    tendencia = calcular_tendencia_ventas(fecha_inicio, fecha_fin)
+    tendencia = calcular_tendencia_ventas(fecha_inicio, fecha_fin, panaderia_id=panaderia_id)
     
     # ✅ Productos más vendidos del período (CON FILTRO POR TENANT)
     detalles_periodo = DetalleVenta.query.join(Venta).filter(
-        db.func.date(Venta.fecha_hora) >= fecha_inicio,
-        db.func.date(Venta.fecha_hora) <= fecha_fin,
-        Venta.panaderia_id == panaderia_id  # ✅ FILTRO MULTI-TENANT
+            db.func.date(Venta.fecha_hora) >= fecha_inicio,
+            db.func.date(Venta.fecha_hora) <= fecha_fin,
+            Venta.panaderia_id == panaderia_id,
+            Venta.estado == 'COMPLETADA',        # ✅ excluye anuladas
+            Venta.es_donacion == False           # ✅ excluye donaciones de "Ingresos"
     ).all()
     
+        
     productos_analisis = analizar_productos_periodo(detalles_periodo)
+    
+    # 🎁 DONACIONES POR PRODUCTO (excluidas de "Ingresos")
+    donaciones_por_producto = {}
+    try:
+        donaciones_periodo = DetalleVenta.query.join(Venta).filter(
+            db.func.date(Venta.fecha_hora) >= fecha_inicio,
+            db.func.date(Venta.fecha_hora) <= fecha_fin,
+            Venta.panaderia_id == panaderia_id,
+            Venta.estado == 'COMPLETADA',
+            Venta.es_donacion == True
+        ).all()
+        for det in donaciones_periodo:
+            if det.producto:
+                key = f"P{det.producto.id}"
+            elif det.producto_externo:
+                key = f"E{det.producto_externo.id}"
+            else:
+                continue
+            if key not in donaciones_por_producto:
+                donaciones_por_producto[key] = {
+                    'cantidad': 0,
+                    'valor_mercado': 0
+                }
+            donaciones_por_producto[key]['cantidad'] += det.cantidad
+            donaciones_por_producto[key]['valor_mercado'] += det.cantidad * det.precio_unitario
+        for key, datos in productos_analisis.items():
+            datos['donaciones_cantidad'] = donaciones_por_producto.get(key, {}).get('cantidad', 0)
+            datos['donaciones_valor'] = donaciones_por_producto.get(key, {}).get('valor_mercado', 0)
+        logger.info(f"🎁 Donaciones: {len(donaciones_periodo)} transacciones / {len(donaciones_por_producto)} productos")
+    except Exception as e:
+        logger.warning(f"⚠️  Error en donaciones por producto: {e}")
+        donaciones_por_producto = {}
     
     total_donaciones = len(donaciones)
     productos_donados = sum(len(v.detalles) for v in donaciones)
@@ -8344,14 +8381,19 @@ def reporte_productos_populares():
         fecha_fin = datetime.now().date()
         fecha_inicio = fecha_fin - timedelta(days=30)
     
+    # ✅ Incluir el día completo de fecha_fin (evita truncar a medianoche)
+    fecha_fin_inclusive = fecha_fin + timedelta(days=1)
+    
     # Actualizar rotaciones automáticas antes de generar reporte
     actualizaciones = actualizar_rotaciones_automaticas()
     
     # ✅ Obtener productos más vendidos del período (CON FILTRO POR TENANT)
     detalles = DetalleVenta.query.join(Venta).filter(
         Venta.fecha_hora >= fecha_inicio,
-        Venta.fecha_hora <= fecha_fin,
-        Venta.panaderia_id == panaderia_id  # ✅ FILTRO MULTI-TENANT
+        Venta.fecha_hora < fecha_fin_inclusive,       # ✅ incluye el día completo
+        Venta.panaderia_id == panaderia_id,
+        Venta.estado == 'COMPLETADA',
+        Venta.es_donacion == False
     ).all()
     
     # Analizar productos
@@ -8378,8 +8420,39 @@ def reporte_productos_populares():
                 'rotacion_promedio': 0
             }
         
+                
         analisis_productos[producto_id]['cantidad_vendida'] += detalle.cantidad
         analisis_productos[producto_id]['ingresos_totales'] += detalle.cantidad * detalle.precio_unitario
+    
+    # 🎁 DONACIONES POR PRODUCTO (excluidas de "Ingresos")
+    donaciones_por_producto = {}
+    try:
+        donaciones_periodo = DetalleVenta.query.join(Venta).filter(
+            Venta.fecha_hora >= fecha_inicio,
+            Venta.fecha_hora < fecha_fin_inclusive,       # ✅ incluye el día completo
+            Venta.panaderia_id == panaderia_id,
+            Venta.estado == 'COMPLETADA',
+            Venta.es_donacion == True
+        ).all()
+        
+        for det in donaciones_periodo:
+            if det.producto:
+                pid = det.producto.id
+            elif det.producto_externo:
+                pid = det.producto_externo.id
+            else:
+                continue
+            if pid not in donaciones_por_producto:
+                donaciones_por_producto[pid] = {'cantidad': 0, 'valor_mercado': 0}
+            donaciones_por_producto[pid]['cantidad'] += det.cantidad
+            donaciones_por_producto[pid]['valor_mercado'] += det.cantidad * det.precio_unitario
+        for pid, datos in analisis_productos.items():
+            datos['donaciones_cantidad'] = donaciones_por_producto.get(pid, {}).get('cantidad', 0)
+            datos['donaciones_valor'] = donaciones_por_producto.get(pid, {}).get('valor_mercado', 0)
+        logger.info(f"🎁 Donaciones: {len(donaciones_periodo)} transacciones / {len(donaciones_por_producto)} productos")
+    except Exception as e:
+        logger.warning(f"⚠️  Error en donaciones por producto: {e}")
+        donaciones_por_producto = {}
     
     # Ordenar por cantidad vendida
     productos_ordenados = sorted(analisis_productos.values(), 
@@ -8394,8 +8467,8 @@ def reporte_productos_populares():
     # ✅ OBTENER DATOS DE DONACIONES (CON FILTRO POR TENANT)
     ventas_periodo = Venta.query.filter(
         Venta.fecha_hora >= fecha_inicio,
-        Venta.fecha_hora <= fecha_fin,
-        Venta.panaderia_id == panaderia_id  # ✅ FILTRO MULTI-TENANT
+        Venta.fecha_hora < fecha_fin_inclusive,       # ✅ incluye el día completo
+        Venta.panaderia_id == panaderia_id
     ).all()
     
     donaciones = [v for v in ventas_periodo if v.es_donacion]
@@ -8438,7 +8511,7 @@ def reporte_analisis_predictivo():
     for receta in recetas_activas:
         if receta.producto:
             # Calcular proyecciones usando ML (INCLUYENDO DONACIONES EN DATOS HISTÓRICOS)
-            proyeccion = calcular_proyeccion_ventas(receta.producto.id)
+            proyeccion = calcular_proyeccion_ventas(receta.producto.id, panaderia_id=panaderia_id)
             productos_analisis.append({
                 'producto': receta.producto.nombre,
                 'stock_actual': receta.producto.stock_actual,
@@ -8660,7 +8733,7 @@ def reporte_ventas_avanzado():
     
     # 🎯 TENDENCIA (usando tu función existente)
     try:
-        tendencia_ml = calcular_tendencia_ventas(fecha_inicio, fecha_fin)
+        tendencia_ml = calcular_tendencia_ventas(fecha_inicio, fecha_fin, panaderia_id=panaderia_id)
         logger.info(f"📈 Tendencia ML: {tendencia_ml:.1f}%")
     except Exception as e:
         logger.warning(f"⚠️  Error en tendencia ML: {e}")
@@ -8679,13 +8752,50 @@ def reporte_ventas_avanzado():
     # 🎯 ANÁLISIS DE PRODUCTOS
     try:
         detalles_periodo = DetalleVenta.query.join(Venta).filter(
-            db.func.date(Venta.fecha_hora) >= fecha_inicio,
-            db.func.date(Venta.fecha_hora) <= fecha_fin,
-            Venta.panaderia_id == panaderia_id
-        ).all()
+        db.func.date(Venta.fecha_hora) >= fecha_inicio,
+        db.func.date(Venta.fecha_hora) <= fecha_fin,
+        Venta.panaderia_id == panaderia_id,  # ✅ FILTRO MULTI-TENANT
+        Venta.estado == 'COMPLETADA',        # ✅ excluye anuladas
+        Venta.es_donacion == False           # ✅ excluye donaciones de "Ingresos"
+    ).all()
         
+                
         productos_analisis = analizar_productos_periodo(detalles_periodo)
         logger.info(f"📦 Productos analizados: {len(productos_analisis)}")
+        
+        # 🎁 DONACIONES POR PRODUCTO (excluidas de "Ingresos")
+        donaciones_por_producto = {}
+        try:
+            donaciones_periodo = DetalleVenta.query.join(Venta).filter(
+                db.func.date(Venta.fecha_hora) >= fecha_inicio,
+                db.func.date(Venta.fecha_hora) <= fecha_fin,
+                Venta.panaderia_id == panaderia_id,
+                Venta.estado == 'COMPLETADA',
+                Venta.es_donacion == True
+            ).all()
+            for det in donaciones_periodo:
+                if det.producto:
+                    key = f"P{det.producto.id}"
+                elif det.producto_externo:
+                    key = f"E{det.producto_externo.id}"
+                else:
+                    continue
+                if key not in donaciones_por_producto:
+                    donaciones_por_producto[key] = {
+                        'cantidad': 0,
+                        'valor_mercado': 0
+                    }
+                donaciones_por_producto[key]['cantidad'] += det.cantidad
+                donaciones_por_producto[key]['valor_mercado'] += det.cantidad * det.precio_unitario
+            # Inyectar en cada producto del análisis (para la tabla del template)
+            for key, datos in productos_analisis.items():
+                datos['donaciones_cantidad'] = donaciones_por_producto.get(key, {}).get('cantidad', 0)
+                datos['donaciones_valor'] = donaciones_por_producto.get(key, {}).get('valor_mercado', 0)
+            logger.info(f"🎁 Donaciones: {len(donaciones_periodo)} transacciones / {len(donaciones_por_producto)} productos")
+        except Exception as e:
+            logger.warning(f"⚠️  Error en donaciones por producto: {e}")
+            donaciones_por_producto = {}
+            
     except Exception as e:
         logger.warning(f"⚠️  Error en análisis productos: {e}")
         productos_analisis = {}
@@ -8768,6 +8878,7 @@ def reporte_ventas_avanzado():
                          total_transacciones=total_transacciones,
                          total_donaciones=total_donaciones,
                          productos_donados=productos_donados,
+                         donaciones_por_producto=donaciones_por_producto,   # 🎁 NUEVO
                          
                          # ML (funciones existentes)
                          tendencia=tendencia_ml,
@@ -8816,7 +8927,7 @@ def reporte_ventas_avanzado():
 # ================================================== MÓDULO FINANCIERO ====================================================
 
 # === FUNCIONES AUXILIARES MEJORADAS ===
-def obtener_ventas_del_dia(fecha):
+def obtener_ventas_del_dia(fecha, panaderia_id=None):
     """Obtener ventas reales del punto de venta para una fecha específica"""
     try:
         from datetime import datetime, timedelta
@@ -8824,10 +8935,17 @@ def obtener_ventas_del_dia(fecha):
         fecha_inicio = datetime(fecha.year, fecha.month, fecha.day)
         fecha_fin = fecha_inicio + timedelta(days=1)
         
-        # Buscar ventas en ese rango de fechas
+        # Determinar panaderia_id (parámetro o contexto actual)
+        if panaderia_id is None:
+            panaderia_id = obtener_panaderia_actual()
+        
+        # Buscar ventas en ese rango de fechas (con filtros completos)
         ventas = Venta.query.filter(
             Venta.fecha_hora >= fecha_inicio,
-            Venta.fecha_hora < fecha_fin
+            Venta.fecha_hora < fecha_fin,
+            Venta.panaderia_id == panaderia_id,   # ✅ multi-tenant
+            Venta.estado == 'COMPLETADA',         # ✅ excluye anuladas
+            Venta.es_donacion == False            # ✅ excluye donaciones
         ).all()
         
         total_ventas = sum(venta.total for venta in ventas)

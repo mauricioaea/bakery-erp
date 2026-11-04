@@ -1518,7 +1518,8 @@ class GeneradorReportes:
                 Venta.fecha_hora >= fecha_inicio,
                 Venta.fecha_hora <= fecha_fin,
                 Venta.panaderia_id == panaderia_id,
-                Venta.estado == 'COMPLETADA'  # 🆕 Excluir anuladas
+                Venta.estado == 'COMPLETADA',       # ✅ excluye anuladas
+                Venta.es_donacion == False          # ✅ excluye donaciones
             ).all()
             
             # Agrupar por fecha

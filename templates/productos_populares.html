@@ -386,6 +386,7 @@
                                             <th>{{ _('Tipo') }}</th>
                                             <th class="text-center">{{ _('Unidades') }}</th>
                                             <th class="text-end">{{ _('Ingresos') }}</th>
+                                            <th class="text-center">{{ _('Donaciones') }}</th>
                                             <th class="text-center">{{ _('Rotación/día') }}</th>
                                         </tr>
                                     </thead>
@@ -409,6 +410,15 @@
                                             </td>
                                             <td class="text-center">{{ producto.cantidad_vendida }}</td>
                                             <td class="text-end">${{ "{:,.0f}".format(producto.ingresos_totales) }}</td>
+                                            <td class="text-center">
+                                                {% if producto.donaciones_cantidad and producto.donaciones_cantidad > 0 %}
+                                                    <span class="badge bg-info" title="{{ _('Valor de mercado') }}: ${{ '{:,.0f}'.format(producto.donaciones_valor or 0) }}">
+                                                        <i class="fas fa-gift me-1"></i>{{ producto.donaciones_cantidad }}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="text-muted">—</span>
+                                                {% endif %}
+                                            </td>
                                             <td class="text-center">
                                                 <span class="badge {% if producto.rotacion_promedio > 20 %}bg-success
                                                                 {% elif producto.rotacion_promedio > 10 %}bg-warning
