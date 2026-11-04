@@ -3355,6 +3355,15 @@ def anular_venta(venta_id):
                 'success': False,
                 'error': 'No se pueden anular facturas electrónicas. Use nota crédito según normativa DIAN.'
             }), 403
+            
+        # 2b) Donaciones: solo admin_cliente o super_admin pueden anularlas
+        if venta.es_donacion:
+            rol_actual = (current_user.rol or '').strip().lower()
+            if rol_actual not in ('admin_cliente', 'super_admin'):
+                return jsonify({
+                    'success': False,
+                    'error': 'Solo un administrador puede anular una donación. Contacta a tu administrador.'
+                }), 403
         
         # 3) Validaciones de negocio (helper centralizado)
         puede, motivo_rechazo = venta.puede_anularse(current_user)

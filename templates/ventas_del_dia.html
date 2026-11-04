@@ -47,11 +47,17 @@
                         <td>{{ venta.fecha_hora.strftime('%H:%M:%S') }}</td>
                         <td>{{ venta.usuario_asociado.nombre_completo if venta.usuario_asociado else 'N/A' }}</td>
                         <td>{{ venta.metodo_pago | capitalize }}</td>
-                        <td>${{ "{:,.0f}".format(venta.total) }}</td>
                         <td>
-                            {% if venta.estado == 'COMPLETADA' %}
-                                <span class="badge bg-success">Completada</span>
+                            {% if venta.estado == 'ANULADA' %}
+                                <span class="text-muted"><s>${{ "{:,.0f}".format(venta.total) }}</s></span>
+                            {% elif venta.es_donacion %}
+                                <span class="text-info" title="Donación — sin ingreso"><strong>$0</strong></span>
                             {% else %}
+                                ${{ "{:,.0f}".format(venta.total) }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if venta.estado == 'ANULADA' %}
                                 <span class="badge bg-danger mb-1">Anulada</span>
                                 <br>
                                 <small class="text-danger fw-bold d-block" style="max-width: 150px;">
@@ -62,20 +68,40 @@
                                     "{{ venta.observacion_anulacion }}"
                                 </small>
                                 {% endif %}
+                            {% elif venta.es_donacion %}
+                                <span class="badge bg-info text-dark" title="Donación: {{ venta.motivo_donacion or 'Sin motivo registrado' }}">
+                                    <i class="fas fa-gift me-1"></i>Donación
+                                </span>
+                                {% if venta.motivo_donacion %}
+                                <br>
+                                <small class="text-muted fst-italic d-block text-truncate" style="max-width: 150px;" title="{{ venta.motivo_donacion }}">
+                                    "{{ venta.motivo_donacion }}"
+                                </small>
+                                {% endif %}
+                            {% elif venta.estado == 'COMPLETADA' %}
+                                <span class="badge bg-success">Completada</span>
                             {% endif %}
                         </td>
                         <td class="text-center">
                             {% if venta.estado == 'COMPLETADA' %}
-                                <button class="btn btn-sm btn-danger" onclick="abrirModalAnulacion({{ venta.id }}, 'POS-{{ "%06d" % venta.consecutivo_pos }}')">
-                                    <i class="fas fa-ban"></i> Anular
-                                </button>
+                                {% if venta.es_donacion %}
+                                    <button class="btn btn-sm btn-outline-warning" 
+                                            onclick="abrirModalAnulacion({{ venta.id }}, 'POS-{{ "%06d" % venta.consecutivo_pos }}', true)"
+                                            title="Anular donación (requiere rol admin)">
+                                        <i class="fas fa-gift"></i> Anular donación
+                                    </button>
+                                {% else %}
+                                    <button class="btn btn-sm btn-danger" 
+                                            onclick="abrirModalAnulacion({{ venta.id }}, 'POS-{{ "%06d" % venta.consecutivo_pos }}', false)">
+                                        <i class="fas fa-ban"></i> Anular
+                                    </button>
+                                {% endif %}
                             {% else %}
                                 <button class="btn btn-sm btn-outline-secondary" disabled>
                                     <i class="fas fa-check"></i> Procesada
                                 </button>
                             {% endif %}
                             
-                            <!-- Ver recibo (opcional, abre en pestaña nueva) -->
                             <a href="{{ url_for('recibo_pos', venta_id=venta.id) }}" target="_blank" class="btn btn-sm btn-outline-primary" title="Ver Recibo">
                                 <i class="fas fa-print"></i>
                             </a>
@@ -103,10 +129,20 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
+                <!-- Aviso condicional: donación vs venta normal -->
+                <div id="avisoDonacion" class="alert alert-warning d-none">
+                    <i class="fas fa-gift me-2"></i>
+                    <strong>Estás a punto de anular una DONACIÓN.</strong><br>
+                    <small>Esta acción revertirá el stock descontado. Solo administradores pueden realizar esta acción.</small>
+                </div>
+                <div id="avisoVentaNormal">
+                    <p class="text-muted small">El stock de los productos regresará a la vitrina y esta venta no se contará en el cierre de caja.</p>
+                </div>
+                
                 <p>¿Estás seguro de anular el recibo <strong id="lblRecibo"></strong>?</p>
-                <p class="text-muted small">El stock de los productos regresará a la vitrina y esta venta no se contará en el cierre de caja.</p>
                 
                 <input type="hidden" id="ventaIdAnular">
+                <input type="hidden" id="esDonacionAnular" value="false">
                 
                 <div class="mb-3">
                     <label class="form-label font-weight-bold">Motivo de anulación:</label>
@@ -114,6 +150,7 @@
                         <option value="error_registro">Error de registro (producto/cantidad incorrecta)</option>
                         <option value="arrepentimiento">Cliente se arrepiente en el momento</option>
                         <option value="cobro_duplicado">Cobro duplicado (doble cobro)</option>
+                        <option value="donacion_por_error">Donación registrada por error (no fue donación)</option>
                     </select>
                 </div>
 
@@ -140,11 +177,24 @@
         modalAnulacionObj = new bootstrap.Modal(document.getElementById('modalAnulacion'));
     });
 
-    function abrirModalAnulacion(ventaId, numeroRecibo) {
+    function abrirModalAnulacion(ventaId, numeroRecibo, esDonacion) {
         document.getElementById('ventaIdAnular').value = ventaId;
         document.getElementById('lblRecibo').innerText = numeroRecibo;
         document.getElementById('observacionAnulacion').value = ''; // Limpiar
         document.getElementById('btnConfirmarAnulacion').disabled = false;
+        document.getElementById('esDonacionAnular').value = esDonacion ? 'true' : 'false';
+        
+        // Mostrar aviso condicional
+        const avisoDonacion = document.getElementById('avisoDonacion');
+        const avisoVentaNormal = document.getElementById('avisoVentaNormal');
+        if (esDonacion) {
+            avisoDonacion.classList.remove('d-none');
+            avisoVentaNormal.classList.add('d-none');
+        } else {
+            avisoDonacion.classList.add('d-none');
+            avisoVentaNormal.classList.remove('d-none');
+        }
+        
         modalAnulacionObj.show();
     }
 
