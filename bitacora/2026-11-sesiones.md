@@ -58,7 +58,6 @@
 ### Estado al cierre
 - Último commit: `6173cfe`. Próxima tarea: **CRÍTICA-1** (depósitos conciliados editables).
 
-
 ---
 
 ## Sesión 1 Nov 2026 (noche) — DT-nueva-CRÍTICA-1: depósitos CONCILIADOS inmutables
@@ -129,6 +128,7 @@ CRÍTICA-1 era la siguiente tarea tras el fix de `current_user` detached (`6173c
 
 ### Estado al cierre
 - Último commit: `5d289fd`. Próxima tarea: **DT-nueva-MEDIA-ALTA** (donaciones suman en "Ingresos" del reporte Análisis Productos).
+
 ---
 
 ## Sesión 3 Nov — Fix MEDIA-ALTA + auditoría de cadena financiera
@@ -183,4 +183,83 @@ CRÍTICA-1 era la siguiente tarea tras el fix de `current_user` detached (`6173c
 ### Notas
 - Backup: `backup_pre_donaciones_test.backup` (por si acaso).
 - 4 archivos de código modificados: `app.py`, `models.py`, `reportes.py`, + 2 templates.
-- Commit pendiente de push tras auditoría.
+- Commit `8304a16` pusheado a `origin/main`.
+
+---
+
+## Sesión 4 Nov — Fix MEDIA-BAJA (Ventas del Día no distingue donaciones)
+
+**Objetivo:** Cerrar DT-S31-ventas-donacion (una venta con `es_donacion=TRUE` aparecía como "Completada" con Total $0, sin badge distintivo).
+
+### Decisión de diseño — Opción D
+
+En lugar de la opción A del HANDOFF (deshabilitar "Anular" para donaciones), se decidió implementar **Opción D (más profesional):**
+
+- Permitir anular donaciones **solo a `admin_cliente` y `super_admin`** (cajero/supervisor → 403).
+- Badge distintivo en columna Estado.
+- Aviso en el modal de anulación.
+- Motivo `donacion_por_error` en el select.
+- Trazabilidad completa (motivo + observación + usuario + fecha).
+
+**Razón:** la opción A dejaba al usuario atrapado si el cajero registraba una donación por error. La opción D permite corregir con salvaguardas.
+
+### Cambios aplicados
+
+**Backend (`app.py:3358`):**
+- Guard de rol en `anular_venta(venta_id)`:
+
+```python
+if venta.es_donacion:
+    rol = (current_user.rol or '').strip().lower()
+    if rol not in ('admin_cliente', 'super_admin'):
+        return jsonify({'success': False, 'error': 'Solo un administrador...'}), 403
+Template (ventas_del_dia.html):
+
+Columna Estado: prioridad ANULADA > es_donacion > COMPLETADA.
+
+Anulada → badge rojo + motivo + observación.
+
+Donación activa → badge azul + tooltip motivo.
+
+Completada → badge verde.
+
+Columna Total: prioridad ANULADA > es_donacion > normal.
+
+Anulada → $0 tachado gris.
+
+Donación → $0 azul info.
+
+Normal → $X normal.
+
+Columna Acciones: botón naranja "Anular donación" si es_donacion, rojo "Anular" si normal, gris "Procesada" si anulada.
+
+Modal: aviso amarillo warning si es_donacion (condicional, vía JS).
+
+Select motivo: agregado donacion_por_error.
+
+JS abrirModalAnulacion: recibe esDonacion como 3er parámetro.
+
+Test validado
+Donación activa: badge azul + botón naranja. ✅
+
+Cajero intenta anular: 403 Forbidden + mensaje claro. ✅
+
+Admin anula: 200 OK + stock revertido. ✅
+
+Donación anulada: badge rojo "Anulada" + motivo + total tachado. ✅
+
+Ventas normales (regresión): badge verde "Completada" + botón rojo "Anular". ✅
+
+Bugs colaterales encontrados
+Doble servidor: 2 instancias de python app.py causaron cache confuso del navegador y diagnóstico erróneo. Regla nueva HANDOFF: verificar tasklist | findstr python antes de reiniciar.
+
+_test_jinja.py: recibe solo nombre de archivo, no ruta completa (ventas_del_dia.html, no templates/ventas_del_dia.html).
+
+DTs cerradas
+✅ DT-S31-ventas-donacion (Ventas del Día no distingue donaciones).
+
+DTs nuevas
+Ninguna. La nota sobre el recibo (recibo_pos.html no distingue donaciones) es informativa, sin acción — no se registra como DT.
+
+Commit
+607ac75 feat(ventas-del-dia): distinguir donaciones con badge, tooltip y guard de rol.
