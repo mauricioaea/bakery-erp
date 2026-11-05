@@ -355,18 +355,20 @@
                                         <div class="d-flex justify-content-between align-items-center">
                                             <span>{{ _('Rotación:') }}</span>
                                             <span class="
-                                                {% if producto.rotacion_promedio > 20 %}rotacion-alta
+                                                {% if producto.rotacion_promedio is none %}rotacion-baja
+                                                {% elif producto.rotacion_promedio > 20 %}rotacion-alta
                                                 {% elif producto.rotacion_promedio > 10 %}rotacion-media
                                                 {% else %}rotacion-baja{% endif %}">
-                                                {{ "%.1f"|format(producto.rotacion_promedio) }}{{ _('/día') }}
+                                                {% if producto.rotacion_promedio is none %}—{% else %}{{ "%.1f"|format(producto.rotacion_promedio) }}{{ _('/día') }}{% endif %}
                                             </span>
                                         </div>
                                         <div class="progress">
                                             <div class="progress-bar 
-                                                {% if producto.rotacion_promedio > 20 %}bg-success
+                                                {% if producto.rotacion_promedio is none %}bg-secondary
+                                                {% elif producto.rotacion_promedio > 20 %}bg-success
                                                 {% elif producto.rotacion_promedio > 10 %}bg-warning
                                                 {% else %}bg-danger{% endif %}" 
-                                                style="width: {{ [producto.rotacion_promedio * 5, 100]|min }}%">
+                                                style="width: {% if producto.rotacion_promedio is none %}0{% else %}{{ [producto.rotacion_promedio * 5, 100]|min }}{% endif %}%">
                                             </div>
                                         </div>
                                     </div>
@@ -420,10 +422,11 @@
                                                 {% endif %}
                                             </td>
                                             <td class="text-center">
-                                                <span class="badge {% if producto.rotacion_promedio > 20 %}bg-success
+                                                <span class="badge {% if producto.rotacion_promedio is none %}bg-secondary
+                                                                {% elif producto.rotacion_promedio > 20 %}bg-success
                                                                 {% elif producto.rotacion_promedio > 10 %}bg-warning
                                                                 {% else %}bg-danger{% endif %}">
-                                                    {{ "%.1f"|format(producto.rotacion_promedio) }}
+                                                    {% if producto.rotacion_promedio is none %}—{% else %}{{ "%.1f"|format(producto.rotacion_promedio) }}{% endif %}
                                                 </span>
                                             </td>
                                         </tr>
@@ -539,7 +542,7 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {% for producto in productos if producto.rotacion_promedio > 20 %}
+                                            {% for producto in productos if producto.rotacion_promedio is not none and producto.rotacion_promedio > 20 %}
                                             <tr>
                                                 <td>{{ producto.nombre[:25] }}{% if producto.nombre|length > 25 %}...{% endif %}</td>
                                                 <td class="text-center">
@@ -566,7 +569,7 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {% for producto in productos if producto.rotacion_promedio < 5 and producto.rotacion_promedio > 0 %}
+                                            {% for producto in productos if producto.rotacion_promedio is not none and producto.rotacion_promedio < 5 and producto.rotacion_promedio > 0 %}
                                             <tr>
                                                 <td>{{ producto.nombre[:25] }}{% if producto.nombre|length > 25 %}...{% endif %}</td>
                                                 <td class="text-center">

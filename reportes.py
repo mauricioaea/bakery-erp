@@ -1972,19 +1972,19 @@ class GeneradorReportes:
             coeficiente_variacion = (np.std(ventas) / venta_promedio * 100) if venta_promedio > 0 else 0
             
             if coeficiente_variacion > 40:
-                recomendaciones.append("🎢 " + _("**Alta variabilidad**: Implementa estrategias para suavizar ventas (promociones en días bajos)"))
+                recomendaciones.append("🎯 " + _("**Alta variabilidad**: Implementa estrategias para suavizar ventas (promociones en días bajos)"))
             elif coeficiente_variacion > 20:
                 recomendaciones.append("📊 " + _("**Variabilidad moderada**: Analiza causas de fluctuaciones para optimizar inventario"))
             else:
-                recomendaciones.append("📐 " + _("**Baja variabilidad**: Excelente para planeación de producción e inventario"))
+                recomendaciones.append("⚖️ " + _("**Estabilidad detectada**: Enfócate en eficiencia operativa y reducción de costos"))
             
-            # Recomendaciones de productos (si hay datos)
+            # 🆕 Fix DT-BAJA-mensajes-IA: recomendaciones de producto FUERA del else de variabilidad
+            # y usando claves reales del dict (nombre, ventas) — no 'producto' ni 'ingreso'
             if datos_productos:
-                producto_top = max(datos_productos, key=lambda x: x['ingreso'])
-                producto_mas_vendido = max(datos_productos, key=lambda x: x['ventas'])
-                
-                recomendaciones.append(f"🏆 **Producto estrella**: {producto_top['producto']} genera máximo ingreso (${producto_top['ingreso']:,.0f})")
-                recomendaciones.append("🛒 " + _("**Más vendido**: %(prod)s (%(vend)s unidades)") % {'prod': producto_mas_vendido['producto'], 'vend': producto_mas_vendido['ventas']})
+                producto_top = max(datos_productos, key=lambda x: x.get('ventas', 0))
+                producto_mas_vendido = max(datos_productos, key=lambda x: x.get('ventas', 0))
+                recomendaciones.append("🏆 " + _("**Producto estrella**: %(prod)s con %(vend)s unidades vendidas") % {'prod': producto_top['nombre'], 'vend': producto_top['ventas']})
+                recomendaciones.append("🛒 " + _("**Más vendido**: %(prod)s (%(vend)s unidades)") % {'prod': producto_mas_vendido['nombre'], 'vend': producto_mas_vendido['ventas']})
             
             # Recomendación general de horarios
             recomendaciones.append("⏰ " + _("**Optimización horaria**: Analiza datos de hora pico para ajustar personal y producción"))

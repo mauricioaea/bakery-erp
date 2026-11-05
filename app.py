@@ -8410,11 +8410,11 @@ def reporte_productos_populares():
     
     for detalle in detalles:
         if detalle.producto:
-            producto_id = detalle.producto.id
+            producto_id = f"int_{detalle.producto.id}"   # 🆕 CRÍTICA-4: prefijo evita colisión int/ext
             nombre = detalle.producto.nombre
             tipo = 'Producción'
         elif detalle.producto_externo:
-            producto_id = detalle.producto_externo.id
+            producto_id = f"ext_{detalle.producto_externo.id}"   # 🆕 CRÍTICA-4: prefijo evita colisión int/ext
             nombre = detalle.producto_externo.nombre
             tipo = 'Externo'
         else:
@@ -8446,9 +8446,9 @@ def reporte_productos_populares():
         
         for det in donaciones_periodo:
             if det.producto:
-                pid = det.producto.id
+                pid = f"int_{det.producto.id}"   # 🆕 CRÍTICA-4: mismo prefijo que analisis_productos
             elif det.producto_externo:
-                pid = det.producto_externo.id
+                pid = f"ext_{det.producto_externo.id}"   # 🆕 CRÍTICA-4: mismo prefijo que analisis_productos
             else:
                 continue
             if pid not in donaciones_por_producto:
@@ -8469,9 +8469,24 @@ def reporte_productos_populares():
                                reverse=True)
     
     # Agregar datos de rotación automática
+    # 🆕 Fix Bug B (v2): usar días REALES del tenant (no fechas del filtro).
+    # Si el tenant tiene < 7 días de vida, la rotación "promedio 30 días" es engañosa → None (template muestra '—')
+    primera_venta_tenant = Venta.query.filter(
+        Venta.panaderia_id == panaderia_id,
+        Venta.estado == 'COMPLETADA'
+    ).order_by(Venta.fecha_hora.asc()).first()
+    
+    if primera_venta_tenant:
+        dias_reales_tenant = (datetime.now().date() - primera_venta_tenant.fecha_hora.date()).days + 1
+    else:
+        dias_reales_tenant = 0
+    
     for producto in productos_ordenados[:20]:
-        rotacion = calcular_rotacion_automatica_por_nombre(producto['nombre'])
-        producto['rotacion_promedio'] = rotacion
+        if dias_reales_tenant >= 7:
+            rotacion = calcular_rotacion_automatica_por_nombre(producto['nombre'])
+            producto['rotacion_promedio'] = rotacion
+        else:
+            producto['rotacion_promedio'] = None
     
     # ✅ OBTENER DATOS DE DONACIONES (CON FILTRO POR TENANT)
     ventas_periodo = Venta.query.filter(
