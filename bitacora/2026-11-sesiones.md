@@ -263,3 +263,100 @@ Ninguna. La nota sobre el recibo (recibo_pos.html no distingue donaciones) es in
 
 Commit
 607ac75 feat(ventas-del-dia): distinguir donaciones con badge, tooltip y guard de rol.
+
+Sesión 5 Nov — Fix CRÍTICA-4 + Bug B (rotación) + IA KeyError
+Commit: 6e7dbbf (pusheado a origin/main)
+
+Contexto
+Retomando la DT MEDIA-BAJA del HANDOFF v9.9 ("Productos Populares vacío en tenant nuevo"), el diagnóstico reveló 3 bugs encadenados que ameritaban un commit conjunto. La investigación tomó ~10 h (creación de tenant de prueba, reproducción de bugs, validación con PDFs antes/después).
+
+Tenant de pruebas: tenant_31 (SE CONSERVA)
+Creación: 4 Nov 2026, vía frontend con dev_master. Contraseña rotada el 5 Nov, guardada localmente por el desarrollador (no commiteada).
+
+Campo	Valor
+id	31
+nombre	Diagnóstico Productos Populares
+subdominio	diagnóstico_producto
+base_datos	tenant_diagnóstico_producto (≠ schema real tenant_31 — evidencia de CRÍTICA-2)
+plan	basico (nube_basica)
+Usuario admin	admin_31
+Contraseña	⚠️ Rotada 2026-11-05. Guardada localmente (no commiteada).
+Propósito	Tenant de pruebas para futuras sesiones. Reproduce "tenant nuevo + licencia básica + pocos datos".
+Limitación	Licencia básica: sin acceso a /reporte/analisis_predictivo, /reporte/recomendaciones_ia, /reporte/analisis_inventarios. Redirige a dashboard (302).
+Datos actuales	8 ventas (1 donación), 1 producto interno (Pan Prueba), 1 producto externo (Agua), 1 receta.
+Uso previsto: validar comportamiento de <7 días en reportes (rotación —), restricciones de licencia básica, lógica multi-tenant.
+
+Cómo eliminarlo (cuando ya no se necesite):
+
+sql
+DROP SCHEMA tenant_31 CASCADE;
+DELETE FROM public.tenants WHERE id = 31;
+Diagnóstico
+CRÍTICA-4 (nueva): colisión de IDs internos/externos en reporte_productos_populares (app.py:8371). El dict analisis_productos usaba producto.id y producto_externo.id como claves, colisionando cuando ambos tienen id=1 (caso típico en tenant nuevo). Los externos se "fusionaban" con internos del mismo id, mostrando nombre/ingresos del interno.
+
+Bug B (rotación <7d): calcular_rotacion_automatica_por_nombre devolvía total_vendido / 30.0, engañoso con 1 día de datos. Fix: dias_reales_tenant desde primera venta del tenant, None si < 7 días, template muestra —.
+
+DT-BAJA-mensajes-IA: _generar_recomendaciones_ia (reportes.py:1942) usaba x['ingreso'] y producto_top['producto'] sobre dicts sin esas claves. Además, el bloque "Producto estrella" estaba mal indentado dentro del else de variabilidad (solo se ejecutaba con variabilidad baja). Resultado: KeyError intermitente → "error técnico".
+
+Fixes aplicados
+Commit 6e7dbbf (3 archivos, 40 insertions, 22 deletions):
+
+app.py:8421, 8425: prefijo int_/ext_ en analisis_productos.
+
+app.py:8464-8468: prefijo int_/ext_ en donaciones_por_producto.
+
+app.py:8470-8480: dias_reales_tenant calculado desde Venta.query...order_by(fecha_hora.asc()).first(). Si < 7 días → rotacion_promedio = None.
+
+templates/productos_populares.html:367, 425, 542, 569, 576: adaptaciones {% if ... is none %}—{% else %}...{% endif %}.
+
+reportes.py:1978-1995: "Producto estrella" movido fuera del else de variabilidad, con claves nombre/ventas.
+
+Tests validados
+tenant_31 (período corto):
+
+Top 10: Agua + Pan Prueba separados (fix CRÍTICA-4 ✅).
+
+Rotación: — en Top 10, badge y baja rotación (fix Bug B ✅).
+
+IA: "Se necesitan más datos históricos (mínimo 7 días)" (fix IA no rompe la lógica ✅).
+
+tenant_27 (período largo 2026-07-01 a 2026-11-05):
+
+Productos Populares: sin regresión.
+
+IA: "Producto estrella: Pan de Yema con 1722 unidades vendidas" en PDF (fix IA ✅).
+
+Sin "error técnico" en el PDF.
+
+Bugs / hallazgos laterales
+Bug A (descartado como CRÍTICA → nota): En el primer día de vida del tenant, detalle_venta.producto_externo_id quedó NULL en 2 ventas con externos. Tras reiniciar servidor, las filas se "corrigieron". No reproducible. Hipótesis: caché/ORM en primer arranque. Verificar en Fase E (tenant virgen).
+
+CRÍTICA-2 reproducida en vivo: tenant_31.base_datos = tenant_diagnóstico_producto vs schema real tenant_31. tenant_27 ya mostraba la inconsistencia (tenant_panadería_demo vs tenant_27), pero era data legacy. tenant_31 la reproduce en runtime limpio. Evidencia empírica para el fix final de Fase D.
+
+Caché del navegador: screenshots desactualizados confunden diagnóstico. Regla nueva: modo incógnito + reiniciar servidor + netstat (1 línea LISTENING) antes de cada test de template.
+
+Mojibake en commit message: Windows usó cp1252 al escribir git commit -m. Recomendación: usar git commit -F _commit_msg.txt (UTF-8) en próximos commits.
+
+_investigar_ia.py: script de diagnóstico, borrado al cierre (no commiteado).
+
+Estado al cierre
+Último commit: 6e7dbbf. Working tree clean.
+
+tenant_31 se conserva vivo como tenant de pruebas (básico).
+
+Próxima tarea: Commit 2 (rediseño "menos es más" + recomendaciones dinámicas en productos_populares.html).
+
+text
+
+---
+
+## 📋 Resumen de acciones
+
+| Archivo | Acción | Notas |
+|---|---|---|
+| `HANDOFF.md` | **Reemplazar completo** con el v9.10 que te di antes | Ya lo tenés del mensaje anterior |
+| `bitacora/2026-11-sesiones.md` | **Reemplazar completo** con el bloque de arriba | Mantiene las 4 sesiones previas + agrega la 5 Nov |
+| `bitacora/tenants_prueba.md` | **NO crear** (decisión tuya) | Todo va en la bitácora |
+
+---
+
