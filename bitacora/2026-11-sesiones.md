@@ -359,4 +359,114 @@ text
 | `bitacora/tenants_prueba.md` | **NO crear** (decisión tuya) | Todo va en la bitácora |
 
 ---
+---
 
+## Sesión 6 Nov — Commit 2 COMPLETO: rediseño "menos es más" + filtro por producto + i18n
+
+**Commits:** `320881b` (B1+B2+H1+H2.1), `5d8e2b4` (H2.2), `b6a1908` (H2.3+H4), `e3b48e0` (H3), `7ff556f` (i18n)
+**Pusheados a `origin/main`.** Working tree clean.
+
+### Contexto
+
+Sesión larga (un solo chat, varios días de trabajo fragmentado en horas). Objetivo: cerrar el Commit 2 pendiente del HANDOFF v9.10 (rediseño "menos es más" + recomendaciones dinámicas en `productos_populares.html`). Se extendió con un filtro `?producto=` en `/reporte/ventas` (necesario para el botón "Ver detalle" del Top 10) y con i18n completo (en + pap).
+
+### Diagnóstico previo
+
+Auditoría exhaustiva (script `_audit_commit2.py`, ya borrado) para verificar si algo ya existía en el código y evitar duplicación:
+- `_obtener_datos_productos_populares` (reportes.py:1904) → lógica distinta (para PDF, sin externos, sin donaciones). **No reusar.** DT anotada para Fase F (unificar).
+- `calcular_totales` (models.py:2299) → es de `RegistroDiario`, no aplica.
+- `analizar_productos_periodo` (models.py:1763) → prefijos `P{id}`/`E{id}` (vs `int_`/`ext_` en `app.py`). Sin filtros de donaciones/anuladas. **No reusar.** DT anotada para Fase F.
+- `_generar_recomendaciones_ia` (reportes.py:1942) → acoplada al PDF, riesgo de romper `6e7dbbf`. **No reusar.**
+- `_generar_recomendaciones_productos` en `app.py` → **no existía**. Creada nueva.
+
+### Bloque B1 — `_generar_recomendaciones_productos()` en `app.py`
+
+- Nueva función (~65 líneas) insertada entre `reporte_productos_populares` y `@app.route('/reporte/analisis_predictivo')`.
+- 5 reglas dinámicas + fallback `<7d` o `<3 productos`:
+  1. Top 1 producto (estrella) → % de ingresos y unidades.
+  2. Rotación saludable (>10/día) → cuántos productos.
+  3. Rotación crítica (<5/día) → qué productos.
+  4. Donaciones → # transacciones + valor de mercado.
+  5. Cierre (análisis continuo) si ≥3 reglas.
+- Devuelve `list[dict]` con `{tipo, icono, titulo, detalle}`. Máximo 6.
+- Tests aislados: caso "rico" (3 productos, 30 días) → 5 recomendaciones; caso "fallback" (1 producto, 3 días) → 1 recomendación informativa.
+
+### Bloque B2 — KPIs en `reporte_productos_populares()`
+
+- Calcula `total_unidades`, `total_ingresos` (suma sobre TODOS los productos, no solo top 20).
+- Inyecta 4 variables nuevas al `render_template`: `total_unidades`, `total_ingresos`, `dias_reales_tenant`, `recomendaciones`.
+
+### Bloque H1 — Bloque 4 del template (recomendaciones dinámicas)
+
+- Reemplaza el bloque de texto fijo (L593-620 original) por iteración sobre `recomendaciones`.
+- Cada recomendación = `alert alert-{tipo}` con `d-flex` + icono + título + detalle.
+- Fallback `{% else %}` si `recomendaciones` vacío.
+- `_test_jinja.py`: OK.
+
+### Bloque H2.1 — Filtro `?producto=` en `/reporte/ventas`
+
+- **H2.1a:** `producto_filtro = request.args.get('producto')` + filtro en Python sobre `ventas_periodo` + inyección al template.
+- **H2.1b:** banner azul "Filtrando por producto: X" + botón "Quitar filtro" en `ventas_periodo.html` (con `no-print`).
+- **H2.1c:** filtro también aplicado a `detalles_periodo` y `donaciones_periodo` con `db.or_(DetalleVenta.producto.has(nombre=...), DetalleVenta.producto_externo.has(nombre=...))`. Sin esto, la tabla "Análisis de Productos" mostraba todos los productos aunque el filtro estuviera activo.
+- Smoke test 5/5: sin filtro (regresión), con filtro a producto real, con filtro a producto inexistente, "Quitar filtro", regresión de H1.
+
+### Bloque H2.2 — Top 10 único + botón "Ver detalle"
+
+- Eliminadas las 10 cards grandes (duplicadas con la tabla).
+- Tabla compacta (que era solo-PDF) promovida a visible en pantalla + PDF.
+- Nueva columna "Acciones" con botón 🔍 por fila. Link a `/reporte/ventas?producto=<nombre>&fecha_inicio=<...>&fecha_fin=<...>` (el filtro de H2.1). Con `no-print` para que no aparezca en PDF.
+- Badges de ranking: 🥇🥈🥉 para 1-3, número para el resto.
+- Tipo completo ("Producción" / "Externo") en lugar de 1 letra.
+- Nombre con `title` (tooltip) y truncado a 40 chars.
+- **Ahorro: -45 líneas netas.**
+
+### Bloque H2.3 + H4 — Top 5 eliminado + Distribución+Rotación lado a lado
+
+- Eliminado el bloque "Top 5 por Ingresos" (redundante: los ingresos ya están en la columna del Top 10).
+- Distribución por Tipo → `col-lg-4` (30%).
+- Análisis de Rotación Automática → `col-lg-8` (70%).
+- Ambos con `h-100` para igualar alturas.
+- **JS del `ingresosChart` eliminado** (huérfano tras quitar el canvas).
+- **Bug detectado en el fix:** quedó un `tipoCtx` duplicado + un bloque `type: 'bar'` huérfano. **Corregido:** eliminar el bloque fantasma y dejar solo el `tipoChart` (doughnut).
+- **Ahorro: -70 líneas netas** (más JS huérfano eliminado).
+
+### Bloque H3 — 4 KPI cards unificadas
+
+- Eliminada la card grande "Información de Salidas No Comerciales" (redundante).
+- 4 mini-cards: **Unidades vendidas** (border-primary) / **Ingresos totales** (border-success) / **Donaciones** (border-warning) / **Productos donados** (border-info).
+- Consume `total_unidades` y `total_ingresos` (de B2).
+- Banner IA movido a badge compacto debajo de las cards (sin card propia, con `{% if actualizaciones_ml %}`).
+- **Ahorro: -15 líneas netas.**
+
+### i18n completo (commit `7ff556f`)
+
+- `pybabel extract -F babel.cfg -o locales/messages.pot app.py models.py reportes.py templates`.
+- `pybabel update -i locales/messages.pot -d locales` (propaga a es/en/pap).
+- `_limpiar_fuzzy.py` (limpia los `#, fuzzy` que marca el update).
+- **13 strings traducidos en `en`** (incluye 4 del Commit 2 + 9 de deuda previa de toppings/bajas).
+- **15 strings traducidos en `pap`** (incluye 4 del Commit 2 + 11 de deuda previa).
+- `pybabel compile -d locales --statistics`: 0 untranslated reales (los 12-13 del `--statistics` eran headers/obsoletos, verificado con script de diagnóstico).
+- **`es` queda al 0% (correcto):** es idioma base, los `msgid` ya están en español.
+
+### Tests finales
+
+- `py_compile app.py`: silencio.
+- `_test_jinja.py productos_populares.html` y `ventas_periodo.html`: OK.
+- Smoke test visual 6/6 en H2.2 y H3.
+- Smoke test i18n: reporte generado en inglés OK (asumido OK en pap).
+- `_ver_untraducciones.py`: 0 strings sin traducir en `en.po`.
+- Script de diagnóstico de i18n: 0 strings sin traducir en `en.po` y `pap.po` (los 12-13 de `--statistics` eran falso positivo).
+- Working tree clean.
+
+### Deuda técnica anotada (NO tocada, para Fase F)
+
+- Unificar `_obtener_datos_productos_populares` (reportes.py) con `reporte_productos_populares` (app.py).
+- Unificar `analizar_productos_periodo` (models.py) con el inline de `app.py:8408-8434` (prefijos `P`/`E` vs `int_`/`ext_`, filtros de donaciones).
+- **Detalle menor preexistente:** el formato `$20.000.00` (punto como separador de miles + punto decimal) es incorrecto para `es-CO` (debería ser `$20.000,00`). Cosmético, no bloquea.
+
+### Estado al cierre
+
+- **Commit 2 100% cerrado.** 5 commits pusheados (`320881b`, `5d8e2b4`, `b6a1908`, `e3b48e0`, `7ff556f`).
+- **Working tree clean.**
+- **Cero DT pendiente del Commit 2.**
+- **Próxima tarea del HANDOFF:** seguir con Fase D — **MEDIA (logging ruidoso)**, después **MEDIA (desconciliación + ANULADO + whitelist)**, después **BAJA (endpoint huérfano)**, después **MEDIA-BAJA (cierre jornada)**, y **al final CRÍTICA-2** (renombrar schemas).
