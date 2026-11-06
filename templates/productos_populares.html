@@ -395,149 +395,111 @@
             </div>
 
             <!-- Gráficos de Análisis -->
-            <div class="row mb-4 no-break">
-                <div class="col-md-6">
-                    <div class="chart-container">
-                        <h4><i class="fas fa-chart-bar"></i> {{ _('Top 5 por Ingresos') }}</h4>
-                        
-                        <!-- Gráfico para pantalla -->
-                        <div class="no-print">
-                            <canvas id="ingresosChart" width="400" height="250"></canvas>
-                        </div>
-                        
-                        <!-- Tabla para PDF -->
-                        <div class="d-none d-print-block">
-                            <table class="table table-sm table-bordered tabla-pdf">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>{{ _('Producto') }}</th>
-                                        <th class="text-end">{{ _('Ingresos') }}</th>
-                                        <th class="text-center">{{ _('Ranking') }}</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for producto in productos[:5] %}
-                                    <tr>
-                                        <td>{{ producto.nombre[:20] }}{% if producto.nombre|length > 20 %}...{% endif %}</td>
-                                        <td class="text-end">${{ "{:,.0f}".format(producto.ingresos_totales) }}</td>
-                                        <td class="text-center">
-                                            <span class="badge {% if loop.index == 1 %}bg-warning
-                                                            {% elif loop.index == 2 %}bg-secondary
-                                                            {% elif loop.index == 3 %}bg-dark
-                                                            {% else %}bg-primary{% endif %}">
-                                                {{ loop.index }}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="chart-container">
-                        <h4><i class="fas fa-chart-pie"></i> {{ _('Distribución por Tipo') }}</h4>
-                        
-                        <!-- Gráfico para pantalla -->
-                        <div class="no-print">
-                            <canvas id="tipoChart" width="400" height="250"></canvas>
-                        </div>
-                        
-                        <!-- Tabla para PDF -->
-                        <div class="d-none d-print-block">
-                            <table class="table table-sm table-bordered tabla-pdf">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>{{ _('Tipo') }}</th>
-                                        <th class="text-center">{{ _('Cantidad') }}</th>
-                                        <th class="text-center">{{ _('Porcentaje') }}</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% set total_productos = productos|length %}
-                                    {% set produccion_count = productos|selectattr('tipo', 'equalto', 'Producción')|list|length %}
-                                    {% set externo_count = productos|selectattr('tipo', 'equalto', 'Externo')|list|length %}
-                                    <tr>
-                                        <td>{{ _('Producción') }}</td>
-                                        <td class="text-center">{{ produccion_count }}</td>
-                                        <td class="text-center">{{ "%.1f"|format((produccion_count / total_productos * 100) if total_productos > 0 else 0) }}%</td>
-                                    </tr>
-                                    <tr>
-                                        <td>{{ _('Externo') }}</td>
-                                        <td class="text-center">{{ externo_count }}</td>
-                                        <td class="text-center">{{ "%.1f"|format((externo_count / total_productos * 100) if total_productos > 0 else 0) }}%</td>
-                                    </tr>
-                                    <tr class="table-primary">
-                                        <td><strong>{{ _('Total') }}</strong></td>
-                                        <td class="text-center"><strong>{{ total_productos }}</strong></td>
-                                        <td class="text-center"><strong>100%</strong></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Análisis de Rotación ML -->
-            <div class="row no-break">
-                <div class="col-12">
-                    <div class="metric-card">
-                        <h4><i class="fas fa-brain"></i> {{ _('Análisis de Rotación Automática') }}</h4>
-                        <div class="row mt-3">
-                            <div class="col-md-6">
-                                <h5><i class="fas fa-rocket"></i> {{ _('Productos de Alta Rotación') }}</h5>
-                                <div class="table-responsive">
-                                    <table class="table table-sm table-bordered tabla-pdf">
-                                        <thead class="table-light">
-                                            <tr>
-                                                <th>{{ _('Producto') }}</th>
-                                                <th class="text-center">{{ _('Rotación/día') }}</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for producto in productos if producto.rotacion_promedio is not none and producto.rotacion_promedio > 20 %}
-                                            <tr>
-                                                <td>{{ producto.nombre[:25] }}{% if producto.nombre|length > 25 %}...{% endif %}</td>
-                                                <td class="text-center">
-                                                    <span class="badge bg-success">{{ "%.1f"|format(producto.rotacion_promedio) }}</span>
-                                                </td>
-                                            </tr>
-                                            {% else %}
-                                            <tr>
-                                                <td colspan="2" class="text-muted text-center">{{ _('No hay productos con rotación muy alta') }}</td>
-                                            </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </div>
+            <!-- Gráficos de Análisis: Distribución (30%) + Rotación (70%) lado a lado -->
+                <div class="row mb-4 no-break">
+                    <!-- Columna izquierda: Distribución por Tipo -->
+                    <div class="col-lg-4">
+                        <div class="chart-container h-100">
+                            <h4><i class="fas fa-chart-pie"></i> {{ _('Distribución por Tipo') }}</h4>
+                            
+                            <!-- Gráfico para pantalla -->
+                            <div class="no-print mt-3">
+                                <canvas id="tipoChart" width="300" height="250"></canvas>
                             </div>
-                            <div class="col-md-6">
-                                <h5><i class="fas fa-exclamation-triangle"></i> {{ _('Productos de Baja Rotación') }}</h5>
-                                <div class="table-responsive">
-                                    <table class="table table-sm table-bordered tabla-pdf">
-                                        <thead class="table-light">
-                                            <tr>
-                                                <th>{{ _('Producto') }}</th>
-                                                <th class="text-center">{{ _('Rotación/día') }}</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for producto in productos if producto.rotacion_promedio is not none and producto.rotacion_promedio < 5 and producto.rotacion_promedio > 0 %}
-                                            <tr>
-                                                <td>{{ producto.nombre[:25] }}{% if producto.nombre|length > 25 %}...{% endif %}</td>
-                                                <td class="text-center">
-                                                    <span class="badge bg-danger">{{ "%.1f"|format(producto.rotacion_promedio) }}</span>
-                                                </td>
-                                            </tr>
-                                            {% else %}
-                                            <tr>
-                                                <td colspan="2" class="text-muted text-center">{{ _('No hay productos con rotación crítica') }}</td>
-                                            </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
+                            
+                            <!-- Tabla para PDF -->
+                            <div class="d-none d-print-block">
+                                <table class="table table-sm table-bordered tabla-pdf">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>{{ _('Tipo') }}</th>
+                                            <th class="text-center">{{ _('Cantidad') }}</th>
+                                            <th class="text-center">{{ _('Porcentaje') }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% set total_productos = productos|length %}
+                                        {% set produccion_count = productos|selectattr('tipo', 'equalto', 'Producción')|list|length %}
+                                        {% set externo_count = productos|selectattr('tipo', 'equalto', 'Externo')|list|length %}
+                                        <tr>
+                                            <td>{{ _('Producción') }}</td>
+                                            <td class="text-center">{{ produccion_count }}</td>
+                                            <td class="text-center">{{ "%.1f"|format((produccion_count / total_productos * 100) if total_productos > 0 else 0) }}%</td>
+                                        </tr>
+                                        <tr>
+                                            <td>{{ _('Externo') }}</td>
+                                            <td class="text-center">{{ externo_count }}</td>
+                                            <td class="text-center">{{ "%.1f"|format((externo_count / total_productos * 100) if total_productos > 0 else 0) }}%</td>
+                                        </tr>
+                                        <tr class="table-primary">
+                                            <td><strong>{{ _('Total') }}</strong></td>
+                                            <td class="text-center"><strong>{{ total_productos }}</strong></td>
+                                            <td class="text-center"><strong>100%</strong></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Columna derecha: Análisis de Rotación Automática -->
+                    <div class="col-lg-8">
+                        <div class="metric-card h-100">
+                            <h4><i class="fas fa-brain"></i> {{ _('Análisis de Rotación Automática') }}</h4>
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <h5><i class="fas fa-rocket"></i> {{ _('Productos de Alta Rotación') }}</h5>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-bordered tabla-pdf">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>{{ _('Producto') }}</th>
+                                                    <th class="text-center">{{ _('Rotación/día') }}</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for producto in productos if producto.rotacion_promedio is not none and producto.rotacion_promedio > 20 %}
+                                                <tr>
+                                                    <td>{{ producto.nombre[:25] }}{% if producto.nombre|length > 25 %}...{% endif %}</td>
+                                                    <td class="text-center">
+                                                        <span class="badge bg-success">{{ "%.1f"|format(producto.rotacion_promedio) }}</span>
+                                                    </td>
+                                                </tr>
+                                                {% else %}
+                                                <tr>
+                                                    <td colspan="2" class="text-muted text-center">{{ _('No hay productos con rotación muy alta') }}</td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h5><i class="fas fa-exclamation-triangle"></i> {{ _('Productos de Baja Rotación') }}</h5>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-bordered tabla-pdf">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>{{ _('Producto') }}</th>
+                                                    <th class="text-center">{{ _('Rotación/día') }}</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for producto in productos if producto.rotacion_promedio is not none and producto.rotacion_promedio < 5 and producto.rotacion_promedio > 0 %}
+                                                <tr>
+                                                    <td>{{ producto.nombre[:25] }}{% if producto.nombre|length > 25 %}...{% endif %}</td>
+                                                    <td class="text-center">
+                                                        <span class="badge bg-danger">{{ "%.1f"|format(producto.rotacion_promedio) }}</span>
+                                                    </td>
+                                                </tr>
+                                                {% else %}
+                                                <tr>
+                                                    <td colspan="2" class="text-muted text-center">{{ _('No hay productos con rotación crítica') }}</td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -645,38 +607,6 @@
                 window.location.href = `${urlActual}?fecha_inicio=${fecha_inicio}&fecha_fin=${fecha_fin}`;
             }
         }
-
-        // Gráfico de Ingresos
-        const ingresosCtx = document.getElementById('ingresosChart').getContext('2d');
-        const ingresosChart = new Chart(ingresosCtx, {
-            type: 'bar',
-            data: {
-                labels: [
-                    {% for producto in productos[:5] %}
-                        '{{ producto.nombre[:15] }}...'{% if not loop.last %},{% endif %}
-                    {% endfor %}
-                ],
-                datasets: [{
-                    label: 'Ingresos Totales',
-                    data: [
-                        {% for producto in productos[:5] %}
-                            {{ producto.ingresos_totales }}{% if not loop.last %},{% endif %}
-                        {% endfor %}
-                    ],
-                    backgroundColor: [
-                        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'
-                    ]
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                }
-            }
-        });
 
         // Gráfico por Tipo
         const tipoCtx = document.getElementById('tipoChart').getContext('2d');
