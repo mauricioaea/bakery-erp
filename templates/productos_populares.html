@@ -321,119 +321,74 @@
                         <h4><i class="fas fa-trophy"></i> {{ _('Top 10 Productos Más Vendidos') }}</h4>
                         <p class="text-muted">{{ _('Ranking basado en unidades vendidas') }}</p>
                         
-                        <!-- Versión normal para pantalla -->
-                        <div class="no-print">
-                            {% for producto in productos[:10] %}
-                            <div class="producto-card">
-                                <div class="row align-items-center">
-                                    <div class="col-md-1 text-center">
-                                        <div class="ranking-badge 
-                                            {% if loop.index == 1 %}ranking-1
-                                            {% elif loop.index == 2 %}ranking-2
-                                            {% elif loop.index == 3 %}ranking-3
-                                            {% else %}ranking-other{% endif %}">
-                                            {{ loop.index }}
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <h5 class="mb-1">{{ producto.nombre }}</h5>
-                                        <span class="badge {% if producto.tipo == 'Producción' %}bg-primary{% else %}bg-secondary{% endif %} tipo-badge">
-                                            {{ _(producto.tipo) }}
-                                        </span>
-                                    </div>
-                                    <div class="col-md-2 text-center">
-                                        <strong class="fs-5">{{ producto.cantidad_vendida }}</strong>
-                                        <br>
-                                        <small class="text-muted">{{ _('unidades') }}</small>
-                                    </div>
-                                    <div class="col-md-2 text-center">
-                                        <strong class="fs-5">${{ "{:,.2f}".format(producto.ingresos_totales) }}</strong>
-                                        <br>
-                                        <small class="text-muted">{{ _('ingresos') }}</small>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <span>{{ _('Rotación:') }}</span>
-                                            <span class="
-                                                {% if producto.rotacion_promedio is none %}rotacion-baja
-                                                {% elif producto.rotacion_promedio > 20 %}rotacion-alta
-                                                {% elif producto.rotacion_promedio > 10 %}rotacion-media
-                                                {% else %}rotacion-baja{% endif %}">
-                                                {% if producto.rotacion_promedio is none %}—{% else %}{{ "%.1f"|format(producto.rotacion_promedio) }}{{ _('/día') }}{% endif %}
+                        <!-- Top 10: tabla única (pantalla + PDF) -->
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered tabla-pdf align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="text-center" style="width: 50px;">#</th>
+                                        <th>{{ _('Producto') }}</th>
+                                        <th>{{ _('Tipo') }}</th>
+                                        <th class="text-center">{{ _('Unidades') }}</th>
+                                        <th class="text-end">{{ _('Ingresos') }}</th>
+                                        <th class="text-center">{{ _('Donaciones') }}</th>
+                                        <th class="text-center">{{ _('Rotación/día') }}</th>
+                                        <th class="text-center no-print" style="width: 90px;">{{ _('Acciones') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for producto in productos[:10] %}
+                                    <tr>
+                                        <td class="text-center">
+                                            <span class="badge 
+                                                {% if loop.index == 1 %}bg-warning text-dark
+                                                {% elif loop.index == 2 %}bg-secondary
+                                                {% elif loop.index == 3 %}bg-dark
+                                                {% else %}bg-primary{% endif %}">
+                                                {% if loop.index == 1 %}🥇
+                                                {% elif loop.index == 2 %}🥈
+                                                {% elif loop.index == 3 %}🥉
+                                                {% else %}{{ loop.index }}{% endif %}
                                             </span>
-                                        </div>
-                                        <div class="progress">
-                                            <div class="progress-bar 
-                                                {% if producto.rotacion_promedio is none %}bg-secondary
-                                                {% elif producto.rotacion_promedio > 20 %}bg-success
-                                                {% elif producto.rotacion_promedio > 10 %}bg-warning
-                                                {% else %}bg-danger{% endif %}" 
-                                                style="width: {% if producto.rotacion_promedio is none %}0{% else %}{{ [producto.rotacion_promedio * 5, 100]|min }}{% endif %}%">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-
-                        <!-- Versión tabla compacta para PDF -->
-                        <div class="d-none d-print-block">
-                            <div class="table-responsive">
-                                <table class="table table-sm table-bordered tabla-pdf">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>#</th>
-                                            <th>{{ _('Producto') }}</th>
-                                            <th>{{ _('Tipo') }}</th>
-                                            <th class="text-center">{{ _('Unidades') }}</th>
-                                            <th class="text-end">{{ _('Ingresos') }}</th>
-                                            <th class="text-center">{{ _('Donaciones') }}</th>
-                                            <th class="text-center">{{ _('Rotación/día') }}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for producto in productos[:10] %}
-                                        <tr>
-                                            <td class="text-center">
-                                                <span class="badge 
-                                                    {% if loop.index == 1 %}bg-warning
-                                                    {% elif loop.index == 2 %}bg-secondary
-                                                    {% elif loop.index == 3 %}bg-dark
-                                                    {% else %}bg-primary{% endif %}">
-                                                    {{ loop.index }}
+                                        </td>
+                                        <td>
+                                            <strong title="{{ producto.nombre }}">{{ producto.nombre[:40] }}{% if producto.nombre|length > 40 %}...{% endif %}</strong>
+                                        </td>
+                                        <td>
+                                            <span class="badge {% if producto.tipo == 'Producción' %}bg-primary{% else %}bg-secondary{% endif %}">
+                                                {{ _(producto.tipo) }}
+                                            </span>
+                                        </td>
+                                        <td class="text-center">{{ producto.cantidad_vendida }}</td>
+                                        <td class="text-end">${{ "{:,.0f}".format(producto.ingresos_totales) }}</td>
+                                        <td class="text-center">
+                                            {% if producto.donaciones_cantidad and producto.donaciones_cantidad > 0 %}
+                                                <span class="badge bg-info" title="{{ _('Valor de mercado') }}: ${{ '{:,.0f}'.format(producto.donaciones_valor or 0) }}">
+                                                    <i class="fas fa-gift me-1"></i>{{ producto.donaciones_cantidad }}
                                                 </span>
-                                            </td>
-                                            <td><strong>{{ producto.nombre[:25] }}{% if producto.nombre|length > 25 %}...{% endif %}</strong></td>
-                                            <td>
-                                                <span class="badge {% if producto.tipo == 'Producción' %}bg-primary{% else %}bg-secondary{% endif %}">
-                                                    {{ _(producto.tipo[:1]) }}
-                                                </span>
-                                            </td>
-                                            <td class="text-center">{{ producto.cantidad_vendida }}</td>
-                                            <td class="text-end">${{ "{:,.0f}".format(producto.ingresos_totales) }}</td>
-                                            <td class="text-center">
-                                                {% if producto.donaciones_cantidad and producto.donaciones_cantidad > 0 %}
-                                                    <span class="badge bg-info" title="{{ _('Valor de mercado') }}: ${{ '{:,.0f}'.format(producto.donaciones_valor or 0) }}">
-                                                        <i class="fas fa-gift me-1"></i>{{ producto.donaciones_cantidad }}
-                                                    </span>
-                                                {% else %}
-                                                    <span class="text-muted">—</span>
-                                                {% endif %}
-                                            </td>
-                                            <td class="text-center">
-                                                <span class="badge {% if producto.rotacion_promedio is none %}bg-secondary
-                                                                {% elif producto.rotacion_promedio > 20 %}bg-success
-                                                                {% elif producto.rotacion_promedio > 10 %}bg-warning
-                                                                {% else %}bg-danger{% endif %}">
-                                                    {% if producto.rotacion_promedio is none %}—{% else %}{{ "%.1f"|format(producto.rotacion_promedio) }}{% endif %}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
+                                            {% else %}
+                                                <span class="text-muted">—</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge {% if producto.rotacion_promedio is none %}bg-secondary
+                                                            {% elif producto.rotacion_promedio > 20 %}bg-success
+                                                            {% elif producto.rotacion_promedio > 10 %}bg-warning
+                                                            {% else %}bg-danger{% endif %}">
+                                                {% if producto.rotacion_promedio is none %}—{% else %}{{ "%.1f"|format(producto.rotacion_promedio) }}{% endif %}
+                                            </span>
+                                        </td>
+                                        <td class="text-center no-print">
+                                            <a href="{{ url_for('reporte_ventas', producto=producto.nombre, fecha_inicio=fecha_inicio.strftime('%Y-%m-%d'), fecha_fin=fecha_fin.strftime('%Y-%m-%d')) }}"
+                                               class="btn btn-sm btn-outline-primary"
+                                               title="{{ _('Ver detalle de ventas de') }} {{ producto.nombre }}">
+                                                <i class="fas fa-search"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
