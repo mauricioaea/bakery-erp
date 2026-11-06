@@ -270,47 +270,62 @@
 
         <!-- Cuerpo del Reporte -->
         <div class="reporte-body">
-            <!-- 🎁 SECCIÓN DE DONACIONES -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="alert alert-warning">
-                        <div class="row align-items-center">
-                            <div class="col-md-8">
-                                <h5 class="mb-1">
-                                    <i class="fas fa-gift me-2"></i>{{ _('Información de Salidas No Comerciales en el Período') }}
-                                </h5>
-                                <p class="mb-0">
-                                    {{ _('Se registraron') }} <strong>{{ total_donaciones }}</strong> {{ _('transacciones de donación') }} 
-                                    {{ _('con') }} <strong>{{ productos_donados }}</strong> {{ _('productos donados.') }}
-                                    <span class="badge bg-light text-dark ms-2">
-                                        <i class="fas fa-info-circle me-1"></i>
-                                        {{ _('Incluidas en el análisis de productos') }}
-                                    </span>
-                                </p>
+            <!-- 4 KPI cards unificadas: unidades, ingresos, donaciones, productos donados -->
+            <div class="row mb-4 no-break">
+                <div class="col-md-3">
+                    <div class="metric-card border-start border-primary border-4 h-100">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="text-muted small text-uppercase">{{ _('Unidades vendidas') }}</div>
+                                <div class="metric-value">{{ total_unidades|default(0, true) }}</div>
+                                <small class="text-muted">{{ _('Total del período') }}</small>
                             </div>
-                            <div class="col-md-4 text-end">
-                                <div class="row text-center">
-                                    <div class="col-6">
-                                        <h4 class="text-warning mb-0">{{ total_donaciones }}</h4>
-                                        <small class="text-muted">{{ _('Salidas No Comerciales') }}</small>
-                                    </div>
-                                    <div class="col-6">
-                                        <h4 class="text-warning mb-0">{{ productos_donados }}</h4>
-                                        <small class="text-muted">{{ _('Productos') }}</small>
-                                    </div>
-                                </div>
+                            <i class="fas fa-box fa-2x text-primary opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="metric-card border-start border-success border-4 h-100">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="text-muted small text-uppercase">{{ _('Ingresos totales') }}</div>
+                                <div class="metric-value">${{ "{:,.0f}".format(total_ingresos or 0) }}</div>
+                                <small class="text-muted">{{ _('Sin donaciones') }}</small>
                             </div>
+                            <i class="fas fa-dollar-sign fa-2x text-success opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="metric-card border-start border-warning border-4 h-100">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="text-muted small text-uppercase">{{ _('Donaciones') }}</div>
+                                <div class="metric-value">{{ total_donaciones }}</div>
+                                <small class="text-muted">{{ _('Transacciones') }}</small>
+                            </div>
+                            <i class="fas fa-gift fa-2x text-warning opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="metric-card border-start border-info border-4 h-100">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="text-muted small text-uppercase">{{ _('Productos donados') }}</div>
+                                <div class="metric-value">{{ productos_donados }}</div>
+                                <small class="text-muted">{{ _('Unidades') }}</small>
+                            </div>
+                            <i class="fas fa-hand-holding-heart fa-2x text-info opacity-50"></i>
                         </div>
                     </div>
                 </div>
             </div>
+
             {% if actualizaciones_ml %}
-            <div class="alert alert-info mb-4 no-print">
-                <h5><i class="fas fa-robot"></i> {{ _('Actualizaciones de IA Aplicadas') }}</h5>
-                <p class="mb-0">
-                    <i class="fas fa-sync-alt"></i>
-                    {{ _('Se actualizaron automáticamente %(num)s rotaciones de productos usando aprendizaje automático.', num=actualizaciones_ml) }}
-                </p>
+            <div class="alert alert-info d-flex align-items-center mb-3 no-print" role="alert">
+                <i class="fas fa-robot me-2"></i>
+                <small>{{ _('Se actualizaron automáticamente %(num)s rotaciones usando IA.', num=actualizaciones_ml) }}</small>
             </div>
             {% endif %}
 
