@@ -333,4 +333,99 @@ Pegar este archivo como contexto inicial con esta instrucción:
 
 Orden sugerido del resto de Fase D: Commit 2 (rediseño) → MEDIA (logging ruidoso) → MEDIA (desconciliación + ANULADO + whitelist, un solo commit) → BAJA (endpoint huérfano) → MEDIA-BAJA (cierre jornada) → CRÍTICA-2 (al final, con backup completo).
 
-Fin del HANDOFF.md — v9.10
+---
+
+## 1️⃣2️⃣ Roadmap a Producción (Nota personal de Mauricio)
+
+> **Objetivo:** lanzar PanaderíaPro a producción en **enero 2027** (inicio de mes).
+> **Modalidad:** trabajo solo, part-time (~10-15 h/semana).
+> **Ventana:** 8 semanas (5 Nov 2026 → 1 Ene 2027), ~80-120 h disponibles.
+
+### Estado actual (5 Nov 2026)
+
+| Aspecto | % Listo |
+|---|---|
+| **Funcionalidad (features)** | ~90% |
+| **Producción-ready (infra)** | ~20% |
+| **Deuda técnica (Fase D)** | 15-22 h restantes |
+| **Bloqueantes críticos** | 8 |
+| **Estimación total** | 54-74 h (7-9 jornadas de 8 h) |
+
+### Cronograma propuesto (8 semanas part-time)
+
+| Semana | Foco | Estimación | Entregable |
+|---|---|---|---|
+| **1 (5-11 Nov)** | Cerrar Fase D: Commit 2 (rediseño) + logging ruidoso | ~6-8 h | `productos_populares.html` rediseñado, logging limpio |
+| **2 (12-18 Nov)** | Cerrar Fase D: desconciliación + ANULADO + whitelist + endpoint huérfano + cierre jornada | ~6-8 h | Commits independientes, DTs cerradas |
+| **3 (19-25 Nov)** | **CRÍTICA-2** (renombrar schemas) con `pg_dump` previo | ~6-8 h | Schemas alineados (`tenant_{id}` en todo el código) |
+| **4 (26-2 Dic)** | **Fase E**: tenant virgen + verificar Bug A (caché `producto_externo_id`) | ~4-6 h | Tenant de prueba creado desde cero, smoke test OK |
+| **5 (3-9 Dic)** | **Docker**: `Dockerfile` + `docker-compose.yml` + `.env.example` completo | ~8-12 h | Stack dockerizado local (Flask + PostgreSQL + Nginx) |
+| **6 (10-16 Dic)** | **WSGI production** (`gunicorn`/`waitress`) + SSL + Nginx reverse proxy | ~6-8 h | Deploy reproducible en VPS local |
+| **7 (17-23 Dic)** | **Backup automático** + logging a stdout + `/health` + monitoreo básico | ~6-8 h | Observabilidad mínima operativa |
+| **8 (24-30 Dic)** | **Deploy a VPS real** + hardening + documentación + smoke test producción | ~8-10 h | Producción lista (o casi) |
+| **31 Dic - 1 Ene** | **Buffer** (imprevistos) + capacitación usuarios | ~4-6 h | Lanzamiento |
+
+**Total estimado:** ~50-66 h + buffer. **Realista con tu plan.**
+
+### Prioridades (si algo se atrasa)
+
+**P0 (sin esto no hay producción):**
+1. CRÍTICA-2 (schemas alineados).
+2. Docker + WSGI + SSL.
+3. Backup automático.
+4. `/health` endpoint.
+5. Variables de entorno producción.
+
+**P1 (importante pero puede esperar 1-2 semanas post-lanzamiento):**
+- CI/CD (GitHub Actions).
+- Monitoreo avanzado (Sentry, Prometheus).
+- Rate limiting.
+- Tests automatizados (pytest).
+
+**P2 (deseables, post-lanzamiento):**
+- i18n de diccionarios Python.
+- API REST.
+- Dashboard de admin.
+- Rotación automática de contraseñas.
+
+### Riesgos identificados
+
+1. **CRÍTICA-2 es transversal:** renombrar schemas de `tenant_1` + `tenant_27` + `tenant_31` puede romper si no hay `pg_dump` previo. **Hacer al final de Fase D, con backup completo.**
+2. **`tenant_27` (demo) tiene `base_datos` inconsistente:** CRÍTICA-2 lo resuelve, pero hay que decidir si se migra o se borra antes del lanzamiento.
+3. **Bug A (caché `producto_externo_id`):** verificar en Fase E. Si se reproduce, escalar a CRÍTICA-5.
+4. **Sin tests automatizados:** la validación es manual (screenshots + PDFs). Post-lanzamiento, agregar `pytest` con 20-30 tests de humo.
+5. **Lógica `<7 días` en reportes:** cada tenant nuevo va a ver `—` en rotación hasta los 7 días. **Documentar en onboarding.**
+
+### Decisiones pendientes (para antes del deploy)
+
+- **Proveedor de VPS:** Hetzner (€5/mes) vs DigitalOcean ($6/mes) vs AWS Lightsail ($5/mes). **Recomendación:** Hetzner CX22 (mejor relación precio/rendimiento en Europa) o DigitalOcean (más amigable, más datacenters).
+- **Dominio:** ¿ya tenés? (ej. `panaderiapro.com`). ¿Usarás subdominios por tenant (`cliente1.panaderiapro.com`)?
+- **SSL:** Let's Encrypt (gratis, auto-renovable).
+- **Backup:** `pg_dump` diario + retención 7 días + copia semanal a almacenamiento externo (S3, Backblaze).
+- **`tenant_27` (demo):** ¿se migra a la nube o se crea una demo nueva con datos reales?
+- **Precio final de licencias:** Premium $X COP/mes, Básica $Y COP/mes.
+
+### Criterios de "listo para producción"
+
+- [ ] Los 3 tenants (1, 27, 31) tienen schema correcto (`tenant_{id}`).
+- [ ] `docker-compose up` levanta el stack local sin errores.
+- [ ] HTTPS funciona con certificado válido.
+- [ ] `/health` responde 200 OK.
+- [ ] Backup automático corriendo (verificar restaurando 1 backup).
+- [ ] Logs van a stdout + rotación.
+- [ ] Smoke test de producción: login → POS → venta → cierre → reporte → PDF.
+- [ ] `dev_master` + 2 tenants productivos creados.
+- [ ] Documentación de deploy en `docs/DEPLOY.md`.
+- [ ] Rollback plan documentado.
+
+### Notas personales
+
+- **No dockerizar hasta completar Fases A-F.** (Regla del HANDOFF v9.10.)
+- **CRÍTICA-2 al final, con backup.** No antes.
+- **Cada semana, actualizar este roadmap** con lo hecho + lo pendiente.
+- **Si algo se atrasa, priorizar P0 sobre P1 y P2.**
+- **El lanzamiento es "soft launch"** (2-3 clientes beta) antes de marketing masivo.
+
+---
+
+**Fin del HANDOFF.md — v9.10**
