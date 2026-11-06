@@ -590,37 +590,32 @@
                 </div>
             </div>
 
-            <!-- Recomendaciones Inteligentes -->
+            <!-- Recomendaciones Inteligentes (dinámicas, generadas en app.py) -->
             <div class="row mt-4 no-break">
                 <div class="col-12">
                     <div class="metric-card">
-                        <h4><i class="fas fa-lightbulb"></i> {{ _('Recomendaciones Basadas en IA') }}</h4>
-                        <div class="row mt-3">
-                            <div class="col-md-6">
-                                <div class="alert alert-success p-2">
-                                    <h6><i class="fas fa-thumbs-up"></i> {{ _('Oportunidades') }}</h6>
-                                    <small>
-                                        <ul class="mb-0 ps-3">
-                                            <li>{{ _('Aumentar producción de productos top 3') }}</li>
-                                            <li>{{ _('Crear promociones con productos de media rotación') }}</li>
-                                            <li>{{ _('Destacar productos estrella en vitrina') }}</li>
-                                        </ul>
-                                    </small>
+                        <h4><i class="fas fa-lightbulb"></i> {{ _('Recomendaciones Inteligentes') }}</h4>
+                        <p class="text-muted small mb-3">
+                            {{ _('Basadas en el análisis automático de tus ventas y rotación del período') }}
+                        </p>
+                        {% if recomendaciones %}
+                            <div class="d-flex flex-column gap-2">
+                                {% for rec in recomendaciones %}
+                                <div class="alert alert-{{ rec.tipo }} d-flex align-items-start mb-0" role="alert">
+                                    <span class="me-2 fs-5" aria-hidden="true">{{ rec.icono }}</span>
+                                    <div class="flex-grow-1">
+                                        <strong>{{ rec.titulo }}</strong>
+                                        <div class="small mt-1">{{ rec.detalle }}</div>
+                                    </div>
                                 </div>
+                                {% endfor %}
                             </div>
-                            <div class="col-md-6">
-                                <div class="alert alert-warning p-2">
-                                    <h6><i class="fas fa-exclamation-circle"></i> {{ _('Acciones Recomendadas') }}</h6>
-                                    <small>
-                                        <ul class="mb-0 ps-3">
-                                            <li>{{ _('Revisar recetas de productos con baja rotación') }}</li>
-                                            <li>{{ _('Optimizar horarios de producción') }}</li>
-                                            <li>{{ _('Analizar estacionalidad de ventas') }}</li>
-                                        </ul>
-                                    </small>
-                                </div>
+                        {% else %}
+                            <div class="alert alert-secondary mb-0" role="alert">
+                                <i class="fas fa-info-circle me-2"></i>
+                                {{ _('No hay recomendaciones disponibles para este período.') }}
                             </div>
-                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>

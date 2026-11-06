@@ -8271,6 +8271,8 @@ def reporte_ventas():
     fecha_inicio_str = request.args.get('fecha_inicio')
     fecha_fin_str = request.args.get('fecha_fin')
     periodo = request.args.get('periodo', 'semana')
+    producto_filtro = (request.args.get('producto') or '').strip()
+    
     
     hoy = datetime.now().date()
     
@@ -8294,6 +8296,22 @@ def reporte_ventas():
         Venta.panaderia_id == panaderia_id  # ✅ FILTRO MULTI-TENANT
     ).all()
     
+    # 🔍 Filtro opcional por producto (llega desde "Ver detalle" del Top 10)
+    #    Si producto_filtro está presente, nos quedamos solo con ventas que
+    #    tengan al menos una línea de detalle con ese nombre (interno o externo).
+    #    Se filtra en Python (no en SQL) para no tocar la query original y
+    #    mantener compatibilidad con ventas mixtas (una venta puede tener
+    #    varios productos).
+    if producto_filtro:
+        def _venta_contiene_producto(v):
+            for det in v.detalles:
+                if det.producto and det.producto.nombre == producto_filtro:
+                    return True
+                if det.producto_externo and det.producto_externo.nombre == producto_filtro:
+                    return True
+            return False
+        ventas_periodo = [v for v in ventas_periodo if _venta_contiene_producto(v)]
+    
     ventas_normales = [v for v in ventas_periodo if not v.es_donacion]
     donaciones = [v for v in ventas_periodo if v.es_donacion]
     
@@ -8306,13 +8324,22 @@ def reporte_ventas():
     tendencia = calcular_tendencia_ventas(fecha_inicio, fecha_fin, panaderia_id=panaderia_id)
     
     # ✅ Productos más vendidos del período (CON FILTRO POR TENANT)
-    detalles_periodo = DetalleVenta.query.join(Venta).filter(
+    detalles_query = DetalleVenta.query.join(Venta).filter(
             db.func.date(Venta.fecha_hora) >= fecha_inicio,
             db.func.date(Venta.fecha_hora) <= fecha_fin,
             Venta.panaderia_id == panaderia_id,
             Venta.estado == 'COMPLETADA',        # ✅ excluye anuladas
             Venta.es_donacion == False           # ✅ excluye donaciones de "Ingresos"
-    ).all()
+    )
+    # 🔍 Filtro opcional por producto (mismo criterio que ventas_periodo)
+    if producto_filtro:
+        detalles_query = detalles_query.filter(
+            db.or_(
+                DetalleVenta.producto.has(nombre=producto_filtro),
+                DetalleVenta.producto_externo.has(nombre=producto_filtro)
+            )
+        )
+    detalles_periodo = detalles_query.all()
     
         
     productos_analisis = analizar_productos_periodo(detalles_periodo)
@@ -8320,13 +8347,21 @@ def reporte_ventas():
     # 🎁 DONACIONES POR PRODUCTO (excluidas de "Ingresos")
     donaciones_por_producto = {}
     try:
-        donaciones_periodo = DetalleVenta.query.join(Venta).filter(
+        donaciones_query = DetalleVenta.query.join(Venta).filter(
             db.func.date(Venta.fecha_hora) >= fecha_inicio,
             db.func.date(Venta.fecha_hora) <= fecha_fin,
             Venta.panaderia_id == panaderia_id,
             Venta.estado == 'COMPLETADA',
             Venta.es_donacion == True
-        ).all()
+        )
+        if producto_filtro:
+            donaciones_query = donaciones_query.filter(
+                db.or_(
+                    DetalleVenta.producto.has(nombre=producto_filtro),
+                    DetalleVenta.producto_externo.has(nombre=producto_filtro)
+                )
+            )
+        donaciones_periodo = donaciones_query.all()
         for det in donaciones_periodo:
             if det.producto:
                 key = f"P{det.producto.id}"
@@ -8363,7 +8398,8 @@ def reporte_ventas():
                          total_transacciones=total_transacciones,
                          datetime=datetime,
                          total_donaciones=total_donaciones,
-                         productos_donados=productos_donados)
+                         productos_donados=productos_donados,
+                         producto_filtro=producto_filtro)
 
 @app.route('/reporte/productos_populares')
 @permisos_requeridos('reportes', 'ver')
@@ -8499,6 +8535,19 @@ def reporte_productos_populares():
     total_donaciones = len(donaciones)
     productos_donados = sum(len(v.detalles) for v in donaciones)
     
+    # 📊 KPIs globales del período (para las cards del rediseño "menos es más")
+    #    Sumamos sobre TODOS los productos analizados, no solo los 20 del top
+    total_unidades = sum(p['cantidad_vendida'] for p in productos_ordenados)
+    total_ingresos = sum(p['ingresos_totales'] for p in productos_ordenados)
+    
+    # 💡 Recomendaciones dinámicas (reemplaza el texto fijo del template viejo)
+    recomendaciones = _generar_recomendaciones_productos(
+        productos=productos_ordenados[:20],
+        total_donaciones=total_donaciones,
+        productos_donados=productos_donados,
+        dias_reales_tenant=dias_reales_tenant
+    )
+    
     return render_template('productos_populares.html',
                          productos=productos_ordenados[:20],
                          fecha_inicio=fecha_inicio,
@@ -8506,7 +8555,133 @@ def reporte_productos_populares():
                          actualizaciones_ml=actualizaciones,
                          datetime=datetime,
                          total_donaciones=total_donaciones,
-                         productos_donados=productos_donados)
+                         productos_donados=productos_donados,
+                         total_unidades=total_unidades,
+                         total_ingresos=total_ingresos,
+                         dias_reales_tenant=dias_reales_tenant,
+                         recomendaciones=recomendaciones)
+
+
+def _generar_recomendaciones_productos(productos, total_donaciones, productos_donados, dias_reales_tenant):
+    """
+    Genera recomendaciones dinámicas para el reporte de Productos Populares.
+
+    Reemplaza el texto fijo hardcodeado del template viejo (L593-620 del HTML).
+    Reglas basadas en los datos reales del tenant y el período analizado.
+
+    Args:
+        productos: lista de dicts con {nombre, tipo, cantidad_vendida, ingresos_totales,
+                   rotacion_promedio, donaciones_cantidad, donaciones_valor}
+        total_donaciones: int, # de ventas con es_donacion=True en el período
+        productos_donados: int, # de líneas de detalle en ventas donación
+        dias_reales_tenant: int, días desde la primera venta del tenant (0 si no hay ventas)
+
+    Returns:
+        list[dict]: hasta 6 recomendaciones con {tipo, icono, titulo, detalle}
+                    tipo ∈ {'danger', 'success', 'warning', 'info', 'secondary'}
+    """
+    recomendaciones = []
+
+    # ─── FALLBACK: tenant nuevo o muy pocos datos ─────────────────────────────
+    if dias_reales_tenant < 7 or len(productos) < 3:
+        return [{
+            'tipo': 'info',
+            'icono': 'ℹ️',
+            'titulo': _('Datos insuficientes para recomendaciones precisas'),
+            'detalle': _(
+                'Se necesitan al menos 7 días de ventas y 3 productos distintos '
+                'para generar recomendaciones basadas en patrones reales. '
+                'Seguí registrando ventas para desbloquear este análisis.'
+            )
+        }]
+
+    # ─── Cálculos base ────────────────────────────────────────────────────────
+    total_ingresos = sum(p.get('ingresos_totales', 0) for p in productos)
+    total_unidades = sum(p.get('cantidad_vendida', 0) for p in productos)
+
+    # ─── REGLA 1: Top 1 producto (estrella) ───────────────────────────────────
+    if productos and total_ingresos > 0:
+        top = productos[0]
+        pct_ingresos = (top['ingresos_totales'] / total_ingresos) * 100
+        pct_unidades = (top['cantidad_vendida'] / total_unidades * 100) if total_unidades > 0 else 0
+        recomendaciones.append({
+            'tipo': 'danger',
+            'icono': '🔴',
+            'titulo': _('Tu producto estrella: %(nombre)s') % {'nombre': top['nombre']},
+            'detalle': _(
+                'Concentra el %(pct_ing)s%% de los ingresos (%(pct_und)s%% de las unidades). '
+                'Considerá aumentar la producción en horario pico y garantizar stock '
+                'constante en vitrina.'
+            ) % {'pct_ing': f'{pct_ingresos:.1f}', 'pct_und': f'{pct_unidades:.1f}'}
+        })
+
+    # ─── REGLA 2: Rotación saludable ──────────────────────────────────────────
+    productos_rotacion_alta = [
+        p for p in productos
+        if p.get('rotacion_promedio') is not None and p['rotacion_promedio'] > 10
+    ]
+    if productos_rotacion_alta:
+        nombres = ', '.join(p['nombre'] for p in productos_rotacion_alta[:3])
+        extra = f' (+{len(productos_rotacion_alta) - 3} más)' if len(productos_rotacion_alta) > 3 else ''
+        recomendaciones.append({
+            'tipo': 'success',
+            'icono': '🟢',
+            'titulo': _('%(n)s productos con rotación saludable') % {'n': len(productos_rotacion_alta)},
+            'detalle': _(
+                'Rotación >10/día: %(nombres)s%(extra)s. '
+                'Mantené la frecuencia de producción actual, está funcionando.'
+            ) % {'nombres': nombres, 'extra': extra}
+        })
+
+    # ─── REGLA 3: Rotación crítica ────────────────────────────────────────────
+    productos_rotacion_critica = [
+        p for p in productos
+        if p.get('rotacion_promedio') is not None and 0 < p['rotacion_promedio'] < 5
+    ]
+    if productos_rotacion_critica:
+        criticos = productos_rotacion_critica[:2]
+        nombres = ', '.join(f"{p['nombre']} ({p['rotacion_promedio']:.1f}/día)" for p in criticos)
+        extra = f' (+{len(productos_rotacion_critica) - 2} más)' if len(productos_rotacion_critica) > 2 else ''
+        recomendaciones.append({
+            'tipo': 'warning',
+            'icono': '🟡',
+            'titulo': _('Rotación crítica detectada'),
+            'detalle': _(
+                'Productos con <5/día: %(nombres)s%(extra)s. '
+                'Revisá la receta, el precio o considerá promoción en vitrina '
+                'o reducir la producción diaria.'
+            ) % {'nombres': nombres, 'extra': extra}
+        })
+
+    # ─── REGLA 4: Donaciones ──────────────────────────────────────────────────
+    if total_donaciones > 0:
+        valor_donado = sum(p.get('donaciones_valor', 0) for p in productos)
+        recomendaciones.append({
+            'tipo': 'info',
+            'icono': '🎁',
+            'titulo': _('%(n)s transacciones de donación') % {'n': total_donaciones},
+            'detalle': _(
+                'Se registraron %(n)s productos donados por un valor de mercado '
+                'de $%(valor)s. Verificá si es una política intencional o un '
+                'error de registro en el POS.'
+            ) % {'n': productos_donados, 'valor': f'{valor_donado:,.0f}'}
+        })
+
+    # ─── REGLA 5: Cierre (análisis continuo) ──────────────────────────────────
+    if len(recomendaciones) >= 3:
+        recomendaciones.append({
+            'tipo': 'secondary',
+            'icono': '🔍',
+            'titulo': _('Análisis continuo recomendado'),
+            'detalle': _(
+                'Revisá este reporte semanalmente para detectar cambios de '
+                'tendencia. La rotación se recalcula automáticamente con cada '
+                'venta registrada.'
+            )
+        })
+
+    return recomendaciones[:6]
+
 
 @app.route('/reporte/analisis_predictivo')
 @licencia_premium_requerida()
