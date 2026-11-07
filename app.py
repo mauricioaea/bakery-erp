@@ -2501,9 +2501,9 @@ def buscar_producto():
     user_id = session.get('user_id')
     panaderia_id = obtener_panaderia_actual()
     logger.debug(f"🔍 DIAGNÓSTICO buscar_producto:")
-    logger.info(f"   👤 User ID: {user_id}")
-    logger.info(f"   🏪 Panadería ID: {panaderia_id}")
-    logger.info(f"   👑 Es super usuario: {es_super_usuario()}")
+    logger.debug(f"   👤 User ID: {user_id}")
+    logger.debug(f"   🏪 Panadería ID: {panaderia_id}")
+    logger.debug(f"   👑 Es super usuario: {es_super_usuario()}")
     logger.debug(f"   🔍 Query: '{query}'")
     
     # ✅ ✅ ✅ NUEVO: BLOQUE SUPER USUARIO (AGREGA ESTO) ✅ ✅ ✅
@@ -2520,12 +2520,12 @@ def buscar_producto():
         # PRODUCTOS DE PANADERÍA
         from utilidades.consultas_filtradas import productos_activos_con_stock
         productos_panaderia = productos_activos_con_stock().all()
-        logger.info(f"🍞 Productos panadería encontrados: {len(productos_panaderia)}")
+        logger.debug(f"🍞 Productos panadería encontrados: {len(productos_panaderia)}")
         
         # PRODUCTOS EXTERNOS
         from utilidades.consultas_filtradas import productos_externos_activos_con_stock
         productos_externos = productos_externos_activos_con_stock().all()
-        logger.info(f"🥤 Productos externos encontrados: {len(productos_externos)}")
+        logger.debug(f"🥤 Productos externos encontrados: {len(productos_externos)}")
         
         # AGREGAR PRODUCTOS DE PANADERÍA
         for producto in productos_panaderia:
@@ -2540,7 +2540,7 @@ def buscar_producto():
                     'tipo_producto': getattr(producto, 'tipo_producto', 'produccion'),
                     'es_externo': False
                 })
-                logger.info(f"✅ Agregado panadería: {producto.nombre}")
+                logger.debug(f"✅ Agregado panadería: {producto.nombre}")
         
         # AGREGAR PRODUCTOS EXTERNOS
         for producto in productos_externos:
@@ -2556,13 +2556,13 @@ def buscar_producto():
                     'es_externo': True,
                     'producto_externo_id': producto.id
                 })
-                logger.info(f"✅ Agregado externo: {producto.nombre}")
+                logger.debug(f"✅ Agregado externo: {producto.nombre}")
         
-        logger.info(f"🎯 Total resultados: {len(resultados)}")
+        logger.debug(f"🎯 Total resultados: {len(resultados)}")
         
-        # DEBUG: Mostrar primeros resultados
+        # DEBUG: Mostrar primeros resultados (nivel DEBUG, no INFO)
         for i, r in enumerate(resultados[:3]):
-            logger.info(f"  {i+1}. {r['nombre']} (ID: {r['id']}, Precio: {r['precio']})")
+            logger.debug(f"  {i+1}. {r['nombre']} (ID: {r['id']}, Precio: {r['precio']})")
         
         return jsonify(resultados)
         
