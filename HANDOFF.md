@@ -1,7 +1,7 @@
 # 🗂️ CONTEXTO MAESTRO — PanaderíaPro (Bakery ERP) — v9.11
 
-**Última actualización:** 6 de Noviembre, 2026 (tarde)
-**Último commit:** `7ff556f` (chore: i18n completo en/pap del Commit 2)
+**Última actualización:** 7 de Noviembre, 2026 (tarde)
+**Último commit:** `68f8856` (fix: F1.5 logging ruidoso - print -> logger)
 **HANDOFF anterior:** `HANDOFF_v9.5.md` (histórico congelado, ver raíz del proyecto)
 **Bitácoras históricas:** `bitacora/2026-10-sesiones.md`, `bitacora/2026-11-sesiones.md`
 **Tenants de prueba:** `bitacora/tenants_prueba.md` (incluye `tenant_31`)
@@ -29,7 +29,7 @@
 
 ### 📋 Próximos pasos
 
-1. **Fase D — Pre-Dockerización:** resolver CRÍTICA-2, logging ruidoso, 3 DTs nuevas financieras (desconciliación + ANULADO + whitelist), BAJA (endpoint huérfano), MEDIA-BAJA (cierre jornada) (~8-10 h). **Siguiente tarea: MEDIA (logging ruidoso).**
+1. **Fase D — Pre-Dockerización:** resolver CRÍTICA-2, logging ruidoso (en curso), 3 DTs nuevas financieras (desconciliación + ANULADO + whitelist), BAJA (endpoint huérfano), MEDIA-BAJA (cierre jornada) (~8-10 h). **Siguiente tarea: Fase 2 de MEDIA (logging ruidoso) — diagnóstico de recetas + `[DEBUG] Usuario`.**
 2. **Fase E — Prueba de "tenant virgen"** (~2 h), post-Fase D. Verificar Bug A (posible caché en `producto_externo_id`).
 3. **Fase G — Dockerización** (~22-32 h).
 4. (Opcional/baja) **i18n de diccionarios Python** (~2-4 h).
@@ -149,7 +149,7 @@ Prioridad	DT	Descripción
 
 Prioridad	DT	Descripción corta
 🚨 CRÍTICA	DT-nueva-CRÍTICA-2	base_datos = tenant_{subdominio} vs schema real tenant_{id} (reproducida en vivo en tenant_31). Fix al final de Fase D, con pg_dump previo.
-🟡 MEDIA	DT-nueva-MEDIA-logging-ruido	Logging ruidoso en producción (20-30 líneas INFO por request). Siguiente tarea.
+🟡 MEDIA	DT-nueva-MEDIA-logging-ruido	Logging ruidoso en producción. F1 (`51000fc`) + F1.5 (`68f8856`) hechas. Faltan F2 (recetas + [DEBUG] Usuario) y F3 (hash en log). Siguiente tarea: F2.
 🟡 MEDIA	DT-nueva-MEDIA (desconciliación)	No existe endpoint para desconciliar depósitos (CONCILIADO inmutable tras CRÍTICA-1).
 🟡 MEDIA	DT-nueva-MEDIA (estado ANULADO sin flujo)	Modal permite setear estado='ANULADO' sin endpoint dedicado ni auditoría.
 🟡 MEDIA	DT-nueva-MEDIA (whitelist estado backend)	editar_deposito_bancario() acepta cualquier string en data['estado'].
@@ -333,7 +333,7 @@ Demo: fases 1-12 completas (~9.972 filas), contraseña demo2026, idioma = pap.
 1️⃣1️⃣ Estado actual (resumen ejecutivo)
 
 Aspecto	Estado
-Último commit	7ff556f en origin/main (pusheado)
+Último commit	68f8856 en origin/main (pusheado)
 Módulos	11/11 completos (100%)
 Commit 2 (rediseño Productos Populares)	✅ 100% cerrado (5 commits)
 Fix 5 Nov	✅ CRÍTICA-4 + Bug B + IA KeyError aplicados. Commit 6e7dbbf.
@@ -349,8 +349,8 @@ DT críticas abiertas	1: CRÍTICA-2 (base_datos huérfano)
 DT medias abiertas	3: logging ruidoso, desconciliación, ANULADO, whitelist
 DT medias-bajas abiertas	1: cierre de jornada sin filtros
 DT bajas abiertas	4: endpoint huérfano, unificar productos populares, unificar prefijos, formato numérico
-Siguiente tarea	MEDIA (logging ruidoso) (~1-2 h)
-Fase actual	Fase D (pre-Dockerización), ~8-10 h restantes
+Siguiente tarea	Fase 2 (logging ruidoso) — recetas + [DEBUG] Usuario
+Fase actual	Fase D (pre-Dockerización) — logging ruidoso F1+F1.5 OK, faltan F2+F3
 Dockerización	Fase G, ~22-32 h (post Fase D)
 Working tree	nothing to commit, working tree clean
 📞 Cómo continuar en un chat nuevo

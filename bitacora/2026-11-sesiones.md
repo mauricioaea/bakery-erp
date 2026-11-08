@@ -470,3 +470,49 @@ Auditoría exhaustiva (script `_audit_commit2.py`, ya borrado) para verificar si
 - **Working tree clean.**
 - **Cero DT pendiente del Commit 2.**
 - **Próxima tarea del HANDOFF:** seguir con Fase D — **MEDIA (logging ruidoso)**, después **MEDIA (desconciliación + ANULADO + whitelist)**, después **BAJA (endpoint huérfano)**, después **MEDIA-BAJA (cierre jornada)**, y **al final CRÍTICA-2** (renombrar schemas).
+## Sesión 7 Nov — DT-nueva-MEDIA-logging-ruido (Fases 1 y 1.5)
+
+**Objetivo:** Atacar el ruido en terminal/logs (DT-nueva-MEDIA-logging-ruido).
+**Commits:** `51000fc` (F1) + `68f8856` (F1.5). Pusheados a `origin/main`.
+
+### Diagnóstico inicial (evidencia empírica)
+- El HANDOFF estimaba "20-30 líneas INFO/request". La realidad medida: **~41 líneas INFO** por request a `/buscar_producto` (con 20 productos).
+- El log `panaderia.log` estaba dominado por `INFO` (diagnósticos por producto) y `DEBUG`.
+- **Hallazgo colateral (seguridad):** el log imprime el hash de contraseña completo en login (`app.py:2184` y `12351`).
+- **Hallazgo colateral (archivos omitidos):** el módulo `utilidades/consultas_filtradas.py` (84 líneas) tenía **10 `print()`** que se ejecutaban en cada request del POS. El inventario previo del HANDOFF solo cubría `app.py`, `models.py` y `reportes.py`.
+
+### Fase 1 — `buscar_producto` (commit `51000fc`)
+- **Archivo:** `app.py` (L~2503-2564).
+- **Cambio:** 9 `logger.info` → `logger.debug`.
+- **Qué se dejó igual:** `logger.error` del `except`, `traceback.print_exc()`, la lógica de negocio, los headers de `logger.debug` preexistentes.
+- **Validación:** `py_compile` OK. Diff exacto: 10 inserciones, 10 borrados.
+- **Impacto:** ~41 líneas INFO/request → 0 en producción.
+
+### Fase 1.5 — `consultas_filtradas.py` (commit `68f8856`)
+- **Archivo:** `utilidades/consultas_filtradas.py`.
+- **Cambio:** 
+  - Agregado `import logging` + `logger = logging.getLogger('panaderia')`.
+  - 7 `print(f"🔍 ...")` de diagnóstico → `logger.debug()`.
+  - 3 `print(f"❌ ...")` de error → `logger.error()`.
+- **Validación:** `py_compile` OK. `findstr "print("` → 0. Diff exacto: 14 inserciones, 10 borrados. Cero cambios en lógica de negocio.
+- **Smoke test 5/5:** POS funcional, cero `print` crudos en terminal (todo con prefijo `[timestamp] DEBUG [panaderia]`), cero `logger.debug` en `logs/panaderia.log`.
+
+### Hallazgos nuevos (anotados, NO tocados)
+1. **DT-nueva-MEDIA-2.5 (logging nivel configurable):** En dev (`debug=True`), Flask fuerza el nivel del logger a DEBUG, mostrando todos los `logger.debug` en consola. En producción (`debug=False`) no aparecen. Solución futura: setear nivel de `'panaderia'` explícitamente independiente de Flask, controlado por variable de entorno (`LOG_LEVEL=INFO`).
+2. **DT-nueva-MEDIA-2.6 (werkzeug requests HTTP a log):** El logger `werkzeug` (que loguea cada request HTTP: `GET /api/... 200`) está en INFO y ensucia el archivo `panaderia.log`. En producción con 500 tenants esto suma ~80 líneas/minuto. Solución futura: bajar `werkzeug` a WARNING o filtrarlo.
+3. **Hash de contraseña en log:** pendiente para **Fase 3** de esta misma DT (seguridad).
+4. **Archivo sin newline final:** `utilidades/consultas_filtradas.py` no termina con `\n` (cosmético, Fase F).
+
+### Reglas nuevas aprendidas
+1. **Prohibido usar PowerShell para diagnóstico de logs:** Usar `findstr`, `find /c`, `more`, `sort /unique` nativo de CMD (PowerShell es lento y `Get-Content` rompe UTF-8 en la salida).
+2. **Validar siempre el formato crudo del log con `more`:** `findstr /c:"[INFO]"` devuelve 0 si el formato no usa corchetes de la forma esperada.
+3. **Distinguir `print()` (stdout, siempre visible) de `logger.debug` (respetа nivel).** El síntoma "veo cosas en terminal" no siempre está en el `.log`.
+4. **Smoke test obligatorio para fixes de canal de logs** (no solo `py_compile` + `git diff`). Comparar `find logs\panaderia.log /c /v ""` antes y después.
+5. **Auditar TODOS los `.py` del repo** para `print()` (no solo los 3 principales). `utilidades/` se nos pasó.
+
+### Estado al cierre
+- Último commit: `68f8856`. Working tree clean. Fase 1 y 1.5 cerradas.
+- **Próximo paso:** **Fase 2** — bajar a DEBUG el diagnóstico de recetas (`app.py:4908` y similares) + el `[DEBUG] Usuario: ..., Authenticated: True` (app.py:2379).
+- **Después:** Fase 3 (hash de contraseña en log).
+
+---
