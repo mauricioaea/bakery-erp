@@ -515,4 +515,54 @@ Auditoría exhaustiva (script `_audit_commit2.py`, ya borrado) para verificar si
 - **Próximo paso:** **Fase 2** — bajar a DEBUG el diagnóstico de recetas (`app.py:4908` y similares) + el `[DEBUG] Usuario: ..., Authenticated: True` (app.py:2379).
 - **Después:** Fase 3 (hash de contraseña en log).
 
+## Sesión 8 Nov — DT-nueva-MEDIA-logging-ruido (Fase 3: hash de contraseña)
+
+**Objetivo:** Cerrar la DT logging ruidoso resolviendo el último bloque: hash de contraseña expuesto en logs (seguridad).
+
+### Diagnóstico
+- **`app.py:2184`:** `logger.info(f"📦 [LOGIN] Hash en BD: {user.password_hash}")` → hash completo (~130 chars) en INFO.
+- **`app.py:12351`:** `logger.info(f"✅ [VERIFICACIÓN] Hash en BD post-commit: {stored_hash[:50]}...")` → 50 chars en INFO.
+- **`app.py:12356`:** `logger.info(f"✅ [PRUEBA] check_password_hash: {test_verify}")` → resultado True/False.
+- **Riesgo:** con 500 tenants × 100 logins/día × 2 líneas = ~100.000 hashes/día en `panaderia.log`. En la nube, logs van a servicios externos (CloudWatch, Datadog).
+
+### Fix aplicado (commit `53fc3f3`)
+- 3 `logger.info` → `logger.debug`.
+- Hash truncado a 20 chars + `...` (preview, ej: `scrypt:32768:8:1$20f...`).
+- 2 comentarios `# ✅ SEGURIDAD:` para documentar la decisión inline.
+- **Lo que NO se tocó:** `logger.info` de "USUARIO ENCONTRADO", "Panadería ID", "Login exitoso" (auditoría legítima).
+
+### Smoke test 5/5
+- Login `admin_27` / `demo2026` funciona.
+- Consola: hash truncado (`scrypt:32768:8:1$20f...`) en `DEBUG`.
+- Archivo: **cero `logger.debug` del hash** (respeta INFO).
+- Login funcional (`GET /dashboard HTTP/1.1 200`).
+
+### ✅ DT-nueva-MEDIA-logging-ruido — CERRADA AL 100%
+
+4 fases + 1 commit de docs:
+- F1 (`51000fc`): `buscar_producto`, ~41 INFO/request → 0.
+- F1.5 (`68f8856`): `consultas_filtradas.py`, 10 `print`/request → 0.
+- F2 (`620a177`): diagnóstico de recetas, ~15 INFO/request → 0.
+- F3 (`53fc3f3`): hash de contraseña, 100k hashes/día → 0.
+- Docs (`72bccc4`): HANDOFF v9.12 + bitácora.
+
+**Impacto total:** ~500.000 líneas de log/día en prod (500 tenants × 500 productos) → ~0 líneas operativas. Cero regresiones. Auditoría intacta.
+
+### DTs nuevas anotadas (NO tocadas)
+1. **DT-nueva-MEDIA-F2.5:** configurar nivel de logger independiente de Flask `debug=True`. Controlar vía `LOG_LEVEL` en `.env`.
+2. **DT-nueva-MEDIA-F2.6:** bajar logger `werkzeug` a WARNING para no ensuciar `panaderia.log` con requests HTTP.
+DT F2.5 y F2.6 surgieron del smoke test de F1.5 y F2. Son concerns legítimos, no bugs.
+
+Propuesta de regla nueva (v9.13): "No acumular DT" + "Cero DT en el aire". Va al HANDOFF en próxima sesión.
+
+Prioridad F2.6: 🟡 MEDIA (afecta producción, 115k líneas/día). Resolver antes de CRÍTICA-2.
+
+Prioridad F2.5: 🟢 BAJA (solo afecta dev). Resolver en Fase F o post-Docker.
+
+Próximo paso: push de docs (esta sesión) → reglas nuevas en HANDOFF (próxima sesión) → resolver F2.6 antes de CRÍTICA-2
+### Estado al cierre
+- Último commit: `53fc3f3`. Working tree clean. 5 commits en `origin/main`.
+- **Siguiente tarea del HANDOFF:** MEDIA (desconciliación + ANULADO + whitelist, un solo commit).
+
 ---
+

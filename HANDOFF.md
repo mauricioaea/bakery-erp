@@ -1,7 +1,7 @@
 # 🗂️ CONTEXTO MAESTRO — PanaderíaPro (Bakery ERP) — v9.11
 
-**Última actualización:** 7 de Noviembre, 2026 (tarde)
-**Último commit:** `68f8856` (fix: F1.5 logging ruidoso - print -> logger)
+**Última actualización:** 8 de Noviembre, 2026 (mañana)
+**Último commit:** `53fc3f3` (fix: F3 logging ruidoso - hash truncado)
 **HANDOFF anterior:** `HANDOFF_v9.5.md` (histórico congelado, ver raíz del proyecto)
 **Bitácoras históricas:** `bitacora/2026-10-sesiones.md`, `bitacora/2026-11-sesiones.md`
 **Tenants de prueba:** `bitacora/tenants_prueba.md` (incluye `tenant_31`)
@@ -29,7 +29,7 @@
 
 ### 📋 Próximos pasos
 
-1. **Fase D — Pre-Dockerización:** resolver CRÍTICA-2, logging ruidoso (en curso), 3 DTs nuevas financieras (desconciliación + ANULADO + whitelist), BAJA (endpoint huérfano), MEDIA-BAJA (cierre jornada) (~8-10 h). **Siguiente tarea: Fase 2 de MEDIA (logging ruidoso) — diagnóstico de recetas + `[DEBUG] Usuario`.**
+1. **Fase D — Pre-Dockerización:** resolver CRÍTICA-2, 3 DTs nuevas financieras (desconciliación + ANULADO + whitelist), BAJA (endpoint huérfano), MEDIA-BAJA (cierre jornada), DT F2.5 (logging nivel configurable) + F2.6 (werkzeug requests HTTP) (~6-8 h restantes). **Siguiente tarea: MEDIA (desconciliación + ANULADO + whitelist, un solo commit).**
 2. **Fase E — Prueba de "tenant virgen"** (~2 h), post-Fase D. Verificar Bug A (posible caché en `producto_externo_id`).
 3. **Fase G — Dockerización** (~22-32 h).
 4. (Opcional/baja) **i18n de diccionarios Python** (~2-4 h).
@@ -149,7 +149,13 @@ Prioridad	DT	Descripción
 
 Prioridad	DT	Descripción corta
 🚨 CRÍTICA	DT-nueva-CRÍTICA-2	base_datos = tenant_{subdominio} vs schema real tenant_{id} (reproducida en vivo en tenant_31). Fix al final de Fase D, con pg_dump previo.
-🟡 MEDIA	DT-nueva-MEDIA-logging-ruido	Logging ruidoso en producción. F1 (`51000fc`) + F1.5 (`68f8856`) hechas. Faltan F2 (recetas + [DEBUG] Usuario) y F3 (hash en log). Siguiente tarea: F2.
+### ✅ Cerradas el 8 Nov (DT logging ruidoso)
+
+| Prioridad | DT | Descripción | Commits |
+|---|---|---|---|
+| ✅ Media | DT-nueva-MEDIA-logging-ruido | Logging ruidoso en producción (F1 + F1.5 + F2 + F3) | `51000fc`, `68f8856`, `620a177`, `53fc3f3` |
+| 🟡 Media (nueva) | DT-nueva-MEDIA-F2.5 | Configurar nivel de logger independiente de Flask `debug=True`. Controlar via `LOG_LEVEL` en `.env`. | — |
+| 🟡 Media (nueva) | DT-nueva-MEDIA-F2.6 | Bajar logger `werkzeug` a WARNING para no ensuciar `panaderia.log` con requests HTTP. | — |
 🟡 MEDIA	DT-nueva-MEDIA (desconciliación)	No existe endpoint para desconciliar depósitos (CONCILIADO inmutable tras CRÍTICA-1).
 🟡 MEDIA	DT-nueva-MEDIA (estado ANULADO sin flujo)	Modal permite setear estado='ANULADO' sin endpoint dedicado ni auditoría.
 🟡 MEDIA	DT-nueva-MEDIA (whitelist estado backend)	editar_deposito_bancario() acepta cualquier string en data['estado'].
@@ -210,6 +216,11 @@ Windows: findstr /c:"patrón" para búsquedas literales (con tildes/emoji puede 
 git commit -F _commit_msg.txt (UTF-8) para mensajes con tildes/emojis (nueva regla 5 Nov).
 
 i18n / Babel
+
+14. No acumular DT. Cuando el diagnóstico o el smoke test de un fix descubre un problema nuevo, se evalúa si está dentro del alcance del fix actual (mismo concern, mismo módulo). Si lo está, se resuelve en el mismo commit. Si es un concern distinto, se anota como DT nueva con prioridad y sesión objetivo en el HANDOFF, para que no quede en el aire.
+
+15. Cero DT "en el aire". Toda DT nueva debe tener: prioridad (🚨/🟡/🟢), estimación (~X h), y sesión objetivo (próxima sesión, Fase D, Fase F, post-Docker). Si no se puede asignar una sesión objetivo, no es una DT: es una nota o un pendiente informal (que va a la bitácora, no al HANDOFF).
+
 
 Flask-Babel 4.0: default_translation_directories va en el constructor Babel(app, ...).
 
@@ -333,7 +344,7 @@ Demo: fases 1-12 completas (~9.972 filas), contraseña demo2026, idioma = pap.
 1️⃣1️⃣ Estado actual (resumen ejecutivo)
 
 Aspecto	Estado
-Último commit	68f8856 en origin/main (pusheado)
+Último commit	53fc3f3 en origin/main (pusheado)
 Módulos	11/11 completos (100%)
 Commit 2 (rediseño Productos Populares)	✅ 100% cerrado (5 commits)
 Fix 5 Nov	✅ CRÍTICA-4 + Bug B + IA KeyError aplicados. Commit 6e7dbbf.
@@ -349,8 +360,8 @@ DT críticas abiertas	1: CRÍTICA-2 (base_datos huérfano)
 DT medias abiertas	3: logging ruidoso, desconciliación, ANULADO, whitelist
 DT medias-bajas abiertas	1: cierre de jornada sin filtros
 DT bajas abiertas	4: endpoint huérfano, unificar productos populares, unificar prefijos, formato numérico
-Siguiente tarea	Fase 2 (logging ruidoso) — recetas + [DEBUG] Usuario
-Fase actual	Fase D (pre-Dockerización) — logging ruidoso F1+F1.5 OK, faltan F2+F3
+Siguiente tarea	MEDIA (desconciliación + ANULADO + whitelist, 1 commit)
+Fase actual	Fase D (pre-Dockerización) — logging ruidoso CERRADO, faltan 3 DTs + CRÍTICA-2
 Dockerización	Fase G, ~22-32 h (post Fase D)
 Working tree	nothing to commit, working tree clean
 📞 Cómo continuar en un chat nuevo
