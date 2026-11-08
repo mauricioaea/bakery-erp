@@ -2181,7 +2181,8 @@ def login():
             user.tenant_id = tenant_id
             
             logger.info(f"✅ [LOGIN] USUARIO ENCONTRADO: {user.username}")
-            logger.info(f"📦 [LOGIN] Hash en BD: {user.password_hash}")
+            # ✅ SEGURIDAD: hash truncado + debug (nunca hash completo en INFO)
+            logger.debug(f"📦 [LOGIN] Hash en BD (preview): {user.password_hash[:20] if user.password_hash else 'N/A'}...")
             logger.info(f"🏪 [LOGIN] Panadería ID: {user.panaderia_id}")
             logger.info(f"🏪 [LOGIN] Tenant ID: {user.tenant_id}")
             
@@ -12348,12 +12349,13 @@ def resetear_password(usuario_id):
         
         if verify:
             stored_hash = verify[0]
-            logger.info(f"✅ [VERIFICACIÓN] Hash en BD post-commit: {stored_hash[:50]}...")
+            # ✅ SEGURIDAD: hash truncado + debug
+            logger.debug(f"✅ [VERIFICACIÓN] Hash post-commit (preview): {stored_hash[:20] if stored_hash else 'N/A'}...")
             
             # ✅ Verificar que el hash funciona correctamente
             from werkzeug.security import check_password_hash
             test_verify = check_password_hash(stored_hash, nueva_password)
-            logger.info(f"✅ [PRUEBA] check_password_hash: {test_verify}")
+            logger.debug(f"✅ [PRUEBA] check_password_hash: {test_verify}")
             
             if not test_verify:
                 logger.error("❌ [ALERTA] El hash guardado NO es válido!")
