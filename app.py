@@ -2069,14 +2069,14 @@ def diagnosticar_recetas(panaderia_id):
     
     # Ver todas las recetas de esta panadería
     todas_recetas = Receta.query.filter_by(panaderia_id=panaderia_id).all()
-    logger.info(f"   Total recetas en BD: {len(todas_recetas)}")
+    logger.debug(f"   Total recetas en BD: {len(todas_recetas)}")
     
     for receta in todas_recetas:
-        logger.info(f"   - '{receta.nombre}' (ID: {receta.id}, Activo: {receta.activo})")
+        logger.debug(f"   - '{receta.nombre}' (ID: {receta.id}, Activo: {receta.activo})")
     
     # Ver recetas activas
     recetas_activas = Receta.query.filter_by(panaderia_id=panaderia_id, activo=True).all()
-    logger.info(f"   Recetas activas: {len(recetas_activas)}")
+    logger.debug(f"   Recetas activas: {len(recetas_activas)}")
     
     return len(recetas_activas)
 
@@ -4905,9 +4905,9 @@ def recetas():
     total_inactivas = Receta.query.filter_by(panaderia_id=panaderia_actual, activo=False).count()
     
     logger.debug(f"🔍 DEBUG RECETAS: Recetas encontradas para panadería {panaderia_actual}: {len(recetas_panaderia)}")
-    logger.info(f"   - Activas: {total_activas}, Inactivas: {total_inactivas}, Filtro: {estado}")
+    logger.debug(f"   - Activas: {total_activas}, Inactivas: {total_inactivas}, Filtro: {estado}")
     for receta in recetas_panaderia:
-        logger.info(f"   - {receta.nombre} (ID: {receta.id}, Activo: {receta.activo})")
+        logger.debug(f"   - {receta.nombre} (ID: {receta.id}, Activo: {receta.activo})")
     
     # 🆕 PASAR TODAS LAS VARIABLES AL TEMPLATE (ACTUALIZADO)
     return render_template(
