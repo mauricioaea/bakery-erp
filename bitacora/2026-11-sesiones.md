@@ -564,5 +564,97 @@ Próximo paso: push de docs (esta sesión) → reglas nuevas en HANDOFF (próxim
 - Último commit: `53fc3f3`. Working tree clean. 5 commits en `origin/main`.
 - **Siguiente tarea del HANDOFF:** MEDIA (desconciliación + ANULADO + whitelist, un solo commit).
 
+---INICIO---
+
+## Sesión 8 Nov (tarde) — DT-nueva-MEDIA-F2.6: reformulada a BAJA (falso positivo)
+
+**Objetivo:** Cerrar la DT-nueva-MEDIA-F2.6 (werkzeug requests HTTP a log). Anotada el 8 Nov por extrapolación teórica ("500 tenants × ~80 líneas/minuto = ~115k líneas/día").
+**Resultado:** **FALSO POSITIVO.** No aplica al código actual. Reformulada a 🟢 BAJA con sesión objetivo Fase G (Dockerización).
+
+### Diagnóstico previo (CMD nativo, sin tocar código)
+
+**Hallazgo 1 — `basicConfig` no existe en `app.py`:**
+```cmd
+findstr /n /c:"basicConfig" app.py
+(vacío)
+El logging no usa basicConfig. Hay config propia.
+
+Hallazgo 2 — getLogger aparece 1 sola vez en app.py:
+
+text
+1341: logger = logging.getLogger('panaderia')
+No hay logging.getLogger('werkzeug') en el código. Werkzeug hereda del root.
+
+Hallazgo 3 — RotatingFileHandler en línea 1360, atado a 'panaderia':
+El bloque 1341-1366 muestra que los 2 handlers (consola + archivo) se agregan al logger 'panaderia', NO al root:
+
+python
+logger = logging.getLogger('panaderia')
+if not logger.handlers:
+    ...
+    logger.addHandler(_console_handler)
+    logger.addHandler(_file_handler)   # ← solo a 'panaderia'
+Hallazgo 4 — Prueba empírica: cero requests HTTP en panaderia.log:
+
+Métrica	Valor
+Total líneas del log	24.083
+Líneas con werkzeug	0
+Líneas con GET /	0
+Líneas con POST /	0
+Hallazgo 5 — Test Python (estado fresh):
+
+text
+root level: 30          ← WARNING
+root handlers: []       ← ROOT SIN HANDLERS
+werkzeug level: 0       ← NOTSET (hereda → efectivo WARNING)
+werkzeug handlers: []   ← sin handlers propios
+werkzeug propagate: True
+Lectura: werkzeug no tiene handlers propios → propaga al root → root sin handlers → no escribe a ningún lado (en proceso fresh). El file handler está solo en 'panaderia' → panaderia.log nunca recibe werkzeug.
+
+Por qué se veía en Flask dev
+Flask con debug=True agrega un handler de consola al logger werkzeug en runtime (dentro de Flask/Werkzeug, no en app.py). Ese handler va a stderr, no al root, y no toca panaderia.log. Los GET /... 200 que se ven en la terminal durante el desarrollo son esperados y útiles. El archivo de log está limpio.
+
+Por qué la DT decía 115k líneas/día
+Extrapolación teórica: "500 tenants × ~80 líneas/minuto × 24h = ~115k líneas/día". Pero esa extrapolación asume que werkzeug sí escribe al file handler, lo cual no ocurre con la config actual (handler atado a 'panaderia', no al root).
+
+Riesgo real (futuro, Fase G)
+Si el Dockerfile / docker-compose.yml / WSGI (gunicorn/waitress) agrega logging.basicConfig() al root, entonces sí werkzeug empezaría a ensuciar el archivo. Es un riesgo de deploy, no un bug actual.
+
+Acción aplicada
+HANDOFF.md — DT F2.6 reformulada:
+
+Título: DT-nueva-MEDIA-F2.6 → DT-nueva-BAJA-F2.6.
+
+Prioridad: 🟡 MEDIA → 🟢 BAJA.
+
+Descripción: "Bajar logger werkzeug a WARNING" → "Falso positivo verificado. Acción real: auditar post-Docker que el deploy NO agregue basicConfig al root; si lo agrega, filtrar werkzeug del root handler o setear WARNING solo en prod."
+
+Sesión objetivo: próxima sesión → Fase G (Dockerización).
+
+Estado: abierta (riesgo post-Docker real).
+
+Código: cero cambios. No se tocó app.py. La config actual es correcta.
+
+DTs nuevas / modificadas
+DT-nueva-MEDIA-F2.6 → reformulada a DT-nueva-BAJA-F2.6 (falso positivo, riesgo post-Docker, Fase G).
+
+DT-nueva-MEDIA-F2.5 (logging nivel configurable vía LOG_LEVEL): sin cambios. Sigue 🟡 MEDIA. Es real (hoy debug=True fuerza _log_level a DEBUG en dev; en prod debug=False lo deja en INFO — pero no hay control explícito por env var). Se resuelve en otra sesión.
+
+Reglas aprendidas
+"115k líneas/día" era extrapolación, no medición. Regla nueva: toda DT de logging debe basarse en find /c /v "" empírico sobre el log real, no en proyecciones.
+
+Antes de bajar un logger a WARNING, verificar quién tiene el file handler. Si el handler está atado a un logger específico (no al root), los loggers "hermanos" (como werkzeug) no llegan al archivo. No hay nada que filtrar.
+
+Flask dev con debug=True agrega handlers a werkzeug en runtime. Esto es interno de Flask, no está en app.py. No confundir "veo requests en terminal" con "los requests van al log".
+
+Estado al cierre
+HANDOFF: F2.6 reformulada. Pendiente commit (docs(handoff): F2.6 reformulada — falso positivo).
+
+Código: working tree clean (cero cambios en .py).
+
+Próxima tarea: MEDIA (desconciliación + ANULADO + whitelist en depósitos bancarios, un solo commit). Es la primera DT con impacto contable real de la Fase D.
+
+---FIN---
+
 ---
 

@@ -155,7 +155,7 @@ Prioridad	DT	Descripción corta
 |---|---|---|---|
 | ✅ Media | DT-nueva-MEDIA-logging-ruido | Logging ruidoso en producción (F1 + F1.5 + F2 + F3) | `51000fc`, `68f8856`, `620a177`, `53fc3f3` |
 | 🟡 Media (nueva) | DT-nueva-MEDIA-F2.5 | Configurar nivel de logger independiente de Flask `debug=True`. Controlar via `LOG_LEVEL` en `.env`. | — |
-| 🟡 Media (nueva) | DT-nueva-MEDIA-F2.6 | Bajar logger `werkzeug` a WARNING para no ensuciar `panaderia.log` con requests HTTP. | — |
+| 🟢 Baja (reformulada) | DT-nueva-BAJA-F2.6 | **Reformulada el 8 Nov (diagnóstico):** FALSO POSITIVO. `RotatingFileHandler` está atado solo al logger `'panaderia'` (app.py:1341-1366), NO al root. Werkzeug no tiene handlers → propaga al root → root sin handlers → no llega a `panaderia.log`. Verificado empíricamente: 0 líneas de `werkzeug`/`GET `/`POST ` en `logs/panaderia.log` (24.083 líneas totales). **Acción real:** en Fase G (Dockerización), auditar que el `Dockerfile`/WSGI NO agregue `basicConfig` al root. Si lo agrega, filtrar `werkzeug` del root handler (o setear WARNING solo en prod vía `LOG_LEVEL`/`FLASK_ENV`). | — |
 🟡 MEDIA	DT-nueva-MEDIA (desconciliación)	No existe endpoint para desconciliar depósitos (CONCILIADO inmutable tras CRÍTICA-1).
 🟡 MEDIA	DT-nueva-MEDIA (estado ANULADO sin flujo)	Modal permite setear estado='ANULADO' sin endpoint dedicado ni auditoría.
 🟡 MEDIA	DT-nueva-MEDIA (whitelist estado backend)	editar_deposito_bancario() acepta cualquier string en data['estado'].
@@ -191,55 +191,53 @@ Mojibake en commit message: Windows usó cp1252 al escribir git commit -m. Recom
 8️⃣ Metodología de trabajo
 Reglas de oro
 
-Un paso a la vez con confirmación antes de continuar.
+1. Un paso a la vez con confirmación antes de continuar.
 
-Diagnóstico ANTES de modificar. Soluciones de raíz, no parches.
+2. Diagnóstico ANTES de modificar. Soluciones de raíz, no parches.
 
-TODO debe funcionar para futuros tenants.
+3. TODO debe funcionar para futuros tenants.
 
-Verificación con psql/findstr antes de avanzar. Commit después de cada fix verificado.
+4. Verificación con psql/findstr antes de avanzar. Commit después de cada fix verificado.
 
-Backup (pg_dump) antes de cada cambio grande.
+5. Backup (pg_dump) antes de cada cambio grande.
 
-git status antes de commitear; git add <archivo> explícito; push tras el commit.
+6. git status antes de commitear; git add <archivo> explícito; push tras el commit.
 
-Detener el servidor antes de reiniciar. Verificar con tasklist | findstr python. netstat -ano | findstr :5000 → 1 sola línea LISTENING (nueva regla 5 Nov, refuerza regla 4 Nov de doble servidor).
+7. Detener el servidor antes de reiniciar. Verificar con tasklist | findstr python. netstat -ano | findstr :5000 → 1 sola línea LISTENING (nueva regla 5 Nov, refuerza regla 4 Nov de doble servidor).
 
-Antes de testear templates, modo incógnito + servidor reiniciado (nueva regla 5 Nov, por caché del navegador).
+8. Antes de testear templates, modo incógnito + servidor reiniciado (nueva regla 5 Nov, por caché del navegador).
 
-Insertar bloques mostrando ANTES → DESPUÉS con número de línea exacto; compilar tras cada inserción (python -m py_compile app.py).
+9. Insertar bloques mostrando ANTES → DESPUÉS con número de línea exacto; compilar tras cada inserción (python -m py_compile app.py).
 
-Deuda técnica detectada: anotarla (no tocarla), priorizar, decidir después.
+10. Deuda técnica detectada: anotarla (no tocarla), priorizar, decidir después.
 
-Windows: findstr /c:"patrón" para búsquedas literales (con tildes/emoji puede fallar → usar powershell -Command "Select-String -Path ..." o script Python). Preferir scripts Python al copy-paste del chat (mojibake).
+11. Windows: findstr /c:"patrón" para búsquedas literales (con tildes/emoji puede fallar → usar powershell -Command "Select-String -Path ..." o script Python). Preferir scripts Python al copy-paste del chat (mojibake).
 
-git commit -F _commit_msg.txt (UTF-8) para mensajes con tildes/emojis (nueva regla 5 Nov).
+12. git commit -F _commit_msg.txt (UTF-8) para mensajes con tildes/emojis (nueva regla 5 Nov).
 
-i18n / Babel
+13. No acumular DT. Cuando el diagnóstico o el smoke test de un fix descubre un problema nuevo, se evalúa si está dentro del alcance del fix actual (mismo concern, mismo módulo). Si lo está, se resuelve en el mismo commit. Si es un concern distinto, se anota como DT nueva con prioridad y sesión objetivo en el HANDOFF, para que no quede en el aire.
 
-14. No acumular DT. Cuando el diagnóstico o el smoke test de un fix descubre un problema nuevo, se evalúa si está dentro del alcance del fix actual (mismo concern, mismo módulo). Si lo está, se resuelve en el mismo commit. Si es un concern distinto, se anota como DT nueva con prioridad y sesión objetivo en el HANDOFF, para que no quede en el aire.
+14. Cero DT "en el aire". Toda DT nueva debe tener: prioridad (🚨/🟡/🟢), estimación (~X h), y sesión objetivo (próxima sesión, Fase D, Fase F, post-Docker). Si no se puede asignar una sesión objetivo, no es una DT: es una nota o un pendiente informal (que va a la bitácora, no al HANDOFF).
 
-15. Cero DT "en el aire". Toda DT nueva debe tener: prioridad (🚨/🟡/🟢), estimación (~X h), y sesión objetivo (próxima sesión, Fase D, Fase F, post-Docker). Si no se puede asignar una sesión objetivo, no es una DT: es una nota o un pendiente informal (que va a la bitácora, no al HANDOFF).
+### i18n / Babel
 
+1. Flask-Babel 4.0: default_translation_directories va en el constructor Babel(app, ...).
 
-Flask-Babel 4.0: default_translation_directories va en el constructor Babel(app, ...).
+2. pybabel extract con lista explícita (con . escanea venv/). babel.cfg: [jinja2: **.html].
 
-pybabel extract con lista explícita (con . escanea venv/). babel.cfg: [jinja2: **.html].
+3. pybabel NO extrae _() dentro de f-strings ni después de emoji en f-string.
 
-pybabel NO extrae _() dentro de f-strings ni después de emoji en f-string.
+4. pybabel update marca #, fuzzy → SIEMPRE correr _limpiar_fuzzy.py. Los .mo se commitean.
 
-pybabel update marca #, fuzzy → SIEMPRE correr _limpiar_fuzzy.py. Los .mo se commitean.
+5. El % NUNCA va dentro de _(). % sueltos en msgstr → escribir %% en msgid y msgstr.
 
-El % NUNCA va dentro de _(). % sueltos en msgstr → escribir %% en msgid y msgstr.
+6. Templates: proteger <style>/<script> antes de reemplazos masivos.
 
-Templates: proteger <style>/<script> antes de reemplazos masivos.
+7. Reiniciar servidor + modo incógnito tras pybabel compile.
 
-Reiniciar servidor + modo incógnito tras pybabel compile.
+8. config.nombre_panaderia ya está global en templates.
 
-config.nombre_panaderia ya está global en templates.
-
-Modelos, schema y multi-tenant
-
+### Modelos, schema y multi-tenant
 ORM ↔ BD DEBEN estar alineados: al agregar columna al modelo, verificar con information_schema.columns.
 
 tenant_1 (plantilla) y tenant_27 (demo) DEBEN tener la misma estructura; toda migración se aplica a ambos.
