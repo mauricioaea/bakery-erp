@@ -2348,7 +2348,11 @@ class SaldoBanco(db.Model):
     
     def __repr__(self):
         return f'<SaldoBanco ${self.saldo_actual}>'
-    
+
+# ✅ DT-nueva-MEDIA (9 Nov): whitelist de estados para DepositoBancario
+# Se usa en app.py para validar `estado` en crear/editar y evitar strings libres.
+ESTADOS_DEPOSITO_VALIDOS = {'REGISTRADO', 'CONCILIADO', 'ANULADO'}
+
 class DepositoBancario(db.Model):
     """Modelo para registrar depósitos bancarios - 100% MULTI-TENANT"""
     __tablename__ = 'depositos_bancarios'
@@ -2374,6 +2378,12 @@ class DepositoBancario(db.Model):
     # ✅ Fase C.3: auditoría
     usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=True)
     
+    # ✅ DT-nueva-MEDIA (9 Nov): auditoría de anulación y desconciliación
+    motivo_anulacion = db.Column(db.Text, nullable=True)
+    fecha_anulacion = db.Column(db.DateTime, nullable=True)
+    motivo_desconciliacion = db.Column(db.Text, nullable=True)
+    fecha_desconciliacion = db.Column(db.DateTime, nullable=True)
+    
     # Auditoría
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
     fecha_actualizacion = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -2397,6 +2407,11 @@ class DepositoBancario(db.Model):
             'metodo_deposito': self.metodo_deposito,
             'estado': self.estado,
             'fecha_conciliacion': self.fecha_conciliacion.isoformat() if self.fecha_conciliacion else None,
+            'usuario_id': self.usuario_id,
+            'motivo_anulacion': self.motivo_anulacion,
+            'fecha_anulacion': self.fecha_anulacion.isoformat() if self.fecha_anulacion else None,
+            'motivo_desconciliacion': self.motivo_desconciliacion,
+            'fecha_desconciliacion': self.fecha_desconciliacion.isoformat() if self.fecha_desconciliacion else None,
             'fecha_creacion': self.fecha_creacion.isoformat() if self.fecha_creacion else None,
             'fecha_actualizacion': self.fecha_actualizacion.isoformat() if self.fecha_actualizacion else None
         }

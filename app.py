@@ -1393,6 +1393,7 @@ from models import Usuario, Producto, Venta, DetalleVenta, MateriaPrima, Receta,
 from models import OrdenProduccion, Categoria, Proveedor, HistorialCompra, HistorialInventario, BajaInventario
 from models import ConfiguracionProduccion, HistorialRotacionProducto, ControlVidaUtil, Factura
 from models import ProductoExterno, CompraExterna, RegistroDiario, SaldoBanco, PagoIndividual, DepositoBancario
+from models import ESTADOS_DEPOSITO_VALIDOS
 from models import JornadaVentas, CierreDiario, obtener_jornada_activa, cerrar_jornada_actual, obtener_ventas_dia, obtener_historial_cierres
 from models import ConsecutivoPOS, ConfiguracionSistema, Cliente
 from models import calcular_rotacion_automatica, actualizar_rotaciones_automaticas
@@ -10575,6 +10576,15 @@ def crear_deposito_bancario():
 
         logger.debug(f"📝 Datos recibidos: {data}")  # Debug
 
+        # ✅ DT-nueva-MEDIA (9 Nov): whitelist de estado (evita strings libres)
+        estado_solicitado = data.get('estado', 'REGISTRADO')
+        if estado_solicitado not in ESTADOS_DEPOSITO_VALIDOS:
+            return jsonify({
+                'success': False,
+                'error': f"Estado inválido: '{estado_solicitado}'. "
+                         f"Valores permitidos: {sorted(ESTADOS_DEPOSITO_VALIDOS)}"
+            }), 400
+
         # Validar campos obligatorios
         if not data.get('fecha_deposito'):
             return jsonify({
@@ -10696,6 +10706,20 @@ def editar_deposito_bancario(deposito_id):
         if 'metodo_deposito' in data:
             deposito.metodo_deposito = data['metodo_deposito']
         if 'estado' in data:
+            # ✅ DT-nueva-MEDIA (9 Nov): whitelist de estado (evita strings libres)
+            if data['estado'] not in ESTADOS_DEPOSITO_VALIDOS:
+                return jsonify({
+                    'success': False,
+                    'error': f"Estado inválido: '{data['estado']}'. "
+                             f"Valores permitidos: {sorted(ESTADOS_DEPOSITO_VALIDOS)}"
+                }), 400
+            # ✅ DT-nueva-MEDIA (9 Nov): ANULADO solo por endpoint dedicado (Paso 4.4)
+            if data['estado'] == 'ANULADO':
+                return jsonify({
+                    'success': False,
+                    'error': 'Para anular un depósito use el endpoint '
+                             '/depositos_bancarios/anular/<id> (requiere motivo).'
+                }), 400
             deposito.estado = data['estado']
             if data['estado'] == 'CONCILIADO' and not deposito.fecha_conciliacion:
                 deposito.fecha_conciliacion = datetime.now().date()
