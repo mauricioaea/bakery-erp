@@ -1020,6 +1020,8 @@ class GeneradorReportes:
             
             deposito.estado = 'CONCILIADO'
             deposito.fecha_conciliacion = datetime.utcnow().date()
+            # ✅ DT-nueva-MEDIA (9 Nov): auditoría de quién concilió
+            deposito.usuario_id = current_user.id
             db.session.commit()
             
             print(f"✅ Depósito {deposito_id} conciliado exitosamente")

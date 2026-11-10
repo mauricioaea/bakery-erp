@@ -10628,7 +10628,8 @@ def crear_deposito_bancario():
             referencia=data.get('referencia', ''),
             cuenta_bancaria=data.get('cuenta_bancaria', ''),
             metodo_deposito=data.get('metodo_deposito', 'efectivo'),
-            estado=data.get('estado', 'REGISTRADO')
+            estado=data.get('estado', 'REGISTRADO'),
+            usuario_id=current_user.id  # ✅ DT-nueva-MEDIA (9 Nov): auditoría
         )
 
         db.session.add(nuevo_deposito)
@@ -10724,6 +10725,8 @@ def editar_deposito_bancario(deposito_id):
             if data['estado'] == 'CONCILIADO' and not deposito.fecha_conciliacion:
                 deposito.fecha_conciliacion = datetime.now().date()
 
+        # ✅ DT-nueva-MEDIA (9 Nov): auditoría de quién editó
+        deposito.usuario_id = current_user.id
         deposito.fecha_actualizacion = datetime.now()
 
         db.session.commit()
