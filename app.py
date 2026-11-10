@@ -10529,19 +10529,7 @@ def obtener_deposito_bancario(deposito_id):
 
         return jsonify({
             'success': True,
-            'deposito': {
-                'id': deposito.id,
-                'fecha_deposito': deposito.fecha_deposito.strftime('%Y-%m-%d') if deposito.fecha_deposito else None,
-                'monto': deposito.monto,
-                'descripcion': deposito.descripcion,
-                'referencia': deposito.referencia,
-                'cuenta_bancaria': deposito.cuenta_bancaria,
-                'metodo_deposito': deposito.metodo_deposito,
-                'estado': deposito.estado,
-                'fecha_conciliacion': deposito.fecha_conciliacion.strftime('%Y-%m-%d') if deposito.fecha_conciliacion else None,
-                'fecha_creacion': deposito.fecha_creacion.strftime('%Y-%m-%d %H:%M:%S') if deposito.fecha_creacion else None,
-                'fecha_actualizacion': deposito.fecha_actualizacion.strftime('%Y-%m-%d %H:%M:%S') if deposito.fecha_actualizacion else None
-            }
+            'deposito': deposito.to_dict()  # ✅ DT-nueva-MEDIA (10 Nov): usa to_dict() para incluir campos de auditoría
         })
 
     except Exception as e:
@@ -10676,7 +10664,7 @@ def editar_deposito_bancario(deposito_id):
                 'error': 'Depósito no encontrado'
             }), 404
 
-        # 🔒 CRÍTICA-1: los depósitos CONCILIADOS son inmutables (auditoría contable).
+        # ✅ CRÍTICA-1: los depósitos CONCILIADOS son inmutables (auditoría contable).
         # Para desconciliar se requerirá un endpoint dedicado con auditoría.
         if deposito.estado == 'CONCILIADO':
             logger.warning(
@@ -10687,6 +10675,13 @@ def editar_deposito_bancario(deposito_id):
                 'success': False,
                 'error': 'No se puede editar un depósito CONCILIADO. Contacte al administrador si necesita desconciliarlo.'
             }), 403
+
+        # ✅ DT-nueva-MEDIA (9 Nov): un depósito ANULADO es inmutable
+        if deposito.estado == 'ANULADO':
+            return jsonify({
+                'success': False,
+                'error': 'Un depósito ANULADO no se puede editar. Cree uno nuevo si es necesario.'
+            }), 409
 
         # Actualizar campos permitidos
         if 'fecha_deposito' in data:
@@ -10783,6 +10778,59 @@ def eliminar_deposito_bancario(deposito_id):
             'success': False,
             'error': str(e)
         }), 500
+        
+
+@app.route('/depositos_bancarios/anular/<int:deposito_id>', methods=['POST'])
+@tenant_required
+@login_required
+@permisos_requeridos('finanzas', 'ver_depositos')
+def anular_deposito_bancario(deposito_id):
+    """Anula un depósito bancario con motivo y auditoría."""
+    try:
+        data = request.get_json() or {}
+        motivo = (data.get('motivo') or '').strip()
+        if not motivo:
+            return jsonify({
+                'success': False,
+                'error': 'El motivo de anulación es obligatorio.'
+            }), 400
+
+        deposito = DepositoBancario.query.filter_by(
+            id=deposito_id,
+            panaderia_id=current_user.panaderia_id
+        ).first()
+        if not deposito:
+            return jsonify({'success': False, 'error': 'Depósito no encontrado'}), 404
+
+        # ✅ DT-nueva-MEDIA (9 Nov): guards de transición
+        if deposito.estado == 'CONCILIADO':
+            return jsonify({
+                'success': False,
+                'error': 'No se puede anular un depósito CONCILIADO. Use el endpoint /desconciliar primero.'
+            }), 403
+        if deposito.estado == 'ANULADO':
+            return jsonify({
+                'success': False,
+                'error': 'El depósito ya está ANULADO.'
+            }), 400
+
+        deposito.estado = 'ANULADO'
+        deposito.motivo_anulacion = motivo
+        deposito.fecha_anulacion = datetime.now()
+        deposito.usuario_id = current_user.id
+        deposito.fecha_actualizacion = datetime.now()
+        db.session.commit()
+
+        logger.warning(
+            f"⚠️ Depósito ANULADO id={deposito_id} por usuario={current_user.username} "
+            f"— motivo: {motivo}"
+        )
+        return jsonify({'success': True, 'message': 'Depósito anulado exitosamente'})
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"❌ Error al anular depósito: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @app.route('/depositos_bancarios/conciliar/<int:deposito_id>', methods=['POST'])
@@ -10830,6 +10878,7 @@ def estadisticas_depositos_bancarios():
 
         # Construir consulta base
         query = DepositoBancario.query.filter_by(panaderia_id=current_user.panaderia_id)
+        query = query.filter(DepositoBancario.estado != 'ANULADO')   # ✅ excluye anulados
 
         if fecha_inicio and fecha_fin:
             fecha_inicio_dt = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()

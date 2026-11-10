@@ -690,17 +690,51 @@
                         <select id="estadoDeposito" class="form-control">
                             <option value="REGISTRADO">Registrado</option>
                             <option value="CONCILIADO">Conciliado</option>
-                            <option value="ANULADO">Anulado</option>
+                            <!-- ✅ DT-nueva-MEDIA (9 Nov): ANULADO se gestiona por el endpoint dedicado /anular/<id> -->
                         </select>
                     </div>
+                </div>                                                                                                                                   
+                <!-- ✅ DT-nueva-MEDIA (9 Nov): Recuadro de auditoría para depósitos ANULADOS -->
+                <div id="infoAnulacion" style="display: none; background-color: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px; margin-bottom: 15px; border: 1px solid #f5c6cb;">
+                    <h4 style="margin-top: 0; font-size: 1.1em;"><i class="fas fa-ban"></i> Depósito Anulado</h4>
+                    <p style="margin-bottom: 5px;"><strong>Motivo:</strong> <span id="textoMotivoAnulacion"></span></p>
+                    <p style="margin-bottom: 0;"><strong>Anulado por:</strong> Usuario ID <span id="textoUsuarioAnulacion"></span> el <span id="textoFechaAnulacion"></span></p>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="cerrarModalDeposito()">Cancelar</button>
-                    <button type="submit" class="btn btn-success" id="btnGuardarDeposito">
-                        <i class="fas fa-save"></i> Guardar Depósito
-                    </button>
-                </div>
-            </form>
+                <div class="modal-footer">                                                                                                               
+                    <button type="button" class="btn btn-secondary" onclick="cerrarModalDeposito()">Cancelar</button>                                    
+                    <button type="submit" class="btn btn-success" id="btnGuardarDeposito">                                                               
+                        <i class="fas fa-save"></i> Guardar Depósito                                                                                    
+                    </button>                                                                                                                            
+                </div>                                                                                                                                   
+            </form>                                                                                                                                      
+        </div>                                                                                                                                           
+    </div>                                                                                                                                               
+</div>
+
+<!-- ✅ DT-nueva-MEDIA (9 Nov): Modal de Anulación -->
+<div id="modalAnularDeposito" class="modal" style="display:none;">
+    <div class="modal-content" style="max-width: 480px;">
+        <div class="modal-header" style="background-color: #fff3cd;">
+            <h3 style="color: #856404;">⚠️ Anular Depósito</h3>
+            <button class="close-modal" onclick="cerrarModalAnular()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p>¿Está seguro de anular el depósito <strong id="anularDepositoInfo"></strong>?</p>
+            <p style="color: #856404; font-size: 0.9em;">
+                <i class="fas fa-info-circle"></i>
+                Esta acción queda registrada en el log con su usuario y el motivo.
+            </p>
+            <div class="form-group">
+                <label for="motivoAnulacion">Motivo de anulación: *</label>
+                <textarea id="motivoAnulacion" class="form-control" rows="3" required
+                          placeholder="Ej: Depósito duplicado, error de tipeo, etc."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="cerrarModalAnular()">Cancelar</button>
+            <button type="button" class="btn btn-warning" onclick="confirmarAnulacion()">
+                <i class="fas fa-ban"></i> Anular Depósito
+            </button>
         </div>
     </div>
 </div>
@@ -821,10 +855,11 @@
                 acciones = `
                     <button class="btn btn-success btn-sm" onclick="conciliarDeposito(${deposito.id})">Conciliar</button>
                     <button class="btn btn-info btn-sm" onclick="abrirModalDeposito('editar', ${deposito.id})">Editar</button>
+                    <button class="btn btn-warning btn-sm" onclick="abrirModalAnular(${deposito.id}, ${monto})">Anular</button>
                     <button class="btn btn-danger btn-sm" onclick="confirmarEliminarDeposito(${deposito.id})">Eliminar</button>
                 `;
             } else {
-                // 🔒 CRÍTICA-1: CONCILIADO (o cualquier estado no editable) → solo lectura
+                // ✅ CRÍTICA-1: CONCILIADO o ANULADO → solo lectura
                 acciones = `
                     <button class="btn btn-secondary btn-sm" onclick="abrirModalDeposito('ver', ${deposito.id})">Ver</button>
                 `;
@@ -876,8 +911,9 @@
     function actualizarEstadisticas(depositos) {
         if (!depositos || depositos.length === 0) return;
 
-        const totalMonto = depositos.reduce((sum, d) => sum + parseFloat(d.monto), 0);
-        const depositosConciliados = depositos.filter(d => d.estado === 'CONCILIADO');
+        const depositosValidos = depositos.filter(d => d.estado !== 'ANULADO');   // ✅ excluye anulados
+        const totalMonto = depositosValidos.reduce((sum, d) => sum + parseFloat(d.monto), 0);
+        const depositosConciliados = depositosValidos.filter(d => d.estado === 'CONCILIADO');
         const totalConciliados = depositosConciliados.length;
         const montoConciliado = depositosConciliados.reduce((sum, d) => sum + parseFloat(d.monto), 0);
         const porcentajeConciliacion = (totalConciliados / depositos.length * 100) || 0;
@@ -905,7 +941,9 @@
             form.reset();
             document.getElementById('depositoId').value = '';
             document.getElementById('fechaDeposito').value = new Date().toISOString().split('T')[0];
-            setModalModoLectura(false); // 🔒 CRÍTICA-1: reset a editable
+            setModalModoLectura(false); // ✅ CRÍTICA-1: reset a editable
+            // ✅ Ocultar el recuadro rojo de anulación al crear un depósito nuevo
+            document.getElementById('infoAnulacion').style.display = 'none';
         } else if ((accion === 'editar' || accion === 'ver') && id) {
             titulo.textContent = 'Editar Depósito Bancario';
             fetch(`/depositos_bancarios/${id}`)
@@ -922,12 +960,23 @@
                         document.getElementById('metodoDeposito').value = d.metodo_deposito || 'efectivo';
                         document.getElementById('estadoDeposito').value = d.estado || 'REGISTRADO';
 
-                        // 🔒 CRÍTICA-1: si está CONCILIADO → modo solo lectura
+                        // ✅ CRÍTICA-1: si está CONCILIADO → modo solo lectura
                         const esConciliado = (d.estado === 'CONCILIADO');
                         setModalModoLectura(esConciliado);
                         titulo.textContent = esConciliado
                             ? 'Ver Depósito (Conciliado — solo lectura)'
                             : 'Editar Depósito Bancario';
+
+                        // ✅ DT-nueva-MEDIA (9 Nov): Mostrar recuadro de anulación
+                        const infoAnulacion = document.getElementById('infoAnulacion');
+                        if (d.estado === 'ANULADO') {
+                            document.getElementById('textoMotivoAnulacion').textContent = d.motivo_anulacion || 'No especificado';
+                            document.getElementById('textoUsuarioAnulacion').textContent = d.usuario_id === 1 ? 'Administrador' : `Usuario #${d.usuario_id || 'Desconocido'}`;
+                            document.getElementById('textoFechaAnulacion').textContent = d.fecha_anulacion ? new Date(d.fecha_anulacion).toLocaleString() : 'Fecha desconocida';
+                            infoAnulacion.style.display = 'block';
+                        } else {
+                            infoAnulacion.style.display = 'none';
+                        }
                     }
                 })
                 .catch(error => console.error('Error:', error));
@@ -961,6 +1010,46 @@
 
     function cerrarModalConciliacion() {
         document.getElementById('modalConciliacion').style.display = 'none';
+    }
+
+    // ✅ DT-nueva-MEDIA (9 Nov): Anulación de depósitos
+    function abrirModalAnular(id, monto) {
+        document.getElementById('anularDepositoInfo').textContent = `#${id} por $${parseFloat(monto).toLocaleString('es-CO')}`;
+        document.getElementById('motivoAnulacion').value = '';
+        window._depositoAAnular = id;
+        document.getElementById('modalAnularDeposito').style.display = 'block';
+    }
+
+    function cerrarModalAnular() {
+        document.getElementById('modalAnularDeposito').style.display = 'none';
+        window._depositoAAnular = null;
+    }
+
+    function confirmarAnulacion() {
+        const motivo = document.getElementById('motivoAnulacion').value.trim();
+        if (!motivo) {
+            alert('El motivo de anulación es obligatorio.');
+            return;
+        }
+        const id = window._depositoAAnular;
+        if (!id) return;
+
+        fetch(`/depositos_bancarios/anular/${id}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ motivo: motivo })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Depósito anulado exitosamente');
+                cerrarModalAnular();
+                cargarDepositos();
+            } else {
+                alert('Error: ' + (data.error || 'Error al anular'));
+            }
+        })
+        .catch(error => alert('Error de conexión: ' + error.message));
     }
 
     function abrirModalConciliacion() {
@@ -1122,7 +1211,7 @@
 
         // Cerrar modales al hacer clic fuera
         document.addEventListener('click', function(event) {
-            const modales = ['modalDeposito', 'modalConfirmacion', 'modalConciliacion'];
+            const modales = ['modalDeposito', 'modalConfirmacion', 'modalConciliacion', 'modalAnularDeposito'];
             modales.forEach(id => {
                 const modal = document.getElementById(id);
                 if (modal && event.target === modal) {
@@ -1130,13 +1219,14 @@
                 }
             });
         });
-
+        
         // Cerrar con ESC
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape') {
                 cerrarModalDeposito();
                 cerrarModalConfirmacion();
                 cerrarModalConciliacion();
+                cerrarModalAnular();
             }
         });
     });
