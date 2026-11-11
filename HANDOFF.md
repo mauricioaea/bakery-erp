@@ -29,7 +29,7 @@
 
 ### 📋 Próximos pasos
 
-1. **Fase D — Pre-Dockerización:** resolver CRÍTICA-2, MEDIA-BAJA (cierre jornada), y las 3 DTs BAJAS. Las DT-nueva-MEDIA (desconciliación + ANULADO + whitelist) y DT-nueva-BAJA (endpoint huérfano) fueron cerradas el 11 Nov. **Siguiente tarea: MEDIA-BAJA (cierre de jornada, `models.py:2166`).**
+1. **Fase D — Pre-Dockerización:** resolver CRÍTICA-2, MEDIA-BAJA (cierre jornada), y las 3 DTs BAJAS. Las DT-nueva-MEDIA (desconciliación + ANULADO + whitelist) y DT-nueva-BAJA (endpoint huérfano) fueron cerradas el 11 Nov. Siguiente tarea: CRÍTICA-2 (renombrar schemas base_datos → tenant_{id}, con pg_dump previo).
 2. **Fase E — Prueba de "tenant virgen"** (~2 h), post-Fase D. Verificar Bug A (posible caché en `producto_externo_id`).
 3. **Fase G — Dockerización** (~22-32 h).
 4. (Opcional/baja) **i18n de diccionarios Python** (~2-4 h).
@@ -169,7 +169,8 @@ Prioridad	DT	Descripción corta
 🟡 MEDIA	DT-nueva-MEDIA (estado ANULADO sin flujo)	Modal permite setear estado='ANULADO' sin endpoint dedicado ni auditoría.✅ Cerrada el 11 Nov (commit 5368b1a).
 🟡 MEDIA	DT-nueva-MEDIA (whitelist estado backend)	editar_deposito_bancario() acepta cualquier string en data['estado'].✅ Cerrada el 11 Nov (commit 6b5485f).
 🟢 BAJA	DT-nueva-BAJA (endpoint huérfano)	/reporte/ventas define def reporte_ventas() (app.py:8259) pero su template es ventas_periodo.html. Opcional: renombrar en Fase D.→ ✅ Cerrada el 11 Nov (commit b0efa27).
-🟡 MEDIA-BAJA	DT-nueva-MEDIA-BAJA (cierre jornada)	models.py:2166 (cierre de jornada): query a Venta sin filtro panaderia_id, estado, es_donacion. Verificar sin auditoría.
+🟡 ✅ Cerrada DT-nueva-MEDIA-BAJA (cierre jornada) Eliminado cerrar_jornada_actual() (código muerto) + fix de filtro es_donacion en obtener_ventas_dia vivo. Commit 7ce0156.
+✅ Cerrada el 11 Nov (tarde) — DT-nueva-BAJA (JS huérfano): Polling a /api/cierre_diario/estado en pos-moderno.js sin botón en frontend → early-return agregado. Commit 7ce0156.
 🟢 BAJA	DT-unificar-productos-populares	Unificar _obtener_datos_productos_populares (reportes.py:1904) con reporte_productos_populares (app.py:8371). Anotada 6 Nov.
 🟢 BAJA	DT-unificar-prefijos-int-ext	Unificar analizar_productos_periodo (models.py:1763, prefijos P/E) con inline de app.py:8408-8434 (prefijos int_/ext_). Anotada 6 Nov.
 🟢 BAJA	DT-formato-numerico-es-CO	Formato $20.000.00 (punto como separador de miles + punto decimal) incorrecto para es-CO (debería ser $20.000,00). Cosmético. Anotada 6 Nov.
@@ -352,22 +353,23 @@ Demo: fases 1-12 completas (~9.972 filas), contraseña demo2026, idioma = pap.
 
 | Aspecto | Estado |
 |---|---|
-| Último commit | `29a4e03` en `origin/main` (pusheado) |
+| Último commit | `7ce0156` en `origin/main` (pusheado) |
 | Módulos | 11/11 completos (100%) |
 | Commit 2 (rediseño Productos Populares) | ✅ 100% cerrado (5 commits) |
-| Fix 11 Nov | ✅ DT-nueva-MEDIA (desconciliación + ANULADO + whitelist) cerrada. 4 commits: `6b5485f`, `17d0b83`, `5368b1a`, `a403c90`. |
-| Fix 11 Nov | ✅ DT-nueva-BAJA (endpoint huérfano) cerrada. Commit `b0efa27` + fix visual `29a4e03`. |
+| Fix 11 Nov (tarde/noche) | ✅ DT-nueva-MEDIA-BAJA (cierre jornada) + DT-nueva-BAJA (JS huérfano) cerradas. Commit `7ce0156`. |
+| Fix 11 Nov (mañana) | ✅ DT-nueva-MEDIA (desconciliación + ANULADO + whitelist) cerrada. 4 commits: `6b5485f`, `17d0b83`, `5368b1a`, `a403c90`. |
+| Fix 11 Nov (mañana) | ✅ DT-nueva-BAJA (endpoint huérfano) cerrada. Commit `b0efa27` + fix visual `29a4e03`. |
 | Fix 8 Nov | ✅ DT-nueva-MEDIA-logging-ruido cerrada al 100% (4 fases). Commit `53fc3f3`. |
 | Fix 6 Nov | ✅ Commit 2 (rediseño Productos Populares) + i18n en/pap. Commit `7ff556f`. |
-| Tests de regresión | ✅ Depósitos 11 Nov: 5/5 (whitelist) + 5/5 (auditoría) + 5/5 (anulación) + 3/3 (desconciliación). |
+| Tests de regresión | ✅ Cierre 11 Nov: endpoint `/api/cierre_diario/estado` OK + `/reporte/cierre_caja` OK + donación discriminada OK + POS sin polling huérfano. ✅ Depósitos 11 Nov: 5/5 (whitelist) + 5/5 (auditoría) + 5/5 (anulación) + 3/3 (desconciliación). |
 | Demo | ✅ admin_27 / demo2026 |
 | Tenants productivos | tenant_1 + tenant_27 |
 | Tenants de pruebas | tenant_31 (básico, diagnóstico 5 Nov) |
 | DT críticas abiertas | **1:** CRÍTICA-2 (base_datos huérfano) |
-| DT medias abiertas | **1:** MEDIA-BAJA (cierre de jornada sin filtros) |
-| DT bajas abiertas | **4:** F2.5, F2.6 (post-Docker), unificar productos populares, unificar prefijos int/ext, formato numérico |
-| Siguiente tarea | MEDIA-BAJA (cierre de jornada, `models.py:2166`) |
-| Fase actual | Fase D (pre-Dockerización) — 2 DTs cerradas el 11 Nov, falta CRÍTICA-2 + MEDIA-BAJA + 3 DTs BAJAS |
+| DT medias abiertas | **0** (todas cerradas) |
+| DT bajas abiertas | **4:** F2.5 (LOG_LEVEL env), F2.6 (post-Docker), unificar productos populares, unificar prefijos int/ext, formato numérico es-CO |
+| Siguiente tarea | **CRÍTICA-2** (renombrar schemas, `pg_dump` previo) |
+| Fase actual | Fase D (pre-Dockerización) — falta solo CRÍTICA-2 + 4 DTs BAJAS |
 | Dockerización | Fase G, ~22-32 h (post Fase D) |
 | Working tree | nothing to commit, working tree clean |
 

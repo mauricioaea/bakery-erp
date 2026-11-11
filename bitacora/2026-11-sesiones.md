@@ -723,6 +723,39 @@ Próxima tarea: MEDIA (desconciliación + ANULADO + whitelist en depósitos banc
 - **`origin/main` en `29a4e03`.**
 - **2 DTs cerradas hoy** (MEDIA + BAJA) = 6 commits.
 - **Próxima tarea del HANDOFF:** MEDIA-BAJA (cierre de jornada sin filtros, `models.py:2166`).
+---
 
+## Sesión 11 Nov (tarde/noche) — MEDIA-BAJA (cierre jornada) + limpieza de JS huérfano
+
+**Objetivo:** Cerrar la DT-nueva-MEDIA-BAJA (cierre de jornada sin filtros) y verificar si era código muerto. Resultado: sí era código muerto + encontramos un bug latente real + un JS huérfano en el POS.
+
+**Commit:** `7ce0156` (pusheado a `origin/main`).
+
+### Diagnóstico
+- **`cerrar_jornada_actual()` (models.py:2161):** Código muerto confirmado. Cero llamadas en `app.py` (solo el `import`), cero referencias en templates. Es la predecesora de `CierreDiario` (el sistema de cierre actual).
+- **Bug latente encontrado:** La DT original apuntaba a `models.py:2166` (muerta), pero el bug real de filtros estaba en **`app.py:7892`** (`obtener_ventas_dia` local, el que SÍ se ejecuta en `/api/cierre_diario/estado` y `/realizar_cierre`). Esa query filtraba `estado == 'COMPLETADA'` pero le faltaba `es_donacion == False`. Las donaciones sumaban en el cierre de caja.
+- **JS huérfano:** El botón "Cierre Diario" fue eliminado del frontend por Mauricio, pero `static/js/pos-moderno.js` seguía haciendo polling a `/api/cierre_diario/estado` en segundo plano (líneas ~1570 y ~1673).
+
+### Fix aplicado (1 commit, 3 archivos)
+1. **`models.py`:** Eliminada `cerrar_jornada_actual()` (86 líneas).
+2. **`app.py:1397`:** Limpiado el `import` (quitado `cerrar_jornada_actual`).
+3. **`app.py:7912`:** Agregado `Venta.es_donacion == False` a la query de `obtener_ventas_dia`.
+4. **`static/js/pos-moderno.js`:** Agregados early-returns (`if (!document.getElementById('btnCierreDiario')) return;`) en `procesarCierreDiario()` y `verificarEstadoCierreDiario()` para evitar llamadas huérfanas si el botón no existe.
+
+### Tests validados
+- **Test 1 (backend `/api/cierre_diario/estado`):** JSON de respuesta correcto (0 ventas = 0 total).
+- **Test 3 (frontend `/reporte/cierre_caja`):** Carga sin errores.
+- **Test JS (Network):** El POS ya no dispara llamadas a `/api/cierre_diario/*`. Cero polling huérfano.
+- **Test Donaciones (empírico):** Se procesó una donación en el POS. El reporte de cierre mostró **Total Ventas: $0** y **Salidas No Comerciales: $1,500**, demostrando que el filtro `es_donacion == False` funciona.
+
+### ✅ RESUELTAS el 11 Nov — MEDIA-BAJA (cierre jornada)
+| # | Descripción | Commit |
+|---|---|---|
+| DT-nueva-MEDIA-BAJA | Cierre de jornada sin filtros (`models.py:2166`) → Código muerto eliminado + bug latente corregido en el `obtener_ventas_dia` vivo (`app.py:7892`). | `7ce0156` |
+| DT-nueva-BAJA (JS huérfano) | Polling a `/api/cierre_diario/estado` desde `pos-moderno.js` sin botón en frontend → early-return agregado. | `7ce0156` |
+
+### Estado al cierre
+- **Working tree clean.** Último commit: `7ce0156`.
+- **Próxima tarea del HANDOFF:** CRÍTICA-2 (renombrar schemas, con `pg_dump` previo). Es la última DT crítica antes de Dockerizar.
 ---
 
