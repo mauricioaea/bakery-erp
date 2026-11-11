@@ -394,7 +394,7 @@
                                             </span>
                                         </td>
                                         <td class="text-center no-print">
-                                            <a href="{{ url_for('reporte_ventas', producto=producto.nombre, fecha_inicio=fecha_inicio.strftime('%Y-%m-%d'), fecha_fin=fecha_fin.strftime('%Y-%m-%d')) }}"
+                                            <a href="{{ url_for('reporte_ventas_periodo', producto=producto.nombre, fecha_inicio=fecha_inicio.strftime('%Y-%m-%d'), fecha_fin=fecha_fin.strftime('%Y-%m-%d')) }}"
                                                class="btn btn-sm btn-outline-primary"
                                                title="{{ _('Ver detalle de ventas de') }} {{ producto.nombre }}">
                                                 <i class="fas fa-search"></i>

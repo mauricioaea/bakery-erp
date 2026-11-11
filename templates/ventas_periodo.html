@@ -234,7 +234,7 @@
                 <i class="fas fa-filter me-2"></i>
                 {{ _('Filtrando por producto:') }} <strong>{{ producto_filtro }}</strong>
             </div>
-            <a href="{{ url_for('reporte_ventas', fecha_inicio=fecha_inicio.strftime('%Y-%m-%d'), fecha_fin=fecha_fin.strftime('%Y-%m-%d'), periodo=periodo) }}"
+            <a href="{{ url_for('reporte_ventas_periodo', fecha_inicio=fecha_inicio.strftime('%Y-%m-%d'), fecha_fin=fecha_fin.strftime('%Y-%m-%d'), periodo=periodo) }}"
                class="btn btn-sm btn-outline-secondary">
                 <i class="fas fa-times me-1"></i>{{ _('Quitar filtro') }}
             </a>

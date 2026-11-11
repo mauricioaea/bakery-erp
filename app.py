@@ -8258,7 +8258,7 @@ def reporte_cierre_caja():
 @app.route('/reporte/ventas')
 @permisos_requeridos('reportes', 'ver')
 @login_required
-def reporte_ventas():
+def reporte_ventas_periodo():
     """Reporte de ventas por período con análisis predictivo"""
     if 'user_id' not in session:
         return redirect(url_for('login'))
