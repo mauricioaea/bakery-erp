@@ -714,12 +714,12 @@
 <!-- ✅ DT-nueva-MEDIA (9 Nov): Modal de Anulación -->
 <div id="modalAnularDeposito" class="modal" style="display:none;">
     <div class="modal-content" style="max-width: 480px;">
-        <div class="modal-header" style="background-color: #fff3cd;">
-            <h3 style="color: #856404;">⚠️ Anular Depósito</h3>
+        <div class="modal-header" id="headerAnularDeposito" style="background-color: #fff3cd;">
+        <h3 style="color: #856404;" id="tituloAnularDeposito">⚠️ Anular Depósito</h3>
             <button class="close-modal" onclick="cerrarModalAnular()">&times;</button>
         </div>
         <div class="modal-body">
-            <p>¿Está seguro de anular el depósito <strong id="anularDepositoInfo"></strong>?</p>
+            <p>¿Está seguro de cambiar el estado del depósito <strong id="anularDepositoInfo"></strong>?</p>
             <p style="color: #856404; font-size: 0.9em;">
                 <i class="fas fa-info-circle"></i>
                 Esta acción queda registrada en el log con su usuario y el motivo.
@@ -851,15 +851,27 @@
             const claseEstado = `estado-${deposito.estado ? deposito.estado.toLowerCase() : 'registrado'}`;
 
             let acciones = '';
+            
+
             if (deposito.estado === 'REGISTRADO') {
                 acciones = `
                     <button class="btn btn-success btn-sm" onclick="conciliarDeposito(${deposito.id})">Conciliar</button>
                     <button class="btn btn-info btn-sm" onclick="abrirModalDeposito('editar', ${deposito.id})">Editar</button>
-                    <button class="btn btn-warning btn-sm" onclick="abrirModalAnular(${deposito.id}, ${monto})">Anular</button>
+                    <button class="btn btn-warning btn-sm" onclick="abrirModalAnular(${deposito.id}, ${monto}, 'anular')">Anular</button>
                     <button class="btn btn-danger btn-sm" onclick="confirmarEliminarDeposito(${deposito.id})">Eliminar</button>
                 `;
+            } else if (deposito.estado === 'CONCILIADO') {
+                let btnDesconciliar = '';
+                // ✅ Usamos JS puro. El backend ya bloquea a los cajeros, 
+                // pero aquí ocultamos el botón si el usuario es cajero
+                if (window.currentUserRol !== 'cajero') {
+                    btnDesconciliar = `<button class="btn btn-info btn-sm" onclick="abrirModalAnular(${deposito.id}, ${monto}, 'desconciliar')">Desconciliar</button>`;
+                }
+                acciones = `
+                    <button class="btn btn-secondary btn-sm" onclick="abrirModalDeposito('ver', ${deposito.id})">Ver</button>
+                    ${btnDesconciliar}
+                `;
             } else {
-                // ✅ CRÍTICA-1: CONCILIADO o ANULADO → solo lectura
                 acciones = `
                     <button class="btn btn-secondary btn-sm" onclick="abrirModalDeposito('ver', ${deposito.id})">Ver</button>
                 `;
@@ -1013,10 +1025,33 @@
     }
 
     // ✅ DT-nueva-MEDIA (9 Nov): Anulación de depósitos
-    function abrirModalAnular(id, monto) {
+    function abrirModalAnular(id, monto, modo = 'anular') {
+        const esDesconciliar = (modo === 'desconciliar');
+        window._depositoAAnular = id;
+        window._modoAnulacion = modo;
+        
         document.getElementById('anularDepositoInfo').textContent = `#${id} por $${parseFloat(monto).toLocaleString('es-CO')}`;
         document.getElementById('motivoAnulacion').value = '';
-        window._depositoAAnular = id;
+        
+        // Cambiar textos dinámicamente
+        const titulo = document.getElementById('tituloAnularDeposito');
+        const btn = document.querySelector('#modalAnularDeposito .btn-warning');
+        const header = document.getElementById('headerAnularDeposito');
+        
+        if (esDesconciliar) {
+            titulo.innerHTML = '🔄 Desconciliar Depósito';
+            btn.innerHTML = '<i class="fas fa-sync"></i> Desconciliar';
+            btn.className = 'btn btn-info'; // Azul para desconciliar
+            header.style.backgroundColor = '#d1ecf1'; // Fondo celeste
+            titulo.style.color = '#0c5460';
+        } else {
+            titulo.innerHTML = '⚠️ Anular Depósito';
+            btn.innerHTML = '<i class="fas fa-ban"></i> Anular';
+            btn.className = 'btn btn-warning'; // Amarillo para anular
+            header.style.backgroundColor = '#fff3cd';
+            titulo.style.color = '#856404';
+        }
+        
         document.getElementById('modalAnularDeposito').style.display = 'block';
     }
 
@@ -1027,14 +1062,19 @@
 
     function confirmarAnulacion() {
         const motivo = document.getElementById('motivoAnulacion').value.trim();
+        const modo = window._modoAnulacion || 'anular';
+        const esDesconciliar = (modo === 'desconciliar');
+        
         if (!motivo) {
-            alert('El motivo de anulación es obligatorio.');
+            alert(`El motivo de ${esDesconciliar ? 'desconciliación' : 'anulación'} es obligatorio.`);
             return;
         }
         const id = window._depositoAAnular;
         if (!id) return;
 
-        fetch(`/depositos_bancarios/anular/${id}`, {
+        const endpoint = esDesconciliar ? `/desconciliar/${id}` : `/anular/${id}`;
+        
+        fetch(`/depositos_bancarios${endpoint}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ motivo: motivo })
@@ -1042,11 +1082,11 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                alert('Depósito anulado exitosamente');
+                alert(`Depósito ${esDesconciliar ? 'desconciliado' : 'anulado'} exitosamente`);
                 cerrarModalAnular();
                 cargarDepositos();
             } else {
-                alert('Error: ' + (data.error || 'Error al anular'));
+                alert('Error: ' + (data.error || `Error al ${esDecConciliar ? 'desconciliar' : 'anular'}`));
             }
         })
         .catch(error => alert('Error de conexión: ' + error.message));
@@ -1230,7 +1270,9 @@
             }
         });
     });
-</script>
 
+    // ✅ Inyectamos el rol del usuario actual de forma segura
+    window.currentUserRol = "{{ current_user.rol }}";
+</script>
 </body>
 </html>

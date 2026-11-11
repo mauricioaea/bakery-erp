@@ -10831,6 +10831,62 @@ def anular_deposito_bancario(deposito_id):
         db.session.rollback()
         logger.error(f"❌ Error al anular depósito: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+    
+@app.route('/depositos_bancarios/desconciliar/<int:deposito_id>', methods=['POST'])
+@tenant_required
+@login_required
+@permisos_requeridos('finanzas', 'ver_depositos')
+def desconciliar_deposito_bancario(deposito_id):
+    """Desconcilia un depósito bancario. SOLO admin_cliente/super_admin."""
+    try:
+        # ✅ Rol: solo admin puede desconciliar (afecta contabilidad cerrada)
+        rol = (current_user.rol or '').strip().lower()
+        if rol not in ('admin_cliente', 'super_admin'):
+            return jsonify({
+                'success': False,
+                'error': 'Solo un administrador puede desconciliar depósitos.'
+            }), 403
+
+        data = request.get_json() or {}
+        motivo = (data.get('motivo') or '').strip()
+        if not motivo:
+            return jsonify({
+                'success': False,
+                'error': 'El motivo de desconciliación es obligatorio.'
+            }), 400
+
+        deposito = DepositoBancario.query.filter_by(
+            id=deposito_id,
+            panaderia_id=current_user.panaderia_id
+        ).first()
+        if not deposito:
+            return jsonify({'success': False, 'error': 'Depósito no encontrado'}), 404
+
+        if deposito.estado != 'CONCILIADO':
+            return jsonify({
+                'success': False,
+                'error': f"Solo se pueden desconciliar depósitos CONCILIADOS (actual: {deposito.estado})."
+            }), 400
+
+        deposito.estado = 'REGISTRADO'
+        deposito.fecha_conciliacion = None
+        deposito.motivo_desconciliacion = motivo
+        deposito.fecha_desconciliacion = datetime.now()
+        deposito.usuario_id = current_user.id
+        deposito.fecha_actualizacion = datetime.now()
+        db.session.commit()
+
+        logger.warning(
+            f"⚠️ Depósito DESCONCILIADO id={deposito_id} por usuario={current_user.username} "
+            f"— motivo: {motivo}"
+        )
+        return jsonify({'success': True, 'message': 'Depósito desconciliado exitosamente'})
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"❌ Error al desconciliar depósito: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 
 @app.route('/depositos_bancarios/conciliar/<int:deposito_id>', methods=['POST'])
