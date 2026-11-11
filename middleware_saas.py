@@ -160,6 +160,10 @@ class GestorTenants:
             
             tenant_id = nuevo_tenant.id
             
+            # 🆕 CRÍTICA-2: Alinear base_datos con el schema real (tenant_{id}, no tenant_{identificador})
+            nuevo_tenant.base_datos = f"tenant_{tenant_id}"
+            db.session.commit()
+            
             # 3. Crear schema en PostgreSQL
             schema_name = f"tenant_{tenant_id}"
             db.session.execute(text(f"CREATE SCHEMA IF NOT EXISTS {schema_name}"))
