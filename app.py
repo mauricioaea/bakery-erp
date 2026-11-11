@@ -1394,7 +1394,7 @@ from models import OrdenProduccion, Categoria, Proveedor, HistorialCompra, Histo
 from models import ConfiguracionProduccion, HistorialRotacionProducto, ControlVidaUtil, Factura
 from models import ProductoExterno, CompraExterna, RegistroDiario, SaldoBanco, PagoIndividual, DepositoBancario
 from models import ESTADOS_DEPOSITO_VALIDOS
-from models import JornadaVentas, CierreDiario, obtener_jornada_activa, cerrar_jornada_actual, obtener_ventas_dia, obtener_historial_cierres
+from models import JornadaVentas, CierreDiario, obtener_jornada_activa, obtener_ventas_dia, obtener_historial_cierres
 from models import ConsecutivoPOS, ConfiguracionSistema, Cliente
 from models import calcular_rotacion_automatica, actualizar_rotaciones_automaticas
 from models import calcular_tendencia_ventas, analizar_productos_periodo, calcular_rotacion_automatica_por_nombre
@@ -7903,11 +7903,13 @@ def obtener_ventas_dia(fecha, panaderia_id=None):
         if isinstance(fecha, str):
             fecha = datetime.strptime(fecha, '%Y-%m-%d').date()
         
-        # ✅ FILTRAR VENTAS SOLO DE ESTA PANADERÍA Y DÍA (excluyendo anuladas)
+        
+        # ✅ FILTRAR VENTAS SOLO DE ESTA PANADERÍA Y DÍA (excluyendo anuladas y donaciones)
         ventas = Venta.query.filter(
             Venta.panaderia_id == panaderia_id,
             func.date(Venta.fecha_hora) == fecha,
-            Venta.estado == 'COMPLETADA'  # 🆕 Excluir anuladas
+            Venta.estado == 'COMPLETADA',       # Excluir anuladas
+            Venta.es_donacion == False,         # Excluir donaciones (no son ingreso)
         ).all()
         
         return ventas

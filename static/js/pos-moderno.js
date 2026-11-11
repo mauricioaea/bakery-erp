@@ -1556,6 +1556,9 @@ function abrirAnalisisPredictivo() {
 // =============================================
 
 async function procesarCierreDiario() {
+    // 🆕 Si el botón no existe en el frontend, no hacemos la llamada ni mostramos el confirm
+    if (!document.getElementById('btnCierreDiario')) return;
+
     if (!confirm('¿Estás seguro de que deseas realizar el CIERRE DIARIO?\n\nEsta acción no se puede deshacer y reiniciará los contadores para el siguiente día.')) {
         return;
     }
@@ -1669,6 +1672,9 @@ function reiniciarContadoresDia() {
 
 // Función para verificar estado del cierre diario
 async function verificarEstadoCierreDiario() {
+    // 🆕 Si el botón no existe en el frontend, no hacemos la llamada
+    if (!document.getElementById('btnCierreDiario')) return;
+
     try {
         const response = await fetch('/api/cierre_diario/estado');
         const estado = await response.json();
@@ -1684,9 +1690,8 @@ async function verificarEstadoCierreDiario() {
             btnCierre.classList.remove('btn-warning');
             btnCierre.classList.add('btn-secondary');
         }
-        
     } catch (error) {
-        console.error('Error verificando estado de cierre:', error);
+        console.error('Error verificando estado:', error);
     }
 }
 
