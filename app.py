@@ -1339,7 +1339,14 @@ babel = Babel(
 # Nivel: DEBUG en desarrollo, INFO en producción.
 # Salida: consola + archivo rotativo (logs/panaderia.log).
 # El archivo rota al alcanzar 5MB, conservando hasta 5 backups.
-_log_level = logging.DEBUG if os.getenv('FLASK_ENV') == 'development' else logging.INFO
+# 🆕 Prioridad: LOG_LEVEL en .env si existe, si no lógica FLASK_ENV (retrocompatible)
+_env_log_level = os.getenv('LOG_LEVEL', '').strip().upper()
+if _env_log_level in ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'):
+    _log_level = getattr(logging, _env_log_level)
+elif os.getenv('FLASK_ENV') == 'development':
+    _log_level = logging.DEBUG
+else:
+    _log_level = logging.INFO
 
 logger = logging.getLogger('panaderia')
 logger.setLevel(_log_level)
