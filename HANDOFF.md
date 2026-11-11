@@ -1,7 +1,7 @@
-# 🗂️ CONTEXTO MAESTRO — PanaderíaPro (Bakery ERP) — v9.11
+# 🗂️ CONTEXTO MAESTRO — PanaderíaPro (Bakery ERP) — v9.14
 
-**Última actualización:** 8 de Noviembre, 2026 (mañana)
-**Último commit:** `53fc3f3` (fix: F3 logging ruidoso - hash truncado)
+**Última actualización:** 11 de Noviembre, 2026 (noche)
+**Último commit:** `29a4e03` (fix: botón Ver Reporte)
 **HANDOFF anterior:** `HANDOFF_v9.5.md` (histórico congelado, ver raíz del proyecto)
 **Bitácoras históricas:** `bitacora/2026-10-sesiones.md`, `bitacora/2026-11-sesiones.md`
 **Tenants de prueba:** `bitacora/tenants_prueba.md` (incluye `tenant_31`)
@@ -29,7 +29,7 @@
 
 ### 📋 Próximos pasos
 
-1. **Fase D — Pre-Dockerización:** resolver CRÍTICA-2, 3 DTs nuevas financieras (desconciliación + ANULADO + whitelist), BAJA (endpoint huérfano), MEDIA-BAJA (cierre jornada), DT F2.5 (logging nivel configurable) + F2.6 (werkzeug requests HTTP) (~6-8 h restantes). **Siguiente tarea: MEDIA (desconciliación + ANULADO + whitelist, un solo commit).**
+1. **Fase D — Pre-Dockerización:** resolver CRÍTICA-2, MEDIA-BAJA (cierre jornada), y las 3 DTs BAJAS. Las DT-nueva-MEDIA (desconciliación + ANULADO + whitelist) y DT-nueva-BAJA (endpoint huérfano) fueron cerradas el 11 Nov. **Siguiente tarea: MEDIA-BAJA (cierre de jornada, `models.py:2166`).**
 2. **Fase E — Prueba de "tenant virgen"** (~2 h), post-Fase D. Verificar Bug A (posible caché en `producto_externo_id`).
 3. **Fase G — Dockerización** (~22-32 h).
 4. (Opcional/baja) **i18n de diccionarios Python** (~2-4 h).
@@ -127,6 +127,15 @@
 ## 6️⃣ Últimos commits
 
 ```text
+29a4e03 fix(reportes): corregir cierre de etiqueta <a> en boton Ver Reporte
+b0efa27 refactor(reportes): renombrar reporte_ventas a reporte_ventas_periodo
+a403c90 feat(depositos): desconciliacion con auditoria y control de rol
+5368b1a feat(depositos): anulacion con motivo, auditoria visual y fix de totales
+17d0b83 feat(depositos): auditoria de usuario_id en crear/editar/conciliar
+6b5485f fix(depositos): whitelist de estados + auditoría (4 columnas nuevas)
+7fd0cbd docs(handoff): F2.6 reformulada a BAJA — falso positivo (werkzeug no ensucia panaderia.log)
+c36bbca docs: HANDOFF v9.13 + bitacora sesion 8 Nov (F3 logging cerrada)
+53fc3f3 fix(logging): F3/3 — truncar hash de contrasena en logs (seguridad)
 7ff556f chore(i18n): traducir cadenas del rediseno productos_populares + deuda previa
 e3b48e0 feat(reportes): H3 — 4 KPI cards unificadas + elimina card de Salidas No Comerciales
 b6a1908 feat(reportes): rediseno graficos — elimina Top 5 + Distribucion 30% + Rotacion 70%
@@ -156,10 +165,10 @@ Prioridad	DT	Descripción corta
 | ✅ Media | DT-nueva-MEDIA-logging-ruido | Logging ruidoso en producción (F1 + F1.5 + F2 + F3) | `51000fc`, `68f8856`, `620a177`, `53fc3f3` |
 | 🟡 Media (nueva) | DT-nueva-MEDIA-F2.5 | Configurar nivel de logger independiente de Flask `debug=True`. Controlar via `LOG_LEVEL` en `.env`. | — |
 | 🟢 Baja (reformulada) | DT-nueva-BAJA-F2.6 | **Reformulada el 8 Nov (diagnóstico):** FALSO POSITIVO. `RotatingFileHandler` está atado solo al logger `'panaderia'` (app.py:1341-1366), NO al root. Werkzeug no tiene handlers → propaga al root → root sin handlers → no llega a `panaderia.log`. Verificado empíricamente: 0 líneas de `werkzeug`/`GET `/`POST ` en `logs/panaderia.log` (24.083 líneas totales). **Acción real:** en Fase G (Dockerización), auditar que el `Dockerfile`/WSGI NO agregue `basicConfig` al root. Si lo agrega, filtrar `werkzeug` del root handler (o setear WARNING solo en prod vía `LOG_LEVEL`/`FLASK_ENV`). | — |
-🟡 MEDIA	DT-nueva-MEDIA (desconciliación)	No existe endpoint para desconciliar depósitos (CONCILIADO inmutable tras CRÍTICA-1).
-🟡 MEDIA	DT-nueva-MEDIA (estado ANULADO sin flujo)	Modal permite setear estado='ANULADO' sin endpoint dedicado ni auditoría.
-🟡 MEDIA	DT-nueva-MEDIA (whitelist estado backend)	editar_deposito_bancario() acepta cualquier string en data['estado'].
-🟢 BAJA	DT-nueva-BAJA (endpoint huérfano)	/reporte/ventas define def reporte_ventas() (app.py:8259) pero su template es ventas_periodo.html. Opcional: renombrar en Fase D.
+🟡 MEDIA	DT-nueva-MEDIA (desconciliación)	No existe endpoint para desconciliar depósitos (CONCILIADO inmutable tras CRÍTICA-1).→ ✅ Cerrada el 11 Nov (commit a403c90).
+🟡 MEDIA	DT-nueva-MEDIA (estado ANULADO sin flujo)	Modal permite setear estado='ANULADO' sin endpoint dedicado ni auditoría.✅ Cerrada el 11 Nov (commit 5368b1a).
+🟡 MEDIA	DT-nueva-MEDIA (whitelist estado backend)	editar_deposito_bancario() acepta cualquier string en data['estado'].✅ Cerrada el 11 Nov (commit 6b5485f).
+🟢 BAJA	DT-nueva-BAJA (endpoint huérfano)	/reporte/ventas define def reporte_ventas() (app.py:8259) pero su template es ventas_periodo.html. Opcional: renombrar en Fase D.→ ✅ Cerrada el 11 Nov (commit b0efa27).
 🟡 MEDIA-BAJA	DT-nueva-MEDIA-BAJA (cierre jornada)	models.py:2166 (cierre de jornada): query a Venta sin filtro panaderia_id, estado, es_donacion. Verificar sin auditoría.
 🟢 BAJA	DT-unificar-productos-populares	Unificar _obtener_datos_productos_populares (reportes.py:1904) con reporte_productos_populares (app.py:8371). Anotada 6 Nov.
 🟢 BAJA	DT-unificar-prefijos-int-ext	Unificar analizar_productos_periodo (models.py:1763, prefijos P/E) con inline de app.py:8408-8434 (prefijos int_/ext_). Anotada 6 Nov.
@@ -341,27 +350,27 @@ Demo: fases 1-12 completas (~9.972 filas), contraseña demo2026, idioma = pap.
 
 1️⃣1️⃣ Estado actual (resumen ejecutivo)
 
-Aspecto	Estado
-Último commit	53fc3f3 en origin/main (pusheado)
-Módulos	11/11 completos (100%)
-Commit 2 (rediseño Productos Populares)	✅ 100% cerrado (5 commits)
-Fix 5 Nov	✅ CRÍTICA-4 + Bug B + IA KeyError aplicados. Commit 6e7dbbf.
-Fix 4 Nov	✅ MEDIA-BAJA (Ventas del Día donación) aplicada + guard de rol. Commit 607ac75.
-Fix 3 Nov	✅ MEDIA-ALTA aplicada (15 fixes en cadena financiera) + fix fecha_fin. Commit 8304a16.
-Fix 1 Nov (noche)	✅ CRÍTICA-1 aplicada, smoke test 7/7, pusheada
-Fix 1 Nov (mañana)	✅ CRÍTICA-3 aplicada (6173cfe), test 6/6
-Tests de regresión	✅ Commit 2: 6/6 en H2.2, 6/6 en H3, 0 strings sin traducir en en/pap
-Demo	✅ admin_27 / demo2026
-Tenants productivos	tenant_1 + tenant_27
-Tenants de pruebas	tenant_31 (básico, diagnóstico 5 Nov)
-DT críticas abiertas	1: CRÍTICA-2 (base_datos huérfano)
-DT medias abiertas	3: logging ruidoso, desconciliación, ANULADO, whitelist
-DT medias-bajas abiertas	1: cierre de jornada sin filtros
-DT bajas abiertas	4: endpoint huérfano, unificar productos populares, unificar prefijos, formato numérico
-Siguiente tarea	MEDIA (desconciliación + ANULADO + whitelist, 1 commit)
-Fase actual	Fase D (pre-Dockerización) — logging ruidoso CERRADO, faltan 3 DTs + CRÍTICA-2
-Dockerización	Fase G, ~22-32 h (post Fase D)
-Working tree	nothing to commit, working tree clean
+| Aspecto | Estado |
+|---|---|
+| Último commit | `29a4e03` en `origin/main` (pusheado) |
+| Módulos | 11/11 completos (100%) |
+| Commit 2 (rediseño Productos Populares) | ✅ 100% cerrado (5 commits) |
+| Fix 11 Nov | ✅ DT-nueva-MEDIA (desconciliación + ANULADO + whitelist) cerrada. 4 commits: `6b5485f`, `17d0b83`, `5368b1a`, `a403c90`. |
+| Fix 11 Nov | ✅ DT-nueva-BAJA (endpoint huérfano) cerrada. Commit `b0efa27` + fix visual `29a4e03`. |
+| Fix 8 Nov | ✅ DT-nueva-MEDIA-logging-ruido cerrada al 100% (4 fases). Commit `53fc3f3`. |
+| Fix 6 Nov | ✅ Commit 2 (rediseño Productos Populares) + i18n en/pap. Commit `7ff556f`. |
+| Tests de regresión | ✅ Depósitos 11 Nov: 5/5 (whitelist) + 5/5 (auditoría) + 5/5 (anulación) + 3/3 (desconciliación). |
+| Demo | ✅ admin_27 / demo2026 |
+| Tenants productivos | tenant_1 + tenant_27 |
+| Tenants de pruebas | tenant_31 (básico, diagnóstico 5 Nov) |
+| DT críticas abiertas | **1:** CRÍTICA-2 (base_datos huérfano) |
+| DT medias abiertas | **1:** MEDIA-BAJA (cierre de jornada sin filtros) |
+| DT bajas abiertas | **4:** F2.5, F2.6 (post-Docker), unificar productos populares, unificar prefijos int/ext, formato numérico |
+| Siguiente tarea | MEDIA-BAJA (cierre de jornada, `models.py:2166`) |
+| Fase actual | Fase D (pre-Dockerización) — 2 DTs cerradas el 11 Nov, falta CRÍTICA-2 + MEDIA-BAJA + 3 DTs BAJAS |
+| Dockerización | Fase G, ~22-32 h (post Fase D) |
+| Working tree | nothing to commit, working tree clean |
+
 📞 Cómo continuar en un chat nuevo
 Pegar este archivo como contexto inicial con esta instrucción:
 

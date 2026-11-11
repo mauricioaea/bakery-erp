@@ -564,7 +564,7 @@ Próximo paso: push de docs (esta sesión) → reglas nuevas en HANDOFF (próxim
 - Último commit: `53fc3f3`. Working tree clean. 5 commits en `origin/main`.
 - **Siguiente tarea del HANDOFF:** MEDIA (desconciliación + ANULADO + whitelist, un solo commit).
 
----INICIO---
+
 
 ## Sesión 8 Nov (tarde) — DT-nueva-MEDIA-F2.6: reformulada a BAJA (falso positivo)
 
@@ -654,7 +654,75 @@ Código: working tree clean (cero cambios en .py).
 
 Próxima tarea: MEDIA (desconciliación + ANULADO + whitelist en depósitos bancarios, un solo commit). Es la primera DT con impacto contable real de la Fase D.
 
----FIN---
+---
+
+## Sesión 11 Nov — DT-nueva-MEDIA (depósitos) 100% + DT-nueva-BAJA (endpoint huérfano)
+
+**Commits:** `6b5485f`, `17d0b83`, `5368b1a`, `a403c90`, `b0efa27`, `29a4e03`. Pusheados a `origin/main`.
+
+### Objetivo 1 — Cerrar DT-nueva-MEDIA (desconciliación + ANULADO + whitelist)
+
+**Diagnóstico previo (5 huecos reales):**
+1. `editar_deposito_bancario()` aceptaba `data['estado']` sin whitelist.
+2. `ANULADO` sin flujo dedicado ni auditoría.
+3. No existía endpoint para desconciliar.
+4. `usuario_id` existía en BD pero nunca se poblaba (auditoría rota).
+5. **(Nuevo, no documentado):** `crear_deposito_bancario()` también aceptaba `estado` sin whitelist.
+
+**Migración SQL aplicada:** 4 columnas de auditoría (`motivo_anulacion`, `fecha_anulacion`, `motivo_desconciliacion`, `fecha_desconciliacion`) en `tenant_1`, `tenant_27`, `tenant_31`. Script en `migrations/sql/2026-11-09_depositos_auditoria.sql`.
+
+**Los 4 bloques cerrados:**
+
+| # | Commit | Alcance |
+|---|---|---|
+| **4.1** | `6b5485f` | Migración SQL + `models.py` alineado (constante `ESTADOS_DEPOSITO_VALIDOS` + 4 columnas) |
+| **4.2** | `6b5485f` | Whitelist de estados en `crear` y `editar` (rechaza strings libres con 400) |
+| **4.3** | `17d0b83` | Auditoría `usuario_id` en crear/editar/conciliar |
+| **4.4** | `5368b1a` | Endpoint `POST /anular/<id>` + modal propio + recuadro rojo + fix de totales (anulados se excluyen del KPI) |
+| **4.5** | `a403c90` | Endpoint `POST /desconciliar/<id>` (solo admin) + botón UI + reutilización de modal |
+
+**Tests:**
+- 5/5 bloque A (whitelist, creación/edición).
+- 5/5 bloque D (auditoría `usuario_id`).
+- 5/5 bloque B (anulación UI + F12 + recuadro rojo + fix de totales).
+- 3/3 bloque C (desconciliación UI + BD + guard de rol).
+
+**Bugs colaterales detectados y resueltos en el mismo commit:**
+- KPI "Total Depósitos" sumaba anulados (mismo patrón que el fix de donaciones `8304a16`). Fix en backend (`estadisticas_depositos_bancarios`) + frontend (`actualizarEstadisticas`).
+- Modal de anulación "recordaba" el estado ANULADO al abrir "Nuevo Depósito". Fix: reset explícito en `abrirModalDeposito('crear')`.
+- Endpoint "Ver" (`obtener_deposito_bancario`) armaba el JSON manualmente sin campos de auditoría. Fix: usar `deposito.to_dict()`.
+- `confirmarAnulacion()` tenía un bloque huérfano (copy-paste viejo) que rompía el JS con `Unexpected token ':'`. Fix: eliminar el bloque.
+- El botón "Desconciliar" no se ocultaba para cajeros (aunque el backend los rechaza). Fix: `window.currentUserRol` inyectado con Jinja.
+
+### Objetivo 2 — Cerrar DT-nueva-BAJA (endpoint huérfano)
+
+**Bug:** `def reporte_ventas()` (app.py:8261) no coincidía con su template `ventas_periodo.html`.
+
+**Fix (commits `b0efa27` + `29a4e03`):**
+- Renombrar `def reporte_ventas()` → `def reporte_ventas_periodo()`.
+- Actualizar `url_for('reporte_ventas_periodo')` en 3 templates: `reportes.html:229`, `ventas_periodo.html:237`, `productos_populares.html:397`.
+- **Fix colateral (en `29a4e03`):** el botón "Ver Reporte" de `reportes.html` tenía el `<a>` mal cerrado (faltaba cierre, texto fuera, `div` de la tarjeta sin cerrar). Reescrito.
+
+### DTs nuevas / modificadas
+
+- **Ninguna DT nueva.** Todos los hallazgos se resolvieron dentro de los mismos commits (regla #13 "No acumular DT").
+
+### Reglas aprendidas
+
+1. **Renombrar función de Flask requiere grep en templates.** Flask `url_for()` busca por nombre de función. Cambiar el `def` sin actualizar los templates rompe los botones con `BuildError` en runtime.
+2. **`to_dict()` centraliza el JSON.** Cuando un endpoint arma el JSON manualmente (como `obtener_deposito_bancario`), los campos nuevos del modelo no se incluyen automáticamente. Usar `deposito.to_dict()` evita olvidos.
+3. **Los KPIs que suman montos deben excluir `ANULADO`.** Mismo patrón que donaciones (`8304a16`): si un registro anulado sigue sumando, el reporte miente.
+4. **Los modales reutilizados necesitan reset explícito.** Si un modal se usa para "crear" y "ver", el estado visual (recuadros, colores) debe resetearse en el branch `'crear'`.
+5. **El `Unexpected token ':'` en JS suele ser código huérfano de un copy-paste.** Cuando se duplica una función y se olvida borrar la vieja, quedan líneas sueltas que rompen el archivo.
+6. **Antes de `git add` en templates con Jinja, correr `git diff <archivo>`.** El editor puede guardar una versión intermedia (sin cerrar bien las etiquetas), y el commit toma esa versión aunque después se corrija. Lección del commit `b0efa27` → `29a4e03`.
+7. **Jinja `{% if %}` dentro de JS rompe la sintaxis.** Se debe inyectar el valor en `window.variable` (con comillas) al final del `<script>` y consultar esa variable en JS puro.
+
+### Estado al cierre
+
+- **Working tree clean.**
+- **`origin/main` en `29a4e03`.**
+- **2 DTs cerradas hoy** (MEDIA + BAJA) = 6 commits.
+- **Próxima tarea del HANDOFF:** MEDIA-BAJA (cierre de jornada sin filtros, `models.py:2166`).
 
 ---
 
