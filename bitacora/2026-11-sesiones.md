@@ -816,5 +816,135 @@ Próxima tarea: MEDIA (desconciliación + ANULADO + whitelist en depósitos banc
 - **Último commit:** `e50f992`. **Working tree clean.**
 - **Fase D (pre-Dockerización):** ✅ **CERRADA.** Cero DTs críticas y cero medias abiertas.
 - **Próxima tarea:** **Fase E — Tenant virgen** (~2 h): crear tenant desde cero, verificar flujo completo, validar Bug A (`producto_externo_id` NULL en primer día).
+
+---
+
+## Sesión 12 Nov — Fases A + B + C cerradas (auditorías ORM ↔ BD ↔ modelo)
+
+**Commits:** `1ef3579` (fix Fase C) + commit de docs (este).
+**Objetivo:** Ejecutar las Fases A, B y C del plan pre-Dockerización (Semana 2 del roadmap: auditorías de alineación ORM ↔ BD ↔ modelo). Estimación original: ~6 h.
+
+### Fase A — Inventario + mapeo de modelos (✅ cerrada)
+
+**Objetivo:** mapear `models.py` (43 modelos) contra la BD real (`tenant_1`, `tenant_27`, `tenant_31`) y detectar huérfanos.
+
+**Procedimiento:**
+1. Inventario de modelos con regex sobre `models.py` → 43 clases.
+2. Inventario de tablas por tenant vía `information_schema.tables`.
+3. Diff `tenant_1` vs `tenant_27`.
+4. Diff `__tablename__` (43) vs tablas reales (42 + `public.tenants`).
+
+**Hallazgos:**
+- **43 modelos ↔ 42 tablas por tenant + `public.tenants` = 43. Cero huérfanos.**
+- `tenant_1` vs `tenant_27`: solo difiere `seed_demo_history` (basura de `seed_demo.py`).
+- `tenant_31` (creado con `crear_tenant_saas()`): **42/42 tablas** = `crear_tenant_saas()` crea TODAS las tablas.
+- `Tenant` ↔ `public.tenants`: 9 columnas alineadas.
+- `Usuario` ↔ `public.usuarios`: 12 columnas alineadas (verificado luego en C.3 que `tenant_1.usuarios` tiene 13, con `sucursal_id` extra; `public` no. Sana para `load_user()`).
+- **Naming inconsistente (cosmético):** `proveedor` y `detalle_venta` en singular vs el resto en plural. Funciona, anotado como DT-unificar-naming.
+
+### Fase B — Auditoría de `app.py` (✅ cerrada)
+
+**Objetivo:** inventariar queries SQL raw en `app.py`/`reportes.py`/`models.py` y verificar que `crear_tenant_saas()` crea todas las tablas en orden correcto.
+
+**Procedimiento:**
+1. `findstr` para queries raw (`db.session.execute`, `text(`, `FROM `, `INSERT INTO`, `UPDATE `, `DELETE FROM`) → 284 líneas en `app.py`, 9 en `reportes.py`, 3 en `models.py`.
+2. Filtro de `db.session.execute` + `text(` → 229 líneas reales en `app.py`.
+3. Clasificación manual por categoría.
+4. Script `_audit_fase_b.py` para verificar 1:1 DDL ↔ `models.py`.
+
+**Hallazgos:**
+- `reportes.py` (9 líneas): **100% falso positivo** (Matplotlib `ax.text()`, no SQL).
+- `models.py` (3 líneas): 1 query raw sana (`models.py:2556-2561`, `configuracion_panaderia`).
+- `app.py` (229 líneas): **100% clasificadas, 0 huérfanas.**
+- `crear_tenant_saas()`: **42 `CREATE TABLE IF NOT EXISTS` únicos (de 45 totales)**, cero tablas huérfanas, cero modelos sin crear.
+- **`db.create_all()` NO se usa para `tenant_X`** (solo para `public`, app.py:13256). DDL raw tabla por tabla.
+- 3 `CREATE TABLE` duplicados de `consecutivos_pos` (app.py:2640, 2868, 2943) → DT-Fase B-2.
+
+### Fase C — Auditoría de BD columna-por-columna (✅ cerrada)
+
+**Objetivo:** diff `tenant_1` vs `tenant_27` vs `tenant_31` columna por columna; cruzar contra `models.py` + DDL.
+
+**Procedimiento:**
+1. Diff SQL: `information_schema.columns` con `GROUP BY table_name, column_name HAVING count(*) < 2`.
+2. Script `_audit_fase_c.py` para cruzar 26 columnas en disputa contra `models.py` + DDL.
+3. **v1 del script falló** (regex roto, todo `❌`) → diagnóstico, corregido en v2. **Lección aprendida** (regla candidata #15).
+4. Verificación empírica de hallazgos (C.13-C.16).
+
+**Hallazgos:**
+
+| ID | Descripción | Severidad | Acción |
+|---|---|---|---|
+| **DT-Fase C-1** | `cierres_diarios.total_anulaciones` faltaba en `crear_tenant_saas()`. Se agregaba vía `migrations/sql/` manual. | 🚨 **Alta** | **Fix 1 línea en `app.py:772`** (`1ef3579`). Validado con `tenant_34`. |
+| DT-Fase C-2 | 7 columnas muertas en `configuracion_produccion` (DDL, no modelo, no código). | 🟢 Baja | Fase F. |
+| DT-Fase C-3 | 4 columnas muertas en `configuracion_sistema` (DDL, no modelo, no código). | 🟢 Baja | Fase F. |
+| DT-Fase C-4 | `pagos_individuales.usuario_id` (DDL sí, modelo no, `tenant_1` no). | 🟢 Baja | Fase F. |
+| DT-Fase C-5 | `panaderias.panaderia_id` auto-referencia rara. | 🟢 Baja | Fase F. |
+| DT-Fase C-6 | Módulo multi-sucursal legacy (nunca implementado): `sucursales.email`, `usuarios.sucursal_id`. **Confirmado por Mauricio.** | 🟢 Baja | Fase F (eliminar). |
+| DT-Fase C-7 | 5 columnas legacy en `tenant_1`: `cierres_diarios.created_at`, `.fecha`, `.jornada_id`, `historial_mantenimientos.activo_id`, `registros_diarios.tarjetas`. | 🟢 Baja | Fase F (limpieza opcional). |
+| DT-Fase C-8 | `seed_demo_history` en `tenant_27` (basura de `seed_demo.py`). | 🟢 Baja | Fase F. |
+
+### Fix DT-Fase C-1 — paso a paso
+
+**Primer intento (fallido):**
+- Fix aplicado con línea `total_anulaciones FLOAT DEFAULT 0,        ← NUEVA LÍNEA`.
+- **Error:** `← NUEVA LÍNEA` es texto plano dentro del `text(f'''...''')`. PostgreSQL no lo interpreta como comentario → `SyntaxError`.
+- **`tenant_33`** quedó a medio crear (37 tablas), pero **rollback automático de SQLAlchemy** revirtió todo (schema no quedó, `public.tenants` sin fila).
+- **Lección aprendida (regla candidata #16):** **NO poner comentarios ni texto decorativo dentro de un string `text(f'''...''')`.** El SQL se ejecuta tal cual. Comentarios de Python (`#`) solo **fuera** del string.
+
+**Segundo intento (exitoso):**
+- Fix corregido: `total_anulaciones FLOAT DEFAULT 0,` (sin flecha).
+- `py_compile` OK.
+- **`tenant_34`** creado exitosamente con el fix aplicado:
+  - 42 tablas, 55 columnas sincronizadas.
+  - `admin_34` (login OK).
+  - `tenant_34.cierres_diarios.total_anulaciones` ✅.
+  - Log: `🎉 Nuevo tenant SaaS creado: Test Fase C Fix (ID: 34)`.
+- **`tenant_34` conservado vivo** como tenant de pruebas para Fase E (decisión Mauricio).
+- **Commit `1ef3579` pusheado.**
+
+### Comportamiento observado (mini-Fase E no planeada)
+
+El test de `tenant_34` **ejercitó `crear_tenant_saas()` de punta a punta** y salió todo bien:
+- `📝 Creando tablas en schema tenant_34...`
+- `✅ Tablas creadas en tenant_34`
+- `✅ 55 columnas sincronizadas en tenant_34`
+- `✅ Panadería creada en schema para tenant_id: 34`
+- `✅ Configuración en schema creada para tenant_id: 34`
+- `✅ Usuarios creados en schema para tenant_id: 34`
+- `✅ Consecutivo POS creado`
+- `✅ Categorías creadas`
+- Login `admin_34` OK.
+- Dashboard carga.
+
+**Esto valida `crear_tenant_saas()` completo (sin bug aparente).** Bug A (caché `producto_externo_id`) **no se puede verificar aún** porque `tenant_34` no tiene ventas. Queda para Fase E.
+
+### Lecciones aprendidas (reglas candidatas)
+
+**Regla #15 (candidata):** "Un script de auditoría que devuelve `❌` uniforme en todas las filas tiene un bug de matching, no un hallazgo. Verificar el 'diagnóstico del script' (cuántos bloques extrajo) antes de interpretar la tabla de resultados."
+
+**Regla #16 (candidata):** "Al insertar líneas en un bloque `text(f'''...''')` (SQL raw), el comentario `#` es válido SOLO fuera del string. Dentro del SQL, cualquier texto se ejecuta como SQL. Nunca poner `← NUEVA LÍNEA`, `# TODO`, etc. en el código. Si hace falta marcar la línea nueva, hacerlo en el mensaje del instructor, no en el código."
+
+**Regla #17 (candidata, seguridad):** "Nunca pegar contraseñas reales en el chat del instructor. Enmascararlas (`ShQ****`) o borrarlas. Aplica a contraseñas de tenants, `demo2026`, `admin_31`, etc."
+
+### DTs nuevas anotadas (Fase F, todas 🟢 BAJAS excepto B-1 🟡)
+
+Ver HANDOFF sección 7️⃣ subsección "🟢 DTs BAJAS Fase F". Total: 12 nuevas + 4 preexistentes = 16 DTs BAJAS, 1 MEDIA (B-1), 0 críticas.
+
+### Archivos temporales
+
+- `_audit_fase_b.py`, `_audit_fase_c.py`: borrados (temporales de la sesión).
+- `_audit_queries_*.txt`, `_audit_execute_app.txt`, `_audit_style_models.txt`: borrados.
+- `_audit_resultado.txt` (26 Oct): conservado (viejo, no de esta sesión, a decidir).
+- `_audit_schema.py` (25 Oct): conservado (utilidad del proyecto, mencionada en HANDOFF).
+- `backup_pre_fasec_fix.backup`: conservado (regla #5).
+- `_commit_msg.txt`: borrado.
+
+### Estado al cierre
+
+- **Último commit:** `1ef3579`. **Working tree:** solo `HANDOFF.md` (se commitea con este bloque).
+- **Fases A + B + C:** ✅ **cerradas al 100%.**
+- **DT-Fase C-1:** ✅ cerrada.
+- **`tenant_34`:** ✅ vivo, listo para Fase E.
+- **Próxima tarea:** **Fase E — tenant virgen** (smoke test completo en `tenant_34`).
 ---
 
