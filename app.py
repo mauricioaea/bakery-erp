@@ -769,6 +769,7 @@ def crear_tablas_en_orden(schema_name):
             total_transferencia FLOAT DEFAULT 0,
             total_donaciones FLOAT DEFAULT 0,
             total_transacciones INTEGER DEFAULT 0,
+            total_anulaciones FLOAT DEFAULT 0,
             productos_top TEXT,
             ventas_dia_anterior FLOAT DEFAULT 0,
             tendencia FLOAT DEFAULT 0,
