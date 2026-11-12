@@ -29,10 +29,12 @@
 
 ### 📋 Próximos pasos
 
-1. **Fase D — Pre-Dockerización:** resolver CRÍTICA-2, MEDIA-BAJA (cierre jornada), y las 3 DTs BAJAS. Las DT-nueva-MEDIA (desconciliación + ANULADO + whitelist) y DT-nueva-BAJA (endpoint huérfano) fueron cerradas el 11 Nov. Siguiente tarea: CRÍTICA-2 (renombrar schemas base_datos → tenant_{id}, con pg_dump previo).
-2. **Fase E — Prueba de "tenant virgen"** (~2 h), post-Fase D. Verificar Bug A (posible caché en `producto_externo_id`).
-3. **Fase G — Dockerización** (~22-32 h).
-4. (Opcional/baja) **i18n de diccionarios Python** (~2-4 h).
+1. **Fase E — Prueba de "tenant virgen"** (~2 h). Crear tenant desde cero (básico + premium), verificar flujo completo (login → POS → venta → cierre → reporte → PDF). Verificar Bug A (`producto_externo_id` NULL en primer día del tenant).
+2. **Fase G — Dockerización** (~22-32 h).
+3. (Opcional/baja) **i18n de diccionarios Python** (~2-4 h).
+4. (Opcional/baja) **4 DTs BAJAS cosméticas** (F2.6 post-Docker, unificar productos populares, unificar prefijos int/ext, formato numérico es-CO). No bloquean Docker ni Fase E.
+
+**Fase D completada:** CRÍTICA-2 (`d32a7f3`) + MEDIA-F2.5 (`e50f992`) cerradas el 11 Nov (noche).
 
 ### 📌 Estructura del HANDOFF (v9.6+)
 
@@ -154,26 +156,35 @@ f694ae5 docs: HANDOFF v9.9 + bitácora sesión 4 Nov (MEDIA-BAJA + regla doble s
 Prioridad	DT	Descripción
 ✅ Media	Commit 2 (rediseño)	Rediseño "menos es más" + recomendaciones dinámicas en productos_populares.html
 ✅ Media	i18n cadenas nuevas	Strings de Commit 2 traducidos en en/pap
+
 🚨 Pendientes (orden de prioridad)
 
-Prioridad	DT	Descripción corta
-🚨 CRÍTICA	DT-nueva-CRÍTICA-2	base_datos = tenant_{subdominio} vs schema real tenant_{id} (reproducida en vivo en tenant_31). Fix al final de Fase D, con pg_dump previo.
+| Prioridad | DT | Descripción corta |
+|---|---|---|
+| 🟢 BAJA | DT-nueva-BAJA-F2.6 | Post-Docker: auditar que el WSGI no agregue `basicConfig` al root (werkzeug no ensucia `panaderia.log` hoy). Verificado 8 Nov. |
+| 🟢 BAJA | DT-unificar-productos-populares | Unificar `_obtener_datos_productos_populares` (reportes.py:1904) con `reporte_productos_populares` (app.py:8371). Anotada 6 Nov. |
+| 🟢 BAJA | DT-unificar-prefijos-int-ext | Unificar `analizar_productos_periodo` (models.py:1763, prefijos `P/E`) con inline de `app.py:8408-8434` (prefijos `int_/ext_`). Anotada 6 Nov. |
+| 🟢 BAJA | DT-formato-numerico-es-CO | Formato `$20.000.00` (punto como separador de miles + punto decimal) incorrecto para es-CO (debería ser `$20.000,00`). Cosmético. Anotada 6 Nov. |
+
+### ✅ Cerradas el 11 Nov (noche)
+
+| Prioridad | DT | Descripción | Commits |
+|---|---|---|---|
+| ✅ CRÍTICA | DT-nueva-CRÍTICA-2 | `base_datos` huérfano en `public.tenants` saneado (`tenant_{id}`) + `crear_tenant_saas()` / `middleware_saas.py` alineados con el ID. | `d32a7f3` |
+| ✅ MEDIA | DT-nueva-MEDIA-F2.5 | Nivel de logger configurable vía `LOG_LEVEL` en `.env`. | `e50f992` |
+| ✅ MEDIA-BAJA | DT-nueva-MEDIA-BAJA (cierre jornada) | Eliminado `cerrar_jornada_actual()` (código muerto) + fix de filtro `es_donacion` en `obtener_ventas_dia` vivo. | `7ce0156` |
+| ✅ BAJA | DT-nueva-BAJA (JS huérfano) | Polling a `/api/cierre_diario/estado` en `pos-moderno.js` sin botón en frontend → early-return agregado. | `7ce0156` |
+| ✅ MEDIA | DT-nueva-MEDIA (desconciliación) | Endpoint para desconciliar depósitos (CONCILIADO inmutable tras CRÍTICA-1). | `a403c90` |
+| ✅ MEDIA | DT-nueva-MEDIA (estado ANULADO sin flujo) | Modal permite setear estado='ANULADO' con endpoint dedicado y auditoría. | `5368b1a` |
+| ✅ MEDIA | DT-nueva-MEDIA (whitelist estado backend) | `editar_deposito_bancario()` valida estados contra whitelist. | `6b5485f` |
+| ✅ BAJA | DT-nueva-BAJA (endpoint huérfano) | `/reporte/ventas` renombrado a `reporte_ventas_periodo()` + fix visual. | `b0efa27`, `29a4e03` |
+
 ### ✅ Cerradas el 8 Nov (DT logging ruidoso)
 
 | Prioridad | DT | Descripción | Commits |
 |---|---|---|---|
 | ✅ Media | DT-nueva-MEDIA-logging-ruido | Logging ruidoso en producción (F1 + F1.5 + F2 + F3) | `51000fc`, `68f8856`, `620a177`, `53fc3f3` |
-| 🟡 Media (nueva) | DT-nueva-MEDIA-F2.5 | Configurar nivel de logger independiente de Flask `debug=True`. Controlar via `LOG_LEVEL` en `.env`. | — |
-| 🟢 Baja (reformulada) | DT-nueva-BAJA-F2.6 | **Reformulada el 8 Nov (diagnóstico):** FALSO POSITIVO. `RotatingFileHandler` está atado solo al logger `'panaderia'` (app.py:1341-1366), NO al root. Werkzeug no tiene handlers → propaga al root → root sin handlers → no llega a `panaderia.log`. Verificado empíricamente: 0 líneas de `werkzeug`/`GET `/`POST ` en `logs/panaderia.log` (24.083 líneas totales). **Acción real:** en Fase G (Dockerización), auditar que el `Dockerfile`/WSGI NO agregue `basicConfig` al root. Si lo agrega, filtrar `werkzeug` del root handler (o setear WARNING solo en prod vía `LOG_LEVEL`/`FLASK_ENV`). | — |
-🟡 MEDIA	DT-nueva-MEDIA (desconciliación)	No existe endpoint para desconciliar depósitos (CONCILIADO inmutable tras CRÍTICA-1).→ ✅ Cerrada el 11 Nov (commit a403c90).
-🟡 MEDIA	DT-nueva-MEDIA (estado ANULADO sin flujo)	Modal permite setear estado='ANULADO' sin endpoint dedicado ni auditoría.✅ Cerrada el 11 Nov (commit 5368b1a).
-🟡 MEDIA	DT-nueva-MEDIA (whitelist estado backend)	editar_deposito_bancario() acepta cualquier string en data['estado'].✅ Cerrada el 11 Nov (commit 6b5485f).
-🟢 BAJA	DT-nueva-BAJA (endpoint huérfano)	/reporte/ventas define def reporte_ventas() (app.py:8259) pero su template es ventas_periodo.html. Opcional: renombrar en Fase D.→ ✅ Cerrada el 11 Nov (commit b0efa27).
-🟡 ✅ Cerrada DT-nueva-MEDIA-BAJA (cierre jornada) Eliminado cerrar_jornada_actual() (código muerto) + fix de filtro es_donacion en obtener_ventas_dia vivo. Commit 7ce0156.
-✅ Cerrada el 11 Nov (tarde) — DT-nueva-BAJA (JS huérfano): Polling a /api/cierre_diario/estado en pos-moderno.js sin botón en frontend → early-return agregado. Commit 7ce0156.
-🟢 BAJA	DT-unificar-productos-populares	Unificar _obtener_datos_productos_populares (reportes.py:1904) con reporte_productos_populares (app.py:8371). Anotada 6 Nov.
-🟢 BAJA	DT-unificar-prefijos-int-ext	Unificar analizar_productos_periodo (models.py:1763, prefijos P/E) con inline de app.py:8408-8434 (prefijos int_/ext_). Anotada 6 Nov.
-🟢 BAJA	DT-formato-numerico-es-CO	Formato $20.000.00 (punto como separador de miles + punto decimal) incorrecto para es-CO (debería ser $20.000,00). Cosmético. Anotada 6 Nov.
+
 📋 Otras medias / bajas (heredadas, detalle en HANDOFF_v9.5.md sec. 9)
 Medias: DT-37 F5-pulido · DT-37 F4.9 (libro_diario huérfano) · DT-NUEVA-1 (CREATE TABLE con idioma) · error 'ingreso' en generar_reporte_ia_predictivo (✅ cerrada 5 Nov) · endpoint huérfano /generar_reporte_flujo_caja · overlap de labels en pie chart · i18n de diccionarios Python · mapeo Jinja2 de badges dinámicos · bug de _ver_untraducciones.py.
 
@@ -182,7 +193,7 @@ Cosmética crítica: emojis rotos en PDFs de ReportLab (Helvetica sin glyphs).
 Bajas: filas legacy en tenant_1.configuracion_sistema · imports redundantes de os en app.py · "Fluho Neto" → "Flusho Neto" (PAP) · cierre_diario.html y ruta /cierre_diario huérfanos · renombrar "Historial de Ventas" en reportes.html:229 · datos demo hardcodeados en ventas_periodo.html · traducciones PAP heredadas · tenant_1.historial_inventario sin FK en orden_produccion_id.
 
 🔍 Hallazgos 5 Nov (diagnóstico con tenant_31)
-CRÍTICA-2 reproducida en vivo: tenant_31.base_datos = tenant_diagnóstico_producto vs schema real tenant_31. tenant_27 ya mostraba la inconsistencia (tenant_panadería_demo vs tenant_27), pero era data legacy. tenant_31 la reproduce en runtime limpio. Evidencia empírica para el fix final de Fase D.
+CRÍTICA-2 reproducida en vivo: tenant_31.base_datos = tenant_diagnóstico_producto vs schema real tenant_31. (✅ Resuelta 11 Nov noche, commit `d32a7f3`).
 
 Bug A (nota, no es CRÍTICA): En el primer día de vida del tenant, detalle_venta.producto_externo_id quedó NULL en 2 ventas con externos. Tras reiniciar servidor, las filas se "corrigieron". No reproducible. Hipótesis: caché/ORM en primer arranque. Verificar en Fase E.
 

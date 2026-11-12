@@ -759,3 +759,62 @@ Próxima tarea: MEDIA (desconciliación + ANULADO + whitelist en depósitos banc
 - **Próxima tarea del HANDOFF:** CRÍTICA-2 (renombrar schemas, con `pg_dump` previo). Es la última DT crítica antes de Dockerizar.
 ---
 
+## Sesión 11 Nov (noche) — CRÍTICA-2 + F2.5: Fase D cerrada
+
+**Objetivo:** Cerrar las 2 últimas DTs no-cosméticas de la Fase D: CRÍTICA-2 (base_datos huérfano) y MEDIA-F2.5 (LOG_LEVEL configurable).
+
+**Commits:** `d32a7f3` (CRÍTICA-2) + `e50f992` (F2.5). Pusheados a `origin/main`.
+
+### CRÍTICA-2 — `base_datos` huérfano (commit `d32a7f3`)
+
+**Diagnóstico (rayos X):**
+- `public.tenants.base_datos` decía: `panaderia_principal.db` (tenant 1), `tenant_panadería_demo` (27), `tenant_diagnóstico_producto` (31). Strings heredados de la era SQLite.
+- Schemas reales en PostgreSQL: `tenant_1`, `tenant_27`, `tenant_31`. Alineados con el ID, no con el subdominio.
+- El código backend (`set_tenant_schema`, `middleware_saas.py`) **ya usaba `tenant_{id}`** para enrutar. La columna `base_datos` era un fósil que nadie leía en runtime. Pero el modal "Agregar Nuevo Cliente" (que crea tenants vía `crear_tenant_saas()`) **sí guardaba** `base_datos=f"tenant_{subdominio}"`, reproduciendo la inconsistencia en cada tenant nuevo.
+
+**Fix (3 capas):**
+1. **BD (saneamiento):** `UPDATE public.tenants SET base_datos = 'tenant_' || id;`. Post-fix: `tenant_1`, `tenant_27`, `tenant_31`. ✅
+2. **`app.py` (`crear_tenant_saas()`):** agregar `nuevo_tenant.base_datos = f"tenant_{tenant_id}"` después de `db.session.flush()` (cuando ya existe el ID asignado por Postgres). ✅
+3. **`middleware_saas.py`:** mismo fix en el branch de creación de tenant. ✅
+
+**Test empírico:** crear `tenant_32` desde el modal con subdominio `test_critica_2`:
+- Resultado en BD: `id=32`, `subdominio=test_critica_2`, **`base_datos=tenant_32`** (no `tenant_test_critica_2`). ✅
+- Login `admin_32` → entra al dashboard del tenant nuevo. ✅
+- Limpieza: `DROP SCHEMA tenant_32 CASCADE` + `DELETE FROM public.tenants WHERE id=32`. Cero rastro. ✅
+
+**Backup previo:** `backup_pre_critica2.backup` (protegido por `.gitignore`).
+
+**Arquitectura SaaS resultante:**
+- `id` → schema PostgreSQL (`tenant_{id}`). Fuente de verdad.
+- `subdominio` → reservado para URL futura (`demo.panaderiapro.com`).
+- `base_datos` → sincronizada con schema real (`tenant_{id}`). Cosmética/auditoría.
+
+### F2.5 — `LOG_LEVEL` configurable (commit `e50f992`)
+
+**Diagnóstico:** `app.py:1342` definía `_log_level = DEBUG si FLASK_ENV=='development' sino INFO`. Sin `LOG_LEVEL`. Sin control fino en producción (no podías poner `WARNING` ni `ERROR` explícitamente).
+
+**Fix:**
+- `app.py:1342`: si `LOG_LEVEL` está en `.env` y es válido (`DEBUG|INFO|WARNING|ERROR|CRITICAL`), usarlo. Fallback: lógica FLASK_ENV (retrocompatible).
+- `.env.example`: documenta `LOG_LEVEL=DEBUG` (con nota de cambiar a INFO en prod).
+
+**Test empírico:** con `LOG_LEVEL=WARNING` en `.env`, la consola ocultó todas las líneas `INFO` (arranque, tenants, etc.). Sin la variable, vuelve al comportamiento anterior.
+
+### ✅ RESUELTAS el 11 Nov (noche)
+
+| # | Descripción | Commit |
+|---|---|---|
+| DT-nueva-CRÍTICA-2 | `base_datos` huérfano en `public.tenants` + `crear_tenant_saas()` / `middleware_saas.py` guardando `tenant_{subdominio}` en vez de `tenant_{id}`. Fix en BD + 2 archivos Python. | `d32a7f3` |
+| DT-nueva-MEDIA-F2.5 | Nivel de logger configurable vía `LOG_LEVEL` en `.env` (prioridad sobre `FLASK_ENV`). | `e50f992` |
+
+### DTs BAJAS restantes (no bloquean Fase E ni Docker)
+- `DT-nueva-BAJA-F2.6`: post-Docker (auditar que WSGI no agregue `basicConfig` al root).
+- `DT-unificar-productos-populares`: unificar `_obtener_datos_productos_populares` con `reporte_productos_populares`.
+- `DT-unificar-prefijos-int-ext`: unificar `analizar_productos_periodo` con el inline `app.py:8408-8434`.
+- `DT-formato-numerico-es-CO`: formato `$20.000,00` (cosmético, es-CO).
+
+### Estado al cierre
+- **Último commit:** `e50f992`. **Working tree clean.**
+- **Fase D (pre-Dockerización):** ✅ **CERRADA.** Cero DTs críticas y cero medias abiertas.
+- **Próxima tarea:** **Fase E — Tenant virgen** (~2 h): crear tenant desde cero, verificar flujo completo, validar Bug A (`producto_externo_id` NULL en primer día).
+---
+
