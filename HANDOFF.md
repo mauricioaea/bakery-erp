@@ -392,109 +392,76 @@ Pegar este archivo como contexto inicial con esta instrucción:
 Orden sugerido del resto de Fase D: MEDIA (logging ruidoso) → MEDIA (desconciliación + ANULADO + whitelist, un solo commit) → BAJA (endpoint huérfano) → MEDIA-BAJA (cierre jornada) → CRÍTICA-2 (al final, con backup completo).
 
 1️⃣2️⃣ Roadmap a Producción (Nota personal de Mauricio)
+
 Objetivo: lanzar PanaderíaPro a producción en enero 2027 (inicio de mes).
 Modalidad: trabajo solo, part-time (~10-15 h/semana).
 Ventana: 8 semanas (5 Nov 2026 → 1 Ene 2027), ~80-120 h disponibles.
 
-Estado actual (6 Nov 2026)
+Estado actual (11 Nov 2026, noche)
 Aspecto	% Listo
-Funcionalidad (features)	~92% (Commit 2 cerrado)
-Producción-ready (infra)	~20%
-Deuda técnica (Fase D)	6-8 h restantes (bajó de 15-22 h)
-Bloqueantes críticos	7 (bajó de 8)
-Estimación total	46-64 h (6-8 jornadas de 8 h)
+Funcionalidad (features)	~92%
+Producción-ready (infra)	~25% (Fase D cerrada hoy, sube de 20%)
+Deuda técnica (Fase D)	✅ 0 DTs críticas, 0 medias. Solo 4 BAJAS cosméticas.
+Bloqueantes críticos	6 (bajó de 8)
+Estimación total	~40-58 h (5-7 jornadas de 8 h)
+
 Cronograma propuesto (8 semanas part-time)
 Semana	Foco	Estimación	Entregable
-1 (5-11 Nov)	✅ CERRADA: Commit 2 (rediseño Productos Populares + i18n)	~10-12 h	productos_populares.html rediseñado, i18n en/pap completo
-2 (12-18 Nov)	Cerrar Fase D: logging ruidoso + desconciliación + ANULADO + whitelist + endpoint huérfano + cierre jornada	~6-8 h	Commits independientes, DTs cerradas
-3 (19-25 Nov)	CRÍTICA-2 (renombrar schemas) con pg_dump previo	~6-8 h	Schemas alineados (tenant_{id} en todo el código)
-4 (26-2 Dic)	Fase E: tenant virgen + verificar Bug A (caché producto_externo_id)	~4-6 h	Tenant de prueba creado desde cero, smoke test OK
-5 (3-9 Dic)	Docker: Dockerfile + docker-compose.yml + .env.example completo	~8-12 h	Stack dockerizado local (Flask + PostgreSQL + Nginx)
-6 (10-16 Dic)	WSGI production (gunicorn/waitress) + SSL + Nginx reverse proxy	~6-8 h	Deploy reproducible en VPS local
-7 (17-23 Dic)	Backup automático + logging a stdout + /health + monitoreo básico	~6-8 h	Observabilidad mínima operativa
-8 (24-30 Dic)	Deploy a VPS real + hardening + documentación + smoke test producción	~8-10 h	Producción lista (o casi)
-31 Dic - 1 Ene	Buffer (imprevistos) + capacitación usuarios	~4-6 h	Lanzamiento
-Total estimado: ~50-66 h + buffer. Realista con tu plan.
+1 (5-11 Nov)	✅ CERRADA: Commit 2 (rediseño Productos Populares + i18n) + DTs de Fase D	~12-14 h	productos_populares.html rediseñado, i18n en/pap, CRÍTICA-2 + F2.5 + cierre jornada + JS huérfano cerradas. Fase D 100% terminada.
+2 (12-18 Nov)	Fases A + B + C (auditorías de alineación ORM ↔ BD ↔ modelo)	~6 h	Tablas huérfanas detectadas, FKs validadas, queries sin columnas inexistentes, docs/ESTRUCTURA_TENANT.md iniciado.
+3 (19-25 Nov)	Fase E (tenant virgen) + verificar Bug A (caché producto_externo_id)	~4 h	Tenant de prueba creado desde cero (básico + premium), smoke test completo (login → POS → venta → cierre → reporte → PDF) OK.
+4 (26-2 Dic)	Fase F (docs + limpieza) + 4 DTs BAJAS cosméticas	~4-6 h	docs/ESTRUCTURA_TENANT.md completo, código huérfano eliminado, HANDOFF actualizado.
+5 (3-9 Dic)	Fase G: Dockerfile + docker-compose.yml + .env.example completo	~8-12 h	Stack dockerizado local (Flask + PostgreSQL + Nginx).
+6 (10-16 Dic)	Fase G: WSGI production (gunicorn/waitress) + SSL + Nginx reverse proxy	~6-8 h	Deploy reproducible en VPS local.
+7 (17-23 Dic)	Fase G: Backup automático + logging a stdout + /health + monitoreo básico	~6-8 h	Observabilidad mínima operativa.
+8 (24-30 Dic)	Fase G: Deploy a VPS real + hardening + documentación + smoke test producción	~8-10 h	Producción lista (o casi).
+31 Dic - 1 Ene	Buffer (imprevistos) + capacitación usuarios	~4-6 h	Lanzamiento.
+Total estimado: ~54-74 h + buffer. Realista con tu plan.
 
 Prioridades (si algo se atrasa)
 P0 (sin esto no hay producción):
 
-CRÍTICA-2 (schemas alineados).
-
+Fases A + B + C (auditorías de alineación ORM ↔ BD).
+Fase E (tenant virgen + Bug A).
 Docker + WSGI + SSL.
-
 Backup automático.
-
 /health endpoint.
-
 Variables de entorno producción.
 
 P1 (importante pero puede esperar 1-2 semanas post-lanzamiento):
 
 CI/CD (GitHub Actions).
-
 Monitoreo avanzado (Sentry, Prometheus).
-
 Rate limiting.
-
 Tests automatizados (pytest).
 
 P2 (deseables, post-lanzamiento):
 
 i18n de diccionarios Python.
-
 API REST.
-
 Dashboard de admin.
-
 Rotación automática de contraseñas.
 
 Riesgos identificados
-CRÍTICA-2 es transversal: renombrar schemas de tenant_1 + tenant_27 + tenant_31 puede romper si no hay pg_dump previo. Hacer al final de Fase D, con backup completo.
-
-tenant_27 (demo) tiene base_datos inconsistente: CRÍTICA-2 lo resuelve, pero hay que decidir si se migra o se borra antes del lanzamiento.
-
+✅ CRÍTICA-2 RESUELTA (11 Nov noche, d32a7f3). Schemas alineados, crear_tenant_saas/middleware_saas alineados, BD saneada.
+Fases A/B/C pueden descubrir tablas creadas "al vuelo" en app.py que no están en models.py (riesgo de que un tenant nuevo no las tenga). Se resuelve en Fase F.
 Bug A (caché producto_externo_id): verificar en Fase E. Si se reproduce, escalar a CRÍTICA-5.
-
+tenant_27 (demo) tiene datos inconsistentes por ser demo. Se resuelve en Fase F (o se migra a demo nueva).
 Sin tests automatizados: la validación es manual (screenshots + PDFs). Post-lanzamiento, agregar pytest con 20-30 tests de humo.
-
 Lógica <7 días en reportes: cada tenant nuevo va a ver — en rotación hasta los 7 días. Documentar en onboarding.
 
 Decisiones pendientes (para antes del deploy)
 Proveedor de VPS: Hetzner (€5/mes) vs DigitalOcean ($6/mes) vs AWS Lightsail ($5/mes). Recomendación: Hetzner CX22 (mejor relación precio/rendimiento en Europa) o DigitalOcean (más amigable, más datacenters).
-
 Dominio: ¿ya tenés? (ej. panaderiapro.com). ¿Usarás subdominios por tenant (cliente1.panaderiapro.com)?
-
 SSL: Let's Encrypt (gratis, auto-renovable).
-
 Backup: pg_dump diario + retención 7 días + copia semanal a almacenamiento externo (S3, Backblaze).
-
 tenant_27 (demo): ¿se migra a la nube o se crea una demo nueva con datos reales?
-
-Precio final de licencias: Premium 
-X
-C
-O
-P
-/
-m
-e
-s
-,
-B
-a
-ˊ
-s
-i
-c
-a
-XCOP/mes,B 
-a
-ˊ
- sicaY COP/mes.
+Precio final de licencias: Premium $X COP/mes, Básica $Y COP/mes.
 
 Criterios de "listo para producción"
-□ Los 3 tenants (1, 27, 31) tienen schema correcto (tenant_{id}).
+□ Los 3 tenants (1, 27, 31) tienen schema correcto (tenant_{id}) + base_datos alineado. ✅ (11 Nov)
+□ Fases A/B/C completadas (auditorías ORM ↔ BD ↔ modelo).
+□ Fase E OK (tenant virgen funcional end-to-end).
 □ docker-compose up levanta el stack local sin errores.
 □ HTTPS funciona con certificado válido.
 □ /health responde 200 OK.
@@ -504,15 +471,12 @@ Criterios de "listo para producción"
 □ dev_master + 2 tenants productivos creados.
 □ Documentación de deploy en docs/DEPLOY.md.
 □ Rollback plan documentado.
+
 Notas personales
-No dockerizar hasta completar Fases A-F. (Regla del HANDOFF v9.11.)
-
-CRÍTICA-2 al final, con backup. No antes.
-
+✅ Fase D cerrada el 11 Nov (noche). No dockerizar hasta completar Fases A-F.
+CRÍTICA-2 resuelta (era el mayor bloqueante transversal).
 Cada semana, actualizar este roadmap con lo hecho + lo pendiente.
-
 Si algo se atrasa, priorizar P0 sobre P1 y P2.
-
 El lanzamiento es "soft launch" (2-3 clientes beta) antes de marketing masivo.
 
-Fin del HANDOFF.md — v9.11
+Fin del HANDOFF.md — v9.17
