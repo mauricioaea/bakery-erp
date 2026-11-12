@@ -946,5 +946,107 @@ Ver HANDOFF sección 7️⃣ subsección "🟢 DTs BAJAS Fase F". Total: 12 nuev
 - **DT-Fase C-1:** ✅ cerrada.
 - **`tenant_34`:** ✅ vivo, listo para Fase E.
 - **Próxima tarea:** **Fase E — tenant virgen** (smoke test completo en `tenant_34`).
+## Sesión 12 Nov (tarde) — Fase E cerrada + 2 bugs fixeados
+
+**Commits:** `9b71016` (fix HistorialInventario) + commit de docs (este).
+**Objetivo:** Ejecutar Fase E (tenant virgen) con `tenant_34` (creado 12 Nov con el fix de DT-Fase C-1). Smoke test completo: login → POS → producción → venta → anulación → cierre → reportes → PDFs. Verificar Bug A.
+
+### Diagnóstico inicial de `tenant_34`
+
+- `public.tenants.id=34`: Test Fase C Fix / test_fase_c_fix / basico / activo.
+- Usuarios: `admin_34`, `super_34`, `cajero_34` (todos activos).
+- Configuración: Test Fase C Fix / nube_basica / max_usuarios=1.
+- Datos de negocio: 0 ventas, 0 productos, 0 detalle_venta, 0 cierres_diarios, 3 categorías (creadas por `crear_tenant_saas()`).
+- `configuracion_sistema`: **0 filas** (tabla con columnas pero sin registro inicial). Dashboard carga OK (fallback funciona).
+
+### Hallazgos del diagnóstico
+
+**E-1 (legacy en tenant_1, NO es bug):** `tenant_1.compras_externas` tiene 4 columnas legacy (`producto_id`, `precio_compra`, `total_compra`, `notas`). El DDL actual no las crea. `tenant_34` no las tiene. Código no las usa. Fase F: limpieza opcional.
+
+**E-2 (legacy en tenant_1/tenant_27, NO es bug):** `stock_productos.receta_id` existe en `tenant_1` y `tenant_27`, pero el DDL actual no la crea. `tenant_34` no la tiene. Código no la usa. Fase F: limpieza opcional.
+
+**E-3 (resuelto sin bug):** `tenant_34.configuracion_sistema` vacía. `GET /dashboard 200` + `GET /api/configuracion-sistema 200`. Fallback a `ConfiguracionPanaderia` funciona. **No es bug** (lazy init). Fase F: agregar `INSERT` inicial si se considera necesario.
+
+### Smoke test completo (todas las validaciones)
+
+| Paso | Resultado |
+|---|---|
+| Login `admin_34` | ✅ (método `hash_seguro`, `pbkdf2`) |
+| Dashboard | ✅ |
+| Crear proveedor "Agua" | ✅ |
+| Crear materia prima | ✅ (con `LegacyAPIWarning` de `Query.get()`, cosmético) |
+| Crear receta "Agua puratorta" | ✅ (categoría "Torta" creada) |
+| Producción 10 unidades | ✅ Stock: 0 → 10 |
+| Crear producto externo "jugo hit mora" | ✅ |
+| Registrar compra externa | ✅ |
+| POS venta interna ($3500) | ✅ |
+| POS venta externa ($2400) | ✅ |
+| **Bug A (POS externo):** `producto_externo_id` | ✅ **NO reproducido.** `detalle_venta.producto_externo_id=1` (ID real, no virtual `10001`). Cierra nota del 5 Nov. |
+| Stock interno descontado | ✅ (10 → 9) |
+| Stock externo descontado | ✅ (100 → 98) |
+| Recibos POS | ✅ Ambos generados |
+| **Anulación POS** (venta #2, $3500) | ✅ Venta `ANULADA`, stock revertido (`historial_inventario: 9→10`), badge + motivo + observación, total tachado, reporte excluye |
+| **Reporte Cierre de Caja** (HTML) | ✅ $5.900 → post-anulación $2.400. Utilidad $4.330 → $900. ROI 60%. |
+| **Reporte Productos Populares** (HTML) | ✅ Top 10, distribución 50/50 → 100% externo post-anulación, rotación "—" (Bug B validado) |
+| **PDFs** (Cierre + Productos Populares) | ✅ Ambos generados con datos correctos |
+| **`historial_inventario`** | ⚠️ **Bug detectado:** filas de producción con `producto_id`, `cantidad_anterior`, `cantidad_nueva` NULL. **Fix en `9b71016`** (ver abajo). |
+| **Producción Diaria (UI)** | ✅ Stock Vitrina 15, Completadas Hoy 2 (10 und + 5 und), Stock Bajo alerta |
+
+### Bug detectado y fixeado — `HistorialInventario` de producto terminado
+
+**Síntoma:** en `tenant_34.historial_inventario`, las filas de producción de producto terminado tenían:
+1|produccion||| ← producto_id=NULL, cantidad_anterior=NULL, cantidad_nueva=NULL
+2|produccion|||
+
+text
+
+**Causa raíz:** `OrdenProduccion.completar_produccion()` (models.py:1325) actualizaba `producto.stock_actual` y luego llamaba a `_descontar_ingredientes()` (que registra MP en `HistorialInventario` con `materia_prima_id != NULL`), pero **nunca registraba el movimiento del producto terminado**.
+
+**Fix (commit `9b71016`):** en `completar_produccion()`, después de actualizar `producto.stock_actual`, agregar un `HistorialInventario` con:
+- `producto_id=producto.id`
+- `materia_prima_id=None` (nullable en BD)
+- `cantidad_anterior=stock_antes`
+- `cantidad_nueva=producto.stock_actual`
+- `cantidad_utilizada=self.cantidad_producir`
+- `tipo_movimiento='produccion'`
+- `observaciones=f"Producción confirmada — orden #{self.id} — receta: {self.receta.nombre}"`
+
+**Patrón copiado de** `anular_venta()` (app.py:3434), que ya hace esto para el producto de la venta anulada.
+
+**Validación empírica:** producción de 5 unidades de "Agua puratorta" (stock 10 → 15). `historial_inventario`:
+4|1||10|15|5|produccion ← producto_id=1, cantidad_anterior=10, cantidad_nueva=15, cantidad_utilizada=5
+
+text
+**Fila correcta.** `productos.stock_actual=15` verificado.
+
+### DTs nuevas de Fase E
+
+| ID | Descripción | Prioridad | Sesión objetivo |
+|---|---|---|---|
+| DT-Fase E-1 | `total_anulaciones` en `cierres_diarios` no validable hasta el job nocturno (sin `INSERT` hasta medianoche). | 🟢 BAJA | Post-Fase E (con `tenant_34` vivo). |
+| DT-Fase E-2 | `tenant_34.configuracion_sistema` sin fila inicial. Fallback funciona. Agregar `INSERT` en `crear_tenant_saas()` o dejar lazy. | 🟢 BAJA | Fase F. |
+| DT-Fase E-4 | `_descontar_ingredientes()` registra MP con cantidades que no son consistentes (312.5g, 31.25g, 62.5g para producciones similares). Revisar cálculo. | 🟡 **MEDIA** | Fase F. |
+| DT-Fase E-5 | `models.py:HistorialInventario.materia_prima_id = nullable=False` pero BD real es nullable (`information_schema` dice `YES`). Inconsistencia modelo ↔ BD. | 🟢 BAJA | Fase F. |
+| DT-Fase E-6 | Mojibake en commit messages (CMD interpreta UTF-8 como CP1252). Recomendación: `chcp 65001` antes o `git commit -m` desde PowerShell. | 🟢 BAJA | Fase F (docs). |
+
+### Lecciones aprendidas
+
+**La anulación POS (feature del 11 Nov) destapó un bug de trazabilidad de producción del 28 Oct.** El bug estaba escondido porque `HistorialInventario` no se consulta en reportes visibles. Pero rompía el principio contable de trazabilidad de inventario de producto terminado. **Fase E lo encontró.** Exactamente lo que el smoke test debía lograr.
+
+**El fix de 1 inserción tomó 15 min** (diagnóstico 20 min + fix 10 min + test 10 min). **La simplicidad fue producto del diagnóstico correcto.** Copiar el patrón de `anular_venta()` (que ya lo hacía bien) fue la decisión correcta.
+
+### Reglas nuevas (candidatas #18)
+
+**Regla #18 (candidata):** "Cuando un flujo funciona en un lugar pero no en otro (ej. `anular_venta` registra bien, `completar_produccion` no), **buscar el patrón que SÍ funciona** y copiarlo. No inventar. La inconsistencia suele ser un `INSERT`/`UPDATE` olvidado en el segundo flujo."
+
+### Estado al cierre
+
+- **Último commit:** `9b71016`. **Working tree:** limpio.
+- **Fases A + B + C + D + E:** ✅ **100% cerradas.**
+- **Bug A (POS externo):** ✅ **NO reproducido** (cierra nota del 5 Nov).
+- **Bug B (rotación <7d):** ✅ Validado.
+- **Bug `HistorialInventario` producto:** ✅ **Fixeado y validado** (`9b71016`).
+- **`tenant_34`:** ✅ vivo para futuras validaciones de Fase E-1 (job nocturno) y Fase F.
+- **Próxima tarea:** **Fase F** (~8-12 h): 6 DTs Fase E (E-1, E-2, E-4, E-5, E-6, menos E-3 que se cerró) + 15 DTs de Fase C/B + `docs/ESTRUCTURA_TENANT.md` + limpieza legacy.
 ---
 

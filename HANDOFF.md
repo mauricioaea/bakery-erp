@@ -1,12 +1,15 @@
-# 🗂️ CONTEXTO MAESTRO — PanaderíaPro (Bakery ERP) — v9.18
+# 🗂️ CONTEXTO MAESTRO — PanaderíaPro (Bakery ERP) — v9.19
 
 **Última actualización:** 12 de Noviembre, 2026
-**Último commit:** `1ef3579` (fix: Fase C — total_anulaciones en DDL)
+**Último commit:** `9b71016` (fix: Fase E — HistorialInventario producto + Fase E cerrada)
 **HANDOFF anterior:** `HANDOFF_v9.5.md` (histórico congelado, ver raíz del proyecto)
 **Bitácoras históricas:** `bitacora/2026-10-sesiones.md`, `bitacora/2026-11-sesiones.md`
 **Tenants de prueba:** `bitacora/tenants_prueba.md` (incluye `tenant_31` y `tenant_34`)
 
 **Sesión 12 Nov:** Fases A + B + C (auditorías de alineación ORM ↔ BD ↔ modelo) 100% cerradas. DT-Fase C-1 (`total_anulaciones` faltaba en DDL de `crear_tenant_saas()`) resuelta y validada empíricamente con `tenant_34`. Commit `1ef3579`. Detalle en `bitacora/2026-11-sesiones.md`.
+**Sesión 12 Nov:** Fases A + B + C (auditorías de alineación ORM ↔ BD ↔ modelo) 100% cerradas. DT-Fase C-1 (`total_anulaciones` faltaba en DDL de `crear_tenant_saas()`) resuelta y validada empíricamente con `tenant_34`. Commit `1ef3579`. Detalle en `bitacora/2026-11-sesiones.md`.
+**Sesión 12 Nov (tarde):** Fase E cerrada (`tenant_34` smoke test completo: login → POS → venta → anulación → producción → reportes → PDFs). Bug A no reproducido. Bug `HistorialInventario` de producto fixeado (`9b71016`). 6 DTs nuevas de Fase E. Detalle en `bitacora/2026-11-sesiones.md`.
+**Sesión 11 Nov (noche):** ...
 **Sesión 11 Nov (noche):** CRÍTICA-2 (`d32a7f3`) + MEDIA-F2.5 (`e50f992`) cerradas. Fase D 100% cerrada.
 **Sesión 11 Nov (tarde/noche):** MEDIA-BAJA (cierre jornada) + limpieza JS huérfano. Commit `7ce0156`.
 **Sesión 11 Nov (mañana):** DT-nueva-MEDIA (desconciliación + ANULADO + whitelist) 100% + DT-nueva-BAJA (endpoint huérfano). 6 commits: `6b5485f`, `17d0b83`, `5368b1a`, `a403c90`, `b0efa27`, `29a4e03`.
@@ -37,13 +40,11 @@
 
 ### 📋 Próximos pasos
 
-1. **Fase E — Prueba de "tenant virgen"** (~2 h). Usar `tenant_34` (creado 12 Nov con `crear_tenant_saas()` fixeado, básico, virgen, conservado vivo). Smoke test completo: login → POS → venta → cierre → reporte → PDF. Verificar Bug A (`producto_externo_id` NULL en primer día del tenant). Si Bug A se reproduce, fixear en el mismo commit (regla #13).
+1. **Fase F — Documentación + limpieza** (~8-12 h). 6 DTs nuevas de Fase E (E-1, E-2, E-4 MEDIA, E-5, E-6, + `docs/ESTRUCTURA_TENANT.md`) + 15 DTs de Fase C/B + limpieza legacy (`sucursales`, `seed_demo_history`, columnas legacy en `tenant_1`). No bloquea Docker.
 2. **Fase G — Dockerización** (~22-32 h).
 3. (Opcional/baja) **i18n de diccionarios Python** (~2-4 h).
-4. (Opcional/baja) **DTs BAJAS Fase F** (~8-12 h). 12 DTs nuevas anotadas (Fase B: B-1 a B-4; Fase C: C-2 a C-8 + unificar-naming) + 4 preexistentes (F2.6, unificar-productos-populares, unificar-prefijos-int-ext, formato-es-CO). No bloquean Fase E ni Docker.
 
-**Fase D completada:** CRÍTICA-2 (`d32a7f3`) + MEDIA-F2.5 (`e50f992`) cerradas el 11 Nov (noche).
-**Fases A + B + C completadas:** 12 Nov. DT-Fase C-1 (`total_anulaciones` faltaba en DDL de `crear_tenant_saas()`) resuelta y validada con `tenant_34`. Commit `1ef3579`. Fase E desbloqueada.
+**Fases completadas:** A+B+C+D (11-12 Nov) + **E (12 Nov, tarde)**. Bug `HistorialInventario` de producto fixeado (`9b71016`). Bug A del 5 Nov cerrado como "no reproducido". **Fase E 100%.**
 
 ### 📌 Estructura del HANDOFF (v9.6+)
 
@@ -133,6 +134,8 @@
 - **CRÍTICA-2 + F2.5 (11 Nov noche):** `d32a7f3` + `e50f992` — `base_datos` saneado + `LOG_LEVEL` configurable.
 - **Fase A+B+C (12 Nov):** `1ef3579` — DT-Fase C-1 resuelta (`total_anulaciones` en DDL de `cierres_diarios`). Fases A+B+C cerradas. `tenant_34` conservado para Fase E.
 
+- **Fase E + fix HistorialInventario (12 Nov):** `9b71016` — `OrdenProduccion.completar_produccion()` ahora registra movimiento de producto terminado en `HistorialInventario` (`producto_id`, `cantidad_anterior`, `cantidad_nueva`, `cantidad_utilizada`). Patrón copiado de `anular_venta()`. Validado con `tenant_34`.
+
 ---
 
 ## 6️⃣ Últimos commits
@@ -183,8 +186,25 @@ Prioridad	DT	Descripción	Commits
 Prioridad	DT	Descripción
 ✅ Media	Commit 2 (rediseño)	Rediseño "menos es más" + recomendaciones dinámicas en productos_populares.html
 ✅ Media	i18n cadenas nuevas	Strings de Commit 2 traducidos en en/pap
-🟢 DTs BAJAS Fase F — Sesión objetivo: Fase F (post-Fase E, pre-Docker)
+### 🟢 DTs BAJAS Fase F — Sesión objetivo: Fase F (post-Fase E, pre-Docker)
+
+**Total: ~25 DTs BAJAS** (6 nuevas de Fase E + 15 de Fase B/C + 4 preexistentes del HANDOFF v9.14).
 Prioridad	DT	Descripción	Estimación
+### 🟡 DT MEDIA nueva (Fase E)
+
+| Prioridad | DT | Descripción | Sesión objetivo |
+|---|---|---|---|
+| 🟡 MEDIA | DT-Fase E-4 | `_descontar_ingredientes()` registra MP en `HistorialInventario` con cantidades inconsistentes entre producciones similares (312.5g vs 31.25g vs 62.5g). Revisar cálculo. | Fase F |
+
+### 🟢 DTs BAJAS Fase E
+
+| Prioridad | DT | Descripción | Sesión objetivo |
+|---|---|---|---|
+| 🟢 BAJA | DT-Fase E-1 | `total_anulaciones` en `cierres_diarios` no validable hasta el job nocturno (sin `INSERT` hasta medianoche). Probar con `tenant_34` vivo post-medianoche. | Post-Fase E (con `tenant_34`). |
+| 🟢 BAJA | DT-Fase E-2 | `tenant_34.configuracion_sistema` sin fila inicial. Fallback funciona. Agregar `INSERT` en `crear_tenant_saas()` o dejar lazy init. | Fase F |
+| 🟢 BAJA | DT-Fase E-5 | `models.py:HistorialInventario.materia_prima_id = nullable=False` pero BD real es nullable. Inconsistencia modelo ↔ BD. | Fase F |
+| 🟢 BAJA | DT-Fase E-6 | Mojibake en commit messages (CMD interpreta UTF-8 como CP1252). Usar `chcp 65001` o PowerShell. | Fase F (docs) |
+| ✅ CERRADA | DT-Fase E-3 | `completar_produccion()` no registraba producto terminado en `HistorialInventario`. Fix `9b71016`. | ✅ |
 🟡 Media	DT-Fase B-1	crear_tenant_saas() usa DDL raw (no db.create_all()). Riesgo: agregar modelo a models.py sin CREATE TABLE → tenant nuevo incompleto. Mitigación: test de verificación post-creación.	~2-3 h
 🟢 BAJA	DT-Fase B-2	CREATE TABLE IF NOT EXISTS consecutivos_pos duplicado en 3 sitios (app.py:2640, 2868, 2943). Consolidar.	~15 min
 🟢 BAJA	DT-Fase B-3	db.create_all() solo se usa en public, no en tenant_X. Patrón asimétrico.	~30 min
@@ -382,28 +402,33 @@ Licencias: Premium 3 usuarios · Básica 1 usuario.
 
 Demo: fases 1-12 completas (~9.972 filas), contraseña demo2026, idioma = pap.
 
-1️⃣1️⃣ Estado actual (resumen ejecutivo)
-Aspecto	Estado
-Último commit	1ef3579 en origin/main (pusheado)
-Módulos	11/11 completos (100%)
-Fase A (auditoría modelos)	✅ 12 Nov — 43 modelos ↔ 42 tablas + public.tenants, cero huérfanos
-Fase B (auditoría app.py)	✅ 12 Nov — 229 queries raw clasificadas, 0 huérfanas. DDL 42/42 ↔ modelos
-Fase C (auditoría BD)	✅ 12 Nov — DT-Fase C-1 resuelta + 12 DTs BAJAS Fase F anotadas
-Fix 12 Nov	✅ DT-Fase C-1 (total_anulaciones en DDL). Commit 1ef3579. Validado con tenant_34.
-Tests de regresión	✅ tenant_34 creado exitosamente: 42 tablas, 55 columnas, admin_34 login OK. tenant_34.cierres_diarios.total_anulaciones ✅.
-Fix 11 Nov (tarde/noche)	✅ MEDIA-BAJA (cierre jornada) + JS huérfano. Commit 7ce0156.
-Fix 11 Nov (noche)	✅ CRÍTICA-2 + MEDIA-F2.5. Commits d32a7f3 + e50f992.
-Fix 8 Nov	✅ DT-nueva-MEDIA-logging-ruido cerrada al 100% (4 fases). Commit 53fc3f3.
-Demo	✅ admin_27 / demo2026
-Tenants productivos	tenant_1 + tenant_27
-Tenants de pruebas	tenant_31 (diagnóstico) + tenant_34 (virgen, Fase E)
-DT críticas abiertas	0
-DT medias abiertas	1: DT-Fase B-1 (DDL raw vs db.create_all())
-DT bajas abiertas	15: 11 Fase C/B nuevas + 4 preexistentes del HANDOFF v9.14
-Siguiente tarea	Fase E — tenant virgen (usar tenant_34)
-Fase actual	Fase E (Fases A-D cerradas)
-Dockerización	Fase G, ~22-32 h (post Fase E)
-Working tree	limpio (post commit de docs)
+## 1️⃣1️⃣ Estado actual (resumen ejecutivo)
+
+| Aspecto | Estado |
+|---|---|
+| Último commit | `9b71016` en `origin/main` (pusheado) |
+| Módulos | 11/11 completos (100%) |
+| Fase A (auditoría modelos) | ✅ 12 Nov — 43 modelos ↔ 42 tablas + `public.tenants`, cero huérfanos |
+| Fase B (auditoría `app.py`) | ✅ 12 Nov — 229 queries raw clasificadas, 0 huérfanas. DDL 42/42 ↔ modelos |
+| Fase C (auditoría BD) | ✅ 12 Nov — DT-Fase C-1 resuelta + 12 DTs BAJAS anotadas |
+| **Fase E (tenant virgen)** | ✅ **12 Nov (tarde)** — `tenant_34` smoke test completo |
+| Fix DT-Fase C-1 (`total_anulaciones`) | ✅ `1ef3579` — validado con `tenant_34` |
+| **Fix DT-Fase E-3 (`HistorialInventario` producto)** | ✅ **`9b71016`** — validado con `tenant_34` (producción 5 und → `cantidad_anterior=10`, `cantidad_nueva=15`) |
+| **Bug A (`producto_externo_id` NULL)** | ✅ **NO reproducido** en `tenant_34` (cierra nota del 5 Nov) |
+| **Bug B (rotación <7d → "—")** | ✅ Validado en `tenant_34` |
+| **Anulación POS** | ✅ Validado end-to-end (venta → anulada → stock revertido → reporte excluye) |
+| Demo | ✅ `admin_27` / `demo2026` |
+| Tenants productivos | `tenant_1` + `tenant_27` |
+| Tenants de pruebas | `tenant_31` (diagnóstico) + `tenant_34` (virgen, Fase E) |
+| DT críticas abiertas | **0** |
+| DT medias abiertas | **2:** DT-Fase B-1 (DDL raw vs `db.create_all()`) + DT-Fase E-4 (MP cantidades inconsistentes) |
+| DT bajas abiertas | **~25:** 5 Fase E nuevas (E-1, E-2, E-5, E-6 + `docs/ESTRUCTURA_TENANT.md`) + 15 Fase B/C + 4 preexistentes |
+| Siguiente tarea | **Fase F — docs + limpieza** (~8-12 h) |
+| Fase actual | **Fase F** (A-E cerradas) |
+| Dockerización | Fase G, ~22-32 h (post Fase F) |
+| Working tree | limpio (post commit docs) |
+
+
 📞 Cómo continuar en un chat nuevo
 Pegar este archivo como contexto inicial con esta instrucción:
 
@@ -560,4 +585,4 @@ Semana 4 (Fase F): usala para las 15 DTs BAJAS + docs/ESTRUCTURA_TENANT.md. No m
 
 Semanas 5-8 (Docker): empezá por el docker-compose.yml más simple posible (Flask + Postgres), después agregá Nginx + SSL. No intentes hacer todo perfecto el día 1.
 
-Fin del HANDOFF.md — v9.18
+Fin del HANDOFF.md — v9.19
