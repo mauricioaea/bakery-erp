@@ -1334,13 +1334,30 @@ class OrdenProduccion(db.Model):
             # ✅ ACTUALIZAR STOCK DEL PRODUCTO
             if self.receta and self.receta.producto:
                 producto = self.receta.producto
+                stock_antes = producto.stock_actual
                 print(f"🔍 DEBUG: Producto antes de actualizar: {producto.nombre} - Stock: {producto.stock_actual}")
-                
+
                 producto.stock_actual += self.cantidad_producir
                 self.stock_generado = True
-                
+
                 print(f"🔍 DEBUG: Producto después de actualizar: {producto.nombre} - Stock: {producto.stock_actual}")
                 print(f"✅ Stock actualizado: +{self.cantidad_producir} unidades de {producto.nombre}")
+
+                # ✅ NUEVO (Fase E): Registrar movimiento de producto terminado en HistorialInventario
+                movimiento_producto = HistorialInventario(
+                    panaderia_id=self.panaderia_id,
+                    producto_id=producto.id,
+                    materia_prima_id=None,
+                    cantidad_anterior=stock_antes,
+                    cantidad_nueva=producto.stock_actual,
+                    cantidad_utilizada=self.cantidad_producir,
+                    tipo_movimiento='produccion',
+                    observaciones=(
+                        f"Producción confirmada — orden #{self.id} — "
+                        f"receta: {self.receta.nombre}"
+                    )
+                )
+                db.session.add(movimiento_producto)
             
             else:
                 print(f"⚠️  Advertencia: Receta '{self.receta.nombre if self.receta else 'N/A'}' no tiene producto asociado")
