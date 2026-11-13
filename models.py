@@ -156,7 +156,7 @@ ROLES_PERMISOS = {
         'dashboard': ['ver'],
         'punto_venta': ['vender', 'ver_ventas_propias', 'imprimir_ticket', 'cierre_caja'], 
         'reportes': ['ver_cierre'],  # 🆕 AGREGADO: Permiso para ver cierre de caja
-        'finanzas': ['ver_cierre_diario'],
+        'finanzas': [],  # (Fase F, 13 Nov) ver_cierre_diario eliminado
         'usuarios': ['ver_perfil']  # Solo puede ver su propio perfil
     },
     
@@ -170,7 +170,7 @@ ROLES_PERMISOS = {
         'proveedores': ['ver'],
         'ventas': ['ver_todas', 'exportar'],
         'reportes': ['ver_ventas', 'ver_produccion', 'ver_cierre'],  # 🆕 AGREGADO: ver_cierre
-        'finanzas': ['ver_cierre_diario'],
+        # 'finanzas': ['ver_cierre_diario'],  # (Fase F, 13 Nov) Eliminado: cierre legacy
         'usuarios': ['ver_perfil']
     },
     
@@ -1072,16 +1072,7 @@ class Venta(db.Model):
         if transcurrido > timedelta(hours=24):
             return (False, "Han pasado más de 24 horas desde la venta")
         
-        # Regla 3: cierre diario confirmado
-        # Import local para evitar dependencia circular
-        from models import CierreDiario  # noqa: F811
-        fecha_venta = self.fecha_hora.date()
-        cierre = CierreDiario.query.filter_by(
-            panaderia_id=self.panaderia_id,
-            fecha_cierre=fecha_venta,
-        ).filter(CierreDiario.estado == 'cerrado').first()
-        if cierre:
-            return (False, f"El cierre diario del {fecha_venta.strftime('%d/%m/%Y')} ya fue confirmado")
+        # (Fase F, 13 Nov) Regla 3 eliminada: cierre diario legacy, nunca se activa.
         
         # Regla 4: cajero solo anula sus propias ventas
         if usuario is not None:
@@ -1685,42 +1676,6 @@ class JornadaVentas(db.Model):
     def __repr__(self):
         return f'<Jornada {self.fecha} - {self.estado}>'
 
-class CierreDiario(db.Model):
-    """Registro de cierres diarios"""
-    __tablename__ = 'cierres_diarios'
-    
-    panaderia_id = db.Column(db.Integer, nullable=False)
-    id = db.Column(db.Integer, primary_key=True)
-    fecha_cierre = db.Column(db.Date, nullable=False)
-    deposito_bancario_id = db.Column(db.Integer, db.ForeignKey('depositos_bancarios.id'))
-    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
-    
-    # TOTALES CALCULADOS
-    total_ventas = db.Column(db.Float, nullable=False, default=0)
-    total_efectivo = db.Column(db.Float, nullable=False, default=0)
-    total_tarjeta = db.Column(db.Float, default=0)
-    total_transferencia = db.Column(db.Float, nullable=False, default=0)
-    total_donaciones = db.Column(db.Float, default=0)
-    
-    # ✅ MANTENER: Se usan en reportes IA y cierre de caja
-    total_transacciones = db.Column(db.Integer, default=0)
-    total_anulaciones = db.Column(db.Float, default=0)  # 🆕 Feature Anulación POS
-    productos_top = db.Column(db.Text)
-    ventas_dia_anterior = db.Column(db.Float, default=0)
-    tendencia = db.Column(db.Float, default=0)
-    
-    # CONTROL
-    estado = db.Column(db.String(20), default='cerrado')
-    observaciones = db.Column(db.Text)
-    fecha_registro = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Relación con usuario
-    usuario = db.relationship('Usuario', backref='cierres_diarios')
-    
-    def __repr__(self):
-        return f'<CierreDiario {self.fecha_cierre} - ${self.total_ventas:,.0f}>'
-    
-    
 class PermisoUsuario(db.Model):
     __tablename__ = 'permisos_usuario'
     
@@ -2176,27 +2131,6 @@ def obtener_jornada_activa(panaderia_id=None):
     return jornada
 
 
-
-def obtener_ventas_dia(fecha=None):
-    """Obtiene ventas de un día específico (hoy por defecto)"""
-    if not fecha:
-        fecha = datetime.now().date()
-    
-    inicio_dia = datetime.combine(fecha, datetime.min.time())
-    fin_dia = datetime.combine(fecha, datetime.max.time())
-    
-    return Venta.query.filter(
-        Venta.fecha_hora >= inicio_dia,
-        Venta.fecha_hora <= fin_dia
-    ).all()
-
-def obtener_historial_cierres(limite=30):
-    """Obtiene historial de cierres recientes"""
-    return CierreDiario.query.order_by(CierreDiario.fecha.desc()).limit(limite).all()
-    
-
-# ======================================= NUEVO MÓDULO FINANCIERO MEJORADO =================================================
-# ======================================= NUEVO MÓDULO FINANCIERO MEJORADO =================================================
 
 class RegistroDiario(db.Model):
     """Registro diario simplificado para el usuario"""

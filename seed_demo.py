@@ -206,7 +206,7 @@ def cmd_reset(tenant_id):
         'historial_precios_recetas', 'historial_rotacion_producto',
         'control_vida_util', 'pagos_individuales',
         # Cabeceras
-        'ventas', 'compras', 'compras_externas', 'cierres_diarios',
+        'ventas', 'compras', 'compras_externas',
         'jornadas_ventas', 'ordenes_produccion', 'activos_fijos',
         'depositos_bancarios', 'gastos', 'registros_financieros',
         'registros_diarios', 'logs_sistema', 'saldos_banco', 'stock_productos',
