@@ -104,3 +104,4 @@ _*.md
 # Archivos generados por scripts de auditoría/diagnóstico
 _audit_resultado.txt
 _test_*.py
+!_test_tenant_schema.py
