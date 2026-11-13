@@ -106,4 +106,5 @@ _audit_resultado.txt
 _test_*.py
 !_test_tenant_schema.py
 !_migrar_tenants.py
+!_cleanup_tenants_huerfanos.py
 !db/schema_tenant_canonical.sql
