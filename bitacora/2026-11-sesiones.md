@@ -1127,5 +1127,73 @@ text
 - **Fase F:** 🟡 en curso. B-1 cerrada. E-4 cerrada como no bug.
 - **Pendientes:** 23 DTs BAJAS (B-2, B-3, B-4, C-2 a C-8, E-1, E-2, E-5, E-6, unificar-naming, 4 preexistentes), `docs/ESTRUCTURA_TENANT.md`, limpieza legacy.
 - **Próxima tarea:** DT-Fase B-2 (`consecutivos_pos` duplicado x3).
+
+---
+
+## Sesión 13 Nov — Fase F (parte 1): limpieza estructural
+
+**Commits:** `15bc439` (B-1), `6905d84` (B-2 + B-3), `9ad0030` (B-4), `99bb28f` (E-1). Sin commit de docs hasta el final (se acumulan).
+**Objetivo:** Arrancar Fase F (docs + limpieza) por las DTs MEDIA/BAJA de Fase B/E, y limpiar el código legacy.
+
+### DT-Fase B-1 — `_test_tenant_schema.py` (✅ cerrada, commit `15bc439`)
+
+**Objetivo:** test de verificación ORM ↔ BD por tenant. Cierra la mitigación de Fase B-1 (DDL raw vs `db.create_all()`).
+
+**Resultado:** script `_test_tenant_schema.py` (test parametrizable, exit code 0/1). Validado en `tenant_1`, `tenant_27`, `tenant_34` (0 columnas del ORM faltantes en todos).
+
+**Lección:** el script v1 tenía un bug (no distinguía "schema no existe" de "schema existe vacío"). Se arregló en v3 (exit 1 si schema no existe).
+
+### DT-Fase B-2 + B-3 — `consecutivos_pos` + auto-reparación (✅ cerradas, commit `6905d84`)
+
+**DT-Fase B-2:** `CREATE TABLE consecutivos_pos` duplicado x3 (en `crear_tablas_en_orden` + 3 fallbacks). Centralizado en `db/schema_tenant_canonical.sql` (fuente única de verdad del DDL).
+
+**DT-Fase B-3:** `inicializar_al_arranque()` ejecutaba `db.create_all()` + `_sincronizar_columnas_tenant()` en CADA arranque, para CADA tenant. Anti-profesional. Se eliminó la auto-reparación en runtime.
+
+**Estrategia nueva (profesional):**
+- `crear_tenant_saas()` crea el schema de un tenant nuevo (DDL canónico + `_sincronizar_columnas_tenant()` post-creación como red de seguridad).
+- `_migrar_tenants.py` (NUEVO): script manual de migración de esquema para tenants existentes.
+- El arranque NO modifica esquemas. Solo verifica datos base.
+
+**Validado:** arranque OK (4 tenants, sin auto-modificación), `_migrar_tenants.py --dry-run` OK, `_migrar_tenants.py 34` OK (0 columnas).
+
+### DT-Fase B-4 — `_cleanup_tenants_huerfanos.py` (✅ cerrada, commit `9ad0030`)
+
+**Objetivo:** limpiar tenants huérfanos (schema sin `public.tenants`, o viceversa). `crear_tenant_saas()` no es atómico.
+
+**Resultado:** script `_cleanup_tenants_huerfanos.py` (--fix, --yes). Validado: BD actual tiene 4 schemas = 4 tenants, 0 huérfanos.
+
+### DT-Fase E-1 — Cierre diario legacy (✅ cerrada, commit `99bb28f`)
+
+**Contexto:** la tabla `cierres_diarios` era legacy. El cierre diario real es un reporte consultable (`/reporte/cierre_caja`), no un `INSERT`. Nadie llamaba a `realizar_cierre()`. La tabla siempre estaba vacía.
+
+**Decisión de diseño (Mauricio):** el cierre diario NO debe bloquear el POS. El reporte de cierre de caja es la herramienta real (consultable en cualquier momento, filtrable por fecha).
+
+**Eliminado (563 líneas):**
+- `models.py`: `class CierreDiario`, `obtener_ventas_dia()`, `obtener_historial_cierres()`, regla "cierre diario confirmado" en `Venta.puede_anularse()`, `'ver_cierre_diario'` en permisos (x2).
+- `app.py`: import de `CierreDiario`, endpoints `/api/cierre_diario/*`, `/cierre_diario`, `/realizar_cierre`, `realizar_cierre()`, `obtener_ventas_dia()` (versión app.py), DDL de `cierres_diarios`, índice `idx_cierres_diarios_panaderia`.
+- `templates/cierre_diario.html`.
+- `seed_demo.py`: `'cierres_diarios'` de la lista.
+- `migrations/sql/2026-11-13_eliminar_cierres_diarios.sql` (NUEVO): `DROP TABLE cierres_diarios` en los 4 tenants.
+
+**Conservado (anulación POS intacta):** `Venta.estado='ANULADA'`, `POST /anular_venta/<id>`, `HistorialInventario` de reversión, reportes que excluyen anuladas.
+
+**Validado:** arranque OK (4 tenants), venta + anulación OK (POS-000004 anulada, stock revertido), `/reporte/cierre_caja` OK (totales $3.500, excluye anulada), tabla eliminada de los 4 tenants.
+
+### DT-Fase E-2 + E-4 — cerradas como "no reproducido"
+
+- **E-2:** `tenant_34.configuracion_sistema` vacía. El dashboard funciona (lazy init, `obtener_configuracion_sistema()` crea la fila on-demand). **No es bug.**
+- **E-4:** `_descontar_ingredientes()` cantidades inconsistentes. **No es bug:** la fórmula es correcta (625g, 62.5g, 312.5g, 31.25g son ingrediente base vs topping, y producción 10 vs 5 unidades). Falso positivo del análisis inicial.
+
+### Lecciones aprendidas (reglas nuevas)
+
+- **#19:** Antes de `git add` de un archivo con prefijo `_`, verificar `.gitignore`. Si es utilidad permanente, agregar excepción `!<archivo>`.
+- **#20 (candidata):** Para borrar bloques de código en Python, NO usar regex (es frágil con decoradores, indentación, strings multilínea). Usar **borrado por líneas exactas** o **cortar/pegar en el editor** con verificación después de cada bloque.
+
+### Estado al cierre
+
+- **Commits de la sesión (Fase F, parte 1):** `15bc439`, `6905d84`, `9ad0030`, `99bb28f`.
+- **7 DTs cerradas en Fase F:** B-1, B-2, B-3, B-4, E-1, E-2, E-4.
+- **Próximo:** DTs BAJAS de Fase C (C-2 a C-8) + `docs/ESTRUCTURA_TENANT.md` + limpieza legacy (`sucursales`, `seed_demo_history`).
+- **`tenant_34`:** vivo, con 4 ventas (3 completadas + 1 anulada). Sirve para futuros tests.
 ---
 

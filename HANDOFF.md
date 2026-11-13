@@ -1,32 +1,33 @@
-# 🗂️ CONTEXTO MAESTRO — PanaderíaPro (Bakery ERP) — v9.19
+# 🗂️ CONTEXTO MAESTRO — PanaderíaPro (Bakery ERP) — v9.20
 
-**Última actualización:** 12 de Noviembre, 2026
-**Último commit:** `9b71016` (fix: Fase E — HistorialInventario producto + Fase E cerrada)
+**Última actualización:** 13 de Noviembre, 2026
+**Último commit:** `99bb28f` (refactor: Fase F — cierre diario legacy eliminado)
 **HANDOFF anterior:** `HANDOFF_v9.5.md` (histórico congelado, ver raíz del proyecto)
 **Bitácoras históricas:** `bitacora/2026-10-sesiones.md`, `bitacora/2026-11-sesiones.md`
 **Tenants de prueba:** `bitacora/tenants_prueba.md` (incluye `tenant_31` y `tenant_34`)
 
-**Sesión 12 Nov:** Fases A + B + C (auditorías de alineación ORM ↔ BD ↔ modelo) 100% cerradas. DT-Fase C-1 (`total_anulaciones` faltaba en DDL de `crear_tenant_saas()`) resuelta y validada empíricamente con `tenant_34`. Commit `1ef3579`. Detalle en `bitacora/2026-11-sesiones.md`.
-**Sesión 12 Nov:** Fases A + B + C (auditorías de alineación ORM ↔ BD ↔ modelo) 100% cerradas. DT-Fase C-1 (`total_anulaciones` faltaba en DDL de `crear_tenant_saas()`) resuelta y validada empíricamente con `tenant_34`. Commit `1ef3579`. Detalle en `bitacora/2026-11-sesiones.md`.
-**Sesión 12 Nov (tarde):** Fase E cerrada (`tenant_34` smoke test completo: login → POS → venta → anulación → producción → reportes → PDFs). Bug A no reproducido. Bug `HistorialInventario` de producto fixeado (`9b71016`). 6 DTs nuevas de Fase E. Detalle en `bitacora/2026-11-sesiones.md`.
-**Sesión 11 Nov (noche):** ...
+**Sesión 13 Nov:** Fase F (parte 1). 7 DTs cerradas: B-1 (`_test_tenant_schema.py`), B-2/B-3 (centralizar DDL + eliminar auto-reparación en runtime), B-4 (`_cleanup_tenants_huerfanos.py`), E-1 (cierre diario legacy eliminado, 563 líneas), E-2/E-4 (no reproducido). Commits: `15bc439`, `6905d84`, `9ad0030`, `99bb28f`.
+**Sesión 12 Nov:** Fases A + B + C (auditorías de alineación ORM ↔ BD ↔ modelo) 100% cerradas. DT-Fase C-1 (`total_anulaciones` faltaba en DDL de `crear_tenant_saas()`) resuelta y validada empíricamente con `tenant_34`. Commit `1ef3579`.
+**Sesión 12 Nov (tarde):** Fase E cerrada (`tenant_34` smoke test completo: login → POS → venta → anulación → producción → reportes → PDFs). Bug A no reproducido. Bug `HistorialInventario` de producto fixeado (`9b71016`). 6 DTs nuevas de Fase E.
 **Sesión 11 Nov (noche):** CRÍTICA-2 (`d32a7f3`) + MEDIA-F2.5 (`e50f992`) cerradas. Fase D 100% cerrada.
 **Sesión 11 Nov (tarde/noche):** MEDIA-BAJA (cierre jornada) + limpieza JS huérfano. Commit `7ce0156`.
 **Sesión 11 Nov (mañana):** DT-nueva-MEDIA (desconciliación + ANULADO + whitelist) 100% + DT-nueva-BAJA (endpoint huérfano). 6 commits: `6b5485f`, `17d0b83`, `5368b1a`, `a403c90`, `b0efa27`, `29a4e03`.
 **Sesión 8 Nov (tarde):** DT-nueva-MEDIA-F2.6 reformulada a BAJA (falso positivo: werkzeug no ensucia `panaderia.log`). Código limpio, solo docs.
-**Sesión 8 Nov:** F3 logging — hash de contraseña truncado. Commit `53fc3f3`. DT-nueva-MEDIA-logging-ruido cerrada al 100% (F1+F1.5+F2+F3).
+**Sesión 8 Nov:** F3 logging — hash de contraseña truncado. Commit `53fc3f3`. DT-nueva-MEDIA-logging-ruido cerrada al 100%.
 **Sesión 7 Nov:** DT-nueva-MEDIA-logging-ruido (F1: `buscar_producto` + F1.5: `consultas_filtradas.py`). Commits `51000fc` + `68f8856`.
-**Sesión 6 Nov:** Commit 2 COMPLETO — rediseño "menos es más" + filtro `?producto=` en `/reporte/ventas` + i18n en/pap. 5 commits: `320881b` (B1+B2+H1+H2.1), `5d8e2b4` (H2.2), `b6a1908` (H2.3+H4), `e3b48e0` (H3), `7ff556f` (i18n). Working tree clean. Cero DT del Commit 2.
-**Sesión 5 Nov:** Fix CRÍTICA-4 (colisión IDs int/ext en Productos Populares) + Bug B (rotación <7d → "—") + IA KeyError. Commit `6e7dbbf`. Tenant_31 conservado como tenant de pruebas.
-**Sesión 4 Nov:** Fix MEDIA-BAJA (Ventas del Día no distingue donaciones). Badge + tooltip + guard de rol. Commit `607ac75`.
-**Sesión 3 Nov:** Fix MEDIA-ALTA (donaciones en "Ingresos") + auditoría completa de cadena financiera (15 fixes) + fix `fecha_fin` a medianoche. Commit `8304a16`.
-**Sesión 1 Nov (noche):** Fix CRÍTICA-1 (depósitos CONCILIADOS editables) — backend 403 + frontend solo-lectura + smoke test 7/7. Commit `5d289fd`.
-**Sesión 1 Nov (mañana):** Fix de raíz `current_user` detached (`db.session.merge()` en `load_user`) + test de regresión 6/6 + commit `6173cfe`.
-**Sesión 31 Oct:** Feature Baja de Inventario + fix FK diferida en `crear_tenant_saas()` + smoke test tenants nuevos (commits `ba48503` + `52696be`).
+**Sesión 6 Nov:** Commit 2 COMPLETO — rediseño "menos es más" + filtro `?producto=` en `/reporte/ventas` + i18n en/pap. 5 commits.
+**Sesión 5 Nov:** Fix CRÍTICA-4 (colisión IDs int/ext en Productos Populares) + Bug B (rotación <7d → "—") + IA KeyError. Commit `6e7dbbf`. Tenant_31 conservado.
+**Sesión 4 Nov:** Fix MEDIA-BAJA (Ventas del Día no distingue donaciones). Commit `607ac75`.
+**Sesión 3 Nov:** Fix MEDIA-ALTA (donaciones en "Ingresos") + auditoría completa de cadena financiera (15 fixes). Commit `8304a16`.
+**Sesión 1 Nov (noche):** Fix CRÍTICA-1 (depósitos CONCILIADOS editables). Commit `5d289fd`.
+**Sesión 1 Nov (mañana):** Fix de raíz `current_user` detached (`db.session.merge()` en `load_user`). Commit `6173cfe`.
+**Sesión 31 Oct:** Feature Baja de Inventario + fix FK diferida en `crear_tenant_saas()`. Commits `ba48503` + `52696be`.
 
 > Este archivo es **contexto actual** (liviano). Detalle de sesiones, tablas de DT resueltas y registros de features: `bitacora/`. Todo lo anterior al 1 Nov, completo: `HANDOFF_v9.5.md`.
 
 ---
+
+▼▼▼ SECCIÓN 1: INFORMACIÓN GENERAL ▼▼▼
 
 ## 1️⃣ Información general
 
@@ -36,27 +37,17 @@
 - **Seguridad:** Producción-ready (CSRF con tokens firmados + Origin/Referer). ✅ CRÍTICA-1 resuelta. ✅ CRÍTICA-2 resuelta (`d32a7f3`).
 - **Observabilidad:** logger con rotación + `LOG_LEVEL` configurable vía `.env`. ✅ DT-nueva-MEDIA-logging-ruido cerrada al 100% (4 fases).
 - **i18n:** es/en/pap operativos. Diccionarios Python pendientes (deuda baja).
-- **Fases pre-Docker:** ✅ Fases A + B + C cerradas (12 Nov). ✅ Fase D cerrada (11 Nov noche). Próximo: **Fase E** (tenant virgen).
+- **Fases pre-Docker:** ✅ Fases A + B + C + D + E cerradas. Fase F (parte 1) cerrada (13 Nov: B-1, B-2, B-3, B-4, E-1, E-2, E-4).
 
 ### 📋 Próximos pasos
 
-1. **Fase F — Documentación + limpieza** (~8-12 h). 6 DTs nuevas de Fase E (E-1, E-2, E-4 MEDIA, E-5, E-6, + `docs/ESTRUCTURA_TENANT.md`) + 15 DTs de Fase C/B + limpieza legacy (`sucursales`, `seed_demo_history`, columnas legacy en `tenant_1`). No bloquea Docker.
+1. **Fase F (parte 2)** (~6-8 h). DTs BAJAS de Fase C (C-2 a C-8: columnas muertas en DDL, `sucursales` legacy, `seed_demo_history`), `docs/ESTRUCTURA_TENANT.md`, DTs BAJAS de Fase E (E-5, E-6).
 2. **Fase G — Dockerización** (~22-32 h).
 3. (Opcional/baja) **i18n de diccionarios Python** (~2-4 h).
 
-**Fases completadas:** A+B+C+D (11-12 Nov) + **E (12 Nov, tarde)**. Bug `HistorialInventario` de producto fixeado (`9b71016`). Bug A del 5 Nov cerrado como "no reproducido". **Fase E 100%.**
-
-### 📌 Estructura del HANDOFF (v9.6+)
-
-- `HANDOFF.md` — **contexto actual** (se reescribe por sesión, ~400-500 líneas).
-- `HANDOFF_v9.5.md` — **histórico congelado** (consulta para Dockerización o dudas históricas).
-- `bitacora/2026-10-sesiones.md` — bitácora octubre (append-only).
-- `bitacora/2026-11-sesiones.md` — bitácora noviembre (append-only).
-- `bitacora/tenants_prueba.md` — tenants de prueba (append-only, sin contraseñas).
-
-**Regla:** cada sesión agrega su bitácora al final de `bitacora/YYYY-MM-sesiones.md` y actualiza `HANDOFF.md` (solo el estado, no el histórico).
-
 ---
+
+▼▼▼ SECCIÓN 2: STACK Y ESTRUCTURA ▼▼▼
 
 ## 2️⃣ Stack y estructura
 
@@ -65,15 +56,17 @@
 - **Frontend:** HTML5/CSS3, JS vanilla, Bootstrap 5.1.3, Chart.js, Font Awesome 6.
 
 **Archivos clave**
-- `app.py` (~13.500 líneas), `models.py` (~3.250), `reportes.py` (~3.600), `seed_demo.py` + `seeds/`.
+- `app.py` (~13.250 líneas), `models.py` (~3.233), `reportes.py` (~3.600), `seed_demo.py` + `seeds/`.
 - Multi-tenant: `middleware_saas.py`, `tenant_decorators.py`, `tenant_context.py`, `security_utils.py`.
-- `migrations/sql/` — scripts SQL versionados (toppings, anulación ventas, total_anulaciones, idioma, `bajas_inventario`, depositos_auditoria).
-- `babel.cfg` (`[jinja2: **.html]`), `locales/{es,en,pap}/LC_MESSAGES/messages.{po,mo}` (los `.mo` se commitean).
-- `templates/` (~56 + `_csrf_head.html` + `secciones/` con 4 parciales), `static/js/csrf-auto-inject.js`, `logs/` (ignorado por git).
-- `.env` (protegido), `.env.example`, `requirements.txt`.
-- Utilidades: `_limpiar_fuzzy.py` (CRÍTICO), `_ver_untraducciones.py` (bug conocido), `_audit_schema.py`, `_test_jinja.py` (usar solo nombre de archivo, no ruta), `_test_mo.py`, `_test_descuento.py`.
+- `migrations/sql/` — scripts SQL versionados.
+- `db/schema_tenant_canonical.sql` — **NUEVO** (Fase F): fuente única de verdad del DDL de un tenant (migración progresiva).
+- `babel.cfg`, `locales/{es,en,pap}/LC_MESSAGES/messages.{po,mo}`.
+- Utilidades: `_limpiar_fuzzy.py`, `_ver_untraducciones.py`, `_audit_schema.py`, `_test_jinja.py` (solo nombre, no ruta), `_test_mo.py`, `_test_descuento.py`.
+- **Nuevas utilidades Fase F:** `_test_tenant_schema.py` (test ORM ↔ BD), `_migrar_tenants.py` (script de migración), `_cleanup_tenants_huerfanos.py` (limpieza de tenants huérfanos).
 
 ---
+
+▼▼▼ SECCIÓN 3: TENANTS ▼▼▼
 
 ## 3️⃣ Tenants
 
@@ -81,28 +74,28 @@
 |----|--------|-----------|------|----------|--------|-------|
 | 1 | Panadería Principal | principal | basico | local | Producción | Plantilla multi-tenant. `base_datos=tenant_1` (saneado `d32a7f3`). |
 | 27 | **Panadería Demo** | panadería_demo | premium | nube_premium | Producción | Demo comercial, `demo2026`. `base_datos=tenant_27` (saneado `d32a7f3`). |
-| 31 | **Diagnóstico Productos Populares** | diagnóstico_producto | basico | nube_basica | **Pruebas** | **Tenant de pruebas** (diagnóstico 5 Nov). Usuario `admin_31`. Sin acceso a reportes premium. Detalle en `bitacora/tenants_prueba.md`. |
-| 34 | **Test Fase C Fix** | test_fase_c_fix | basico | nube_basica | **Pruebas** | **Tenant virgen** (12 Nov), creado con `crear_tenant_saas()` fixeado (42 tablas, 55 columnas). Usuario `admin_34`. Conservado para Fase E (smoke test completo). |
+| 31 | **Diagnóstico Productos Populares** | diagnóstico_producto | basico | nube_basica | **Pruebas** | **Tenant de pruebas** (diagnóstico 5 Nov). Usuario `admin_31`. |
+| 34 | **Test Fase C Fix** | test_fase_c_fix | basico | nube_basica | **Pruebas** | **Tenant virgen** (12 Nov), creado con `crear_tenant_saas()` fixeado. Usuario `admin_34`. |
 
 - **Producción real:** `tenant_1` + `tenant_27` (Demo, ~9.972 filas, `idioma = pap`).
-- **Pruebas:** `tenant_31` (básico, ~10 filas, diagnóstico) + `tenant_34` (básico, virgen, Fase E).
-- `public` tiene SOLO 3 tablas: `tenants` (sin columna `licencia`), `usuarios` (fallback `dev_master`), `configuracion_panaderia` (licencias/suscripciones/facturación, 27 columnas).
-- `idioma` vive en `tenant_X.configuracion_sistema` (`VARCHAR(5) NOT NULL DEFAULT 'es'`; valores `es`, `en`, `pap`, `pt` futuro).
-- `tenant_1.configuracion_sistema` tiene 6 filas con `panaderia_id` = 1, 5, 22, 24, 27, 28 (posible data legacy, no bloquea).
+- **Pruebas:** `tenant_31` + `tenant_34`.
+- `public` tiene SOLO 3 tablas: `tenants`, `usuarios` (fallback `dev_master`), `configuracion_panaderia`.
+- `idioma` vive en `tenant_X.configuracion_sistema` (`VARCHAR(5) NOT NULL DEFAULT 'es'`).
 
 ---
+
+▼▼▼ SECCIÓN 4: USUARIOS ▼▼▼
 
 ## 4️⃣ Usuarios
 
 - **Roles:** `super_admin` (dev_master, todos los tenants), `admin_cliente` (total en su tenant), `supervisor` (producción, recetas, MP, proveedores, reportes), `cajero` (POS y cierre).
 - **Usuarios:** tenant 1 → `dev_master`, `admin`, `admin_1`. Tenant 27 → `admin_27`, `super_27`, `cajero_27`. Tenant 31 → `admin_31`, `super_31`, `cajero_31`. Tenant 34 → `admin_34`, `super_34`, `cajero_34`.
-- **Demo:** todos los usuarios del tenant_27 usan **`demo2026`**. `admin_27` tiene nombre `Administrador Panadería Demo` (sin espacio final).
-- **Tenants de pruebas:** `admin_31` (pass en `bitacora/tenants_prueba.md`, rotada 5 Nov). `admin_34` (pass temporal generada al crear el tenant, rotar al primer login).
-- **Creación:** NO desde el frontend; al alta del tenant en `crear_tenant_saas()`. Viven en `tenant_X.usuarios`.
-- **Contraseñas:** `/mi_perfil` (✅ arreglado el 1 Nov) y `POST /resetear_password/<id>` (app.py:~11981; desde `gestion_clientes.html` y `gestion_usuarios.html`).
-- **Facturación por tenant:** `/configuracion/facturacion` → `ConfiguracionSistema` (fallback `ConfiguracionPanaderia`).
+- **Demo:** todos los usuarios del tenant_27 usan **`demo2026`**. `admin_27` tiene nombre `Administrador Panadería Demo`.
+- **Contraseñas:** `/mi_perfil` (✅ arreglado 1 Nov) y `POST /resetear_password/<id>`.
 
 ---
+
+▼▼▼ SECCIÓN 5: MÓDULOS Y FEATURES ▼▼▼
 
 ## 5️⃣ Módulos (11/11)
 
@@ -118,29 +111,36 @@
 | 8 | Activos Fijos | ✅ |
 | 9 | Gestión de Usuarios + Mi Perfil | ✅ |
 | 10 | Gestión Financiera | ✅ (CRÍTICA-1 resuelta + desconciliación + ANULADO + auditoría) |
-| 11 | Reportes Profesionales | ✅ (i18n PDF y HTML 100% + donaciones separadas + rotación <7d + rediseño Productos Populares) |
+| 11 | Reportes Profesionales | ✅ (i18n 100% + donaciones separadas + rotación <7d + rediseño Productos Populares) |
 
 **Features recientes (detalle en bitácoras)**
-- Toppings: `9e645ba` — tabla `receta_toppings`, costos por gramos/lote, descuento de stock, `/api/calcular_ingredientes`.
-- Anulación POS: `4ecfde9` — soft-delete `Venta.estado`, `/ventas_del_dia`, `POST /anular_venta/<id>`, blindaje de 11 consultas.
-- Baja de Inventario: `ba48503` + `52696be` — `bajas_inventario` (motivo `VENCIMIENTO`/`ROTURA`), `/baja_inventario`, `/api/productos_vitrina`, `POST /registrar_baja`, costo desde receta; integrado en Estado de Resultados, Análisis de Gastos y Cierre de Caja.
-- **Fix CRÍTICA-1 (1 Nov):** `5d289fd` — depósitos CONCILIADOS inmutables (backend 403 + frontend solo-lectura).
-- **Fix MEDIA-ALTA (3 Nov):** `8304a16` — auditoría completa de donaciones/anuladas en cadena financiera (15 fixes) + fix `fecha_fin` a medianoche.
-- **Fix MEDIA-BAJA (4 Nov):** `607ac75` — Ventas del Día distingue donaciones (badge, tooltip, guard de rol).
-- **Fix CRÍTICA-4 + Bug B + IA (5 Nov):** `6e7dbbf` — colisión IDs int/ext en Productos Populares + rotación <7d → "—" + KeyError en `_generar_recomendaciones_ia`.
-- **Commit 2 — rediseño Productos Populares (6 Nov):** 5 commits (`320881b`, `5d8e2b4`, `b6a1908`, `e3b48e0`, `7ff556f`).
-- **Depósitos bancarios (11 Nov):** 4 commits (`6b5485f`, `17d0b83`, `5368b1a`, `a403c90`) — whitelist, auditoría, anulación, desconciliación.
-- **Cierre jornada + JS huérfano (11 Nov):** `7ce0156` — código muerto eliminado + filtro `es_donacion` en `obtener_ventas_dia` vivo + early-return en polling JS.
+- **Fase F (13 Nov):** `15bc439` (`_test_tenant_schema.py`), `6905d84` (DDL canónico + `_migrar_tenants.py` + eliminar auto-reparación en runtime), `9ad0030` (`_cleanup_tenants_huerfanos.py`), `99bb28f` (eliminar cierre diario legacy: 563 líneas).
+- **Fase E + fix HistorialInventario (12 Nov):** `9b71016` — `OrdenProduccion.completar_produccion()` ahora registra movimiento de producto terminado en `HistorialInventario`.
+- **Fase A+B+C (12 Nov):** `1ef3579` — DT-Fase C-1 resuelta (`total_anulaciones` en DDL de `cierres_diarios`).
 - **CRÍTICA-2 + F2.5 (11 Nov noche):** `d32a7f3` + `e50f992` — `base_datos` saneado + `LOG_LEVEL` configurable.
-- **Fase A+B+C (12 Nov):** `1ef3579` — DT-Fase C-1 resuelta (`total_anulaciones` en DDL de `cierres_diarios`). Fases A+B+C cerradas. `tenant_34` conservado para Fase E.
-
-- **Fase E + fix HistorialInventario (12 Nov):** `9b71016` — `OrdenProduccion.completar_produccion()` ahora registra movimiento de producto terminado en `HistorialInventario` (`producto_id`, `cantidad_anterior`, `cantidad_nueva`, `cantidad_utilizada`). Patrón copiado de `anular_venta()`. Validado con `tenant_34`.
+- **Cierre jornada + JS huérfano (11 Nov):** `7ce0156` — código muerto eliminado + filtro `es_donacion`.
+- **Depósitos bancarios (11 Nov):** `6b5485f`, `17d0b83`, `5368b1a`, `a403c90`.
+- **Commit 2 — rediseño Productos Populares (6 Nov):** `320881b`, `5d8e2b4`, `b6a1908`, `e3b48e0`, `7ff556f`.
+- **Fix CRÍTICA-4 + Bug B + IA (5 Nov):** `6e7dbbf`.
+- **Fix MEDIA-BAJA (4 Nov):** `607ac75`.
+- **Fix MEDIA-ALTA (3 Nov):** `8304a16`.
+- **Fix CRÍTICA-1 (1 Nov):** `5d289fd`.
 
 ---
+
+▼▼▼ SECCIÓN 6: ÚLTIMOS COMMITS ▼▼▼
 
 ## 6️⃣ Últimos commits
 
 ```text
+99bb28f refactor(fase-f): eliminar cierre diario legacy (CierreDiario + endpoints + tabla)
+9ad0030 feat(fase-f): _cleanup_tenants_huerfanos.py + .gitignore excepciones
+6905d84 refactor(fase-f): eliminar auto-reparación de esquema en runtime + migraciones manuales
+15bc439 feat(fase-f): _test_tenant_schema.py — test de verificación ORM ↔ BD
+b798950 docs(handoff): Fase E cerrada + HistorialInventario producto fixeado
+9b71016 fix(fase-e): registrar movimiento de producto en HistorialInventario al completar producción
+17c1033 docs(bitacora): agregar sesión 12 Nov — Fases A/B/C cerradas
+a314682 docs(handoff): HANDOFF v9.18 + bitácora sesión 12 Nov — Fases A/B/C cerradas
 1ef3579 fix(fase-c): agregar total_anulaciones al DDL de cierres_diarios
 a85e8d1 docs(handoff): actualizar roadmap a producción (Fases A/B/C antes de Docker)
 02ed322 docs: HANDOFF v9.16 + bitácora sesión 11 Nov (noche) — Fase D cerrada
@@ -150,107 +150,80 @@ a403c90 feat(depositos): desconciliacion con auditoria y control de rol
 5368b1a feat(depositos): anulacion con motivo, auditoria visual y fix de totales
 17d0b83 feat(depositos): auditoria de usuario_id en crear/editar/conciliar
 6b5485f fix(depositos): whitelist de estados + auditoría (4 columnas nuevas)
-7fd0cbd docs(handoff): F2.6 reformulada a BAJA — falso positivo (werkzeug no ensucia panaderia.log)
+7fd0cbd docs(handoff): F2.6 reformulada a BAJA — falso positivo
 c36bbca docs: HANDOFF v9.13 + bitacora sesion 8 Nov (F3 logging cerrada)
 53fc3f3 fix(logging): F3/3 — truncar hash de contrasena en logs (seguridad)
-7ff556f chore(i18n): traducir cadenas del rediseno productos_populares + deuda previa
-e3b48e0 feat(reportes): H3 — 4 KPI cards unificadas + elimina card de Salidas No Comerciales
-b6a1908 feat(reportes): rediseno graficos — elimina Top 5 + Distribucion 30% + Rotacion 70%
-5d8e2b4 feat(reportes): rediseno Top 10 — tabla unica + boton Ver detalle + badges medalla
-320881b feat(reportes): recomendaciones dinamicas + filtro por producto + banner
-6e7dbbf fix(reportes): CRÍTICA-4 colisión IDs int/ext + rotación <7d a '—' + IA KeyError
-f694ae5 docs: HANDOFF v9.9 + bitácora sesión 4 Nov (MEDIA-BAJA + regla doble servidor)
-607ac75 feat(ventas-del-dia): distinguir donaciones con badge, tooltip y guard de rol
-8304a16 fix(reportes): auditoría completa de donaciones/anuladas en cadena financiera
-0da8b5b docs: reemplazar PENDIENTE_HASH por 5d289fd (hash real del commit CRITICA-1)
-5d289fd fix(CRITICA-1): bloquear edición de depósitos CONCILIADOS (auditoría contable)
-6173cfe fix: current_user detached — db.session.merge() en load_user (CRÍTICA-3 resuelta)
+▼▼▼ SECCIÓN 7: DEUDA TÉCNICA ▼▼▼
+
 7️⃣ Deuda técnica PENDIENTE
+✅ Cerradas el 13 Nov (Fase F, parte 1)
+Prioridad	DT	Descripción	Commit
+✅ Media	DT-Fase B-1	_test_tenant_schema.py compara models.py ↔ BD real por tenant con exit code 0/1.	15bc439
+✅ BAJA	DT-Fase B-2	consecutivos_pos centralizado en db/schema_tenant_canonical.sql.	6905d84
+✅ Media	DT-Fase B-3	Auto-reparación de esquema en runtime eliminada.	6905d84
+✅ BAJA	DT-Fase B-4	_cleanup_tenants_huerfanos.py (limpieza de tenants huérfanos).	9ad0030
+✅ BAJA	DT-Fase E-1	Cierre diario legacy eliminado (563 líneas).	99bb28f
+✅ BAJA	DT-Fase E-2	configuracion_sistema vacía (no reproducido, lazy init).	—
+✅ Media	DT-Fase E-4	Cantidades inconsistentes (no reproducido, fórmula correcta).	—
 ✅ Cerradas el 12 Nov (Fases A + B + C)
 Prioridad	DT	Descripción	Commit
-✅ Alta	DT-Fase C-1	total_anulaciones faltaba en el DDL de cierres_diarios en crear_tenant_saas(). Se agregaba solo vía migrations/sql/. Fix: 1 línea en app.py:772. Validado con tenant_34.	1ef3579
-### ✅ Cerradas el 13 Nov (Fase F, sesión inicial)
-
-| Prioridad | DT | Descripción | Commit |
-|---|---|---|---|
-| ✅ Media | DT-Fase B-1 | `crear_tenant_saas()` usa DDL raw. Mitigación: `_test_tenant_schema.py` compara `models.py` ↔ BD real por tenant con exit code 0/1. Validado en `tenant_1`, `tenant_27`, `tenant_34`. | `15bc439` |
-| ✅ Media | DT-Fase E-4 | `_descontar_ingredientes()` cantidades inconsistentes. **No reproducido:** la fórmula es correcta. Las cantidades 625g/62.5g/312.5g/31.25g son ingrediente base vs topping (receta rinde 16 unidades). Falso positivo del análisis inicial. | — (no code change) |
+✅ Alta	DT-Fase C-1	total_anulaciones faltaba en el DDL de cierres_diarios.	1ef3579
 ✅ Cerradas el 11 Nov (noche)
 Prioridad	DT	Descripción	Commits
-✅ CRÍTICA	DT-nueva-CRÍTICA-2	base_datos huérfano en public.tenants saneado (tenant_{id}) + crear_tenant_saas() / middleware_saas.py alineados con el ID.	d32a7f3
-✅ MEDIA	DT-nueva-MEDIA-F2.5	Nivel de logger configurable vía LOG_LEVEL en .env.	e50f992
-✅ MEDIA-BAJA	DT-nueva-MEDIA-BAJA (cierre jornada)	Eliminado cerrar_jornada_actual() (código muerto) + fix de filtro es_donacion en obtener_ventas_dia vivo.	7ce0156
-✅ BAJA	DT-nueva-BAJA (JS huérfano)	Polling a /api/cierre_diario/estado en pos-moderno.js sin botón en frontend → early-return agregado.	7ce0156
-✅ MEDIA	DT-nueva-MEDIA (desconciliación)	Endpoint para desconciliar depósitos (CONCILIADO inmutable tras CRÍTICA-1).	a403c90
-✅ MEDIA	DT-nueva-MEDIA (estado ANULADO sin flujo)	Modal permite setear estado='ANULADO' con endpoint dedicado y auditoría.	5368b1a
-✅ MEDIA	DT-nueva-MEDIA (whitelist estado backend)	editar_deposito_bancario() valida estados contra whitelist.	6b5485f
-✅ BAJA	DT-nueva-BAJA (endpoint huérfano)	/reporte/ventas renombrado a reporte_ventas_periodo() + fix visual.	b0efa27, 29a4e03
+✅ CRÍTICA	DT-nueva-CRÍTICA-2	base_datos huérfano saneado.	d32a7f3
+✅ MEDIA	DT-nueva-MEDIA-F2.5	LOG_LEVEL configurable.	e50f992
+✅ MEDIA-BAJA	DT-nueva-MEDIA-BAJA (cierre jornada)	Código muerto eliminado.	7ce0156
+✅ BAJA	DT-nueva-BAJA (JS huérfano)	Polling eliminado.	7ce0156
+✅ MEDIA	DT-nueva-MEDIA (desconciliación)	Endpoint agregado.	a403c90
+✅ MEDIA	DT-nueva-MEDIA (estado ANULADO)	Endpoint dedicado.	5368b1a
+✅ MEDIA	DT-nueva-MEDIA (whitelist)	Validación agregada.	6b5485f
+✅ BAJA	DT-nueva-BAJA (endpoint huérfano)	Renombrado.	b0efa27, 29a4e03
 ✅ Cerradas el 8 Nov (DT logging ruidoso)
 Prioridad	DT	Descripción	Commits
-✅ Media	DT-nueva-MEDIA-logging-ruido	Logging ruidoso en producción (F1 + F1.5 + F2 + F3)	51000fc, 68f8856, 620a177, 53fc3f3
+✅ Media	DT-nueva-MEDIA-logging-ruido	Logging ruidoso (F1 + F1.5 + F2 + F3)	51000fc, 68f8856, 620a177, 53fc3f3
 ✅ Cerradas el 6 Nov (Commit 2)
 Prioridad	DT	Descripción
-✅ Media	Commit 2 (rediseño)	Rediseño "menos es más" + recomendaciones dinámicas en productos_populares.html
-✅ Media	i18n cadenas nuevas	Strings de Commit 2 traducidos en en/pap
-### 🟢 DTs BAJAS Fase F — Sesión objetivo: Fase F (post-Fase E, pre-Docker)
-
-**Total: ~25 DTs BAJAS** (6 nuevas de Fase E + 15 de Fase B/C + 4 preexistentes del HANDOFF v9.14).
+✅ Media	Commit 2 (rediseño)	Rediseño "menos es más" + recomendaciones dinámicas.
+✅ Media	i18n cadenas nuevas	Strings de Commit 2 traducidos en en/pap.
+🟢 DTs BAJAS Fase F — Pendientes (para Fase F parte 2)
 Prioridad	DT	Descripción	Estimación
+🟢 BAJA	DT-Fase C-2	7 columnas muertas en configuracion_produccion (en DDL, no en modelo).	~30 min
+🟢 BAJA	DT-Fase C-3	4 columnas muertas en configuracion_sistema (en DDL, no en modelo).	~15 min
+🟢 BAJA	DT-Fase C-4	pagos_individuales.usuario_id (DDL, no modelo).	~15 min
+🟢 BAJA	DT-Fase C-5	panaderias.panaderia_id auto-referencia (DDL, no modelo).	~15 min
+🟢 BAJA	DT-Fase C-6	Módulo multi-sucursal legacy (sucursales, usuarios.sucursal_id).	~30 min
+🟢 BAJA	DT-Fase C-7	5 columnas legacy en tenant_1 (cierres_diarios.created_at, etc.).	~15 min
+🟢 BAJA	DT-Fase C-8	seed_demo_history en tenant_27 (basura de seed).	~5 min
+🟢 BAJA	DT-unificar-naming	proveedor, detalle_venta en singular vs plural.	~15 min
+🟢 BAJA	DT-Fase E-5	HistorialInventario.materia_prima_id modelo vs BD (nullable).	~15 min
+🟢 BAJA	DT-Fase E-6	Mojibake en commit messages (CMD).	~5 min
+🟢 BAJA	DT-nueva-BAJA-F2.6	Post-Docker: auditar WSGI basicConfig.	~30 min
+🟢 BAJA	DT-unificar-productos-populares	Unificar _obtener_datos_productos_populares.	~2-3 h
+🟢 BAJA	DT-unificar-prefijos-int-ext	Unificar analizar_productos_periodo.	~1-2 h
+🟢 BAJA	DT-formato-numerico-es-CO	Formato $20.000.00 → $20.000,00.	~1 h
+Nota: También hay ~39 archivos .bak acumulados (oct/nov) que no deberían estar en el repo. DT-Fase F-BAK (nueva, 🟢 BAJA, ~30 min, Fase F): agregar *.bak* a .gitignore y limpiar.
 
-### 🟡 DT MEDIA nueva (Fase E)
-
-Ninguna abierta. **DT-Fase E-4 cerrada el 13 Nov** (no reproducido: la fórmula es correcta, era ingrediente base vs topping).
-
-### 🟢 DTs BAJAS Fase E
-
-| Prioridad | DT | Descripción | Sesión objetivo |
-|---|---|---|---|
-| 🟢 BAJA | DT-Fase E-1 | `total_anulaciones` en `cierres_diarios` no validable hasta el job nocturno (sin `INSERT` hasta medianoche). Probar con `tenant_34` vivo post-medianoche. | Post-Fase E (con `tenant_34`). |
-| 🟢 BAJA | DT-Fase E-2 | `tenant_34.configuracion_sistema` sin fila inicial. Fallback funciona. Agregar `INSERT` en `crear_tenant_saas()` o dejar lazy init. | Fase F |
-| 🟢 BAJA | DT-Fase E-5 | `models.py:HistorialInventario.materia_prima_id = nullable=False` pero BD real es nullable. Inconsistencia modelo ↔ BD. | Fase F |
-| 🟢 BAJA | DT-Fase E-6 | Mojibake en commit messages (CMD interpreta UTF-8 como CP1252). Usar `chcp 65001` o PowerShell. | Fase F (docs) |
-| ✅ CERRADA | DT-Fase E-3 | `completar_produccion()` no registraba producto terminado en `HistorialInventario`. Fix `9b71016`. | ✅ |
-🟡 Media	DT-Fase B-1	crear_tenant_saas() usa DDL raw (no db.create_all()). Riesgo: agregar modelo a models.py sin CREATE TABLE → tenant nuevo incompleto. Mitigación: test de verificación post-creación.	~2-3 h
-🟢 BAJA	DT-Fase B-2	CREATE TABLE IF NOT EXISTS consecutivos_pos duplicado en 3 sitios (app.py:2640, 2868, 2943). Consolidar.	~15 min
-🟢 BAJA	DT-Fase B-3	db.create_all() solo se usa en public, no en tenant_X. Patrón asimétrico.	~30 min
-🟢 BAJA	DT-Fase B-4	crear_tenant_saas() no es atómico: si falla a mitad, schema huérfano (rollback SQLAlchemy revierte, pero no hay test).	~1 h
-🟢 BAJA	DT-Fase C-2	7 columnas muertas en configuracion_produccion (activar_alertas, alerta_stock_minimo, dias_historial_ventas, inventario_seguridad, produccion_automatica, rotacion_recomendada, vida_util_pan_dias). Están en DDL, NO en models.py, NO en código. Quitar del DDL o implementar feature.	~30 min
-🟢 BAJA	DT-Fase C-3	4 columnas muertas en configuracion_sistema (modo_mantenimiento, nombre_sistema, ultima_actualizacion, version). tenant_1 no las tiene. Quitar del DDL o migrar tenant_1.	~15 min
-🟢 BAJA	DT-Fase C-4	pagos_individuales.usuario_id en DDL, no en models.py, no en tenant_1. Agregar al modelo o quitar del DDL.	~15 min
-🟢 BAJA	DT-Fase C-5	panaderias.panaderia_id auto-referencia (DDL, no modelo). Revisar por qué existe.	~15 min
-🟢 BAJA	DT-Fase C-6	Módulo multi-sucursal legacy (nunca implementado). sucursales.email, usuarios.sucursal_id. Eliminar del modelo + DDL.	~30 min
-🟢 BAJA	DT-Fase C-7	5 columnas legacy en tenant_1 (cierres_diarios.created_at, .fecha, .jornada_id, historial_mantenimientos.activo_id, registros_diarios.tarjetas). Limpieza opcional.	~15 min
-🟢 BAJA	DT-Fase C-8	seed_demo_history en tenant_27 (basura de seed_demo.py). Eliminar.	~5 min
-🟢 BAJA	DT-unificar-naming	proveedor, detalle_venta en singular vs resto en plural. Cosmético.	~15 min
-🟢 DTs BAJAS preexistentes (HANDOFF v9.14)
-Prioridad	DT	Descripción	Estimación
-🟢 BAJA	DT-nueva-BAJA-F2.6	Post-Docker: auditar que el WSGI no agregue basicConfig al root (werkzeug no ensucia panaderia.log hoy). Verificado 8 Nov.	~30 min
-🟢 BAJA	DT-unificar-productos-populares	Unificar _obtener_datos_productos_populares (reportes.py:1904) con reporte_productos_populares (app.py:8371). Anotada 6 Nov.	~2-3 h
-🟢 BAJA	DT-unificar-prefijos-int-ext	Unificar analizar_productos_periodo (models.py:1763, prefijos P/E) con inline de app.py:8408-8434 (prefijos int_/ext_). Anotada 6 Nov.	~1-2 h
-🟢 BAJA	DT-formato-numerico-es-CO	Formato $20.000.00 (punto como separador de miles + punto decimal) incorrecto para es-CO (debería ser $20.000,00). Cosmético. Anotada 6 Nov.	~1 h
 📋 Otras medias / bajas (heredadas, detalle en HANDOFF_v9.5.md sec. 9)
-Medias: DT-37 F5-pulido · DT-37 F4.9 (libro_diario huérfano) · DT-NUEVA-1 (CREATE TABLE con idioma) · error 'ingreso' en generar_reporte_ia_predictivo (✅ cerrada 5 Nov) · endpoint huérfano /generar_reporte_flujo_caja · overlap de labels en pie chart · i18n de diccionarios Python · mapeo Jinja2 de badges dinámicos · bug de _ver_untraducciones.py.
+Medias: DT-37 F5-pulido · DT-37 F4.9 (libro_diario huérfano) · DT-NUEVA-1 (CREATE TABLE con idioma) · error 'ingreso' (✅ cerrada 5 Nov) · endpoint huérfano /generar_reporte_flujo_caja · overlap de labels en pie chart · i18n de diccionarios Python · mapeo Jinja2 de badges dinámicos · bug de _ver_untraducciones.py.
 
-Cosmética crítica: emojis rotos en PDFs de ReportLab (Helvetica sin glyphs).
+Cosmética crítica: emojis rotos en PDFs de ReportLab.
 
-Bajas: filas legacy en tenant_1.configuracion_sistema · imports redundantes de os en app.py · "Fluho Neto" → "Flusho Neto" (PAP) · cierre_diario.html y ruta /cierre_diario huérfanos · renombrar "Historial de Ventas" en reportes.html:229 · datos demo hardcodeados en ventas_periodo.html · traducciones PAP heredadas · tenant_1.historial_inventario sin FK en orden_produccion_id.
+Bajas: filas legacy en tenant_1.configuracion_sistema · imports redundantes de os · "Fluho Neto" → "Flusho Neto" (PAP) · renombrar "Historial de Ventas" en reportes.html:229 · datos demo hardcodeados en ventas_periodo.html · traducciones PAP heredadas · tenant_1.historial_inventario sin FK en orden_produccion_id.
 
 🔍 Hallazgos 5 Nov (diagnóstico con tenant_31)
-✅ CRÍTICA-2 reproducida en vivo: tenant_31.base_datos = tenant_diagnóstico_producto vs schema real tenant_31. Resuelta 11 Nov noche (d32a7f3).
+✅ CRÍTICA-2 reproducida en vivo: tenant_31.base_datos = tenant_diagnóstico_producto. Resuelta 11 Nov noche.
 
-Bug A (nota, no CRÍTICA): En el primer día de vida del tenant, detalle_venta.producto_externo_id quedó NULL en 2 ventas con externos. Tras reiniciar servidor, las filas se "corrigieron". No reproducible. Hipótesis: caché/ORM en primer arranque. Verificar en Fase E con tenant_34.
+Bug A (cerrado como no reproducido en Fase E): detalle_venta.producto_externo_id NULL en 2 ventas con externos en tenant_31. No se reprodujo en tenant_34 (12 Nov). Se cierra.
 
-Licencia básica: tenant_31 (nube_basica) NO tiene acceso a reportes premium (/reporte/analisis_predictivo, /reporte/recomendaciones_ia, /reporte/analisis_inventarios). Redirige a dashboard (302). Comportamiento esperado.
+Licencia básica: tenant_31 no tiene acceso a reportes premium. Comportamiento esperado.
 
-Reportes IA (2 distintos):
+Reportes IA (2 distintos): /reporte/analisis_predictivo (HTML) + /generar_reporte_ia_predictivo (PDF).
 
-Análisis Predictivo (HTML): /reporte/analisis_predictivo → alertas + proyecciones + distribución + prioridades. "Exportar PDF" = window.print().
+Caché del navegador: screenshots desactualizados confunden diagnóstico. Regla: modo incógnito + reiniciar servidor + netstat.
 
-Recomendaciones con IA (PDF): /generar_reporte_ia_predictivo → GeneradorReportes.generar_reporte_ia_predictivo → _generar_recomendaciones_ia. Reporte separado, con secciones "RECOMENDACIONES INTELIGENTES" + "PLAN DE ACCIÓN".
+Mojibake en commit message: usar git commit -F _commit_msg.txt (UTF-8).
 
-Caché del navegador: screenshots desactualizados pueden confundir el diagnóstico. Regla: modo incógnito + reiniciar servidor + netstat (1 línea LISTENING) antes de cada test de template.
-
-Mojibake en commit message: Windows usó cp1252 al escribir git commit -m. Recomendación: usar git commit -F _commit_msg.txt (UTF-8) en próximos commits.
+▼▼▼ SECCIÓN 8: METODOLOGÍA DE TRABAJO ▼▼▼
 
 8️⃣ Metodología de trabajo
 Reglas de oro
@@ -266,38 +239,44 @@ Backup (pg_dump) antes de cada cambio grande.
 
 git status antes de commitear; git add <archivo> explícito; push tras el commit.
 
-Detener el servidor antes de reiniciar. Verificar con tasklist | findstr python. netstat -ano | findstr :5000 → 1 sola línea LISTENING (nueva regla 5 Nov, refuerza regla 4 Nov de doble servidor).
+Detener el servidor antes de reiniciar. Verificar con tasklist | findstr python. netstat -ano | findstr :5000 → 1 sola línea LISTENING.
 
-Antes de testear templates, modo incógnito + servidor reiniciado (nueva regla 5 Nov, por caché del navegador).
+Antes de testear templates, modo incógnito + servidor reiniciado.
 
 Insertar bloques mostrando ANTES → DESPUÉS con número de línea exacto; compilar tras cada inserción (python -m py_compile app.py).
 
 Deuda técnica detectada: anotarla (no tocarla), priorizar, decidir después.
 
-Windows: findstr /c:"patrón" para búsquedas literales (con tildes/emoji puede fallar → usar powershell -Command "Select-String -Path ..." o script Python). Preferir scripts Python al copy-paste del chat (mojibake).
+Windows: findstr /c:"patrón" para literales; PowerShell Select-String para tildes. Preferir scripts Python al copy-paste.
 
-git commit -F _commit_msg.txt (UTF-8) para mensajes con tildes/emojis (nueva regla 5 Nov).
+git commit -F _commit_msg.txt (UTF-8) para mensajes con tildes/emojis.
 
-No acumular DT. Cuando el diagnóstico o el smoke test de un fix descubre un problema nuevo, se evalúa si está dentro del alcance del fix actual (mismo concern, mismo módulo). Si lo está, se resuelve en el mismo commit. Si es un concern distinto, se anota como DT nueva con prioridad y sesión objetivo en el HANDOFF, para que no quede en el aire.
+No acumular DT. Si el fix descubre un problema nuevo: si es mismo concern → mismo commit; si es distinto → DT nueva.
 
-Cero DT "en el aire". Toda DT nueva debe tener: prioridad (🚨/🟡/🟢), estimación (~X h), y sesión objetivo (próxima sesión, Fase D, Fase F, post-Docker). Si no se puede asignar una sesión objetivo, no es una DT: es una nota o un pendiente informal (que va a la bitácora, no al HANDOFF).
+Cero DT "en el aire". Toda DT debe tener: prioridad, estimación, y sesión objetivo.
 
-Un script de auditoría que devuelve ❌ uniforme en todas las filas tiene un bug de matching, no un hallazgo. Verificar el "diagnóstico del script" (cuántos bloques extrajo) antes de interpretar la tabla de resultados. (Regla nueva 12 Nov.)
+Script de auditoría con ❌ uniforme = bug de matching. Verificar el diagnóstico del script.
 
-Nunca poner comentarios ni texto decorativo dentro de un string text(f'''...'''). El SQL se ejecuta tal cual. Comentarios de Python (#) solo fuera del string. Nunca poner ← NUEVA LÍNEA, # TODO, etc. dentro del bloque SQL. (Regla nueva 12 Nov.)
+No poner texto decorativo dentro de text(f'''...'''). El SQL se ejecuta tal cual.
 
-Nunca pegar contraseñas reales en el chat del instructor. Enmascararlas (ShQ****) o borrarlas. Aplica a contraseñas de tenants, demo2026, admin_31, etc. (Regla nueva 12 Nov.)
+Nunca pegar contraseñas reales en el chat del instructor.
+
+db.create_all() solo en public, no en tenant_X. El DDL de tenant_X es raw (crear_tablas_en_orden).
+
+Antes de git add de un archivo _*, verificar .gitignore. Si es utilidad permanente, agregar excepción !<archivo>.
+
+Para borrar bloques de código, NO usar regex. Usar borrado por líneas exactas o cortar/pegar en el editor con verificación después de cada bloque. La regex es frágil con decoradores, indentación, strings multilínea.
 
 i18n / Babel
 Flask-Babel 4.0: default_translation_directories va en el constructor Babel(app, ...).
 
-pybabel extract con lista explícita (con . escanea venv/). babel.cfg: [jinja2: **.html].
+pybabel extract con lista explícita. babel.cfg: [jinja2: **.html].
 
-pybabel NO extrae _() dentro de f-strings ni después de emoji en f-string.
+pybabel NO extrae _() dentro de f-strings ni después de emoji.
 
-pybabel update marca #, fuzzy → SIEMPRE correr _limpiar_fuzzy.py. Los .mo se commitean.
+pybabel update marca #, fuzzy → SIEMPRE _limpiar_fuzzy.py. Los .mo se commitean.
 
-El % NUNCA va dentro de _(). % sueltos en msgstr → escribir %% en msgid y msgstr.
+El % NUNCA va dentro de _(). % sueltos → %%.
 
 Templates: proteger <style>/<script> antes de reemplazos masivos.
 
@@ -306,13 +285,13 @@ Reiniciar servidor + modo incógnito tras pybabel compile.
 config.nombre_panaderia ya está global en templates.
 
 Modelos, schema y multi-tenant
-ORM ↔ BD DEBEN estar alineados: al agregar columna al modelo, verificar con information_schema.columns.
+ORM ↔ BD DEBEN estar alineados. Al agregar columna al modelo, verificar con information_schema.columns.
 
-tenant_1 (plantilla), tenant_27 (demo) y tenant_31/tenant_34 (pruebas) DEBEN tener la misma estructura; toda migración se aplica a todos.
+tenant_1, tenant_27, tenant_31, tenant_34 DEBEN tener la misma estructura.
 
-FK diferida: si una tabla referencia a otra creada DESPUÉS en crear_tenant_saas(), NO poner la FK en el CREATE TABLE; agregarla al final con ALTER TABLE ... ADD CONSTRAINT ... FOREIGN KEY.
+FK diferida: si una tabla referencia a otra creada DESPUÉS en crear_tenant_saas(), agregar la FK al final con ALTER TABLE ... ADD CONSTRAINT.
 
-Todo cambio de schema se prueba con un tenant nuevo (básico y premium, 16 puntos). tenant_31 y tenant_34 sirven como tenants de pruebas.
+Todo cambio de schema se prueba con un tenant nuevo (tenant_31 o tenant_34).
 
 search_path DEBE estar seteado antes de consultar modelos fuera de request.
 
@@ -324,22 +303,24 @@ load_user() debe devolver un objeto ATTACHED (db.session.merge(user)).
 
 Antes de cambiar un patrón global, auditar con grep quién lo toca y correr un test de regresión.
 
-Colisión de IDs int/ext: cuando dos tablas (productos, productos_externos) tienen su propio id autoincremental, los id colisionan (ej. Pan Prueba id=1 y Agua id=1). Usar prefijos (int_, ext_) al armar claves de diccionarios. (Regla 5 Nov.)
+Colisión de IDs int/ext: usar prefijos (int_, ext_) al armar claves de diccionarios.
 
-Diagnóstico pre-commit: si git diff --stat muestra más líneas de las esperadas, verificar el diff completo antes de commitear. (Regla 6 Nov.)
+Diagnóstico pre-commit: si git diff --stat muestra más líneas de las esperadas, verificar el diff completo antes de commitear.
 
-crear_tenant_saas() usa DDL raw, no db.create_all(). Cualquier columna nueva en models.py DEBE agregarse también al CREATE TABLE correspondiente en app.py:~22-828. Verificar con tenant_XX de prueba. (Regla 12 Nov.)
+crear_tenant_saas() usa DDL raw, no db.create_all(). Cualquier columna nueva en models.py DEBE agregarse también al CREATE TABLE correspondiente en app.py. Verificar con _test_tenant_schema.py.
 
 Dinero, ventas y bajas
 Soft-delete siempre: las ventas nunca se borran (COMPLETADA / ANULADA).
 
 Toda consulta de Venta para reportes/dinero DEBE filtrar Venta.estado == 'COMPLETADA'; las donaciones (es_donacion=TRUE) se excluyen de ingresos.
 
-Queries de reportes con fecha_fin: usar fecha_fin_inclusive = fecha_fin + timedelta(days=1) y Venta.fecha_hora < fecha_fin_inclusive. Alternativamente, db.func.date(Venta.fecha_hora) <= fecha_fin.
+Queries de reportes con fecha_fin: usar fecha_fin_inclusive = fecha_fin + timedelta(days=1) y Venta.fecha_hora < fecha_fin_inclusive.
 
-No se anula una venta si el día ya tiene CierreDiario confirmado. Las facturas ELECTRONICA NUNCA se anulan en el POS.
+No se anula una venta si el día ya tiene CierreDiario confirmado (esta regla se eliminó en Fase F, porque CierreDiario es legacy).
 
-Donaciones: solo admin_cliente o super_admin pueden anularlas (backend 403 si no). El cajero puede registrarlas pero no anularlas.
+Las facturas ELECTRONICA NUNCA se anulan en el POS.
+
+Donaciones: solo admin_cliente o super_admin pueden anularlas (backend 403). El cajero puede registrarlas pero no anularlas.
 
 Toppings: siempre en gramos; factor_escala = cantidad_producir / unidades_obtenidas.
 
@@ -347,17 +328,18 @@ Al agregar una nueva fuente de pérdidas/gastos (como bajas), actualizar estado_
 
 Verificar los print y strings de JS en templates: el mojibake puede romper el JS.
 
-Depósitos bancarios: CONCILIADO es inmutable (CRÍTICA-1, 5d289fd). Editar un depósito conciliado → 403.
+Depósitos bancarios: CONCILIADO es inmutable (CRÍTICA-1). Editar un depósito conciliado → 403.
 
-Rotación <7 días: si el tenant tiene menos de 7 días de vida, rotacion_promedio = None (template muestra —). Criterio: dias_reales_tenant desde la primera venta del tenant. (Regla 5 Nov.)
+Rotación <7 días: si el tenant tiene <7 días de vida, rotacion_promedio = None (template muestra —). Criterio: dias_reales_tenant desde la primera venta.
 
-Filtro ?producto= en /reporte/ventas: aplica a ventas_periodo (Python) y a detalles_periodo + donaciones_periodo (SQLAlchemy .has()). Compara nombre exacto. (Regla 6 Nov.)
+Filtro ?producto= en /reporte/ventas: aplica a ventas_periodo (Python) y a detalles_periodo + donaciones_periodo (SQLAlchemy .has()).
 
 Comandos útiles
 cmd
 chcp 65001
 psql -U postgres -p 5433 -h localhost -d panaderia_master
 python -m py_compile app.py
+python -m py_compile models.py
 python -m py_compile reportes.py
 python app.py
 findstr /n /c:"patrón exacto" archivo.py
@@ -365,7 +347,7 @@ powershell -Command "Select-String -Path archivo.py -Pattern 'patrón con tildes
 git commit -F _commit_msg.txt && del _commit_msg.txt
 pg_dump -U postgres -p 5433 -h localhost -d panaderia_master -F c -f backup_pre_XXX.backup
 
-:: Verificar procesos Python corriendo (regla 4 Nov + 5 Nov)
+:: Verificar procesos Python corriendo
 tasklist | findstr python
 netstat -ano | findstr :5000
 
@@ -376,27 +358,34 @@ python _limpiar_fuzzy.py
 pybabel compile -d locales --statistics
 
 :: Estructura / constraints de una tabla
-psql -U postgres -p 5433 -h localhost -d panaderia_master -c "SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_schema = 'tenant_27' AND table_name = 'historial_inventario' ORDER BY ordinal_position;"
+psql -U postgres -p 5433 -h localhost -d panaderia_master -c "SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_schema = 'tenant_34' AND table_name = 'historial_inventario' ORDER BY ordinal_position;"
 
-:: Diagnóstico
+:: Diagnóstico (Fase F)
+python _test_tenant_schema.py 34           (test ORM ↔ BD, exit 0/1)
+python _migrar_tenants.py --dry-run        (migración de esquema, dry-run)
+python _migrar_tenants.py 34               (migración de esquema, real)
+python _cleanup_tenants_huerfanos.py       (dry-run)
+python _cleanup_tenants_huerfanos.py --fix (limpieza real)
 python _audit_schema.py
-python _test_jinja.py ventas_del_dia.html   ← SOLO nombre, NO ruta
+python _test_jinja.py ventas_del_dia.html  (SOLO nombre, NO ruta)
 python _test_mo.py
 python _ver_untraducciones.py
+▼▼▼ SECCIÓN 9: PLAN PRE-DOCKERIZACIÓN ▼▼▼
+
 9️⃣ Plan pre-Dockerización (Fases A-G)
-Objetivo: que models.py ↔ app.py ↔ BD estén sincronizados y que un tenant nuevo nazca 100% funcional. Prioridad CRÍTICA: no dockerizar sin completar A-F.
+Objetivo: que models.py ↔ app.py ↔ BD estén sincronizados y que un tenant nuevo nazca 100% funcional.
 
 Fase	Alcance	Estimación	Estado
-A — Auditoría de modelos	Mapear modelos, detectar huérfanos, FKs mal definidas, documentar estructura canónica	~2 h	✅ 12 Nov
-B — Auditoría de app.py	Queries a tablas/columnas inexistentes, crear_tenant_saas() crea todo y en orden correcto	~2 h	✅ 12 Nov
-C — Auditoría de BD	information_schema en tenant_1 vs tenant_27, modelos vs BD real, tablas huérfanas	~2 h	✅ 12 Nov (DT-Fase C-1 resuelta)
-D — Sincronización + DT abiertas	Script SQL para alinear tenants, crear_tenant_saas(), models.py, migraciones; resolver DTs	~8-10 h	✅ 11 Nov noche
-E — Tenant virgen	Usar tenant_34, flujo login → POS → venta → cierre → reporte, verificar Bug A.	~2 h	🟡 Próxima
-F — Documentación y limpieza	docs/ESTRUCTURA_TENANT.md, eliminar código huérfano, actualizar HANDOFF, 12 DTs BAJAS	~6-8 h	⏸️ Pendiente
-G — Dockerización	requirements.txt completo, .mo commiteados, .env.example con todas las variables, Dockerfile + docker-compose.yml con PostgreSQL	~22-32 h	⏸️ Pendiente
-Riesgos: tablas creadas "al vuelo" en app.py sin estar en models.py (mitigado por Fase B: 42/42 alineados hoy); tenants antiguos con estructura distinta a un tenant nuevo (mitigado por Fase C: tenant_34 creado con DDL actual); código huérfano; dependencias ocultas entre tablas.
+A — Auditoría de modelos	Mapear modelos, detectar huérfanos, FKs mal definidas	~2 h	✅ 12 Nov
+B — Auditoría de app.py	Queries a tablas/columnas inexistentes, crear_tenant_saas()	~2 h	✅ 12 Nov
+C — Auditoría de BD	information_schema en tenant_1 vs tenant_27, modelos vs BD real	~2 h	✅ 12 Nov
+D — Sincronización + DT abiertas	Script SQL para alinear tenants, resolver DTs	~8-10 h	✅ 11 Nov noche
+E — Tenant virgen	tenant_34, flujo login → POS → venta → cierre → reporte	~2 h	✅ 12 Nov (tarde)
+F — Documentación y limpieza	docs/ESTRUCTURA_TENANT.md, eliminar código huérfano, DTs BAJAS	~6-8 h	🟡 Parte 1 cerrada (13 Nov) — parte 2 pendiente
+G — Dockerización	requirements.txt completo, .mo commiteados, .env.example, Dockerfile + docker-compose.yml	~22-32 h	⏸️ Pendiente
+Listo para Docker: ✅ CSRF portable · ✅ logs a archivo + rotación · ✅ i18n portable · ✅ crear_tenant_saas() OK · ✅ CRÍTICA-1 resuelta · ✅ cadena financiera auditada · ✅ Anulación POS · ✅ Bug B resuelto · ✅ IA KeyError · ✅ Commit 2 · ✅ Fases A+B+C+D+E cerradas · ✅ DT-Fase C-1 resuelta · ✅ Fase F parte 1 cerrada · 🟡 Fase F parte 2 pendiente · 🟡 Dockerfile/compose por crear.
 
-Listo para Docker: ✅ CSRF con SECRET_KEY portable · ✅ logs a archivo + consola con rotación · ✅ sin dependencias de red específicas · ✅ i18n portable (.mo en el repo) · ✅ crear_tenant_saas() sin errores de FK · ✅ CRÍTICA-1 resuelta · ✅ cadena financiera auditada (donaciones/anuladas) · ✅ Ventas del Día con guard de rol para donaciones · ✅ CRÍTICA-4 resuelta · ✅ Bug B (rotación) resuelto · ✅ IA KeyError resuelto · ✅ Commit 2 (rediseño Productos Populares) resuelto · ✅ i18n cadenas nuevas resuelto · ✅ Fases A+B+C+D cerradas · ✅ DT-Fase C-1 resuelta · 🟡 Fase E pendiente · 🟡 Fase F pendiente · 🟡 Dockerfile/compose por crear.
+▼▼▼ SECCIÓN 10: NOTAS ESTRATÉGICAS ▼▼▼
 
 🔟 Notas estratégicas
 Objetivo: ERP SaaS multi-tenant multi-país: POS, inventario, producción, recetas (toppings), activos fijos, reportes con IA, finanzas, i18n (es/en/pap), anulación de ventas, bajas de inventario, donaciones con auditoría; base para API REST + IA avanzada.
@@ -407,93 +396,83 @@ Licencias: Premium 3 usuarios · Básica 1 usuario.
 
 Demo: fases 1-12 completas (~9.972 filas), contraseña demo2026, idioma = pap.
 
-## 1️⃣1️⃣ Estado actual (resumen ejecutivo)
+▼▼▼ SECCIÓN 11: ESTADO ACTUAL (RESUMEN EJECUTIVO) ▼▼▼
 
-| Aspecto | Estado |
-|---|---|
-| Último commit | `15bc439` en `origin/main` (pusheado) |
-| Módulos | 11/11 completos (100%) |
-| Fase A (auditoría modelos) | ✅ 12 Nov — 43 modelos ↔ 42 tablas + `public.tenants`, cero huérfanos |
-| Fase B (auditoría `app.py`) | ✅ 12 Nov — 229 queries raw clasificadas, 0 huérfanas. DDL 42/42 ↔ modelos |
-| Fase C (auditoría BD) | ✅ 12 Nov — DT-Fase C-1 resuelta + 12 DTs BAJAS anotadas |
-| **Fase E (tenant virgen)** | ✅ **12 Nov (tarde)** — `tenant_34` smoke test completo |
-| Fix DT-Fase C-1 (`total_anulaciones`) | ✅ `1ef3579` — validado con `tenant_34` |
-| Fix DT-Fase E-3 (`HistorialInventario` producto) | ✅ `9b71016` — validado con `tenant_34` |
-| **Fix DT-Fase B-1 (`_test_tenant_schema.py`)** | ✅ **`15bc439`** — test ORM ↔ BD, validado en `tenant_1`, `tenant_27`, `tenant_34` |
-| **DT-Fase E-4 (MP cantidades)** | ✅ **13 Nov** — no reproducido, la fórmula es correcta |
-| **Bug A (`producto_externo_id` NULL)** | ✅ **NO reproducido** en `tenant_34` (cierra nota del 5 Nov) |
-| **Bug B (rotación <7d → "—")** | ✅ Validado en `tenant_34` |
-| **Anulación POS** | ✅ Validado end-to-end (venta → anulada → stock revertido → reporte excluye) |
-| Demo | ✅ `admin_27` / `demo2026` |
-| Tenants productivos | `tenant_1` + `tenant_27` |
-| Tenants de pruebas | `tenant_31` (diagnóstico) + `tenant_34` (virgen, Fase E) |
-| DT críticas abiertas | **0** |
-| DT medias abiertas | **0** |
-| DT bajas abiertas | **~23:** 5 Fase E nuevas (E-1, E-2, E-5, E-6 + `docs/ESTRUCTURA_TENANT.md`) + 15 Fase B/C + 4 preexistentes - 1 (B-1 cerrada) |
-| Siguiente tarea | **Fase F — docs + limpieza** (B-2, B-3, B-4, DTs BAJAS, `docs/ESTRUCTURA_TENANT.md`, limpieza legacy) |
-| Fase actual | **Fase F** (A-E cerradas, B-1 y E-4 cerradas el 13 Nov) |
-| Dockerización | Fase G, ~22-32 h (post Fase F) |
-| Working tree | B-1 commiteado (`15bc439`), docs de Fase F pendientes de commit |
-
-### Próximos pasos de Fase F
-
-1. **DT-Fase B-2:** `consecutivos_pos` con `CREATE TABLE` duplicado x3 (app.py:2640, 2868, 2943). ~15 min.
-2. **DT-Fase B-3, B-4:** `db.create_all()` asimétrico, `crear_tenant_saas()` no atómico. ~1-2 h.
-3. **11 DTs BAJAS de Fase C:** columnas muertas, `sucursal_id` legacy, `panaderias.panaderia_id`, etc. ~3-4 h.
-4. **DT-Fase E-1, E-2, E-5, E-6:** validar `total_anulaciones` post-medianoche, `configuracion_sistema`, modelo vs BD, mojibake. ~2 h.
-5. **`docs/ESTRUCTURA_TENANT.md`:** documento canónico. ~2 h.
-6. **Limpieza legacy:** `sucursales`, `seed_demo_history`, columnas legacy en `tenant_1`. ~1-2 h.
-7. **Commit final de Fase F** (docs + `_test_tenant_schema.py` ya commiteado).
-
+1️⃣1️⃣ Estado actual (resumen ejecutivo)
+Aspecto	Estado
+Último commit	99bb28f en origin/main (pusheado)
+Módulos	11/11 completos (100%)
+Fase A (auditoría modelos)	✅ 12 Nov — 43 modelos ↔ 42 tablas, cero huérfanos
+Fase B (auditoría app.py)	✅ 12 Nov — 229 queries raw clasificadas, 0 huérfanas
+Fase C (auditoría BD)	✅ 12 Nov — DT-Fase C-1 resuelta + 12 DTs BAJAS anotadas
+Fase E (tenant virgen)	✅ 12 Nov (tarde) — tenant_34 smoke test completo
+Fase F (parte 1)	✅ 13 Nov — 7 DTs cerradas (B-1, B-2, B-3, B-4, E-1, E-2, E-4)
+Fix DT-Fase C-1 (total_anulaciones)	✅ 1ef3579
+Fix DT-Fase E-3 (HistorialInventario producto)	✅ 9b71016
+Fix DT-Fase B-1 (_test_tenant_schema.py)	✅ 15bc439
+Fix DT-Fase B-2/B-3 (DDL + auto-reparación)	✅ 6905d84
+Fix DT-Fase B-4 (_cleanup_tenants_huerfanos.py)	✅ 9ad0030
+Fix DT-Fase E-1 (cierre diario legacy)	✅ 99bb28f
+Bug A (producto_externo_id NULL)	✅ NO reproducido en tenant_34 (cerrado)
+Bug B (rotación <7d → "—")	✅ Validado en tenant_34
+Anulación POS	✅ Validado end-to-end (venta → anulada → stock revertido → reporte excluye)
+Demo	✅ admin_27 / demo2026
+Tenants productivos	tenant_1 + tenant_27
+Tenants de pruebas	tenant_31 + tenant_34
+DT críticas abiertas	0
+DT medias abiertas	0
+DT bajas abiertas	~18: C-2 a C-8, unificar-naming, E-5, E-6, F2.6, unificar-productos-populares, unificar-prefijos-int-ext, formato-es-CO, F-BAK (39 archivos .bak)
+Siguiente tarea	Fase F (parte 2): DTs BAJAS de Fase C (C-2 a C-8) + docs/ESTRUCTURA_TENANT.md
+Fase actual	Fase F (parte 1 cerrada, parte 2 pendiente)
+Dockerización	Fase G, ~22-32 h (post Fase F parte 2)
+Working tree	limpio (post commit 99bb28f)
+▼▼▼ SECCIÓN 12: CÓMO CONTINUAR EN CHAT NUEVO ▼▼▼
 
 📞 Cómo continuar en un chat nuevo
 Pegar este archivo como contexto inicial con esta instrucción:
 
-"Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el HANDOFF.md v9.18 con el contexto actual (el histórico está en HANDOFF_v9.5.md, bitácoras en bitacora/, tenants de prueba en bitacora/tenants_prueba.md). Por favor actúa como instructor guiando paso a paso, con la metodología del HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/PowerShell Select-String, commit tras cada fix verificado. Al insertar bloques, muéstrame ANTES → DESPUÉS con número de línea exacto. Tú me das LUZ VERDE cuando los cambios estén 100% validados. Yo aplico los cambios en mi editor. Primera tarea: Fase E (tenant virgen) usando tenant_34. Smoke test completo: login → POS → venta → cierre → reporte → PDF. Verificar Bug A (producto_externo_id NULL en primer día del tenant). Empieza con diagnóstico del estado actual de tenant_34."
+"Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el HANDOFF.md v9.20 con el contexto actual. Por favor actúa como instructor guiando paso a paso, con la metodología del HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/PowerShell Select-String, commit tras cada fix verificado. Al insertar bloques, muéstrame ANTES → DESPUÉS con número de línea exacto. Tú me das LUZ VERDE cuando los cambios estén 100% validados. Yo aplico los cambios en mi editor. Primera tarea: Fase F (parte 2). Arrancar por las DTs BAJAS de Fase C (C-2 a C-8: columnas muertas en DDL, sucursales legacy, seed_demo_history). Empieza con diagnóstico del DDL actual de configuracion_produccion, configuracion_sistema, pagos_individuales, panaderias, sucursales, usuarios en crear_tablas_en_orden()."
 
-Orden sugerido post-Fase E: Fase F (12 DTs BAJAS + docs/ESTRUCTURA_TENANT.md) → Fase G (Dockerización).
+▼▼▼ SECCIÓN 13: ROADMAP A PRODUCCIÓN ▼▼▼
 
-1️⃣2️⃣ Roadmap a Producción (Nota personal de Mauricio)
-Objetivo: lanzar PanaderíaPro a producción en enero 2027 (inicio de mes).
-Modalidad: trabajo solo, part-time (~10-15 h/semana).
-Ventana: 8 semanas (5 Nov 2026 → 1 Ene 2027), ~80-120 h disponibles.
+1️⃣2️⃣ Roadmap a Producción
+Objetivo: lanzar PanaderíaPro a producción en enero 2027.
+Modalidad: part-time (~10-15 h/semana).
 
-Estado actual (12 Nov 2026)
+Estado actual (13 Nov 2026)
 Aspecto	% Listo
 Funcionalidad (features)	~92%
-Producción-ready (infra)	~30% (Fases A+B+C cerradas, sube de 25%)
-Deuda técnica	✅ 0 DTs críticas, 0 medias (excepto DT-Fase B-1 estructural), 15 BAJAS cosméticas
-Bloqueantes críticos	5 (bajó de 6)
-Estimación total	~36-52 h (4-6 jornadas de 8 h)
-Cronograma propuesto (8 semanas part-time)
-Semana	Foco	Estimación	Entregable
-1 (5-11 Nov)	✅ CERRADA: Commit 2 + DTs de Fase D (CRÍTICA-2 + F2.5 + cierre jornada + JS huérfano)	~12-14 h	Fase D 100% terminada.
-2 (12-18 Nov)	✅ CERRADA: Fases A + B + C (auditorías ORM ↔ BD ↔ modelo)	~6 h	DT-Fase C-1 resuelta (1ef3579). 12 DTs BAJAS anotadas. tenant_34 creado.
-3 (19-25 Nov)	Fase E (tenant virgen) + verificar Bug A	~2 h	Smoke test completo en tenant_34 (login → POS → venta → cierre → reporte → PDF) OK.
-4 (26-2 Dic)	Fase F (12 DTs BAJAS + docs/ESTRUCTURA_TENANT.md + limpieza)	~6-8 h	docs/ESTRUCTURA_TENANT.md completo, código huérfano eliminado, DDL limpiado.
-5 (3-9 Dic)	Fase G: Dockerfile + docker-compose.yml + .env.example completo	~8-12 h	Stack dockerizado local (Flask + PostgreSQL + Nginx).
-6 (10-16 Dic)	Fase G: WSGI production (gunicorn/waitress) + SSL + Nginx reverse proxy	~6-8 h	Deploy reproducible en VPS local.
-7 (17-23 Dic)	Fase G: Backup automático + logging a stdout + /health + monitoreo básico	~6-8 h	Observabilidad mínima operativa.
-8 (24-30 Dic)	Fase G: Deploy a VPS real + hardening + documentación + smoke test producción	~8-10 h	Producción lista (o casi).
-31 Dic - 1 Ene	Buffer (imprevistos) + capacitación usuarios	~4-6 h	Lanzamiento.
-Total estimado: ~52-72 h + buffer. Realista con tu plan.
-
-Prioridades (si algo se atrasa)
+Producción-ready (infra)	~35% (Fases A-E cerradas, sube de 30%)
+Deuda técnica	✅ 0 DTs críticas, 0 medias, ~18 BAJAS
+Bloqueantes críticos	4 (bajó de 5)
+Estimación total	~30-45 h (4-6 jornadas de 8 h)
+Cronograma propuesto
+Semana	Foco	Estado
+1 (5-11 Nov)	✅ CERRADA: Commit 2 + DTs de Fase D	✅
+2 (12-18 Nov)	✅ CERRADA: Fases A + B + C + E + Fase F parte 1	✅
+3 (19-25 Nov)	Fase F (parte 2): DTs BAJAS de Fase C + docs/ESTRUCTURA_TENANT.md	🟡 Próxima
+4 (26-2 Dic)	Fase G: Dockerfile + docker-compose.yml + .env.example	⏸️
+5 (3-9 Dic)	Fase G: WSGI production + SSL + Nginx	⏸️
+6 (10-16 Dic)	Fase G: Backup automático + /health + logging	⏸️
+7 (17-23 Dic)	Fase G: Deploy a VPS real + hardening	⏸️
+8 (24-30 Dic)	Fase G: Smoke test producción + docs	⏸️
+31 Dic - 1 Ene	Buffer + lanzamiento	⏸️
+Prioridades
 P0 (sin esto no hay producción):
 
-✅ Fases A + B + C (auditorías ORM ↔ BD). Cerradas 12 Nov.
+✅ Fases A + B + C (auditorías). Cerradas.
 
-Fase E (tenant virgen + Bug A).
+✅ Fase E (tenant virgen + Bug A). Cerrada.
 
-Docker + WSGI + SSL.
+🟡 Fase F parte 2 (DTs BAJAS). Pendiente.
 
-Backup automático.
+☐ Docker + WSGI + SSL.
 
-/health endpoint.
+☐ Backup automático.
 
-Variables de entorno producción.
+☐ /health endpoint.
 
-P1 (importante pero puede esperar 1-2 semanas post-lanzamiento):
+P1 (post-lanzamiento 1-2 semanas):
 
 CI/CD (GitHub Actions).
 
@@ -503,7 +482,7 @@ Rate limiting.
 
 Tests automatizados (pytest).
 
-P2 (deseables, post-lanzamiento):
+P2 (deseables):
 
 i18n de diccionarios Python.
 
@@ -513,93 +492,53 @@ Dashboard de admin.
 
 Rotación automática de contraseñas.
 
-Riesgos identificados
-✅ CRÍTICA-2 RESUELTA (11 Nov noche, d32a7f3). Schemas alineados, crear_tenant_saas()/middleware_saas() alineados, BD saneada.
-
-✅ Fases A/B/C completadas (12 Nov). No se encontraron tablas huérfanas ni queries a columnas inexistentes. DT-Fase C-1 resuelta.
-
-Bug A (caché producto_externo_id): verificar en Fase E con tenant_34. Si se reproduce, escalar a CRÍTICA-5 y fixear en el mismo commit (regla #13).
-
-tenant_27 (demo) tiene datos inconsistentes por ser demo. Se resuelve en Fase F (o se migra a demo nueva).
-
-Sin tests automatizados: la validación es manual (screenshots + PDFs). Post-lanzamiento, agregar pytest con 20-30 tests de humo.
-
-Lógica <7 días en reportes: cada tenant nuevo va a ver — en rotación hasta los 7 días. Documentar en onboarding.
-
-Decisiones pendientes (para antes del deploy)
-Proveedor de VPS: Hetzner (€5/mes) vs DigitalOcean ($6/mes) vs AWS Lightsail ($5/mes). Recomendación: Hetzner CX22 (mejor relación precio/rendimiento en Europa) o DigitalOcean (más amigable, más datacenters).
-
-Dominio: ¿ya tenés? (ej. panaderiapro.com). ¿Usarás subdominios por tenant (cliente1.panaderiapro.com)?
-
-SSL: Let's Encrypt (gratis, auto-renovable).
-
-Backup: pg_dump diario + retención 7 días + copia semanal a almacenamiento externo (S3, Backblaze).
-
-tenant_27 (demo): ¿se migra a la nube o se crea una demo nueva con datos reales?
-
-Precio final de licencias: Premium 
-X
-C
-O
-P
-/
-m
-e
-s
-,
-B
-a
-ˊ
-s
-i
-c
-a
-XCOP/mes,B 
-a
-ˊ
- sicaY COP/mes.
-
 Criterios de "listo para producción"
-☑ Los 3 tenants productivos + tenants de prueba tienen schema correcto (tenant_{id}) + base_datos alineado. ✅ (11 Nov)
+☑ Tenants con schema correcto (tenant_{id}). ✅ (11 Nov)
 
-☑ Fases A/B/C completadas (auditorías ORM ↔ BD ↔ modelo). ✅ (12 Nov)
+☑ Fases A/B/C completadas. ✅ (12 Nov)
 
-☐ Fase E OK (tenant virgen funcional end-to-end).
+☑ Fase E OK. ✅ (12 Nov)
 
-☐ docker-compose up levanta el stack local sin errores.
+☐ Fase F parte 2 OK (DTs BAJAS cerradas).
 
-☐ HTTPS funciona con certificado válido.
+☐ docker-compose up levanta sin errores.
+
+☐ HTTPS funciona.
 
 ☐ /health responde 200 OK.
 
-☐ Backup automático corriendo (verificar restaurando 1 backup).
+☐ Backup automático corriendo.
 
-☐ Logs van a stdout + rotación.
+☐ Logs a stdout + rotación.
 
-☐ Smoke test de producción: login → POS → venta → cierre → reporte → PDF.
+☐ Smoke test de producción OK.
 
-☐ dev_master + 2 tenants productivos creados.
+☐ dev_master + 2 tenants productivos.
 
 ☐ Documentación de deploy en docs/DEPLOY.md.
 
 ☐ Rollback plan documentado.
 
-Notas personales
-✅ Fase D cerrada el 11 Nov (noche). ✅ Fases A+B+C cerradas el 12 Nov. No dockerizar hasta completar Fase E.
+Decisiones pendientes
+Proveedor de VPS (Hetzner, DigitalOcean, AWS Lightsail).
 
-✅ CRÍTICA-2 resuelta (era el mayor bloqueante transversal). ✅ DT-Fase C-1 resuelta.
+Dominio y subdominios por tenant.
 
-Cada semana, actualizar este roadmap con lo hecho + lo pendiente.
+SSL (Let's Encrypt).
 
-Si algo se atrasa, priorizar P0 sobre P1 y P2.
+Backup (pg_dump diario + retención + copia externa).
 
-El lanzamiento es "soft launch" (2-3 clientes beta) antes de marketing masivo.
+tenant_27 (demo): migrar a la nube o demo nueva.
+
+Precio final de licencias.
+
+▼▼▼ RECOMENDACIÓN PARA NO ATRASARTE ▼▼▼
 
 🎯 Recomendación para no atrasarte
-Semana 3 (Fase E): si Bug A se reproduce, fixealo en el mismo commit (regla #13). Si no se reproduce, anotalo como "no reproducido" y seguí. tenant_34 es el tenant ideal: virgen, 42 tablas, 55 columnas, admin funcional.
+Fase F parte 2: priorizá C-2 a C-6 (limpieza del DDL) en un solo commit. C-7 y C-8 son limpieza de datos, se pueden agrupar en otro commit. docs/ESTRUCTURA_TENANT.md puede esperar a que termines las DTs.
 
-Semana 4 (Fase F): usala para las 15 DTs BAJAS + docs/ESTRUCTURA_TENANT.md. No metas código nuevo acá. Priorizá: DT-Fase B-1 (test de verificación de tenants) > unificar-productos-populares > el resto.
+Fase G (Docker): empezá por el docker-compose.yml más simple (Flask + Postgres). Después agregá Nginx + SSL. No intentes hacer todo perfecto el día 1.
 
-Semanas 5-8 (Docker): empezá por el docker-compose.yml más simple posible (Flask + Postgres), después agregá Nginx + SSL. No intentes hacer todo perfecto el día 1.
+No acumules .bak: agregá *.bak* a .gitignore antes de empezar Fase G.
 
-Fin del HANDOFF.md — v9.19
+Fin del HANDOFF.md — v9.20
