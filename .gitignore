@@ -105,3 +105,5 @@ _*.md
 _audit_resultado.txt
 _test_*.py
 !_test_tenant_schema.py
+!_migrar_tenants.py
+!db/schema_tenant_canonical.sql

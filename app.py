@@ -107,14 +107,13 @@ def crear_tablas_en_orden(schema_name):
     # =============================================
     # 5. consecutivos_pos (depende de panaderias)
     # =============================================
-    db.session.execute(text(f'''
-        CREATE TABLE IF NOT EXISTS {schema_name}.consecutivos_pos (
-            id SERIAL PRIMARY KEY,
-            panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),
-            numero_actual INTEGER DEFAULT 0,
-            updated_at TIMESTAMP DEFAULT NOW()
-        )
-    '''))
+    # Lee el DDL desde db/schema_tenant_canonical.sql (fuente única de verdad).
+    # Reemplaza {schema_name} por el schema real.
+    _ruta_sql = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'db', 'schema_tenant_canonical.sql')
+    with open(_ruta_sql, 'r', encoding='utf-8') as f:
+        _ddl_canonico = f.read()
+    _ddl_canonico = _ddl_canonico.replace('{schema_name}', schema_name)
+    db.session.execute(text(_ddl_canonico))
     
     # =============================================
     # 6. sucursal (depende de panaderias)
@@ -2634,18 +2633,13 @@ def obtener_consecutivo_pos():
             {"schema": schema_name}
         ).scalar()
         
-        # 3. Crear tabla si no existe
+        # 3. Verificar tabla (fuente de verdad: db/schema_tenant_canonical.sql)
+        #    La tabla DEBE existir (crear_tenant_saas() la crea). Si no existe,
+        #    es un error de infraestructura: NO se auto-repara en runtime.
         if not check_table:
-            logger.info(f"📝 Creando tabla consecutivos_pos en {schema_name}...")
-            db.session.execute(sql_text(f"""
-                CREATE TABLE IF NOT EXISTS {schema_name}.consecutivos_pos (
-                    id SERIAL PRIMARY KEY,
-                    panaderia_id INTEGER NOT NULL,
-                    numero_actual INTEGER DEFAULT 0,
-                    updated_at TIMESTAMP DEFAULT NOW()
-                )
-            """))
-            db.session.commit()
+            logger.error(f"❌ [CONSECUTIVO] Tabla consecutivos_pos no existe en {schema_name}. "
+                         f"Ejecutar crear_tenant_saas() para crearla.")
+            return 1  # Fallback seguro, pero loguea el error
         
         # 4. Obtener el consecutivo actual
         result = db.session.execute(
@@ -2864,22 +2858,13 @@ def api_consecutivo_pos_estado():
         ).scalar()
         
         if not check_table:
-            # Crear tabla si no existe
-            db.session.execute(sql_text(f"""
-                CREATE TABLE IF NOT EXISTS {schema_name}.consecutivos_pos (
-                    id SERIAL PRIMARY KEY,
-                    panaderia_id INTEGER NOT NULL,
-                    numero_actual INTEGER DEFAULT 0,
-                    updated_at TIMESTAMP DEFAULT NOW()
-                )
-            """))
-            db.session.commit()
-            
+            # La tabla DEBE existir (crear_tenant_saas() la crea).
+            # Si no existe, error de infraestructura. NO auto-reparar en runtime.
+            logger.error(f"❌ [CONSECUTIVO-ESTADO] Tabla consecutivos_pos no existe en {schema_name}.")
             return jsonify({
-                'success': True,
-                'numero_actual': 0,
-                'updated_at': None
-            })
+                'success': False,
+                'error': 'La tabla de consecutivos no existe. Ejecutar crear_tenant_saas().'
+            }), 500
         
         # Obtener el consecutivo actual
         result = db.session.execute(
@@ -2939,16 +2924,13 @@ def api_consecutivo_pos_reiniciar():
         ).scalar()
         
         if not check_table:
-            # Crear tabla si no existe
-            db.session.execute(sql_text(f"""
-                CREATE TABLE IF NOT EXISTS {schema_name}.consecutivos_pos (
-                    id SERIAL PRIMARY KEY,
-                    panaderia_id INTEGER NOT NULL,
-                    numero_actual INTEGER DEFAULT 0,
-                    updated_at TIMESTAMP DEFAULT NOW()
-                )
-            """))
-            db.session.commit()
+            # La tabla DEBE existir (crear_tenant_saas() la crea).
+            # Si no existe, error de infraestructura. NO auto-reparar en runtime.
+            logger.error(f"❌ [CONSECUTIVO-REINICIAR] Tabla consecutivos_pos no existe en {schema_name}.")
+            return jsonify({
+                'success': False,
+                'error': 'La tabla de consecutivos no existe. Ejecutar crear_tenant_saas().'
+            }), 500
         
         # Verificar si existe registro
         result = db.session.execute(
@@ -13209,10 +13191,18 @@ def _sincronizar_columnas_tenant(schema_name):
 def inicializar_al_arranque():
     """
     Inicializa todos los tenants activos al arrancar la app.
-    - Crea tablas si no existen
-    - Sincroniza columnas faltantes (ALTER TABLE)
-    - Verifica y crea panadería, configuración, categorías, consecutivo POS
-    Se ejecuta 1 sola vez. Nuevos tenants se inicializan desde crear_tenant_saas().
+
+    Estrategia de esquema (Fase F, 13 Nov 2026):
+    - crear_tenant_saas() crea el schema de un tenant NUEVO (DDL canónico
+      en db/schema_tenant_canonical.sql + _sincronizar_columnas_tenant()
+      como red de seguridad post-creación).
+    - _migrar_tenants.py (script manual) aplica cambios de esquema a tenants
+      EXISTENTES.
+    - El arranque NO modifica esquemas. Solo verifica datos base (panadería,
+      config, categorías, consecutivo POS) y configura search_path.
+    - Si un tenant tiene drift (tabla o columna faltante), _test_tenant_schema.py
+      lo detecta. Es error de infraestructura, no algo que la app deba arreglar
+      sola.
     """
     from sqlalchemy import text
     from models import Tenant
@@ -13232,8 +13222,8 @@ def inicializar_al_arranque():
             
             logger.info(f"📋 Encontrados {len(tenants_activos)} tenants activos")
             
-            total_columnas_agregadas = 0
-            total_errores = 0
+            # (Fase F) Eliminadas total_columnas_agregadas y total_errores:
+            # el arranque ya no sincroniza columnas, solo verifica datos base.
             
             for tenant in tenants_activos:
                 tenant_id = tenant.id
@@ -13252,23 +13242,19 @@ def inicializar_al_arranque():
                     
                     # 2. Configurar search_path
                     set_tenant_schema(tenant_id)
-                    
-                    # 3. Crear tablas si no existen
-                    db.create_all()
-                    
-                    # 4. NUEVO: Sincronizar columnas faltantes
-                    columnas_agregadas, errores = _sincronizar_columnas_tenant(schema_name)
-                    total_columnas_agregadas += columnas_agregadas
-                    total_errores += errores
-                    
-                    # 5. Verificar y crear datos base
+
+                    # 3. NO crear tablas ni sincronizar columnas en runtime.
+                    #    El esquema debe ser creado por crear_tenant_saas() (DDL
+                    #    canónico en db/schema_tenant_canonical.sql) y actualizado
+                    #    por scripts de migración versionados.
+                    #    _test_tenant_schema.py detecta drift. Ver
+                    #    _migrar_tenants.py para migraciones manuales.
+
+                    # 4. Verificar y crear datos base (lógica de negocio, no de esquema)
                     verificar_y_crear_datos_tenant(tenant_id)
-                    
-                    # Imprimir resultado del tenant
-                    if columnas_agregadas > 0:
-                        logger.info(f"   ✅ Tenant {tenant_id} ({tenant.nombre}) - {columnas_agregadas} columnas sincronizadas")
-                    else:
-                        logger.info(f"   ✅ Tenant {tenant_id} ({tenant.nombre}) inicializado")
+
+                    # 5. Log de tenant inicializado
+                    logger.info(f"   ✅ Tenant {tenant_id} ({tenant.nombre}) inicializado (schema no auto-modificado)")
                     
                 except Exception as e:
                     logger.error(f"   ❌ Error inicializando tenant {tenant_id}: {e}")
@@ -13277,9 +13263,7 @@ def inicializar_al_arranque():
             
             logger.info("=" * 60)
             logger.info(f"✅ INICIALIZACIÓN COMPLETA")
-            logger.info(f"   📊 Columnas agregadas: {total_columnas_agregadas}")
-            if total_errores > 0:
-                logger.warning(f"   ⚠️ Errores: {total_errores}")
+            logger.info(f"   📊 Tenants procesados: {len(tenants_activos)}")
             logger.info("=" * 60)
             
         except Exception as e:

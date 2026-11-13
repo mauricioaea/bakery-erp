@@ -1048,5 +1048,84 @@ text
 - **Bug `HistorialInventario` producto:** ✅ **Fixeado y validado** (`9b71016`).
 - **`tenant_34`:** ✅ vivo para futuras validaciones de Fase E-1 (job nocturno) y Fase F.
 - **Próxima tarea:** **Fase F** (~8-12 h): 6 DTs Fase E (E-1, E-2, E-4, E-5, E-6, menos E-3 que se cerró) + 15 DTs de Fase C/B + `docs/ESTRUCTURA_TENANT.md` + limpieza legacy.
+
+---
+
+## Sesión 13 Nov — Fase F: DT-Fase B-1 cerrada + E-4 analizada (no bug)
+
+**Objetivo:** Arrancar Fase F (docs + limpieza) por las 2 DTs MEDIA: B-1 y E-4.
+
+### DT-Fase B-1 — `_test_tenant_schema.py` (✅ cerrada)
+
+**Commit:** `15bc439`.
+
+**Objetivo:** mitigar el riesgo de que `crear_tenant_saas()` (DDL raw, no `db.create_all()`) no cree una tabla nueva agregada a `models.py`. Si eso pasa, un tenant nuevo nace sin esa tabla y el ORM rompe al usarla.
+
+**Solución:** script de verificación que compara `models.py` (ORM) contra la BD real de un tenant. Reutiliza la lógica de `audit_columns.py` (4 Oct) con 3 mejoras:
+1. Default `tenant_34` (no `tenant_27` de producción).
+2. **Exit code 0/1**: falla si hay columnas del ORM que faltan en BD.
+3. Mensaje final ✅/❌ con conteo de huérfanas.
+
+**Uso:** `python _test_tenant_schema.py [tenant_id]`.
+
+**Validación empírica:**
+
+| Tenant | Tablas OK | Columnas faltantes en BD | Huérfanas en BD | Exit code |
+|---|---|---|---|---|
+| `tenant_1` | 37/42 | **0** | 10 (legacy) | **0** ✅ |
+| `tenant_27` | 37/42 | **0** | 14 (legacy) | **0** ✅ |
+| `tenant_34` | 37/42 | **0** | 14 (legacy) | **0** ✅ |
+
+**Conclusión:** ningún tenant tiene columnas del ORM que falten en BD. El ORM **nunca** va a romper por columna inexistente. Las huérfanas son legacy del DDL actual (DTs-Fase C-2 a C-6), no rompen, se limpian en Fase F.
+
+**Lección aprendida (candidata #19):** antes de `git add` de un archivo con prefijo `_`, verificar `.gitignore`. Si es utilidad permanente (no temporal), agregar excepción `!<archivo>`. `_test_tenant_schema.py` estaba ignorado por `_*.py` (línea 101) y `_test_*.py` (línea 106). Se agregó `!_test_tenant_schema.py` (línea 107).
+
+### DT-Fase E-4 — `_descontar_ingredientes()` cantidades inconsistentes (✅ cerrada como "no reproducido")
+
+**Diagnóstico:** en `tenant_34.historial_inventario` vimos `cantidad_utilizada` con valores 625g, 62.5g, 312.5g y 31.25g para "producciones similares". Parecía bug de cálculo.
+
+**Análisis con datos reales:**
+
+La receta "Agua puratorta" tiene:
+- `unidades_obtenidas = 16` (rinde 16 unidades).
+- Ingrediente base: Agua, `cantidad_gramos = 1000` por lote.
+- Topping: Agua, `cantidad_por_unidad = 100` por unidad.
+
+Las 2 órdenes:
+- Orden 1: `cantidad_producir = 10`.
+- Orden 2: `cantidad_producir = 5`.
+
+**Fórmula del ingrediente base:**
+cantidad_necesaria = (cantidad_gramos / unidades_obtenidas) * cantidad_producir
+= (1000 / 16) * cantidad_producir
+= 62.5 * cantidad_producir
+
+text
+- Orden 1: 62.5 × 10 = **625g** ✅
+- Orden 2: 62.5 × 5 = **312.5g** ✅
+
+**Fórmula del topping:**
+factor_escala = cantidad_producir / unidades_obtenidas
+cantidad_necesaria_topping = topping.cantidad_por_unidad * factor_escala
+= 100 * (cantidad_producir / 16)
+
+text
+- Orden 1: 100 × (10/16) = **62.5g** ✅
+- Orden 2: 100 × (5/16) = **31.25g** ✅
+
+**Veredicto:** **NO es bug.** Las 4 cantidades (625, 62.5, 312.5, 31.25) son **exactamente las correctas** según la fórmula y los datos de la receta. La "inconsistencia" original era un **falso positivo** del análisis inicial de Fase E (mirar `historial_inventario` sin cruzar con `ordenes_produccion` ni distinguir ingrediente base vs topping).
+
+**Lección aprendida:** cuando `cantidad_utilizada` parece "inconsistente", **siempre cruzar con `ordenes_produccion.cantidad_producir` y verificar si hay toppings**. Las proporciones pueden parecer extrañas pero ser matemáticamente correctas.
+
+**Recomendación (no urgente, Fase F):** para futuros smoke tests de producción, usar recetas realistas (ej. "Pan de yema" con varios ingredientes distintos), no recetas de prueba donde el ingrediente base y el topping son la misma MP (confunde el análisis).
+
+**No se tocó código.** DT cerrada como "no reproducido".
+
+### Estado al cierre (13 Nov)
+
+- **Commits de la sesión:** `15bc439` (`_test_tenant_schema.py`). Sin commit de docs (se acumulan para el final de Fase F).
+- **Fase F:** 🟡 en curso. B-1 cerrada. E-4 cerrada como no bug.
+- **Pendientes:** 23 DTs BAJAS (B-2, B-3, B-4, C-2 a C-8, E-1, E-2, E-5, E-6, unificar-naming, 4 preexistentes), `docs/ESTRUCTURA_TENANT.md`, limpieza legacy.
+- **Próxima tarea:** DT-Fase B-2 (`consecutivos_pos` duplicado x3).
 ---
 
