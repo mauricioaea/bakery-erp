@@ -739,6 +739,7 @@ def crear_tablas_en_orden(schema_name):
             moneda VARCHAR(3) DEFAULT 'COP',
             usa_centavos BOOLEAN DEFAULT FALSE,
             simbolo_moneda VARCHAR(5) DEFAULT '$',
+            idioma VARCHAR(5) NOT NULL DEFAULT 'es',
             nombre_sistema VARCHAR(100) DEFAULT 'PanaderíaPro',
             version VARCHAR(20) DEFAULT '1.0.0',
             modo_mantenimiento BOOLEAN DEFAULT FALSE,
