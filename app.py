@@ -22,7 +22,6 @@ def crear_tablas_en_orden(schema_name):
     db.session.execute(text(f'''
         CREATE TABLE IF NOT EXISTS {schema_name}.panaderias (
             id INTEGER PRIMARY KEY,
-            panaderia_id INTEGER NOT NULL DEFAULT 1,
             nombre VARCHAR(100) NOT NULL,
             direccion VARCHAR(200),
             telefono VARCHAR(20),
@@ -707,13 +706,6 @@ def crear_tablas_en_orden(schema_name):
     db.session.execute(text(f'''
         CREATE TABLE IF NOT EXISTS {schema_name}.configuracion_produccion (
             id SERIAL PRIMARY KEY,
-            produccion_automatica BOOLEAN DEFAULT TRUE,
-            alerta_stock_minimo BOOLEAN DEFAULT TRUE,
-            dias_historial_ventas INTEGER DEFAULT 30,
-            inventario_seguridad FLOAT DEFAULT 20,
-            rotacion_recomendada FLOAT DEFAULT 10,
-            vida_util_pan_dias INTEGER DEFAULT 3,
-            activar_alertas BOOLEAN DEFAULT TRUE,
             panaderia_id INTEGER NOT NULL REFERENCES {schema_name}.panaderias(id),
             receta_id INTEGER,
             stock_objetivo INTEGER DEFAULT 50,
