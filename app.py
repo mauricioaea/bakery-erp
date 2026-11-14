@@ -837,19 +837,7 @@ def crear_tablas_en_orden(schema_name):
         ON {schema_name}.activos_fijos(panaderia_id)
     '''))
     
-    db.session.execute(text(f'''
-        CREATE INDEX IF NOT EXISTS idx_ordenes_produccion_panaderia 
-        ON {schema_name}.ordenes_produccion(panaderia_id)
-    '''))
-    
-    db.session.execute(text(f'''
-        
-    '''))
-    
-    db.session.execute(text(f'''
-        CREATE INDEX IF NOT EXISTS idx_materias_primas_proveedor 
-        ON {schema_name}.materias_primas(proveedor_id)
-    '''))
+   
     
     db.session.execute(text(f'''
         CREATE INDEX IF NOT EXISTS idx_receta_ingredientes_receta 
@@ -3873,10 +3861,13 @@ def recibo_pos(venta_id):
         # ✅ OBTENER CONFIGURACIÓN
         config = obtener_configuracion_sistema()
         
-        return render_template('recibo_pos.html', 
-                             venta=venta, 
-                             detalles=detalles, 
-                             config=config)
+        # ✅ Obtener configuración de moneda (símbolo, decimales, usa_centavos)
+        config_moneda = obtener_configuracion_moneda()
+        return render_template('recibo_pos.html',
+                             venta=venta,
+                             detalles=detalles,
+                             config=config,
+                             config_moneda=config_moneda)
                              
     except Exception as e:
         logger.error(f"❌ [RECIBO] Error: {e}")
@@ -6768,11 +6759,14 @@ def imprimir_factura(factura_id):
                                 config=config,
                                 ahora=datetime.now())
         else:
-            # Usar template de recibo POS tradicional
+            
+            # ✅ Obtener configuración de moneda
+            config_moneda = obtener_configuracion_moneda()
             return render_template('recibo_pos.html',
                                 venta=venta,
                                 detalles=detalles,
                                 config=config,
+                                config_moneda=config_moneda,
                                 ahora=datetime.now())
         
     except Exception as e:

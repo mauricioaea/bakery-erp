@@ -201,8 +201,8 @@
                         {% endif %}
                     </td>
                     <td>{{ detalle.cantidad }}</td>
-                    <td>${{ "{:,.0f}".format(detalle.precio_unitario) }}</td>
-                    <td>${{ "{:,.0f}".format(detalle.cantidad * detalle.precio_unitario) }}</td>
+                    <td>{{ config_moneda.simbolo }}{{ ("{:,.%df}" % config_moneda.decimales).format(detalle.precio_unitario) }}</td>
+                    <td>{{ config_moneda.simbolo }}{{ ("{:,.%df}" % config_moneda.decimales).format(detalle.cantidad * detalle.precio_unitario) }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -212,7 +212,7 @@
         <div class="total-section">
             <div style="display: flex; justify-content: space-between;">
                 <span>TOTAL:</span>
-                <span>${{ "{:,.0f}".format(venta.total) }}</span>
+                <span>{{ config_moneda.simbolo }}{{ ("{:,.%df}" % config_moneda.decimales).format(venta.total) }}</span>
             </div>
         </div>
         
