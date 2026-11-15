@@ -1195,5 +1195,100 @@ text
 - **7 DTs cerradas en Fase F:** B-1, B-2, B-3, B-4, E-1, E-2, E-4.
 - **Próximo:** DTs BAJAS de Fase C (C-2 a C-8) + `docs/ESTRUCTURA_TENANT.md` + limpieza legacy (`sucursales`, `seed_demo_history`).
 - **`tenant_34`:** vivo, con 4 ventas (3 completadas + 1 anulada). Sirve para futuros tests.
+  ---
+
+## Sesión 14 Nov — Fase F (parte 2): limpieza DDL + bug recibo POS + moneda
+
+**Commits:** `179fb0b` (8 columnas), `d8f703d` (idioma), `34dbc84` (bloque vacío + recibo POS). Sin commit de docs hasta el final.
+**Objetivo:** continuar Fase F parte 2. Eliminar columnas muertas seguras, arreglar bug de `idioma`, arreglar bug del recibo POS con moneda.
+
+### DT-Fase C-2 + C-5 (parcial) — Limpieza de 8 columnas muertas del DDL (✅ commit `179fb0b`)
+
+**Contexto:** en Fase C se detectaron 15 columnas "huérfanas" (en DDL, no en modelo). **Antes de eliminar, se hizo auditoría de dependencias** (`findstr` en `app.py`, `models.py`, `reportes.py`, `templates/`). **Resultado: solo 8 eran 100% seguras de eliminar.**
+
+**Columnas eliminadas del DDL (app.py) y de los 4 tenants (ALTER TABLE DROP COLUMN):**
+- `configuracion_produccion`: `produccion_automatica`, `alerta_stock_minimo`, `dias_historial_ventas`, `inventario_seguridad`, `rotacion_recomendada`, `vida_util_pan_dias`, `activar_alertas` (7).
+- `panaderias`: `panaderia_id` (auto-referencia, no en modelo, no en código).
+
+**Columnas que NO se tocan (y por qué):**
+- `sucursal_id`: en `multicliente_middleware.py` (línea 15) + `models.py:30`.
+- `proveedor.email`: en `app.py:4085` + `templates/proveedores.html:293` + `models.py:531`. **Es crítico.**
+- `pagos_individuales.usuario_id`: en `models.py:1259` (relationship).
+- `configuracion_sistema` (4 columnas): riesgo de confusión, pendiente investigación.
+- `sucursales.email`: riesgo de confusión con `proveedor.email`.
+
+**Verificado:** `_test_tenant_schema.py 34` → huérfanas bajan de 14 a 6. Las 6 restantes son las que NO se tocan.
+
+**Script SQL:** `migrations/sql/2026-11-14_drop_columnas_seguras.sql`.
+
+### DT-Fase C-3 (parcial) — Agregar `idioma` al DDL de `configuracion_sistema` (✅ commit `d8f703d`)
+
+**Contexto:** el modelo `ConfiguracionSistema` tiene `idioma` (VARCHAR(5) NOT NULL DEFAULT 'es'), pero el DDL de `crear_tablas_en_orden()` NO la creaba. Los tenants existentes la tienen por `_sincronizar_columnas_tenant()` (post-creación en `crear_tenant_saas()`). **Un tenant nuevo nacería sin la columna si `_sincronizar_columnas_tenant()` falla.**
+
+**Fix:**
+- `app.py:742`: agregar `idioma VARCHAR(5) NOT NULL DEFAULT 'es'` al DDL de `configuracion_sistema`.
+- `migrations/sql/2026-11-14_add_idioma.sql`: `ALTER TABLE ... ADD COLUMN IF NOT EXISTS idioma VARCHAR(5) NOT NULL DEFAULT 'es'` en los 4 tenants.
+
+**Validado:** smoke test de idioma (cambiar `es` → `en` → `pap` → `es`) → el menú de reportes se traduce parcialmente.
+
+**Descubrimiento importante:** el `locale_selector` de Flask-Babel YA ESTÁ configurado (`app.py:1299`, parámetro `locale_selector=_get_locale`). **La lógica de idioma funciona.** **El problema son las traducciones incompletas (ver DT-Fase F-I18N abajo).**
+
+### Bug preexistente — Bloque `db.session.execute` vacío en `crear_tablas_en_orden` (✅ commit `34dbc84`)
+
+**Contexto:** al crear `tenant_36` (14 Nov), falló con `can't execute an empty query`. **El log mostró que en `app.py:845` había un `db.session.execute(text(f'''\n        \n    '''))` vacío (sin SQL).** **PostgreSQL rechaza "empty query".** **Un tenant nuevo fallaba al crearse.**
+
+**Bug preexistente:** no es del commit `179fb0b`. **Estaba ahí desde una sesión anterior** (alguien eliminó un `CREATE INDEX` completo y dejó el `db.session.execute` vacío).
+
+**Fix:** eliminar el bloque vacío en `app.py:844-846`.
+
+**Validado:** `tenant_37` creado exitosamente (54 columnas, `admin_37` login OK).
+
+### Bug del recibo POS — Moneda dinámica (✅ commit `34dbc84`)
+
+**Contexto:** en el test de moneda (cambiar `moneda='ANG'`, `usa_centavos=true`), el POS mostraba `ƒ1,25` correctamente, pero **el recibo POS mostraba `$1`** (símbolo hardcodeado, 0 decimales).
+
+**Causa:** `templates/recibo_pos.html:204-215` usaba `"${{ "{:,.0f}".format(...) }}"` (símbolo `$` hardcodeado, formato `0f` = 0 decimales).
+
+**Fix:**
+- `templates/recibo_pos.html`: usar `config_moneda.simbolo` y `config_moneda.decimales` (de `obtener_configuracion_moneda()`).
+- `app.py:3865` y `app.py:6764`: ya pasaban `config_moneda=config_moneda` al template (fix aplicado en sesión).
+
+**Validado:** `tenant_37` (premium, `moneda='ANG'`, `usa_centavos=true`) → venta `ƒ1.25` → recibo `ƒ1,25` (con decimales). ✅
+
+### Test de moneda con decimales (florín) — ✅ exitoso
+
+**Tenant:** `tenant_37` (premium, borrado al final).
+**Configuración:** `idioma='pap'`, `moneda='ANG'`, `usa_centavos=true`, `simbolo_moneda='ƒ'`.
+**Producto:** "jugo hit mora", precio `ƒ1.25`.
+**Venta:** registrada OK (`Total: $1.25`).
+**Recibo:** `ƒ1,25` (con decimales). ✅
+**POS:** calculadora de cambio acepta decimales (`2` → cambio `ƒ0.75`). ✅
+
+**Conclusión: la lógica de moneda con decimales funciona end-to-end.**
+
+### DTs nuevas / pendientes (para HANDOFF)
+
+| ID | Descripción | Prioridad |
+|---|---|---|
+| **DT-Fase F-I18N** | Strings sin `_()` en `reportes.html` (líneas 189, 191, 297). Traducciones incompletas en `.po` de `en`/`pap`. | 🟡 Media |
+| **DT-Fase F-C3-resto** | 4 columnas muertas en `configuracion_sistema` (`nombre_sistema`, `version`, `modo_mantenimiento`, `ultima_actualizacion`). No se tocan (riesgo). | 🟢 Baja |
+| **DT-Fase F-C4** | `pagos_individuales.usuario_id` (en `models.py:1259`). No se toca. | 🟢 Baja |
+| **DT-Fase F-C6** | `sucursales.email` (no se usa, pero riesgo de confusión con `proveedor.email`). No se toca. | 🟢 Baja |
+| **DT-Fase F-BAK** | ~39 archivos `.bak` en el working tree. Limpieza en Fase G. | 🟢 Baja |
+| **DT-Fase G-Responsive** | Auditoría de responsividad en todos los módulos del frontend (POS, Dashboard, Reportes, etc.). Bloqueante para producción. | 🟡 Media |
+
+### Lecciones aprendidas
+
+- **Siempre verificar dependencias antes de eliminar columnas.** El `findstr` en `app.py`, `models.py`, `reportes.py` y `templates/` evitó romper `proveedor.email`, `sucursal_id` y `pagos_individuales.usuario_id`.
+- **Los bugs preexistentes (bloque vacío, moneda hardcodeada) no son de un commit reciente.** **Pueden estar ahí desde hace tiempo.** **El smoke test de tenant nuevo los destapa.**
+- **El test de moneda con decimales funciona** (florín, `ƒ1,25`). **La lógica de multi-país está OK.**
+
+### Estado al cierre
+
+- **Commits de la sesión:** `179fb0b`, `d8f703d`, `34dbc84`.
+- **Working tree clean.**
+- **Tenants: 1, 27, 31, 34.** (`tenant_37` borrado).
+- **Fase F parte 2:** parcialmente cerrada. 3 DTs cerradas (C-2 parcial, C-5, C-3 parcial). 6 DTs nuevas pendientes.
+- **Próximo:** `docs/ESTRUCTURA_TENANT.md` + DT-Fase F-I18N + DT-Fase G-Responsive.
 ---
 
