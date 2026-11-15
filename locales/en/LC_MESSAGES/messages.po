@@ -2061,15 +2061,15 @@ msgstr "PREDICTIVE ANALYSIS WITH ARTIFICIAL INTELLIGENCE"
 
 #: templates/analisis_predictivo.html:663
 msgid "Alertas Altas"
-msgstr "Real Sales"
+msgstr "High Alerts"
 
 #: templates/analisis_predictivo.html:663
 msgid "Alertas Medias"
-msgstr "Loss Alert:"
+msgstr "Medium Alerts"
 
 #: templates/analisis_predictivo.html:663
 msgid "Alertas Bajas"
-msgstr "Low Risk"
+msgstr "Low Alerts"
 
 #: templates/analisis_predictivo.html:665
 msgid "Cantidad de Alertas"
@@ -2738,6 +2738,22 @@ msgstr "Number of Payments"
 msgid "Gestión Financiera"
 msgstr "Financial Management"
 
+#: templates/reportes.html:189
+msgid "Historial de Pagos"
+msgstr "Payment History"
+
+#: templates/reportes.html:191
+msgid "Pagos a proveedores y gastos"
+msgstr "Supplier and expense payments"
+
+#: templates/reportes.html:192
+msgid ""
+"Consulta detallada de pagos por período, categoría y proveedor. Con "
+"exportación a PDF y Excel."
+msgstr ""
+"Detailed payment consultation by period, category, and supplier. With "
+"export to PDF and Excel."
+
 #: templates/reportes.html:196 templates/reportes.html:213
 msgid "Ver Historial"
 msgstr "View History"
@@ -2800,11 +2816,13 @@ msgstr "Good financial performance"
 msgid ""
 "Combina el Libro Mayor con el Estado de Flujos de Efectivo para análisis "
 "completo de liquidez."
-msgstr "Low Alerts"
+msgstr ""
+"Combines the General Ledger with the Cash Flow Statement for a complete "
+"liquidity analysis."
 
 #: templates/reportes.html:272 templates/reportes.html:702
 msgid "Generar Reporte Consolidado"
-msgstr "ERROR GENERATING AI REPORT"
+msgstr "Generate Consolidated Report"
 
 #: templates/reportes.html:275
 msgid "Completo"

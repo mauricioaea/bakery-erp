@@ -2078,15 +2078,15 @@ msgstr "ANALISIS PREDIKTIVO KU INTELIGENSIA ARTIFISIAL"
 
 #: templates/analisis_predictivo.html:663
 msgid "Alertas Altas"
-msgstr "Benta Real"
+msgstr "Alerta Haltu"
 
 #: templates/analisis_predictivo.html:663
 msgid "Alertas Medias"
-msgstr "Alerta di Perdida:"
+msgstr "Alerta Medio"
 
 #: templates/analisis_predictivo.html:663
 msgid "Alertas Bajas"
-msgstr "Risku Abou"
+msgstr "Alerta Abou"
 
 #: templates/analisis_predictivo.html:665
 msgid "Cantidad de Alertas"
@@ -2613,9 +2613,8 @@ msgstr "No tin aktivo registrá"
 
 #: templates/reporte_activos.html:758
 msgid "Registra algunos activos para ver análisis y estadísticas en este reporte."
-msgstr "Registrá algun aktivo pa mira análisish i estadístikanan den e reportahe aki."
-"Alerta MedioRegistrá algun aktivo pa mira e análisis i estadístikanan den"
-" e reporte aki."
+msgstr ""
+"Registrá algun aktivo pa mira análisish i estadístikanan den e reportahe aki."
 
 #: templates/reporte_activos.html:760
 msgid "Registrar Primer Activo"
@@ -2757,6 +2756,22 @@ msgstr "Kantidat di Pagonan"
 msgid "Gestión Financiera"
 msgstr "Gestion Financiero"
 
+#: templates/reportes.html:189
+msgid "Historial de Pagos"
+msgstr "Historial di Pagamentu"
+
+#: templates/reportes.html:191
+msgid "Pagos a proveedores y gastos"
+msgstr "Pagamentu na proveedornan y gastunan"
+
+#: templates/reportes.html:192
+msgid ""
+"Consulta detallada de pagos por período, categoría y proveedor. Con "
+"exportación a PDF y Excel."
+msgstr ""
+"Consulta detayá di pagamentu pa periodo, categoria y proveedor. Ku "
+"eksportashon na PDF y Excel."
+
 #: templates/reportes.html:196 templates/reportes.html:213
 msgid "Ver Historial"
 msgstr "Wak Historial"
@@ -2773,7 +2788,9 @@ msgstr "HISTORIAL DI DEPOSITONAN BANKARIO"
 msgid ""
 "Consulta de depósitos por período, banco y estado de conciliación. Con "
 "exportación a PDF."
-msgstr "Alerta Abou"
+msgstr ""
+"Consulta di depositonan pa periodo, banco y estado di konsiliashon. Ku "
+"eksportashon na PDF."
 
 #: templates/reportes.html:221 templates/reportes.html:223
 msgid "Historial de Ventas"
@@ -2823,7 +2840,7 @@ msgstr ""
 
 #: templates/reportes.html:272 templates/reportes.html:702
 msgid "Generar Reporte Consolidado"
-msgstr "ERROR NA GENERÁ REPORTE DI IA"
+msgstr "Generá Reporte Konsolidá"
 
 #: templates/reportes.html:275
 msgid "Completo"

@@ -186,10 +186,10 @@
             <div class="reporte-grid">
                 <!-- Historial de Pagos -->
                 <div class="reporte-card movimiento">
-                    <h3>💸 Historial de Pagos</h3>
+                    <h3>💸 {{ _('Historial de Pagos') }}</h3>
                     <p>
-                        <strong>Pagos a proveedores y gastos</strong><br>
-                        Consulta detallada de pagos por período, categoría y proveedor. Con exportación a PDF y Excel.
+                        <strong>{{ _('Pagos a proveedores y gastos') }}</strong><br>
+                        {{ _('Consulta detallada de pagos por período, categoría y proveedor. Con exportación a PDF y Excel.') }}
                     </p>
                     <div class="acciones">
                         <a href="{{ url_for('historial_pagos') }}" class="btn btn-warning btn-sm">
@@ -201,7 +201,6 @@
                     </div>
                 </div>
 
-                <!-- {{ _('Historial de Depósitos') }} -->
                 <div class="reporte-card movimiento">
                     <h3>🏦 {{ _('Historial de Depósitos') }}</h3>
                     <p>
@@ -218,7 +217,6 @@
                     </div>
                 </div>
 
-                <!-- {{ _('Historial de Ventas') }} -->
                 <div class="reporte-card movimiento">
                     <h3>🛒 {{ _('Historial de Ventas') }}</h3>
                     <p>
@@ -227,12 +225,11 @@
                     </p>
                     <div class="acciones">
                         <a href="{{ url_for('reporte_ventas_periodo') }}" class="btn btn-warning btn-sm">
-                            📊 Ver Reporte
+                            📊 {{ _('Ver Reporte') }}
                         </a>
                     </div>
                 </div> <!-- ✅ CERRE EL DIV DE LA TARJETA -->
 
-                <!-- {{ _('Cierre de Caja') }} -->
                 <div class="reporte-card movimiento">
                     <h3>💼 {{ _('Cierre de Caja') }}</h3>
                     <p>
@@ -241,7 +238,7 @@
                     </p>
                     <div class="acciones">
                     <a href="{{ url_for('reporte_cierre_caja') }}" target="_blank" class="btn btn-warning btn-sm">
-                        📄 Ver Reporte
+                        📄 {{ _('Ver Reporte') }}
                     </a>
                     </div>
                 </div>
@@ -260,7 +257,6 @@
             <p class="text-muted mb-3">{{ _('Documentos formales para presentación ante contador y autoridades fiscales') }}</p>
 
             <div class="reporte-grid">
-                <!-- {{ _('Reporte Unificado de Tesorería') }} -->
                 <div class="reporte-card unificado">
                     <h3>📋 {{ _('Reporte Unificado de Tesorería') }}</h3>
                     <p>
@@ -278,7 +274,6 @@
                     </div>
                 </div>
 
-                <!-- {{ _('Estado de Resultados') }} -->
                 <div class="reporte-card contable">
                     <h3>📈 {{ _('Estado de Resultados') }}</h3>
                     <p>
@@ -294,7 +289,7 @@
 
                 <!-- Conciliación Bancaria -->
                 <div class="reporte-card contable">
-                    <h3>🏦 Conciliación Bancaria</h3>
+                    <h3>🏦 {{ _('Conciliación Bancaria') }}</h3>
                     <p>
                         <strong>{{ _('Conciliación de Saldos') }}</strong><br>
                         {{ _('Compara saldos del sistema con extractos bancarios. Esencial para auditorías.') }}
@@ -306,7 +301,6 @@
                     </div>
                 </div>
 
-                <!-- {{ _('Análisis de Gastos') }} -->
                 <div class="reporte-card contable">
                     <h3>📊 {{ _('Análisis de Gastos') }}</h3>
                     <p>
@@ -315,7 +309,7 @@
                     </p>
                     <div class="acciones">
                         <button class="btn btn-primary btn-sm" onclick="generarReporte('analisis_gastos')">
-                            📥 Descargar PDF
+                            📥 {{ _('Descargar PDF') }}
                         </button>
                     </div>
                 </div>
@@ -334,7 +328,6 @@
             <p class="text-muted mb-3">{{ _('Reportes operativos y de análisis para optimización del negocio') }}</p>
 
             <div class="reporte-grid">
-                <!-- {{ _('Productos Populares') }} -->
                 <div class="reporte-card gerencial">
                     <h3>🏆 {{ _('Productos Populares') }}</h3>
                     <p>
@@ -343,7 +336,7 @@
                     </p>
                     <div class="acciones">
                         <a href="{{ url_for('reporte_productos_populares') }}" class="btn btn-success btn-sm">
-                            📊 Ver Reporte
+                            📊 {{ _('Ver Reporte') }}
                         </a>
                         <div>
                             <span class="badge-reporte bg-nuevo">NUEVO</span>
@@ -351,7 +344,6 @@
                     </div>
                 </div>
 
-                <!-- {{ _('Producción Diaria') }} -->
                 <div class="reporte-card gerencial">
                     <h3>🏭 {{ _('Producción Diaria') }}</h3>
                     <p>
@@ -360,7 +352,7 @@
                     </p>
                     <div class="acciones">
                         <a href="{{ url_for('reporte_produccion_diaria') }}" class="btn btn-success btn-sm">
-                            📄 Ver Reporte
+                            📄 {{ _('Ver Reporte') }}
                         </a>
                         <div>
                             <span class="badge-reporte bg-nuevo">NUEVO</span>
@@ -368,7 +360,6 @@
                     </div>
                 </div>
 
-                <!-- {{ _('Inventario Externo') }} -->
                 <div class="reporte-card gerencial">
                     <h3>📦 {{ _('Inventario Externo') }}</h3>
                     <p>
@@ -377,7 +368,7 @@
                     </p>
                     <div class="acciones">
                         <a href="{{ url_for('reporte_inventario_externo') }}" class="btn btn-success btn-sm">
-                            📊 Ver Reporte
+                            📊 {{ _('Ver Reporte') }}
                         </a>
                         <div>
                             <span class="badge-reporte bg-nuevo">NUEVO</span>
@@ -394,7 +385,7 @@
                     </p>
                     <div class="acciones">
                         <a href="{{ url_for('reporte_ventas_externas') }}" class="btn btn-success btn-sm">
-                            📊 Ver Reporte
+                            📊 {{ _('Ver Reporte') }}
                         </a>
                         <div>
                             <span class="badge-reporte bg-nuevo">NUEVO</span>
@@ -403,7 +394,6 @@
                     </div>
                 </div>
 
-                <!-- {{ _('Activos Fijos') }} -->
                 <div class="reporte-card gerencial">
                     <h3>🏢 {{ _('Activos Fijos') }}</h3>
                     <p>
@@ -412,7 +402,7 @@
                     </p>
                     <div class="acciones">
                         <a href="{{ url_for('reporte_activos') }}" class="btn btn-success btn-sm">
-                            📊 Ver Reporte
+                            📊 {{ _('Ver Reporte') }}
                         </a>
                         <div>
                             <span class="badge-reporte bg-nuevo">NUEVO</span>
@@ -434,7 +424,6 @@
             <p class="text-muted mb-3">{{ _('Análisis inteligentes con Machine Learning y recomendaciones automáticas') }}</p>
 
             <div class="reporte-grid">
-                <!-- {{ _('Reporte Avanzado Ventas + IA') }} -->
                 <div class="reporte-card gerencial">
                     <h3>🚀 {{ _('Reporte Avanzado Ventas + IA') }}</h3>
                     <p>
@@ -453,7 +442,6 @@
                     </div>
                 </div>
 
-                <!-- {{ _('Análisis Predictivo') }} -->
                 <div class="reporte-card gerencial">
                     <h3>🔮 {{ _('Análisis Predictivo') }}</h3>
                     <p>
@@ -462,7 +450,7 @@
                     </p>
                     <div class="acciones">
                         <a href="{{ url_for('reporte_analisis_predictivo') }}" class="btn btn-success btn-sm">
-                            📊 Ver Reporte
+                            📊 {{ _('Ver Reporte') }}
                         </a>
                         <div>
                             <span class="badge-reporte bg-nuevo">NUEVO</span>
@@ -470,7 +458,6 @@
                     </div>
                 </div>
 
-                <!-- {{ _('Tendencia de Ventas') }} -->
                 <div class="reporte-card gerencial">
                     <h3>📈 {{ _('Tendencia de Ventas') }}</h3>
                     <p>
@@ -479,7 +466,7 @@
                     </p>
                     <div class="acciones">
                         <button class="btn btn-success btn-sm" onclick="generarReporte('tendencia_ventas')">
-                            📥 Descargar PDF
+                            📥 {{ _('Descargar PDF') }}
                         </button>
                     </div>
                 </div>
@@ -493,12 +480,11 @@
                     </p>
                     <div class="acciones">
                         <button class="btn btn-success btn-sm" onclick="generarReporte('ia_predictivo')">
-                            📥 Descargar PDF
+                            📥 {{ _('Descargar PDF') }}
                         </button>
                     </div>
                 </div>
 
-                <!-- {{ _('Análisis de Inventarios') }} -->
                 <div class="reporte-card gerencial">
                     <h3>📦 {{ _('Análisis de Inventarios') }}</h3>
                     <p>
@@ -507,7 +493,7 @@
                     </p>
                     <div class="acciones">
                         <button class="btn btn-success btn-sm" onclick="generarReporte('analisis_inventarios')">
-                            📥 Descargar PDF
+                            📥 {{ _('Descargar PDF') }}
                         </button>
                     </div>
                 </div>
@@ -524,7 +510,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">🏦 Conciliación Bancaria</h5>
+                <h5 class="modal-title">🏦 {{ _('Conciliación Bancaria') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ _('Cerrar') }}"></button>
             </div>
             <div class="modal-body">
