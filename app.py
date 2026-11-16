@@ -13389,6 +13389,29 @@ def registrar_baja():
 
 
 # ============================================
+# 🆕 HEALTHCHECK (SaaS) — DT-Fase C-3-resto
+# ============================================
+@app.route('/api/health')
+def health_check():
+    """Endpoint público para verificar estado del sistema (SaaS)."""
+    try:
+        from models import ConfiguracionSistema
+        config = ConfiguracionSistema.query.first()
+        if not config:
+            return jsonify({"status": "error", "message": "No config"}), 500
+        
+        return jsonify({
+            "status": "maintenance" if config.modo_mantenimiento else "ok",
+            "sistema": config.nombre_sistema,
+            "version": config.version,
+            "ultima_actualizacion": config.ultima_actualizacion.isoformat() if config.ultima_actualizacion else None
+        })
+    except Exception as e:
+        logger.exception(f"Error en /api/health: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+# ============================================
 # INICIAR APLICACIÓN
 # ============================================
 if __name__ == '__main__':

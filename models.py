@@ -2479,6 +2479,12 @@ class ConfiguracionSistema(db.Model):
     # 🆕 CONFIGURACIÓN DE IDIOMA (DT-37 - i18n reportes)
     idioma = db.Column(db.String(5), default='es', nullable=False)  # es, en, pt
     
+    # 🆕 SaaS: Control de versión y mantenimiento (DT-Fase C-3-resto)
+    nombre_sistema = db.Column(db.String(100), default='PanaderíaPro')
+    version = db.Column(db.String(20), default='1.9.4')
+    modo_mantenimiento = db.Column(db.Boolean, default=False)
+    ultima_actualizacion = db.Column(db.DateTime, default=datetime.utcnow)
+    
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     def __repr__(self):
