@@ -1346,5 +1346,55 @@ text
 - **Fase F:** ✅ 100% cerrada.
 - **DTs críticas abiertas:** 0. **DTs medias abiertas:** 1 (DT-Fase G-Responsive).
 - **Próxima tarea:** DTs BAJAS de Fase C/E (C-3-resto, C-4, C-6, E-5).
+
+---
+
+## Sesión 16 Nov — DTs BAJAS de Fase C/E (C-3-resto, C-4, C-6, E-5)
+
+**Commits:** `34b449e`. Pusheado a `origin/main`.
+**Objetivo:** Cerrar las DTs BAJAS de Fase C/E pendientes en el HANDOFF.
+
+### Diagnóstico
+
+Se ejecutó `pg_dump` de seguridad (`backup_pre_dts_bajas_16nov.backup`) y un script de diagnóstico (`_diag_dts_bajas.py`) para comparar `models.py` (ORM) contra `tenant_34` (BD real). Resultado:
+
+| Columna | ORM | BD | Veredicto |
+|---|---|---|---|
+| `configuracion_sistema.nombre_sistema` | ❌ | ✅ | Huérfana (basura) |
+| `configuracion_sistema.version` | ❌ | ✅ | Huérfana (basura) |
+| `configuracion_sistema.modo_mantenimiento` | ❌ | ✅ | Huérfana (basura) |
+| `configuracion_sistema.ultima_actualizacion` | ❌ | ✅ | Huérfana (basura) |
+| `pagos_individuales.usuario_id` | ✅ | ✅ | Alineada (falso positivo) |
+| `sucursales.email` | ✅ | ✅ | Alineada (falso positivo) |
+| `historial_inventario.materia_prima_id` | ✅ | ✅ | Alineada (falso positivo) |
+
+### DT-Fase C-3-resto (✅ implementada como feature)
+
+**Decisión de diseño (Mauricio):** en vez de borrar las 4 columnas de `configuracion_sistema`, se decidió mapearlas al ORM y darles un uso real (feature de SaaS: healthcheck y control de versión).
+
+**Cambios:**
+- `models.py`: 4 columnas agregadas a `ConfiguracionSistema` (`nombre_sistema`, `version`, `modo_mantenimiento`, `ultima_actualizacion`).
+- `app.py`: endpoint `GET /api/health` que devuelve JSON con `status`, `sistema`, `version` y `ultima_actualizacion`. Si `modo_mantenimiento=True`, devuelve `"status": "maintenance"`.
+- `migrations/sql/2026-11-16_config_sistema_version.sql`: migración para sincronizar `tenant_1` (tenía 14 columnas vs 18 de los demás) y actualizar valores por defecto a `1.9.4`.
+
+**Verificación:**
+- `_test_tenant_schema.py 34` → las 4 columnas ya no aparecen como huérfanas (bajó de 6 a 2).
+- `GET /api/health` → devuelve `{"status": "ok", "sistema": "PanaderíaPro", "version": "1.9.4", "ultima_actualizacion": "..."}`. ✅
+
+### DT-Fase C-4, C-6, E-5 (✅ cerradas como falso positivo)
+
+- **C-4** (`pagos_individuales.usuario_id`): la columna está declarada en `models.py:1259` (relationship). No es huérfana.
+- **C-6** (`sucursales.email`): la columna está declarada en `models.py` (tabla `Sucursal`). El módulo multi-sucursal es legacy (nunca se implementó), pero la columna está alineada.
+- **E-5** (`historial_inventario.materia_prima_id`): el modelo la mapea y la BD la tiene como `nullable=YES`. Están alineadas. El bug original no se reproduce.
+
+### Reglas nuevas aprendidas
+
+- **#28 (candidata):** `_test_tenant_schema.py` tiene falsos positivos con columnas declaradas como `relationship` o `db.ForeignKey`. Hay que cruzar con `findstr` en `models.py` antes de declarar una columna como "huérfana".
+
+### Estado al cierre
+- **Último commit:** `34b449e`. **Working tree:** limpio.
+- **DTs críticas abiertas:** 0. **DTs medias abiertas:** 1 (DT-Fase G-Responsive).
+- **DTs BAJAS abiertas:** 1 (E-6, mojibake en commits).
+- **Próxima tarea:** DT-Fase G-Responsive (auditoría visual móvil).
 ---
 

@@ -1,7 +1,7 @@
-# 🗂️ CONTEXTO MAESTRO — PanaderíaPro (Bakery ERP) — v9.23
+# 🗂️ CONTEXTO MAESTRO — PanaderíaPro (Bakery ERP) — v9.24
 
-**Última actualización:** 15 de Noviembre, 2026
-**Último commit:** `6ddcc91` (chore: .gitignore _BACKUP_BAKS)
+**Última actualización:** 16 de Noviembre, 2026
+**Último commit:** `34b449e` (feat: healthcheck y control de versión)
 **HANDOFF anterior:** `HANDOFF_v9.5.md` (histórico congelado, ver raíz del proyecto)
 **Bitácoras históricas:** `bitacora/2026-10-sesiones.md`, `bitacora/2026-11-sesiones.md`
 **Tenants de prueba:** `bitacora/tenants_prueba.md` (incluye `tenant_31` y `tenant_34`)
@@ -9,7 +9,7 @@
 ---
 
 ▼▼▼ INICIO DEL BLOQUE DE SESIONES (AQUÍ SE AGREGA LA SESIÓN NUEVA ARRIBA DEL TODO) ▼▼▼
-
+**Sesión 16 Nov:** DTs BAJAS de Fase C/E. C-3-resto: implementada feature de healthcheck (`/api/health`) + mapeo de 4 columnas al ORM. C-4, C-6, E-5: cerradas como falso positivo (columnas ya alineadas ORM ↔ BD). Commit: `34b449e`.
 **Sesión 15 Nov:** Cierre de DT-Fase F-I18N (traducciones cruzadas corregidas a mano), `docs/ESTRUCTURA_TENANT.md` creado (42 tablas), y DT-Fase F-BAK (81 archivos `.bak` movidos a `_BACKUP_BAKS`). Commits: `e2333cc`, `8f7e227`, `6ddcc91`.
 **Sesión 14 Nov:** Fase F (parte 2). 3 DTs cerradas: C-2 parcial (7 columnas muertas), C-5 (panaderia_id), C-3 parcial (idioma en DDL). Bug preexistente (bloque vacío en crear_tablas_en_orden) y bug del recibo POS (moneda hardcodeada) fixeados. Test de moneda con decimales (florín ANG) exitoso. Commits: `179fb0b`, `d8f703d`, `34dbc84`.
 
@@ -48,9 +48,8 @@
 
 ### 📋 Próximos pasos
 
-1. **DTs BAJAS de Fase C/E** (~1-2 h). Resolver `C-3-resto`, `C-4`, `C-6` y `E-5` en un solo commit (con `pg_dump` previo).
-2. **DT-Fase G-Responsive** (🟡 Media). Auditoría de responsividad del frontend (POS, Dashboard, Reportes). Bloqueante para producción (~2-3 h).
-3. **Fase G — Dockerización** (~22-32 h).
+1. **DT-Fase G-Responsive** (🟡 Media). Auditoría de responsividad del frontend (POS, Dashboard, Reportes). Bloqueante para producción (~2-3 h).
+2. **Fase G — Dockerización** (~22-32 h).
 ▲▲▲ FIN DE LA SECCIÓN 1 ▲▲▲
 
 ---
@@ -142,6 +141,7 @@
 ▼▼▼ INICIO DE LA SECCIÓN 6 ▼▼▼
 ## 6️⃣ Últimos commits (AQUÍ SE AGREGA EL COMMIT NUEVO ARRIBA DEL TODO)
 ```text
+34b449e feat(saas): implementar healthcheck y control de versión (DT-Fase C-3-resto)
 6ddcc91 chore(gitignore): agregar _BACKUP_BAKS/ a la lista de ignorados
 8f7e227 docs(fase-f): agregar docs/ESTRUCTURA_TENANT.md
 e2333cc fix(i18n): completar traducciones de tarjetas en reportes.html (en/pap)
@@ -221,13 +221,7 @@ Prioridad	DT	Descripción
 🟡 DTs BAJAS Fase F pendientes (AQUÍ SE AGREGA LO NUEVO DEBAJO)
 Prioridad	DT	Descripción	Estimación
 🟡 Media	DT-Fase G-Responsive	Auditoría de responsividad del frontend (POS, Dashboard, Reportes). Bloqueante para producción.	~2-3 h
-🟢 BAJA	DT-Fase F-C3-resto	4 columnas muertas en configuracion_sistema (nombre_sistema, version, etc.). No se tocan (riesgo).	~30 min
-...
-(eliminar las líneas de DT-Fase F-I18N y DT-Fase F-BAK de esta tabla)
-🟢 BAJA	DT-Fase C-7	5 columnas legacy en tenant_1 (cierres_diarios.created_at, etc.).	~15 min
-🟢 BAJA	DT-Fase C-8	seed_demo_history en tenant_27 (basura de seed).	~5 min
-🟢 BAJA	DT-unificar-naming	proveedor, detalle_venta en singular vs plural.	~15 min
-🟢 BAJA	DT-Fase E-5	HistorialInventario.materia_prima_id modelo vs BD (nullable).	~15 min
+🟢 BAJA	DT-Fase E-6	Mojibake en commit messages (usar VS Code para guardar el _commit_msg.txt en UTF-8).	~5 min
 🟢 BAJA	DT-Fase E-6	Mojibake en commit messages (CMD).	~5 min
 🟢 BAJA	DT-nueva-BAJA-F2.6	Post-Docker: auditar WSGI basicConfig.	~30 min
 🟢 BAJA	DT-unificar-productos-populares	Unificar _obtener_datos_productos_populares.	~2-3 h
@@ -413,7 +407,7 @@ Demo: fases 1-12 completas (~9.972 filas), contraseña demo2026, idioma = pap.
 
 1️⃣1️⃣ Estado actual (resumen ejecutivo)
 Aspecto	Estado
-Último commit	6ddcc91 en origin/main (pusheado)
+Último commit	34b449e en origin/main (pusheado)
 Módulos	11/11 completos (100%)
 Fase A (auditoría modelos)	✅ 12 Nov — 43 modelos ↔ 42 tablas, cero huérfanos
 Fase B (auditoría app.py)	✅ 12 Nov — 229 queries raw clasificadas, 0 huérfanas
@@ -437,11 +431,12 @@ Tenants de pruebas	tenant_31 + tenant_34
 DT críticas abiertas	0
 DT medias abiertas	0
 Fase F (continuación)	✅ 15 Nov — DT-Fase F-I18N cerrada (commit e2333cc) + docs/ESTRUCTURA_TENANT.md (8f7e227) + DT-Fase F-BAK cerrada (6ddcc91)
+DTs BAJAS C/E (16 Nov)	✅ 16 Nov — C-3-resto implementada como feature (34b449e). C-4, C-6, E-5 cerradas como falso positivo.
+
 ...
-DT bajas abiertas	~5: C-3-resto, C-4, C-6, E-5, E-6
-Siguiente tarea	DTs BAJAS de Fase C/E (C-3-resto, C-4, C-6, E-5)
-Fase actual	Fase G (Dockerización pendiente) — Fase F 100% cerrada
-Working tree	limpio (post commit 6ddcc91)
+DT bajas abiertas	~1: E-6 (mojibake en commits, se resuelve usando VS Code)
+Siguiente tarea	DT-Fase G-Responsive (auditoría móvil)
+Working tree	limpio (post commit 34b449e)
 
 Fase actual	Fase F (parte 1 cerrada, parte 2 cerrada, continuación pendiente)
 Dockerización	Fase G, ~22-32 h (post Fase F parte 2)
@@ -474,7 +469,7 @@ Cronograma propuesto
 Semana	Foco	Estado
 1 (5-11 Nov)	✅ CERRADA: Commit 2 + DTs de Fase D	✅
 2 (12-18 Nov)	✅ CERRADA: Fases A + B + C + E + Fase F parte 1 y 2	✅
-3 (19-25 Nov)	✅ CERRADA (15 Nov): DT-Fase F-I18N + docs/ESTRUCTURA_TENANT.md + DT-Fase F-BAK	✅
+3 (19-25 Nov)	✅ CERRADA (15-16 Nov): DT-Fase F-I18N + docs + F-BAK + DTs C/E (C-3-resto, C-4, C-6, E-5)	✅
 4 (26-2 Dic)	Fase G: Dockerfile + docker-compose.yml + .env.example	⏸️
 5 (3-9 Dic)	Fase G: WSGI production + SSL + Nginx	⏸️
 6 (10-16 Dic)	Fase G: Backup automático + /health + logging	⏸️
