@@ -1290,5 +1290,61 @@ text
 - **Tenants: 1, 27, 31, 34.** (`tenant_37` borrado).
 - **Fase F parte 2:** parcialmente cerrada. 3 DTs cerradas (C-2 parcial, C-5, C-3 parcial). 6 DTs nuevas pendientes.
 - **Próximo:** `docs/ESTRUCTURA_TENANT.md` + DT-Fase F-I18N + DT-Fase G-Responsive.
+
+---
+
+## Sesión 15 Nov — Cierre de DT-Fase F-I18N + docs + limpieza F-BAK
+
+**Commits:** `e2333cc` (i18n), `8f7e227` (docs), `6ddcc91` (gitignore). Pusheados a `origin/main`.
+**Objetivo:** Cerrar la DT-Fase F-I18N pendiente, crear `docs/ESTRUCTURA_TENANT.md` y limpiar los archivos `.bak`.
+
+### 1. DT-Fase F-I18N (✅ cerrada, commit `e2333cc`)
+
+**Contexto:** la tarjeta "Historial de Pagos" en `reportes.html` tenía los textos hardcodeados (sin `_()`). En las pruebas de frontend, aunque se cambiara el idioma a inglés o papiamento, esa tarjeta seguía en español.
+
+**Diagnóstico:** el archivo `reportes.html` tenía 17 textos sin `_()`. Además, el archivo `.po` de inglés y papiamento tenía "traducciones cruzadas" (textos de error pegados a botones correctos).
+
+**Fix:**
+- `reportes.html`: 17 wrappers `_()` agregados, 14 comentarios HTML huérfanos eliminados.
+- `en.po` / `pap.po`: se corrigieron manualmente 4 traducciones cruzadas sin usar `pybabel update` (que reasigna `msgstr` huérfanos):
+  - `Generar Reporte Consolidado` → `Generate Consolidated Report` / `Generá Reporte Konsolidá`.
+  - `Alertas Altas/Medias/Bajas` → `High/Medium/Low Alerts` / `Alerta Haltu/Medio/Abou`.
+  - `Consulta de depósitos...` → traducción correcta.
+  - `Se actualizaron automáticamente...` → traducción correcta.
+- `.mo` compilados. Smoke test visual en 3 idiomas OK.
+
+### 2. `docs/ESTRUCTURA_TENANT.md` (✅ cerrado, commit `8f7e227`)
+
+**Contexto:** Fase F requería documentar la estructura de un tenant.
+
+**Fix:**
+- Se generó el inventario real de `tenant_34` (42 tablas, 491 columnas) con `information_schema`.
+- Se documentaron las 42 tablas agrupadas en 10 módulos.
+- Se documentaron convenciones de naming, FKs, soft-delete, multi-moneda, multi-idioma.
+- Se documentaron tablas/columnas eliminadas en Fase F y DTs BAJAS pendientes.
+
+### 3. DT-Fase F-BAK (✅ cerrada, commit `6ddcc91`)
+
+**Contexto:** había ~39 archivos `.bak` en el working tree (y ~97 en total con `.backup`).
+
+**Fix:**
+- Se movieron 81 archivos `.bak`/`.backup` a `_BACKUP_BAKS/` (backup temporal).
+- Se restauraron los 3 scripts `audit_columns*.py` a la raíz (estaban commiteados, no eran basura).
+- `_BACKUP_BAKS/` agregado al `.gitignore`.
+
+### Reglas nuevas aprendidas
+
+- **#21**: Para strings con tildes en UTF-8, usar `powershell Select-String`, nunca `findstr`.
+- **#22**: Nunca usar `|` con `-SimpleMatch` en `findstr`/`Select-String`.
+- **#23**: Después de `git add` → `git status`. Después de `git commit` → `git log`. `git push` sin commit dice "Everything up-to-date".
+- **#24**: `pybabel update` puede reasignar `msgstr` huérfanos. Para fixes puntuales, editar `.po` a mano.
+- **#25**: Nunca pasar strings multilínea enormes por `python -c` o `powershell -Command`. Crear el archivo desde el editor.
+- **#26**: Antes de borrar archivos, verificar `git status` + `git log`. Los `.bak` pueden ser backups, pero los `_*.py` suelen estar commiteados y son utilidades del proyecto.
+
+### Estado al cierre
+- **Último commit:** `6ddcc91`. **Working tree:** limpio.
+- **Fase F:** ✅ 100% cerrada.
+- **DTs críticas abiertas:** 0. **DTs medias abiertas:** 1 (DT-Fase G-Responsive).
+- **Próxima tarea:** DTs BAJAS de Fase C/E (C-3-resto, C-4, C-6, E-5).
 ---
 

@@ -1,7 +1,7 @@
-# 🗂️ CONTEXTO MAESTRO — PanaderíaPro (Bakery ERP) — v9.22
+# 🗂️ CONTEXTO MAESTRO — PanaderíaPro (Bakery ERP) — v9.23
 
-**Última actualización:** 14 de Noviembre, 2026
-**Último commit:** `34dbc84` (fix: Fase F — bloque vacío + recibo POS con moneda)
+**Última actualización:** 15 de Noviembre, 2026
+**Último commit:** `6ddcc91` (chore: .gitignore _BACKUP_BAKS)
 **HANDOFF anterior:** `HANDOFF_v9.5.md` (histórico congelado, ver raíz del proyecto)
 **Bitácoras históricas:** `bitacora/2026-10-sesiones.md`, `bitacora/2026-11-sesiones.md`
 **Tenants de prueba:** `bitacora/tenants_prueba.md` (incluye `tenant_31` y `tenant_34`)
@@ -9,7 +9,10 @@
 ---
 
 ▼▼▼ INICIO DEL BLOQUE DE SESIONES (AQUÍ SE AGREGA LA SESIÓN NUEVA ARRIBA DEL TODO) ▼▼▼
+
+**Sesión 15 Nov:** Cierre de DT-Fase F-I18N (traducciones cruzadas corregidas a mano), `docs/ESTRUCTURA_TENANT.md` creado (42 tablas), y DT-Fase F-BAK (81 archivos `.bak` movidos a `_BACKUP_BAKS`). Commits: `e2333cc`, `8f7e227`, `6ddcc91`.
 **Sesión 14 Nov:** Fase F (parte 2). 3 DTs cerradas: C-2 parcial (7 columnas muertas), C-5 (panaderia_id), C-3 parcial (idioma en DDL). Bug preexistente (bloque vacío en crear_tablas_en_orden) y bug del recibo POS (moneda hardcodeada) fixeados. Test de moneda con decimales (florín ANG) exitoso. Commits: `179fb0b`, `d8f703d`, `34dbc84`.
+
 **Sesión 13 Nov:** Fase F (parte 1). 7 DTs cerradas: B-1 (`_test_tenant_schema.py`), B-2/B-3 (centralizar DDL + eliminar auto-reparación en runtime), B-4 (`_cleanup_tenants_huerfanos.py`), E-1 (cierre diario legacy eliminado, 563 líneas), E-2/E-4 (no reproducido). Commits: `15bc439`, `6905d84`, `9ad0030`, `99bb28f`.
 **Sesión 12 Nov:** Fases A + B + C (auditorías de alineación ORM ↔ BD ↔ modelo) 100% cerradas. DT-Fase C-1 (`total_anulaciones` faltaba en DDL de `crear_tenant_saas()`) resuelta y validada empíricamente con `tenant_34`. Commit `1ef3579`.
 **Sesión 12 Nov (tarde):** Fase E cerrada (`tenant_34` smoke test completo: login → POS → venta → anulación → producción → reportes → PDFs). Bug A no reproducido. Bug `HistorialInventario` de producto fixeado (`9b71016`). 6 DTs nuevas de Fase E.
@@ -45,9 +48,9 @@
 
 ### 📋 Próximos pasos
 
-1. **Fase F (parte 2) — continuación** (~4-6 h). DT-Fase F-I18N (strings sin `_()` en reportes.html), `docs/ESTRUCTURA_TENANT.md`, DT-Fase F-BAK (39 archivos `.bak`), DTs BAJAS de Fase E (E-5, E-6).
-2. **Fase G — Dockerización** (~22-32 h).
-3. **DT-Fase G-Responsive** (🟡 Media). Auditoría de responsividad del frontend (POS, Dashboard, Reportes). Bloqueante para producción.
+1. **DTs BAJAS de Fase C/E** (~1-2 h). Resolver `C-3-resto`, `C-4`, `C-6` y `E-5` en un solo commit (con `pg_dump` previo).
+2. **DT-Fase G-Responsive** (🟡 Media). Auditoría de responsividad del frontend (POS, Dashboard, Reportes). Bloqueante para producción (~2-3 h).
+3. **Fase G — Dockerización** (~22-32 h).
 ▲▲▲ FIN DE LA SECCIÓN 1 ▲▲▲
 
 ---
@@ -139,6 +142,9 @@
 ▼▼▼ INICIO DE LA SECCIÓN 6 ▼▼▼
 ## 6️⃣ Últimos commits (AQUÍ SE AGREGA EL COMMIT NUEVO ARRIBA DEL TODO)
 ```text
+6ddcc91 chore(gitignore): agregar _BACKUP_BAKS/ a la lista de ignorados
+8f7e227 docs(fase-f): agregar docs/ESTRUCTURA_TENANT.md
+e2333cc fix(i18n): completar traducciones de tarjetas en reportes.html (en/pap)
 34dbc84 fix(fase-f): bloque vacío en crear_tablas_en_orden + recibo POS con moneda
 d8f703d fix(fase-f): agregar idioma al DDL de configuracion_sistema
 179fb0b refactor(fase-f): eliminar 8 columnas muertas del DDL (Grupo 2)
@@ -210,14 +216,14 @@ Cerradas el 6 Nov (Commit 2):
 Prioridad	DT	Descripción
 ✅ Media	Commit 2 (rediseño)	Rediseño "menos es más" + recomendaciones dinámicas.
 ✅ Media	i18n cadenas nuevas	Strings de Commit 2 traducidos en en/pap.
+
+
 🟡 DTs BAJAS Fase F pendientes (AQUÍ SE AGREGA LO NUEVO DEBAJO)
 Prioridad	DT	Descripción	Estimación
-🟡 Media	DT-Fase F-I18N	Strings sin _() en reportes.html (líneas 189, 191, 297). Traducciones incompletas en .po de en/pap.	~1-2 h
 🟡 Media	DT-Fase G-Responsive	Auditoría de responsividad del frontend (POS, Dashboard, Reportes). Bloqueante para producción.	~2-3 h
 🟢 BAJA	DT-Fase F-C3-resto	4 columnas muertas en configuracion_sistema (nombre_sistema, version, etc.). No se tocan (riesgo).	~30 min
-🟢 BAJA	DT-Fase F-C4	pagos_individuales.usuario_id (en models.py:1259). No se toca.	~15 min
-🟢 BAJA	DT-Fase F-C6	sucursales.email (riesgo de confusión con proveedor.email). No se toca.	~15 min
-🟢 BAJA	DT-Fase F-BAK	~39 archivos .bak en el working tree. Limpieza en Fase G.	~30 min
+...
+(eliminar las líneas de DT-Fase F-I18N y DT-Fase F-BAK de esta tabla)
 🟢 BAJA	DT-Fase C-7	5 columnas legacy en tenant_1 (cierres_diarios.created_at, etc.).	~15 min
 🟢 BAJA	DT-Fase C-8	seed_demo_history en tenant_27 (basura de seed).	~5 min
 🟢 BAJA	DT-unificar-naming	proveedor, detalle_venta en singular vs plural.	~15 min
@@ -407,7 +413,7 @@ Demo: fases 1-12 completas (~9.972 filas), contraseña demo2026, idioma = pap.
 
 1️⃣1️⃣ Estado actual (resumen ejecutivo)
 Aspecto	Estado
-Último commit	34dbc84 en origin/main (pusheado)
+Último commit	6ddcc91 en origin/main (pusheado)
 Módulos	11/11 completos (100%)
 Fase A (auditoría modelos)	✅ 12 Nov — 43 modelos ↔ 42 tablas, cero huérfanos
 Fase B (auditoría app.py)	✅ 12 Nov — 229 queries raw clasificadas, 0 huérfanas
@@ -430,12 +436,19 @@ Tenants productivos	tenant_1 + tenant_27
 Tenants de pruebas	tenant_31 + tenant_34
 DT críticas abiertas	0
 DT medias abiertas	0
-DT bajas abiertas	~18: C-2 a C-8, unificar-naming, E-5, E-6, F2.6, unificar-productos-populares, unificar-prefijos-int-ext, formato-es-CO, F-BAK (39 archivos .bak)
-Siguiente tarea	Fase F (parte 2) — continuación: DT-Fase F-I18N + docs/ESTRUCTURA_TENANT.md + DTs BAJAS
+Fase F (continuación)	✅ 15 Nov — DT-Fase F-I18N cerrada (commit e2333cc) + docs/ESTRUCTURA_TENANT.md (8f7e227) + DT-Fase F-BAK cerrada (6ddcc91)
+...
+DT bajas abiertas	~5: C-3-resto, C-4, C-6, E-5, E-6
+Siguiente tarea	DTs BAJAS de Fase C/E (C-3-resto, C-4, C-6, E-5)
+Fase actual	Fase G (Dockerización pendiente) — Fase F 100% cerrada
+Working tree	limpio (post commit 6ddcc91)
+
 Fase actual	Fase F (parte 1 cerrada, parte 2 cerrada, continuación pendiente)
 Dockerización	Fase G, ~22-32 h (post Fase F parte 2)
-Working tree	limpio (post commit 34dbc84)
-▲▲▲ FIN DE LA SECCIÓN 11 ▲▲▲	
+
+▲▲▲ FIN DE LA SECCIÓN 11 ▲▲▲
+
+
 ▼▼▼ INICIO DE LA SECCIÓN 12 (AQUÍ SE ACTUALIZA LA INSTRUCCIÓN PARA EL CHAT NUEVO) ▼▼▼
 
 📞 Cómo continuar en un chat nuevo
@@ -461,7 +474,7 @@ Cronograma propuesto
 Semana	Foco	Estado
 1 (5-11 Nov)	✅ CERRADA: Commit 2 + DTs de Fase D	✅
 2 (12-18 Nov)	✅ CERRADA: Fases A + B + C + E + Fase F parte 1 y 2	✅
-3 (19-25 Nov)	Fase F (parte 2) — continuación: DT-Fase F-I18N + docs/ESTRUCTURA_TENANT.md	🟡 Próxima
+3 (19-25 Nov)	✅ CERRADA (15 Nov): DT-Fase F-I18N + docs/ESTRUCTURA_TENANT.md + DT-Fase F-BAK	✅
 4 (26-2 Dic)	Fase G: Dockerfile + docker-compose.yml + .env.example	⏸️
 5 (3-9 Dic)	Fase G: WSGI production + SSL + Nginx	⏸️
 6 (10-16 Dic)	Fase G: Backup automático + /health + logging	⏸️
