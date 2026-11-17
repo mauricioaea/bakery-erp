@@ -1,0 +1,133 @@
+/* ============================================================
+   PanaderíaPro — Hoja de estilos responsive compartida
+   ------------------------------------------------------------
+   Propósito: centralizar las reglas responsive que Bootstrap 5
+   no cubre, y las utilidades propias del proyecto (.resp-*).
+   
+   Reglas de diseño:
+   - SOLO clases .resp-* y overrides scoped (.reportes-page,
+     .dashboard-*). NO redefinir Bootstrap, NI pos-moderno.css,
+     NI el <style> de base.html.
+   - Breakpoints estándar (alineados con Bootstrap 5):
+       576px  (sm)  — móvil grande / tablet vertical chica
+       768px  (md)  — tablet
+       992px  (lg)  — desktop chico
+       1200px (xl)  — desktop
+   - Esta hoja es ADITIVA: donde no hay clases .resp-*, no
+     cambia nada. Linkearla en un template es seguro.
+   ============================================================ */
+
+/* ----- Utilidades genéricas ----- */
+
+/* Tabla que colapsa a "stack" en móvil (label : value).
+   Uso: <table class="table resp-table-stack"> */
+@media (max-width: 576px) {
+    .resp-table-stack thead { display: none; }
+    .resp-table-stack,
+    .resp-table-stack tbody,
+    .resp-table-stack tr,
+    .resp-table-stack td { display: block; width: 100%; }
+    .resp-table-stack tr {
+        margin-bottom: 1rem;
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        padding: 0.5rem;
+    }
+    .resp-table-stack td {
+        border: none;
+        padding: 0.35rem 0.5rem;
+        text-align: right;
+        position: relative;
+        padding-left: 45%;
+    }
+    .resp-table-stack td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 0.5rem;
+        width: 42%;
+        text-align: left;
+        font-weight: 600;
+        color: #6c757d;
+    }
+}
+
+/* Filtros que se apilan verticalmente en móvil.
+   Uso: <div class="resp-filters-stack"> */
+@media (max-width: 576px) {
+    .resp-filters-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    .resp-filters-stack > * { width: 100%; }
+}
+
+/* Canvas/gráficos que nunca desbordan su contenedor. */
+.resp-chart-fluid {
+    max-width: 100% !important;
+    height: auto !important;
+}
+
+/* Botones táctiles: altura mínima 44px en móvil (WCAG). */
+@media (max-width: 768px) {
+    .resp-btn-touch {
+        min-height: 44px;
+        min-width: 44px;
+    }
+}
+
+/* ----- Reportes (scope: .reportes-page) ----- */
+
+@media (max-width: 576px) {
+    .reportes-page .reporte-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .reportes-page .seccion-titulo {
+        flex-wrap: wrap;
+    }
+    .reportes-page .seccion-titulo h2 {
+        font-size: 1.1em;
+    }
+}
+
+/* ----- Dashboard (scope: .dashboard-*) ----- 
+   dashboard.html NO carga Bootstrap, así que estas reglas son
+   custom. Se aplican solo si el template usa clases .dashboard-*. */
+
+@media (max-width: 768px) {
+    .dashboard-modules-grid {
+        grid-template-columns: 1fr 1fr !important;
+    }
+    .dashboard-header-content {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        text-align: center;
+    }
+    .dashboard-header-right {
+        justify-content: center !important;
+    }
+    .dashboard-header-left h1 {
+        font-size: 1.4rem !important;
+    }
+}
+
+@media (max-width: 560px) {
+    .dashboard-modules-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .dashboard-header-left h1 {
+        font-size: 1.2rem !important;
+    }
+    .dashboard-card {
+        padding: 18px 16px !important;
+    }
+    .dashboard-assets-buttons {
+        flex-direction: column !important;
+        align-items: center;
+    }
+    .dashboard-assets-buttons .btn {
+        width: 100%;
+        max-width: 180px;
+        justify-content: center;
+    }
+}
