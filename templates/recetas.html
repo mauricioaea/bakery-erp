@@ -1,28 +1,29 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Recetas - Panadería</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: 'Arial', sans-serif;
-            background: #f5f5f5;
-            padding: 20px;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 10px;
-            padding: 30px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
+{% extends "layout_erp.html" %}
+
+{% block title %}Gestión de Recetas{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Aislamiento: el reset solo aplica al wrapper, NO al navbar global */
+    .recetas-wrapper * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    .recetas-wrapper {
+        font-family: 'Arial', sans-serif;
+        background: #f5f5f5;
+        padding: 20px;
+        min-height: 80vh;
+    }
+    .recetas-wrapper .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 10px;
+        padding: 30px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
         .header {
             display: flex;
             justify-content: space-between;
@@ -483,10 +484,10 @@
             min-width: 0; /* Previene problemas de desbordamiento */
         }
     </style>
-    {% include '_csrf_head.html' %}
-    <link href="{{ url_for('static', filename='css/responsive.css') }}" rel="stylesheet">
-</head>
-<body>
+{% endblock %}
+
+{% block content %}
+<div class="recetas-wrapper">
     <div class="container">
         <div class="header">
             <div>
@@ -992,5 +993,5 @@
             setTimeout(filtrarRecetas, 100);
         });
     </script>
-</body>
-</html>
+</div> <!-- Cierra recetas-wrapper -->
+{% endblock %}
