@@ -6521,6 +6521,10 @@ def cancelar_orden_produccion(orden_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+    
+@app.route('/test_layout')
+def test_layout():
+    return render_template('test_layout.html')
 
 @app.route('/stock_vitrina')
 @permisos_requeridos('produccion', 'ver')
