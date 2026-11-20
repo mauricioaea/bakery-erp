@@ -14,6 +14,20 @@
     <link href="{{ url_for('static', filename='css/responsive.css') }}" rel="stylesheet">
     <!-- CSS específico del template (opcional) -->
     {% block extra_css %}{% endblock %}
+
+    <!-- FIX: Forzar que el offcanvas (menú) esté siempre por encima de cualquier banner -->
+    <style>
+        /* FIX: El offcanvas (menú) siempre debe estar por encima */
+        .offcanvas { z-index: 9999 !important; position: fixed !important; }
+        .offcanvas-backdrop { z-index: 9998 !important; position: fixed !important; }
+        
+        /* FIX: Los alerts fuera del main no se mueven con el offcanvas */
+        .container-fluid > .alert {
+            position: relative !important;
+            z-index: 1 !important;
+        }
+    </style>
+
     {% include '_csrf_head.html' %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
@@ -49,7 +63,19 @@
             {% endif %}
         </div>
     </nav>
-
+    <!-- Flash messages (fuera del main, no se mueven con el offcanvas) -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="container-fluid mt-2">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
     {% if current_user.is_authenticated %}
     <!-- ============================================ -->
     <!-- DRAWER LATERAL (menú completo de la app)     -->
@@ -294,18 +320,6 @@
 
             <!-- Contenido del template -->
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-                <!-- Flash messages -->
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        {% for category, message in messages %}
-                            <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show mt-3">
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-                {% endwith %}
-
                 {% block content %}{% endblock %}
             </main>
         </div>

@@ -4,7 +4,7 @@
 
 {% block extra_css %}
 <style>
-    /* Aislamiento: el reset solo aplica al wrapper, NO al navbar global */
+    /* ===== AISLAMIENTO Y RESET (Solo afecta a .recetas-wrapper) ===== */
     .recetas-wrapper * {
         margin: 0;
         padding: 0;
@@ -24,466 +24,523 @@
         padding: 30px;
         box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #667eea;
-        }
-        .btn {
-            background: #667eea;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
-            text-decoration: none;
-            border: none;
-            cursor: pointer;
-            display: inline-block;
-        }
-        .btn:hover {
-            background: #5a6fd8;
-        }
-        .btn-success {
-            background: #28a745;
-        }
-        .btn-success:hover {
-            background: #218838;
-        }
-        .btn-warning {
-            background: #ffc107;
-            color: #212529;
-        }
-        .btn-warning:hover {
-            background: #e0a800;
-        }
-        .btn-info {
-            background: #17a2b8;
-        }
-        .btn-info:hover {
-            background: #138496;
-        }
-        .btn-secondary {
-            background: #6c757d;
-            color: white;
-            padding: 8px 15px;
-            border-radius: 5px;
-            text-decoration: none;
-            font-size: 0.9em;
-            margin-right: 10px;
-            display: inline-block;
-        }
-        .btn-secondary:hover {
-            background: #5a6268;
-        }
+
+    /* ===== ESTILOS BASE DEL TEMPLATE ===== */
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #667eea;
+    }
+    .btn {
+        background: #667eea;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 5px;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        display: inline-block;
+    }
+    .btn:hover {
+        background: #5a6fd8;
+    }
+    .btn-success {
+        background: #28a745;
+    }
+    .btn-success:hover {
+        background: #218838;
+    }
+    .btn-warning {
+        background: #ffc107;
+        color: #212529;
+    }
+    .btn-warning:hover {
+        background: #e0a800;
+    }
+    .btn-info {
+        background: #17a2b8;
+    }
+    .btn-info:hover {
+        background: #138496;
+    }
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+        padding: 8px 15px;
+        border-radius: 5px;
+        text-decoration: none;
+        font-size: 0.9em;
+        margin-right: 10px;
+        display: inline-block;
+    }
+    .btn-secondary:hover {
+        background: #5a6268;
+    }
+    .recetas-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+        gap: 25px;
+        margin-top: 20px;
+        width: 100%;
+    }
+    .receta-card {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 25px;
+        background: white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        min-width: 0;
+    }
+    .receta-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    }
+    .receta-card h3 {
+        color: #333;
+        margin-bottom: 15px;
+        font-size: 1.3em;
+        border-bottom: 2px solid #667eea;
+        padding-bottom: 10px;
+    }
+    .receta-info {
+        color: #555;
+        margin-bottom: 20px;
+    }
+    .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+    .info-item {
+        margin-bottom: 8px;
+    }
+    .info-label {
+        font-weight: bold;
+        color: #333;
+        display: block;
+        font-size: 0.9em;
+    }
+    .info-value {
+        color: #666;
+        font-size: 1em;
+    }
+    .costos-section {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        margin: 15px 0;
+        border-left: 4px solid #667eea;
+    }
+    .costo-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+        font-size: 0.9em;
+    }
+    .costo-label {
+        font-weight: 600;
+    }
+    .costo-value {
+        font-weight: bold;
+    }
+    .utilidad-section {
+        background: #e8f5e8;
+        padding: 15px;
+        border-radius: 5px;
+        margin: 15px 0;
+        border-left: 4px solid #28a745;
+    }
+    .precio-real-input {
+        width: 120px;
+        padding: 4px 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 0.9em;
+        text-align: right;
+    }
+    .precio-real-input:focus {
+        border-color: #28a745;
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.2);
+    }
+    .receta-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+        padding-top: 15px;
+        border-top: 1px solid #eee;
+    }
+    .action-btn {
+        flex: 1;
+        text-align: center;
+        padding: 8px 12px;
+        border-radius: 5px;
+        text-decoration: none;
+        font-size: 0.85em;
+        transition: all 0.3s ease;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: #666;
+    }
+    .navigation-links {
+        margin-top: 10px;
+    }
+    .alert {
+        padding: 12px 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        border: 1px solid transparent;
+    }
+    .alert-success {
+        background: #d4edda;
+        color: #155724;
+        border-color: #c3e6cb;
+    }
+    .alert-error {
+        background: #f8d7da;
+        color: #721c24;
+        border-color: #f5c6cb;
+    }
+    .alert-info {
+        background: #d1ecf1;
+        color: #0c5460;
+        border-color: #bee5eb;
+    }
+    .badge {
+        background: #28a745;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 0.8em;
+        font-weight: bold;
+    }
+    .badge-inactive {
+        background: #dc3545;
+    }
+    .badge-rentabilidad {
+        padding: 2px 6px;
+        border-radius: 8px;
+        font-size: 0.7em;
+        font-weight: bold;
+    }
+    .ingredientes-count {
+        background: #6c757d;
+        color: white;
+        padding: 2px 6px;
+        border-radius: 10px;
+        font-size: 0.7em;
+        margin-left: 5px;
+    }
+    .fecha-creacion {
+        font-size: 0.8em;
+        color: #888;
+        margin-top: 5px;
+    }
+    .loading-spinner {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border: 2px solid #f3f3f3;
+        border-top: 2px solid #3498db;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-left: 5px;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* ===== RESPONSIVE DESIGN MEJORADO ===== */
+    /* TABLETS (768px - 1024px) */
+    @media (max-width: 1024px) {
         .recetas-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-            gap: 25px;
-            margin-top: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
         }
         .receta-card {
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 25px;
-            background: white;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            padding: 20px;
         }
-        .receta-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    }
+    
+    /* MÓVILES GRANDES (576px - 768px) */
+    @media (max-width: 768px) {
+        .recetas-wrapper {
+            padding: 15px;
+        }
+        .recetas-wrapper .container {
+            padding: 20px;
+        }
+        .header {
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 1.5em;
+        }
+        .recetas-grid {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        .receta-card {
+            padding: 20px;
+            width: 100%;
+            margin: 0;
         }
         .receta-card h3 {
-            color: #333;
-            margin-bottom: 15px;
-            font-size: 1.3em;
-            border-bottom: 2px solid #667eea;
-            padding-bottom: 10px;
+            font-size: 1.2em;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: flex-start;
         }
-        .receta-info {
-            color: #555;
-            margin-bottom: 20px;
+        .receta-card h3 .badge {
+            align-self: flex-start;
+            float: none;
         }
         .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 15px;
+            grid-template-columns: 1fr;
+            gap: 12px;
         }
         .info-item {
-            margin-bottom: 8px;
-        }
-        .info-label {
-            font-weight: bold;
-            color: #333;
-            display: block;
-            font-size: 0.9em;
-        }
-        .info-value {
-            color: #666;
-            font-size: 1em;
-        }
-        .costos-section {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 15px 0;
-            border-left: 4px solid #667eea;
-        }
-        .costo-item {
+            margin-bottom: 10px;
             display: flex;
             justify-content: space-between;
-            margin-bottom: 5px;
-            font-size: 0.9em;
+            align-items: center;
         }
-        .costo-label {
-            font-weight: 600;
-        }
-        .costo-value {
-            font-weight: bold;
-        }
+        .costos-section,
         .utilidad-section {
-            background: #e8f5e8;
             padding: 15px;
-            border-radius: 5px;
-            margin: 15px 0;
-            border-left: 4px solid #28a745;
         }
-        .precio-real-input {
-            width: 120px;
-            padding: 4px 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 0.9em;
-            text-align: right;
+        .costo-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 5px;
+            margin-bottom: 10px;
         }
-        .precio-real-input:focus {
-            border-color: #28a745;
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.2);
-        }
-        .receta-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-            padding-top: 15px;
-            border-top: 1px solid #eee;
-        }
-        .action-btn {
-            flex: 1;
-            text-align: center;
-            padding: 8px 12px;
-            border-radius: 5px;
-            text-decoration: none;
-            font-size: 0.85em;
-            transition: all 0.3s ease;
-        }
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: #666;
-        }
-        .navigation-links {
-            margin-top: 10px;
-        }
-        .alert {
-            padding: 12px 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            border: 1px solid transparent;
-        }
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border-color: #c3e6cb;
-        }
-        .alert-error {
-            background: #f8d7da;
-            color: #721c24;
-            border-color: #f5c6cb;
-        }
-        .alert-info {
-            background: #d1ecf1;
-            color: #0c5460;
-            border-color: #bee5eb;
-        }
-        .badge {
-            background: #28a745;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 0.8em;
-            font-weight: bold;
-        }
-        .badge-inactive {
-            background: #dc3545;
-        }
-        .badge-rentabilidad {
-            padding: 2px 6px;
-            border-radius: 8px;
-            font-size: 0.7em;
-            font-weight: bold;
-        }
-        .ingredientes-count {
-            background: #6c757d;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 10px;
-            font-size: 0.7em;
-            margin-left: 5px;
-        }
-        .fecha-creacion {
-            font-size: 0.8em;
-            color: #888;
-            margin-top: 5px;
-        }
-        .loading-spinner {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            border: 2px solid #f3f3f3;
-            border-top: 2px solid #3498db;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-left: 5px;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        /* ===== RESPONSIVE DESIGN MEJORADO ===== */
-        /* TABLETS (768px - 1024px) */
-        @media (max-width: 1024px) {
-            .recetas-grid {
-                grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-                gap: 20px;
-            }
-            .receta-card {
-                padding: 20px;
-            }
-        }
-        /* MÓVILES GRANDES (576px - 768px) */
-        @media (max-width: 768px) {
-            body {
-                padding: 15px;
-            }
-            .container {
-                padding: 20px;
-            }
-            /* HEADER RESPONSIVE */
-            .header {
-                flex-direction: column;
-                gap: 15px;
-                align-items: center;
-                text-align: center;
-            }
-            .header h1 {
-                font-size: 1.5em;
-            }
-            /* GRID RESPONSIVE - 1 COLUMNA */
-            .recetas-grid {
-                grid-template-columns: 1fr;
-                gap: 20px;
-            }
-            .receta-card {
-                padding: 20px;
-                width: 100%;
-                margin: 0;
-            }
-            .receta-card h3 {
-                font-size: 1.2em;
-                display: flex;
-                flex-direction: column;
-                gap: 10px;
-                align-items: flex-start;
-            }
-            .receta-card h3 .badge {
-                align-self: flex-start;
-                float: none;
-            }
-            /* INFO GRID RESPONSIVE */
-            .info-grid {
-                grid-template-columns: 1fr;
-                gap: 12px;
-            }
-            .info-item {
-                margin-bottom: 10px;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            }
-            /* SECCIONES RESPONSIVE */
-            .costos-section,
-            .utilidad-section {
-                padding: 15px;
-            }
-            .costo-item {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 5px;
-                margin-bottom: 10px;
-            }
-            .costo-label,
-            .costo-value {
-                width: 100%;
-            }
-            /* BOTONES RESPONSIVE */
-            .receta-actions {
-                flex-direction: column;
-                gap: 10px;
-            }
-            .action-btn {
-                width: 100%;
-                padding: 12px;
-            }
-            .btn {
-                width: 100%;
-                max-width: 250px;
-                text-align: center;
-                margin-bottom: 10px;
-            }
-            .btn-secondary {
-                width: auto;
-                margin-bottom: 5px;
-            }
-            /* INPUT RESPONSIVE */
-            .precio-real-input {
-                width: 100%;
-                max-width: 150px;
-            }
-            /* ESTADÍSTICAS RESPONSIVE */
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr) !important;
-                gap: 15px !important;
-            }
-            .stats-grid > div {
-                padding: 15px !important;
-            }
-            .stats-grid div div:first-child {
-                font-size: 1.5em !important;
-            }
-        }
-        /* MÓVILES PEQUEÑOS (hasta 576px) */
-        @media (max-width: 576px) {
-            body {
-                padding: 10px;
-            }
-            .container {
-                padding: 15px;
-            }
-            .receta-card {
-                padding: 15px;
-            }
-            .receta-card h3 {
-                font-size: 1.1em;
-                padding-bottom: 8px;
-            }
-            .info-grid {
-                gap: 10px;
-            }
-            .info-item {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 2px;
-            }
-            .costos-section,
-            .utilidad-section {
-                padding: 12px;
-            }
-            .costo-item {
-                font-size: 0.85em;
-            }
-            .receta-actions {
-                gap: 8px;
-            }
-            .action-btn {
-                padding: 10px;
-                font-size: 0.85em;
-            }
-            .precio-real-input {
-                max-width: 130px;
-                font-size: 0.85em;
-                padding: 6px 10px;
-            }
-            .stats-grid {
-                grid-template-columns: 1fr !important;
-                gap: 12px !important;
-            }
-            .empty-state {
-                padding: 30px 20px;
-            }
-            .empty-state h3 {
-                font-size: 1.3em;
-            }
-            .alert {
-                padding: 10px 12px;
-                font-size: 0.9em;
-            }
-            .navigation-links {
-                display: flex;
-                flex-direction: column;
-                gap: 8px;
-                align-items: center;
-            }
-            .btn-secondary {
-                width: 100%;
-                max-width: 200px;
-                text-align: center;
-            }
-        }
-        /* MÓVILES MUY PEQUEÑOS (hasta 375px) */
-        @media (max-width: 375px) {
-            body {
-                padding: 8px;
-            }
-            .container {
-                padding: 12px;
-                border-radius: 8px;
-            }
-            .receta-card {
-                padding: 12px;
-            }
-            .costos-section,
-            .utilidad-section {
-                padding: 10px;
-            }
-            .costo-item {
-                font-size: 0.8em;
-            }
-            .precio-real-input {
-                max-width: 110px;
-                padding: 5px 8px;
-            }
-            .action-btn {
-                padding: 8px;
-                font-size: 0.8em;
-            }
-        }
-        /* MEJORAS ESPECÍFICAS PARA TABLET */
-        @media (min-width: 769px) and (max-width: 1024px) {
-            .recetas-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            .header {
-                align-items: center;
-            }
-        }
-        /* MEJORAS PARA PANTALLAS GRANDES */
-        @media (min-width: 1400px) {
-            .recetas-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
-        }
-        /* CORRECCIÓN ESPECÍFICA PARA EVITAR SUPERPOCISIÓN */
-        .recetas-grid {
+        .costo-label,
+        .costo-value {
             width: 100%;
         }
-        .receta-card {
-            min-width: 0; /* Previene problemas de desbordamiento */
+        .receta-actions {
+            flex-direction: column;
+            gap: 10px;
         }
-    </style>
+        .action-btn {
+            width: 100%;
+            padding: 12px;
+        }
+        /* Botones generales al 100% en móvil */
+        .btn {
+            width: 100%;
+            max-width: 100%;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .btn-secondary {
+            width: 100%;
+            margin-bottom: 8px;
+            display: block;
+            text-align: center;
+        }
+
+        /* ===== BARRA DE FILTROS Y BUSCADOR ===== */
+        .barra-filtros {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            align-items: center;
+        }
+        .buscador-wrapper {
+            flex: 1;
+            min-width: 250px;
+        }
+        .buscador-form {
+            display: flex;
+            gap: 10px;
+        }
+        .buscador-input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .buscador-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .buscador-btn:hover {
+            background: #5a6fd8;
+        }
+        select {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+        }
+
+        /* ===== RESPONSIVE PARA FILTROS EN MÓVIL ===== */
+        @media (max-width: 768px) {
+            .barra-filtros {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .buscador-wrapper {
+                min-width: 100%;
+            }
+            .buscador-form {
+                flex-direction: row; /* Mantiene el input y la lupa en la misma línea */
+            }
+            select {
+                width: 100%;
+            }
+        }
+        .precio-real-input {
+            width: 100%;
+            max-width: 150px;
+        }
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 15px !important;
+        }
+        .stats-grid > div {
+            padding: 15px !important;
+        }
+        .stats-grid div div:first-child {
+            font-size: 1.5em !important;
+        }
+    }
+    
+    /* MÓVILES PEQUEÑOS (hasta 576px) */
+    @media (max-width: 576px) {
+        .recetas-wrapper {
+            padding: 10px;
+        }
+        .recetas-wrapper .container {
+            padding: 15px;
+        }
+        .receta-card {
+            padding: 15px;
+        }
+        .receta-card h3 {
+            font-size: 1.1em;
+            padding-bottom: 8px;
+        }
+        .info-grid {
+            gap: 10px;
+        }
+        .info-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 2px;
+        }
+        .costos-section,
+        .utilidad-section {
+            padding: 12px;
+        }
+        .costo-item {
+            font-size: 0.85em;
+        }
+        .receta-actions {
+            gap: 8px;
+        }
+        .action-btn {
+            padding: 10px;
+            font-size: 0.85em;
+        }
+        .precio-real-input {
+            max-width: 130px;
+            font-size: 0.85em;
+            padding: 6px 10px;
+        }
+        .stats-grid {
+            grid-template-columns: 1fr !important;
+            gap: 12px !important;
+        }
+        .empty-state {
+            padding: 30px 20px;
+        }
+        .empty-state h3 {
+            font-size: 1.3em;
+        }
+        .alert {
+            padding: 10px 12px;
+            font-size: 0.9em;
+        }
+        
+        .btn-secondary {
+            width: 100%;
+            max-width: 200px;
+            text-align: center;
+        }
+    }
+    
+    /* MÓVILES MUY PEQUEÑOS (hasta 375px) */
+    @media (max-width: 375px) {
+        .recetas-wrapper {
+            padding: 8px;
+        }
+        .recetas-wrapper .container {
+            padding: 12px;
+            border-radius: 8px;
+        }
+        .receta-card {
+            padding: 12px;
+        }
+        .costos-section,
+        .utilidad-section {
+            padding: 10px;
+        }
+        .costo-item {
+            font-size: 0.8em;
+        }
+        .precio-real-input {
+            max-width: 110px;
+            padding: 5px 8px;
+        }
+        .action-btn {
+            padding: 8px;
+            font-size: 0.8em;
+        }
+    }
+    
+    /* MEJORAS ESPECÍFICAS PARA TABLET */
+    @media (min-width: 769px) and (max-width: 1024px) {
+        .recetas-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        .header {
+            align-items: center;
+        }
+    }
+    
+    /* MEJORAS PARA PANTALLAS GRANDES */
+    @media (min-width: 1400px) {
+        .recetas-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -512,20 +569,18 @@
                     </a>
                 </div>
 
-                <div class="navigation-links">
-                    <a href="{{ url_for('dashboard') }}" class="btn-secondary">🏠 Volver al Dashboard</a>
-                </div>
+                
         <!-- 🆕 BARRA DE BÚSQUEDA Y FILTROS (ACTUALIZADA) -->
-        <div style="display: flex; flex-wrap: wrap; gap: 15px; margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; align-items: center;">
-            <div style="flex: 1; min-width: 250px;">
-                <form method="GET" action="{{ url_for('recetas') }}" style="display: flex; gap: 10px;">
+        <div class="barra-filtros">
+            <div class="buscador-wrapper">
+                <form method="GET" action="{{ url_for('recetas') }}" class="buscador-form">
                     <input type="hidden" name="estado" value="{{ estado }}">
                     <input type="text" id="buscadorRecetas" name="busqueda" 
                         placeholder="🔍 Buscar recetas por nombre..." 
                         value="{{ busqueda or '' }}"
-                        style="flex: 1; padding: 10px 15px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
-                    <button type="submit" class="btn" style="background: #667eea; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">
-                        Buscar
+                        class="buscador-input">
+                    <button type="submit" class="buscador-btn" title="Buscar">
+                        <i class="fas fa-search"></i>
                     </button>
                     {% if busqueda %}
                     <a href="{{ url_for('recetas', estado=estado) }}" 
