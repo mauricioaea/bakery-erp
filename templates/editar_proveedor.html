@@ -1,10 +1,14 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editar Proveedor - Panadería</title>
-    <style>
+{% extends "layout_erp.html" %}
+
+{% block title %}Editar Proveedor{% endblock %}
+
+{% block extra_css %}
+<style>
+    .wrapper-editar_proveedor * {
+        /* Aislamiento preventivo */
+        box-sizing: border-box;
+    }
+    
         body {
             font-family: Arial, sans-serif;
             margin: 0;
@@ -99,15 +103,37 @@
             color: #155724;
             border: 1px solid #c3e6cb;
         }
-    </style>
-    {% include '_csrf_head.html' %}
-    <link href="{{ url_for('static', filename='css/responsive.css') }}" rel="stylesheet">
-</head>
-<body>
+        /* Ajustes para móvil en formularios */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 15px !important;
+            }
+            .header h1 {
+                font-size: 1.3em !important;
+                margin-bottom: 10px !important;
+            }
+            .header > div {
+                width: 100%;
+            }
+            .back-btn {
+                width: 100%;
+                text-align: center;
+                display: block;
+            }
+        }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wrapper-editar_proveedor">
     <div class="header">
         <h1>✏️ Editar Proveedor</h1>
         <div>
-            <a href="{{ url_for('proveedores') }}" class="back-btn">← Volver a Proveedores</a>
+            <a href="{{ url_for('proveedores') }}" class="back-btn">
+                <i class="fas fa-arrow-left me-1"></i> Volver a Proveedores
+            </a>
         </div>
     </div>
 
@@ -185,5 +211,5 @@
             </form>
         </div>
     </div>
-</body>
-</html>
+</div>
+{% endblock %}

@@ -170,3 +170,16 @@
         margin-bottom: 0 !important;
     }
 }
+/* ============================================================
+   FIX: Botón de Inicio (Casita) en el Navbar
+   ============================================================ */
+.btn-home {
+    width: 38px !important;
+    height: 38px !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    padding: 0 !important;
+    border-radius: 8px !important;
+    flex: 0 0 auto !important;
+}
