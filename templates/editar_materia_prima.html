@@ -1,10 +1,14 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editar Materia Prima - Panadería</title>
-    <style>
+{% extends "layout_erp.html" %}
+
+{% block title %}Editar Materia Prima{% endblock %}
+
+{% block extra_css %}
+<style>
+    .wrapper-editar_materia_prima * {
+        /* Aislamiento preventivo */
+        box-sizing: border-box;
+    }
+    
         body {
             font-family: Arial, sans-serif;
             margin: 0;
@@ -160,11 +164,12 @@
             margin-bottom: 20px;
             border-left: 4px solid #ffc107;
         }
-    </style>
-    {% include '_csrf_head.html' %}
-    <link href="{{ url_for('static', filename='css/responsive.css') }}" rel="stylesheet">
-</head>
-<body>
+    
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wrapper-editar_materia_prima">
     <div class="header">
         <h1>✏️ Editar Materia Prima</h1>
         <div>
@@ -354,5 +359,5 @@
             precioInput.addEventListener('input', calcularNuevaCompra);
         });
     </script>
-</body>
-</html>
+</div>
+{% endblock %}
