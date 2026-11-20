@@ -140,6 +140,40 @@
             padding: 5px;
             border: 1px dashed #000;
         }
+
+            /* ============================================================
+       AJUSTES PARA PANTALLA MÓVIL (no afecta la impresión)
+       ============================================================ */
+    @media screen and (max-width: 768px) {
+        body {
+            padding: 10px !important;
+            font-size: 12px !important;
+        }
+        .receipt {
+            width: 100% !important;
+            max-width: 100% !important;
+            padding: 15px !important;
+            margin: 0 auto !important;
+            box-sizing: border-box !important;
+        }
+        /* Ajustar tablas si hay */
+        table {
+            width: 100% !important;
+            font-size: 11px !important;
+        }
+        /* Botones de acción en móvil */
+        .no-print {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .no-print a, .no-print button {
+            width: 100%;
+            text-align: center;
+            padding: 10px;
+        }
+    }
     </style>
     {% include '_csrf_head.html' %}
     <link href="{{ url_for('static', filename='css/responsive.css') }}" rel="stylesheet">
