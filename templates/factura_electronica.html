@@ -1,10 +1,14 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Factura Electrónica - {{ venta.id }}</title>
-    <style>
+{% extends "layout_erp.html" %}
+
+{% block title %}Factura Electronica{% endblock %}
+
+{% block extra_css %}
+<style>
+    .wrapper-factura_electronica * {
+        /* Aislamiento preventivo */
+        box-sizing: border-box;
+    }
+    
         /* Estilos optimizados para impresión térmica/factura */
         @media print {
             @page {
@@ -20,7 +24,8 @@
             .no-print { display: none; }
         }
         
-        body {
+        /* AISLAMIENTO: La factura solo afecta a su propio wrapper, NO al body global */
+        .wrapper-factura_electronica {
             font-family: Arial, sans-serif;
             max-width: 80mm;
             margin: 0 auto;
@@ -101,11 +106,58 @@
             margin-top: 10px;
             color: #444;
         }
-    </style>
-    {% include '_csrf_head.html' %}
-    <link href="{{ url_for('static', filename='css/responsive.css') }}" rel="stylesheet">
-</head>
-<body onload="window.print()">
+
+            /* ============================================================
+           AJUSTES RESPONSIVE (Pantalla)
+           ============================================================ */
+        
+        /* 1. En escritorio, la factura ocupa el 100% del contenedor */
+        .wrapper-factura_electronica {
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow-x: visible !important; /* No ocultar, dejar que el layout fluya */
+        }
+
+        .factura-container {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 auto !important;
+        }
+
+        /* 2. En móvil, permitimos el scroll horizontal */
+        @media screen and (max-width: 768px) {
+            .wrapper-factura_electronica {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            .factura-container {
+                min-width: 600px !important; 
+            }
+            .no-print {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+
+        /* 3. En impresión, todo vuelve a la normalidad */
+        @media print {
+            .container {
+                overflow-x: visible !important;
+                padding: 0 !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .factura-container {
+                min-width: 100% !important;
+            }
+        }
+    
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wrapper-factura_electronica">
     <div class="header">
         <div class="empresa">{{ config.nombre_empresa }}</div>
         <div class="nit">NIT: {{ config.nit_empresa }}</div>
@@ -214,5 +266,5 @@
         <button onclick="descargarXMLFactura({{ venta.id }})" class="btn btn-success">📄 Descargar XML</button>
         <button onclick="window.close()" class="btn btn-secondary">❌ Cerrar</button>
     </div>
-</body>
-</html>
+</div>
+{% endblock %}
