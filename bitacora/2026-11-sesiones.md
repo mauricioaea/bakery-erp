@@ -1396,5 +1396,48 @@ Se ejecutó `pg_dump` de seguridad (`backup_pre_dts_bajas_16nov.backup`) y un sc
 - **DTs críticas abiertas:** 0. **DTs medias abiertas:** 1 (DT-Fase G-Responsive).
 - **DTs BAJAS abiertas:** 1 (E-6, mojibake en commits).
 - **Próxima tarea:** DT-Fase G-Responsive (auditoría visual móvil).
+
+
+
+Sesión 20 Nov — DT-Fase G-Responsive (Parte 2: Migración Masiva)
+Commits: a8b0374 a 829cd26 (20 commits). Pusheados a origin/main.
+Objetivo: Migrar los 37 templates "fáciles" (sin <nav> propio) al nuevo layout_erp.html y estandarizar el diseño responsivo en toda la aplicación.
+
+1. Estandarización del Layout Maestro (layout_erp.html)
+Navbar rediseñado: Se ajustó el tamaño del botón de la casita (Inicio) para que no se estire en escritorio (clase .btn-home). Se eliminó un botón verde duplicado que rompía la estética.
+
+Dependencias globales: Se eliminó la carga duplicada de Bootstrap en varios templates y se agregó Chart.js globalmente para que todos los reportes con gráficos funcionen sin problemas.
+
+Limpieza: Se eliminaron los botones de "Volver al Dashboard" en los listados y formularios (la casita del navbar ya cumple esa función). En formularios de edición/creación, el botón de volver al listado se mantuvo, pero se cambió el emoji ← por el ícono de FontAwesome.
+
+2. Fórmula de Migración (Los 37 templates)
+Para cada template se aplicó la técnica de aislamiento de CSS:
+
+Se envolvió el contenido en un <div class="wrapper-[nombre]">.
+
+El CSS específico del template se movió al bloque {% block extra_css %}.
+
+Se cambió el selector body { ... } por .wrapper-[nombre] { ... } para no romper el layout global.
+
+Estandarización de buscadores: Se reemplazó el botón de texto "Buscar" por un ícono de lupa (<i class="fas fa-search"></i>) integrado en un input-group de Bootstrap, ahorrando espacio visual en móvil.
+
+3. Fixes Críticos de Raíz
+factura_electronica.html: El CSS de la factura tenía un body { max-width: 80mm; } que comprimía toda la aplicación y superponía el sidebar. Se aisló moviendo los estilos al .wrapper-factura_electronica.
+
+recibo_pos.html: Se agregó un @media screen para adaptar el recibo a móvil sin romper la impresión térmica (@media print).
+
+ventas_avanzado.html: Se corrigió un error de sintaxis en el bloque de scripts que impedía que se renderizaran los gráficos y que funcionara el selector de fechas.
+
+4. Nuevas DTs Anotadas
+DT-BAJA-Tabla-Mantenimientos: La tabla en mantenimientos.html presenta problemas menores de desbordamiento en móvil. Revisar en Fase G.
+
+DT-BAJA-Auditar-configurar_stock: Verificar si configurar_stock.html es un template huérfano (no referenciado en app.py).
+
+Estado al cierre
+Fase G (Responsive): 🟡 37 templates fáciles migrados y pulidos. Faltan los 11 templates con <nav> propio (Fase 4).
+
+Working tree: limpio (post commit 829cd26).
+
+Próxima tarea: Migrar los 11 templates difíciles con <nav> propio (empezando por punto_venta.html).
 ---
 
