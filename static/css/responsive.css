@@ -137,19 +137,16 @@
    FIX: Tablas en móvil (para templates migrados a layout_erp)
    ============================================================ */
 @media (max-width: 768px) {
-    /* Aplica a cualquier tabla dentro de un wrapper de template migrado */
-    .table-responsive,
-    [class*="-wrapper"] table {
-        display: block;
-        width: 100%;
+    /* Contenedor que permite el scroll */
+    [class*="-wrapper"] .container {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
+        padding-bottom: 15px;
     }
     
-    /* Si la tabla no tiene table-responsive, igual le damos scroll */
-    [class*="-wrapper"] .table:not(.table-responsive) {
-        display: block;
-        overflow-x: auto;
+    /* Tablas con ancho mínimo para forzar el scroll */
+    [class*="-wrapper"] table {
+        min-width: 600px;
         white-space: nowrap;
     }
 }
