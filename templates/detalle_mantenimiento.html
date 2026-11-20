@@ -1,10 +1,14 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detalle de Mantenimiento</title>
-    <style>
+{% extends "layout_erp.html" %}
+
+{% block title %}Detalle Mantenimiento{% endblock %}
+
+{% block extra_css %}
+<style>
+    .wrapper-detalle_mantenimiento * {
+        /* Aislamiento preventivo */
+        box-sizing: border-box;
+    }
+    
         body {
             font-family: 'Arial', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -115,16 +119,44 @@
             .header { flex-direction: column; gap: 10px; text-align: center; }
             .actions { justify-content: center; }
         }
-    </style>
-    {% include '_csrf_head.html' %}
-    <link href="{{ url_for('static', filename='css/responsive.css') }}" rel="stylesheet">
-</head>
-<body>
+
+            /* Ajustes para móvil */
+        @media (max-width: 768px) {
+            .header {
+                padding: 15px !important;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            .header h1 {
+                font-size: 1.3em !important;
+                margin-bottom: 0 !important;
+            }
+            .header .btn {
+                width: 100%;
+                text-align: center;
+            }
+            .actions {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .actions .btn {
+                width: 100%;
+                text-align: center;
+            }
+        }
+    
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wrapper-detalle_mantenimiento">
     <div class="container">
         <div class="header">
             <h1>🔍 Detalle de Mantenimiento</h1>
-            <a href="{{ url_for('listar_mantenimientos', activo_id=mantenimiento.activo_fijo_id) }}" class="btn btn-secondary">← Volver</a>
-        </div>
+            <a href="{{ url_for('listar_mantenimientos', activo_id=mantenimiento.activo_fijo_id) }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Volver
+            </a>
 
         <!-- Activo relacionado -->
         <div style="background: #e8f4fd; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
@@ -171,9 +203,13 @@
         </div>
 
         <div class="actions">
-            <a href="{{ url_for('listar_mantenimientos', activo_id=mantenimiento.activo_fijo_id) }}" class="btn btn-secondary">← Volver a lista</a>
-            <a href="{{ url_for('editar_activo', id=mantenimiento.activo_fijo_id) }}" class="btn btn-primary">✏️ Editar Activo</a>
+            <a href="{{ url_for('listar_mantenimientos', activo_id=mantenimiento.activo_fijo_id) }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Volver a lista
+            </a>
+            <a href="{{ url_for('editar_activo', id=mantenimiento.activo_fijo_id) }}" class="btn btn-primary">
+                <i class="fas fa-edit me-1"></i> Editar Activo
+            </a>
         </div>
     </div>
-</body>
-</html>
+</div>
+{% endblock %}
