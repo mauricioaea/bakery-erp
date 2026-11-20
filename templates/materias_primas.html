@@ -1,10 +1,14 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Materias Primas - Panadería</title>
-    <style>
+{% extends "layout_erp.html" %}
+
+{% block title %}Materias Primas{% endblock %}
+
+{% block extra_css %}
+<style>
+    .wrapper-materias_primas * {
+        /* Aislamiento preventivo */
+        box-sizing: border-box;
+    }
+    
         body {
             font-family: Arial, sans-serif;
             margin: 0;
@@ -220,31 +224,68 @@
             background-color: #fff3cd !important;
             color: #856404;
         }
-    </style>
-    {% include '_csrf_head.html' %}
-    <link href="{{ url_for('static', filename='css/responsive.css') }}" rel="stylesheet">
-</head>
-<body>
+        /* Ajuste de filtros en móvil */
+        @media (max-width: 768px) {
+            .input-group {
+                width: 100% !important;
+                min-width: 100% !important;
+            }
+            #filtroProveedor {
+                width: 100% !important;
+                margin-top: 10px;
+            }
+        }
+        @media (max-width: 768px) {
+            .input-group {
+                width: 100% !important;
+                min-width: 100% !important;
+            }
+            #filtroProveedor {
+                width: 100% !important;
+                margin-top: 10px;
+            }
+            
+            /* NUEVO: Ajuste del banner morado en móvil */
+            .header {
+                padding: 15px !important; /* Reduce el espacio interno */
+            }
+            .header h1 {
+                font-size: 1.3em !important; /* Reduce el tamaño del texto */
+                margin-bottom: 0 !important; /* Quita margen extra */
+            }
+        }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wrapper-materias_primas">
     <div class="header">
         <h1>📦 Gestión de Materias Primas</h1>
-        <div>
-            <a href="{{ url_for('dashboard') }}" class="back-btn">← Volver al Dashboard</a>
-        </div>
     </div>
 
     <div class="container">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
-        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-            <input type="text" id="buscadorMaterias" placeholder="🔍 Buscar por nombre, proveedor..." 
-                   style="padding: 10px 15px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; min-width: 300px;"
-                   onkeyup="filtrarMaterias()">
-            <select id="filtroProveedor" onchange="filtrarMaterias()" 
-                    style="padding: 10px 15px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
-                <option value="">Todos los proveedores</option>
-                {% for proveedor in proveedores %}
-                <option value="{{ proveedor.id }}">{{ proveedor.nombre }}</option>
-                {% endfor %}
-            </select>
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; width: 100%; max-width: 600px;">
+                
+                <!-- Buscador con Lupa Integrada -->
+                <div class="input-group" style="flex: 1; min-width: 250px;">
+                    <span class="input-group-text bg-white" style="border-right: none; border-radius: 8px 0 0 8px;">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" id="buscadorMaterias" class="form-control" placeholder="Buscar por nombre, proveedor..." 
+                           style="border-left: none; border-radius: 0 8px 8px 0; border-color: #ddd;"
+                           onkeyup="filtrarMaterias()">
+                </div>
+
+                <!-- Select de Proveedor -->
+                <select id="filtroProveedor" onchange="filtrarMaterias()" class="form-select" 
+                        style="flex: 1; min-width: 200px; border-radius: 8px; border: 2px solid #ddd; padding: 10px 15px;">
+                    <option value="">Todos los proveedores</option>
+                    {% for proveedor in proveedores %}
+                    <option value="{{ proveedor.id }}">{{ proveedor.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
         </div>
         <a href="{{ url_for('agregar_materia_prima') }}" class="btn">➕ Agregar Materia Prima</a>
     </div>
@@ -508,5 +549,5 @@
     }
 
 </script>
-</body>
-</html>
+</div>
+{% endblock %}

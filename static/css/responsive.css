@@ -153,3 +153,20 @@
         white-space: nowrap;
     }
 }
+/* ============================================================
+   FIX GLOBAL: Banners de encabezado en móvil
+   ============================================================ */
+@media (max-width: 768px) {
+    /* Reduce el padding y el tamaño de fuente de los headers */
+    .header, 
+    .page-header, 
+    .banner {
+        padding: 15px !important;
+    }
+    .header h1, 
+    .page-header h1, 
+    .banner h1 {
+        font-size: 1.4em !important;
+        margin-bottom: 0 !important;
+    }
+}
