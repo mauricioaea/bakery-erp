@@ -1,19 +1,19 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Proveedores - Panadería</title>
-    <style>
-        * {
-            box-sizing: border-box;
-        }
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background: #f8f9fa;
-        }
+{% extends "layout_erp.html" %}
+
+{% block title %}Proveedores{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Aislamiento: el reset solo aplica al wrapper, NO al navbar global */
+    .proveedores-wrapper * {
+        box-sizing: border-box;
+    }
+    .proveedores-wrapper {
+        font-family: Arial, sans-serif;
+        background: #f8f9fa;
+        padding: 20px;
+        min-height: 80vh;
+    }
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -209,16 +209,31 @@
             .search-box input, .search-box select { width: 100%; }
             .stats { grid-template-columns: repeat(2, 1fr); }
         }
+            /* Ajuste de filtros en móvil */
+        @media (max-width: 768px) {
+            .input-group {
+                width: 100% !important;
+                min-width: 100% !important;
+            }
+            #filtroEstado {
+                width: 100% !important;
+                margin-top: 10px;
+            }
+            /* Ajuste del banner en móvil (si no tienes la regla global) */
+            .header {
+                padding: 15px !important;
+            }
+            .header h1 {
+                font-size: 1.3em !important;
+            }
+        }
     </style>
-    {% include '_csrf_head.html' %}
-    <link href="{{ url_for('static', filename='css/responsive.css') }}" rel="stylesheet">
-</head>
-<body>
+{% endblock %}
+
+{% block content %}
+<div class="proveedores-wrapper">
     <div class="header">
         <h1>🏢 Gestión de Proveedores</h1>
-        <div class="header-actions">
-            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">← Dashboard</a>
-        </div>
     </div>
 
     <div class="container">
@@ -257,7 +272,15 @@
         <!-- 🛠️ Barra de herramientas -->
         <div class="toolbar">
             <div class="search-box">
-                <input type="text" id="buscarProveedor" placeholder="🔍 Buscar proveedor..." onkeyup="filtrarTabla()">
+                <!-- Buscador con Lupa Integrada -->
+                <div class="input-group" style="flex: 1; min-width: 250px;">
+                    <span class="input-group-text bg-white" style="border-right: none; border-radius: 8px 0 0 8px;">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" id="buscarProveedor" class="form-control" placeholder="Buscar proveedor..." 
+                           style="border-left: none; border-radius: 0 8px 8px 0; border-color: #ddd;"
+                           onkeyup="filtrarTabla()">
+                </div>
                 <select id="filtroEstado" onchange="filtrarTabla()">
                     <option value="todos">📋 Todos</option>
                     <option value="activos">✅ Activos</option>
@@ -370,5 +393,5 @@
             });
         }
     </script>
-</body>
-</html>
+</div> <!-- Cierra proveedores-wrapper -->
+{% endblock %}
