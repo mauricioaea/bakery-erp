@@ -1,10 +1,14 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Configurar Stock - {{ receta.nombre }}</title>
-    <style>
+{% extends "layout_erp.html" %}
+
+{% block title %}Configurar Stock{% endblock %}
+
+{% block extra_css %}
+<style>
+    .wrapper-configurar_stock * {
+        /* Aislamiento preventivo */
+        box-sizing: border-box;
+    }
+    
         body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
         .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .header { margin-bottom: 30px; border-bottom: 2px solid #667eea; padding-bottom: 20px; }
@@ -21,11 +25,38 @@
         .bajo { background: #fff3cd; color: #856404; }
         .medio { background: #cce7ff; color: #004085; }
         .optimo { background: #d4edda; color: #155724; }
-    </style>
-    {% include '_csrf_head.html' %}
-    <link href="{{ url_for('static', filename='css/responsive.css') }}" rel="stylesheet">
-</head>
-<body>
+    
+        /* Ajustes para móvil */
+    @media (max-width: 768px) {
+        .header {
+            padding: 15px !important;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .header h1 {
+            font-size: 1.3em !important;
+            margin-bottom: 10px !important;
+        }
+        .container {
+            padding: 15px !important;
+        }
+        /* Hacer que los botones del formulario ocupen todo el ancho */
+        form > div:last-child {
+            flex-direction: column;
+        }
+        form > div:last-child .btn,
+        form > div:last-child .btn-secondary {
+            width: 100%;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+    }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wrapper-configurar_stock">
     <div class="container">
         <div class="header">
             <h1>⚙️ Configurar Stock - {{ receta.nombre }}</h1>
@@ -78,11 +109,15 @@
                 <small>1.0 = normal, 1.5 = 50% más ventas, 0.8 = 20% menos ventas</small>
             </div>
 
-            <div style="display: flex; gap: 10px; margin-top: 30px;">
-                <button type="submit" class="btn">💾 Guardar Configuración</button>
-                <a href="{{ url_for('produccion_diaria') }}" class="btn btn-secondary">← Volver</a>
+            <div style="display: flex; gap: 10px; margin-top: 30px; flex-wrap: wrap;">
+                <button type="submit" class="btn">
+                    <i class="fas fa-save me-1"></i> Guardar Configuración
+                </button>
+                <a href="{{ url_for('produccion_diaria') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-1"></i> Volver a Producción
+                </a>
             </div>
         </form>
     </div>
-</body>
-</html>
+</div>
+{% endblock %}
