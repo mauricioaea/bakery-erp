@@ -9,6 +9,8 @@
 ---
 
 ▼▼▼ INICIO DEL BLOQUE DE SESIONES (AQUÍ SE AGREGA LA SESIÓN NUEVA ARRIBA DEL TODO) ▼▼▼
+**Sesión 20 Nov:** DT-Fase G-Responsive (Parte 2). Migración masiva de 37 templates fáciles al `layout_erp.html`. Se estandarizó el uso de lupa en buscadores, se eliminaron botones redundantes ("Volver al Dashboard"), se cargó Chart.js globalmente y se aisló el CSS de facturas/recibos para no romper el layout. Commits: `a8b0374` a `829cd26`.
+
 **Sesión 16 Nov:** DTs BAJAS de Fase C/E. C-3-resto: implementada feature de healthcheck (`/api/health`) + mapeo de 4 columnas al ORM. C-4, C-6, E-5: cerradas como falso positivo (columnas ya alineadas ORM ↔ BD). Commit: `34b449e`.
 **Sesión 15 Nov:** Cierre de DT-Fase F-I18N (traducciones cruzadas corregidas a mano), `docs/ESTRUCTURA_TENANT.md` creado (42 tablas), y DT-Fase F-BAK (81 archivos `.bak` movidos a `_BACKUP_BAKS`). Commits: `e2333cc`, `8f7e227`, `6ddcc91`.
 **Sesión 14 Nov:** Fase F (parte 2). 3 DTs cerradas: C-2 parcial (7 columnas muertas), C-5 (panaderia_id), C-3 parcial (idioma en DDL). Bug preexistente (bloque vacío en crear_tablas_en_orden) y bug del recibo POS (moneda hardcodeada) fixeados. Test de moneda con decimales (florín ANG) exitoso. Commits: `179fb0b`, `d8f703d`, `34dbc84`.
@@ -48,7 +50,7 @@
 
 ### 📋 Próximos pasos
 
-1. **DT-Fase G-Responsive** (🟡 Media). Auditoría de responsividad del frontend (POS, Dashboard, Reportes). Bloqueante para producción (~2-3 h).
+1. **DT-Fase G-Responsive (Parte 3)** (🟡 Media). Migrar los 11 templates restantes que tienen `<nav>` propio (POS, productos externos, gestión de clientes, etc.). Bloqueante para producción (~2-3 h).
 2. **Fase G — Dockerización** (~22-32 h).
 ▲▲▲ FIN DE LA SECCIÓN 1 ▲▲▲
 
@@ -141,6 +143,12 @@
 ▼▼▼ INICIO DE LA SECCIÓN 6 ▼▼▼
 ## 6️⃣ Últimos commits (AQUÍ SE AGREGA EL COMMIT NUEVO ARRIBA DEL TODO)
 ```text
+829cd26 feat(responsive): ajustes finales en editar_materia_prima y factura
+c91fd84 feat(responsive): optimizar suscripcion_vencida para movil
+7eb52b9 fix(responsive): aislar CSS de factura_electronica para no romper el layout global
+b4a76db fix(responsive): cargar Chart.js globalmente en layout y corregir sintaxis en ventas_avanzado
+...
+34b449e feat(saas): implementar healthcheck y control de versión (DT-Fase C-3-resto)
 34b449e feat(saas): implementar healthcheck y control de versión (DT-Fase C-3-resto)
 6ddcc91 chore(gitignore): agregar _BACKUP_BAKS/ a la lista de ignorados
 8f7e227 docs(fase-f): agregar docs/ESTRUCTURA_TENANT.md
@@ -220,8 +228,10 @@ Prioridad	DT	Descripción
 
 🟡 DTs BAJAS Fase F pendientes (AQUÍ SE AGREGA LO NUEVO DEBAJO)
 Prioridad	DT	Descripción	Estimación
-🟡 Media	DT-Fase G-Responsive	Auditoría de responsividad del frontend (POS, Dashboard, Reportes). Bloqueante para producción.	~2-3 h
-🟢 BAJA	DT-Fase E-6	Mojibake en commit messages (usar VS Code para guardar el _commit_msg.txt en UTF-8).	~5 min
+🟡 Media | DT-Fase G-Responsive (Parte 3) | Migrar los 11 templates restantes con `<nav>` propio (POS, productos externos, etc.). | ~2-3 h |
+🟢 BAJA | DT-BAJA-Tabla-Mantenimientos | La tabla en `mantenimientos.html` se desborda en móvil. Revisar en Fase G. | ~30 min |
+🟢 BAJA | DT-BAJA-Auditar-configurar_stock | Verificar si `configurar_stock.html` es un template huérfano (no referenciado en `app.py`). | ~15 min |
+🟢 BAJA | DT-Fase E-6 | Mojibake en commit messages (usar VS Code para guardar el _commit_msg.txt en UTF-8). | ~5 min |
 🟢 BAJA	DT-Fase E-6	Mojibake en commit messages (CMD).	~5 min
 🟢 BAJA	DT-nueva-BAJA-F2.6	Post-Docker: auditar WSGI basicConfig.	~30 min
 🟢 BAJA	DT-unificar-productos-populares	Unificar _obtener_datos_productos_populares.	~2-3 h
@@ -389,7 +399,9 @@ C — Auditoría de BD	information_schema en tenant_1 vs tenant_27, modelos vs B
 D — Sincronización + DT abiertas	Script SQL para alinear tenants, resolver DTs	~8-10 h	✅ 11 Nov noche
 E — Tenant virgen	tenant_34, flujo login → POS → venta → cierre → reporte	~2 h	✅ 12 Nov (tarde)
 F — Documentación y limpieza	docs/ESTRUCTURA_TENANT.md, eliminar código huérfano, DTs BAJAS	~6-8 h	🟡 Parte 1 y 2 cerradas (13-14 Nov) — continuación pendiente
-G — Dockerización	requirements.txt completo, .mo commiteados, .env.example, Dockerfile + docker-compose.yml	~22-32 h	⏸️ Pendiente
+F — Documentación y limpieza | ... | ~6-8 h | 🟡 Parte 1 y 2 cerradas (13-14 Nov) — continuación pendiente |
+G — Responsive | Auditoría y migración al `layout_erp.html`. 37 templates fáciles migrados (✅ 20 Nov). Faltan 11 templates con `<nav>` propio. | ~2-3 h | 🟡 En progreso (Parte 3 pendiente) |
+| G — Dockerización | requirements.txt completo, .mo commiteados, .env.example, Dockerfile + docker-compose.yml | ~22-32 h | ⏸️ Pendiente |
 ▲▲▲ FIN DE LA SECCIÓN 9 ▲▲▲			
 ▼▼▼ INICIO DE LA SECCIÓN 10 ▼▼▼
 
@@ -432,11 +444,11 @@ DT críticas abiertas	0
 DT medias abiertas	0
 Fase F (continuación)	✅ 15 Nov — DT-Fase F-I18N cerrada (commit e2333cc) + docs/ESTRUCTURA_TENANT.md (8f7e227) + DT-Fase F-BAK cerrada (6ddcc91)
 DTs BAJAS C/E (16 Nov)	✅ 16 Nov — C-3-resto implementada como feature (34b449e). C-4, C-6, E-5 cerradas como falso positivo.
-
+Fase G-Responsive (Parte 2)	✅ 20 Nov — 37 templates fáciles migrados a `layout_erp.html`. Estandarización de lupa, Chart.js global y aislamiento de CSS.
 ...
-DT bajas abiertas	~1: E-6 (mojibake en commits, se resuelve usando VS Code)
-Siguiente tarea	DT-Fase G-Responsive (auditoría móvil)
-Working tree	limpio (post commit 34b449e)
+DT bajas abiertas	~3: E-6, Tabla-Mantenimientos, Auditar-configurar_stock.
+Siguiente tarea	Fase G-Responsive (Parte 3): migrar los 11 templates con `<nav>` propio.
+Working tree   limpio (post commit 829cd26)
 
 Fase actual	Fase F (parte 1 cerrada, parte 2 cerrada, continuación pendiente)
 Dockerización	Fase G, ~22-32 h (post Fase F parte 2)
@@ -449,7 +461,7 @@ Dockerización	Fase G, ~22-32 h (post Fase F parte 2)
 📞 Cómo continuar en un chat nuevo
 Pegar este archivo como contexto inicial con esta instrucción:
 
-"Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el HANDOFF.md v9.22 con el contexto actual. Por favor actúa como instructor guiando paso a paso, con la metodología del HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/PowerShell Select-String, commit tras cada fix verificado. Al insertar bloques, muéstrame ANTES → DESPUÉS con número de línea exacto. Tú me das LUZ VERDE cuando los cambios estén 100% validados. Yo aplico los cambios en mi editor. Primera tarea: Fase F (parte 2) — continuación. Arrancar por DT-Fase F-I18N (strings sin _() en reportes.html) y después docs/ESTRUCTURA_TENANT.md. Empieza con diagnóstico de los strings sin _() en reportes.html y templates/secciones/."
+"Soy Mauricio, desarrollador de PanaderíaPro (Bakery ERP). Adjunto el HANDOFF.md v9.22 con el contexto actual. Por favor actúa como instructor guiando paso a paso, con la metodología del HANDOFF: un paso a la vez, diagnóstico antes de modificar, soluciones de raíz, verificación con psql/PowerShell Select-String, commit tras cada fix verificado. Al insertar bloques, muéstrame ANTES → DESPUÉS con número de línea exacto. Tú me das LUZ VERDE cuando los cambios estén 100% validados. Yo aplico los cambios en mi editor. "Primera tarea: Fase G-Responsive (Parte 3). Migrar los 11 templates restantes que tienen `<nav>` propio (punto_venta.html, productos_externos.html, gestion_clientes.html, etc.) al `layout_erp.html`. La estrategia es: borrar su navbar interno, borrar su CSS de navbar, y verificar que no se rompa nada. Empieza con diagnóstico de `punto_venta.html`."
 ▲▲▲ FIN DE LA SECCIÓN 12 ▲▲▲
 
 ▼▼▼ INICIO DE LA SECCIÓN 13 (AQUÍ SE ACTUALIZA EL ROADMAP) ▼▼▼
