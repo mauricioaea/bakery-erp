@@ -1,20 +1,28 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Producción - {{ receta.nombre }}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        .stock-suficiente { background-color: #d4edda; }
-        .stock-insuficiente { background-color: #f8d7da; }
-        .card-header { background-color: #f8f9fa; }
-        .breadcrumb { background-color: #e9ecef; }
-    </style>
-    {% include '_csrf_head.html' %}
-    <link href="{{ url_for('static', filename='css/responsive.css') }}" rel="stylesheet">
-</head>
-<body>
+{% extends "layout_erp.html" %}
+
+{% block title %}Producción - {{ receta.nombre }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .wrapper-produccion * {
+        /* Aislamiento preventivo */
+        box-sizing: border-box;
+    }
+
+    .wrapper-produccion .stock-suficiente {
+        background-color: #d4edda;
+    }
+    .wrapper-produccion .stock-insuficiente {
+        background-color: #f8d7da;
+    }
+    .wrapper-produccion .card-header {
+        background-color: #f8f9fa;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wrapper-produccion">
     <div class="container mt-4">
         <!-- Migas de pan -->
         <nav aria-label="breadcrumb">
@@ -41,7 +49,7 @@
             <h2>🍞 Producción: {{ receta.nombre }}</h2>
             <a href="{{ url_for('recetas') }}" class="btn btn-secondary">← Volver a Recetas</a>
         </div>
-        
+
         <!-- Información de la receta -->
         <div class="row mb-4">
             <div class="col-md-6">
@@ -106,7 +114,7 @@
                     <div class="row">
                         <div class="col-md-6">
                             <label for="cantidad" class="form-label">Cantidad a producir (unidades):</label>
-                            <input type="number" class="form-control" id="cantidad" name="cantidad" 
+                            <input type="number" class="form-control" id="cantidad" name="cantidad"
                                    value="{{ cantidad }}" min="1" required>
                             <div class="form-text">
                                 Unidades base de la receta: <strong>{{ receta.unidades_obtenidas }}</strong> unidades
@@ -146,8 +154,8 @@
             <ul class="mb-0">
                 {% for ingrediente in ingredientes_insuficientes %}
                 <li>
-                    <strong>{{ ingrediente.nombre }}:</strong> 
-                    Necesario {{ ingrediente.necesario|round(2) }}{{ ingrediente.unidad }}, 
+                    <strong>{{ ingrediente.nombre }}:</strong>
+                    Necesario {{ ingrediente.necesario|round(2) }}{{ ingrediente.unidad }},
                     Disponible {{ ingrediente.disponible|round(2) }}{{ ingrediente.unidad }}
                 </li>
                 {% endfor %}
@@ -156,38 +164,37 @@
         {% endif %}
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // Función para calcular y mostrar ingredientes
         function calcularIngredientes() {
             const cantidad = document.getElementById('cantidad').value;
             const recetaId = {{ receta.id }};
-            
+
             if (!cantidad || cantidad < 1) {
-                document.getElementById('ingredientes-container').innerHTML = 
+                document.getElementById('ingredientes-container').innerHTML =
                     '<p class="text-muted">Ingrese una cantidad válida</p>';
                 return;
             }
-            
+
             fetch(`/api/calcular_ingredientes/{{ receta.id }}?cantidad=${cantidad}`)
                 .then(response => response.json())
                 .then(ingredientes => {
                     const container = document.getElementById('ingredientes-container');
-                    
+
                     if (ingredientes.length === 0) {
                         container.innerHTML = '<p class="text-muted">No hay ingredientes para mostrar.</p>';
                         return;
                     }
-                    
+
                     // Calcular peso total y factor de escala
                     const pesoBase = {{ receta.peso_total_masa }};
                     const unidadesBase = {{ receta.unidades_obtenidas }};
                     const factorEscala = cantidad / unidadesBase;
                     const pesoTotal = pesoBase * factorEscala;
-                    
+
                     document.getElementById('peso-total').textContent = pesoTotal.toFixed(1);
                     document.getElementById('factor-escala').textContent = factorEscala.toFixed(2);
-                    
+
                     let html = `
                         <div class="table-responsive">
                             <table class="table table-bordered table-hover">
@@ -202,19 +209,19 @@
                                 </thead>
                                 <tbody>
                     `;
-                    
+
                     let todosSuficientes = true;
-                    
+
                     ingredientes.forEach(ing => {
                         const claseFila = ing.suficiente ? 'stock-suficiente' : 'stock-insuficiente';
-                        const estado = ing.suficiente ? 
-                            '<span class="badge bg-success">✅ Suficiente</span>' : 
+                        const estado = ing.suficiente ?
+                            '<span class="badge bg-success">✅ Suficiente</span>' :
                             '<span class="badge bg-danger">❌ Insuficiente</span>';
-                        
+
                         if (!ing.suficiente) {
                             todosSuficientes = false;
                         }
-                        
+
                         html += `
                             <tr class="${claseFila}">
                                 <td><strong>${ing.nombre}</strong></td>
@@ -225,13 +232,13 @@
                             </tr>
                         `;
                     });
-                    
+
                     html += `
                                 </tbody>
                             </table>
                         </div>
                     `;
-                    
+
                     // Actualizar estado del botón de confirmación
                     const btnConfirmar = document.getElementById('btn-confirmar');
                     if (!todosSuficientes) {
@@ -245,20 +252,20 @@
                         btnConfirmar.classList.remove('btn-secondary');
                         btnConfirmar.classList.add('btn-success');
                     }
-                    
+
                     container.innerHTML = html;
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    document.getElementById('ingredientes-container').innerHTML = 
+                    document.getElementById('ingredientes-container').innerHTML =
                         '<p class="text-danger">❌ Error al calcular ingredientes.</p>';
                 });
         }
-        
+
         // Calcular ingredientes al cargar la página y cuando cambia la cantidad
         document.addEventListener('DOMContentLoaded', calcularIngredientes);
         document.getElementById('cantidad').addEventListener('input', calcularIngredientes);
-        
+
         // Validar formulario antes de enviar
         document.getElementById('produccion-form').addEventListener('submit', function(e) {
             const cantidad = document.getElementById('cantidad').value;
@@ -267,18 +274,18 @@
                 alert('❌ Por favor ingrese una cantidad válida.');
                 return;
             }
-            
+
             const btnConfirmar = document.getElementById('btn-confirmar');
             if (btnConfirmar.disabled) {
                 e.preventDefault();
                 alert('❌ No hay stock suficiente para realizar esta producción.');
                 return;
             }
-            
+
             if (!confirm(`¿Está seguro de que desea producir ${cantidad} unidades de "${receta.nombre}"?`)) {
                 e.preventDefault();
             }
         });
     </script>
-</body>
-</html>
+</div>
+{% endblock %}
