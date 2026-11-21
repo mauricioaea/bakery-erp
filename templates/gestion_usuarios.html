@@ -299,7 +299,7 @@
                                                         title="Resetear contraseña">
                                                     <i class="fas fa-key"></i> Resetear
                                                 </button>
-                                                
+                                                                                                
                                                 <a href="{{ url_for('editar_usuario', usuario_id=usuario.id) }}" 
                                                     class="btn btn-outline-primary btn-sm" 
                                                     title="Editar información">
@@ -307,6 +307,11 @@
                                                 </a>
                                                 
                                                 {% if usuario.id != current_user.id %}
+                                                <a href="{{ url_for('gestionar_permisos', usuario_id=usuario.id) }}" 
+                                                    class="btn btn-outline-info btn-sm" 
+                                                    title="Gestionar permisos del usuario">
+                                                    <i class="fas fa-shield-alt"></i> Permisos
+                                                </a>
                                                 <button class="btn btn-outline-{{ 'danger' if usuario.activo else 'success' }} btn-sm" 
                                                         onclick="cambiarEstadoUsuario({{ usuario.id }}, '{{ usuario.username }}', {{ usuario.activo }})"
                                                         title="{{ 'Desactivar' if usuario.activo else 'Activar' }} usuario">
