@@ -74,6 +74,7 @@ databases_tenants/
 backup_final_20260630/
 backup_temp/
 _ARCHIVE_*/
+*.bak
 *.bak_*
 
 # Migraciones
@@ -96,6 +97,11 @@ cookies.txt
 server_output.txt
 warning_traceback.txt
 
+# =============================================
+# Carpetas anidadas generadas por accidente
+# =============================================
+templates/templates/
+
 # Excepcion: versionar scripts SQL de migraciones
 !migrations/sql/*.sql
 _*.py
@@ -107,4 +113,4 @@ _test_*.py
 !_test_tenant_schema.py
 !_migrar_tenants.py
 !_cleanup_tenants_huerfanos.py
-!db/schema_tenant_canonical.sql_BACKUP_BAKS/ 
+!db/schema_tenant_canonical.sql_BACKUP_BAKS/
