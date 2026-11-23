@@ -1,253 +1,165 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Productos Externos - Panadería</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        .stock-bajo {
-            background-color: #ffe6e6;
-        }
-        .stock-ok {
-            background-color: #e6ffe6;
-        }
-        
-        /* ===== RESPONSIVE DESIGN ===== */
-        
-        /* NAVBAR RESPONSIVE */
-        @media (max-width: 768px) {
-            .navbar-nav {
-                text-align: center;
-            }
-            
-            .navbar-text {
-                display: block;
-                text-align: center;
-                margin: 10px 0;
-            }
-            
-            .navbar .btn {
-                width: 100%;
-                margin-top: 10px;
-            }
-        }
+{% extends "layout_erp.html" %}
 
-        /* FORMULARIO RESPONSIVE */
-        @media (max-width: 768px) {
-            .card-body .row.g-3 {
-                margin: 0 -10px;
-            }
-            
-            .card-body .col-md-2,
-            .card-body .col-md-3,
-            .card-body .col-md-4 {
-                margin-bottom: 15px;
-            }
-            
-            .sticky-bottom {
-                position: relative !important;
-            }
-            
-            .sticky-bottom .bg-light {
-                background: transparent !important;
-                padding: 15px 0 !important;
-                border-top: 1px solid #dee2e6 !important;
-            }
-        }
+{% block title %}Productos Externos - Panadería{% endblock %}
 
-        /* TABLA RESPONSIVE */
-        @media (max-width: 992px) {
-            .table-responsive {
-                border: 1px solid #dee2e6;
-                border-radius: 0.375rem;
-            }
-            
-            .table thead {
-                display: none;
-            }
-            
-            .table tbody tr {
-                display: block;
-                margin-bottom: 1rem;
-                border: 1px solid #dee2e6;
-                border-radius: 0.375rem;
-                padding: 1rem;
-            }
-            
-            .table tbody td {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 0.75rem 0.5rem;
-                border: none;
-                border-bottom: 1px solid #f8f9fa;
-            }
-            
-            .table tbody td:last-child {
-                border-bottom: none;
-            }
-            
-            .table tbody td::before {
-                content: attr(data-label);
-                font-weight: bold;
-                color: #495057;
-                margin-right: 1rem;
-                min-width: 120px;
-            }
-            
-            .table tbody td .btn-group {
-                justify-content: flex-end;
-                width: 100%;
-            }
-        }
+{% block extra_css %}
+<style>
+    .wrapper-productos_externos * {
+        box-sizing: border-box;
+    }
 
-        /* MODALES RESPONSIVE */
-        @media (max-width: 576px) {
-            .modal-dialog {
-                margin: 0.5rem;
-            }
-            
-            .modal-content {
-                border-radius: 0.5rem;
-            }
-            
-            .modal-body .row.g-3 {
-                margin: 0 -5px;
-            }
-            
-            .modal-body .col-md-6,
-            .modal-body .col-md-4,
-            .modal-body .col-md-12 {
-                margin-bottom: 10px;
-            }
-        }
+    .wrapper-productos_externos .stock-bajo {
+        background-color: #ffe6e6;
+    }
+    .wrapper-productos_externos .stock-ok {
+        background-color: #e6ffe6;
+    }
 
-        /* MEJORAS PARA MÓVILES MUY PEQUEÑOS */
-        @media (max-width: 375px) {
-            .container {
-                padding-left: 10px;
-                padding-right: 10px;
-            }
-            
-            .card-body {
-                padding: 1rem;
-            }
-            
-            .btn-group-sm .btn {
-                padding: 0.25rem 0.5rem;
-                font-size: 0.775rem;
-            }
-            
-            .badge {
-                font-size: 0.7em;
-                padding: 0.35em 0.65em;
-            }
-        }
+    /* ===== RESPONSIVE DESIGN ===== */
 
-        /* BOTONES DE ACCIÓN EN TABLA RESPONSIVE */
-        @media (max-width: 992px) {
-            .btn-group {
-                flex-wrap: wrap;
-                gap: 5px;
-            }
-            
-            .btn-group .btn {
-                flex: 1;
-                min-width: 60px;
-            }
-            
-            .btn-group form {
-                flex: 1;
-            }
-            
-            .btn-group form .btn {
-                width: 100%;
-            }
+    /* FORMULARIO RESPONSIVE */
+    @media (max-width: 768px) {
+        .wrapper-productos_externos .card-body .row.g-3 {
+            margin: 0 -10px;
         }
+        .wrapper-productos_externos .card-body .col-md-2,
+        .wrapper-productos_externos .card-body .col-md-3,
+        .wrapper-productos_externos .card-body .col-md-4 {
+            margin-bottom: 15px;
+        }
+        .wrapper-productos_externos .sticky-bottom {
+            position: relative !important;
+        }
+        .wrapper-productos_externos .sticky-bottom .bg-light {
+            background: transparent !important;
+            padding: 15px 0 !important;
+            border-top: 1px solid #dee2e6 !important;
+        }
+    }
 
-        /* HEADER RESPONSIVE */
-        @media (max-width: 576px) {
-            h2 {
-                font-size: 1.5rem;
-            }
-            
-            .text-muted {
-                font-size: 0.9rem;
-            }
-            
-            .card-header h5 {
-                font-size: 1.1rem;
-            }
+    /* TABLA RESPONSIVE */
+    @media (max-width: 992px) {
+        .wrapper-productos_externos .table-responsive {
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
         }
+        .wrapper-productos_externos .table thead {
+            display: none;
+        }
+        .wrapper-productos_externos .table tbody tr {
+            display: block;
+            margin-bottom: 1rem;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            padding: 1rem;
+        }
+        .wrapper-productos_externos .table tbody td {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0.5rem;
+            border: none;
+            border-bottom: 1px solid #f8f9fa;
+        }
+        .wrapper-productos_externos .table tbody td:last-child {
+            border-bottom: none;
+        }
+        .wrapper-productos_externos .table tbody td::before {
+            content: attr(data-label);
+            font-weight: bold;
+            color: #495057;
+            margin-right: 1rem;
+            min-width: 120px;
+        }
+        .wrapper-productos_externos .table tbody td .btn-group {
+            justify-content: flex-end;
+            width: 100%;
+        }
+    }
 
-        /* ESTILOS ADICIONALES PARA MEJOR EXPERIENCIA MOBILE */
-        .mobile-friendly-table td[data-label] {
-            flex-direction: column;
-            align-items: flex-start;
+    /* MODALES RESPONSIVE */
+    @media (max-width: 576px) {
+        .wrapper-productos_externos .modal-dialog {
+            margin: 0.5rem;
         }
-        
-        .mobile-friendly-table td[data-label]::before {
-            margin-bottom: 0.5rem;
-            font-size: 0.875rem;
-            color: #6c757d;
+        .wrapper-productos_externos .modal-content {
+            border-radius: 0.5rem;
         }
+        .wrapper-productos_externos .modal-body .row.g-3 {
+            margin: 0 -5px;
+        }
+        .wrapper-productos_externos .modal-body .col-md-6,
+        .wrapper-productos_externos .modal-body .col-md-4,
+        .wrapper-productos_externos .modal-body .col-md-12 {
+            margin-bottom: 10px;
+        }
+    }
 
-        /* MEJORA PARA DROPDOWN EN NAVBAR MOBILE */
-        @media (max-width: 768px) {
-            .navbar-nav .dropdown-menu {
-                text-align: center;
-                background-color: #343a40;
-            }
-            
-            .navbar-nav .dropdown-item {
-                color: rgba(255,255,255,.75);
-            }
-            
-            .navbar-nav .dropdown-item:hover {
-                color: #fff;
-                background-color: rgba(255,255,255,.1);
-            }
+    /* MEJORAS PARA MÓVILES MUY PEQUEÑOS */
+    @media (max-width: 375px) {
+        .wrapper-productos_externos .container {
+            padding-left: 10px;
+            padding-right: 10px;
         }
-    </style>
-    {% include '_csrf_head.html' %}
-    <link href="{{ url_for('static', filename='css/responsive.css') }}" rel="stylesheet">
-</head>
-<body>
-    <!-- Barra de navegación -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="/dashboard">🍞 Panadería</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <div class="navbar-nav ms-auto">
-                    <a class="nav-link" href="/punto_venta">Punto de Venta</a>
-                    <a class="nav-link" href="/productos_externos">Productos Externos</a>
-                    
-                    <!-- DROPDOWN DE REPORTES -->
-                    <div class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="reportesDropdown" role="button" data-bs-toggle="dropdown">
-                            📊 Reportes
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/reporte_inventario_externo">📦 Inventario Externo</a></li>
-                            <li><a class="dropdown-item" href="/reporte_ventas_externas">💰 Ventas Externas</a></li>
-                            <li><a class="dropdown-item" href="/dashboard_externos">📈 Dashboard Externo</a></li>
-                        </ul>
-                    </div>
-                    <!-- FIN DEL DROPDOWN -->
-                    
-                    <a class="nav-link" href="/proveedores">Proveedores</a>
-                    <span class="navbar-text me-3">Hola, {{ session.username }}</span>
-                    <a class="btn btn-outline-light btn-sm" href="/logout">Cerrar Sesión</a>
-                </div>
-            </div>
-        </div>
-    </nav>
+        .wrapper-productos_externos .card-body {
+            padding: 1rem;
+        }
+        .wrapper-productos_externos .btn-group-sm .btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.775rem;
+        }
+        .wrapper-productos_externos .badge {
+            font-size: 0.7em;
+            padding: 0.35em 0.65em;
+        }
+    }
 
+    /* BOTONES DE ACCIÓN EN TABLA RESPONSIVE */
+    @media (max-width: 992px) {
+        .wrapper-productos_externos .btn-group {
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .wrapper-productos_externos .btn-group .btn {
+            flex: 1;
+            min-width: 60px;
+        }
+        .wrapper-productos_externos .btn-group form {
+            flex: 1;
+        }
+        .wrapper-productos_externos .btn-group form .btn {
+            width: 100%;
+        }
+    }
+
+    /* HEADER RESPONSIVE */
+    @media (max-width: 576px) {
+        .wrapper-productos_externos h2 {
+            font-size: 1.5rem;
+        }
+        .wrapper-productos_externos .text-muted {
+            font-size: 0.9rem;
+        }
+        .wrapper-productos_externos .card-header h5 {
+            font-size: 1.1rem;
+        }
+    }
+
+    /* ESTILOS ADICIONALES PARA MEJOR EXPERIENCIA MOBILE */
+    .wrapper-productos_externos .mobile-friendly-table td[data-label] {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .wrapper-productos_externos .mobile-friendly-table td[data-label]::before {
+        margin-bottom: 0.5rem;
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wrapper-productos_externos">
     <div class="container mt-4">
         <!-- ============================================= -->
         <!-- 🆕 ALERTA DE PRODUCTOS PRÓXIMOS A VENCER -->
@@ -641,7 +553,6 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // Datos de productos para JavaScript
         const productos = [
@@ -774,7 +685,6 @@
             const marca = row.dataset.marca?.toLowerCase() || '';
             const cat = row.dataset.categoria || '';
             const stock = parseInt(row.dataset.stock) || 0;
-            // ✅ FIX: dataset.stockMinimo (camelCase) mapea a data-stock-minimo
             const stockMinimo = parseInt(row.dataset.stockMinimo) || 0;
             
             let visible = true;
@@ -800,7 +710,6 @@
             }
             
             // Filtro por stock
-            // ✅ FIX: Separar correctamente "sin stock" (stock=0) de "stock bajo" (0 < stock <= stock_minimo)
             if (filtroStock === 'sin_stock' && stock !== 0) {
                 visible = false;
             }
@@ -853,6 +762,5 @@
         setTimeout(filtrarProductos, 500);
     });
     </script>
-
-</body>
-</html>
+</div>
+{% endblock %}
