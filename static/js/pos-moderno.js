@@ -502,7 +502,7 @@ function limpiarBusqueda() {
 // =============================================
 function agregarAlCarritoConCantidad(productoId) {
     const cantidadInput = document.getElementById('cantidad-' + productoId);
-    const cantidad = parseInt(cantidadInput.value);
+    const cantidad = parseInt(cantidadInput.value) || 1;
     
     const producto = todosProductos.find(p => p.id === productoId);
     
@@ -532,7 +532,7 @@ function agregarAlCarritoConCantidad(productoId) {
     }
 
     // Buscar si ya está en el carrito
-    const itemExistente = carrito.find(item => item.id === productoId);
+    const itemExistente = carrito.find(item => item.id === productoId && item.tipo === 'externo');
     
     if (itemExistente) {
         const cantidadTotal = itemExistente.cantidad + cantidad;
@@ -542,19 +542,20 @@ function agregarAlCarritoConCantidad(productoId) {
         }
         itemExistente.cantidad += cantidad;
     } else {
-        carrito.push({
+                carrito.push({
             id: producto.id,
             nombre: producto.nombre,
             precio: producto.precio,
             cantidad: cantidad,
-            stock_maximo: producto.stock_actual
+            stock_maximo: producto.stock_actual,
+            tipo: 'externo'
         });
     }
 
     actualizarCarrito();
     mostrarFeedbackAgregado(producto.nombre, cantidad);
     
-    // Resetear a 1 después de agregar
+    // Sincronizar input con la cantidad actual en el carrito (Opción B)
     cantidadInput.value = 1;
     
     // Enfocar siguiente input automáticamente
@@ -669,16 +670,22 @@ function actualizarCarrito() {
     if (subtotalElement) subtotalElement.textContent = `$${total.toLocaleString()}`;
     if (totalElement) totalElement.textContent = `$${total.toLocaleString()}`;
 
-    // Actualizar escritorio
+        // Actualizar escritorio
     carritoItems.innerHTML = html;
-    contadorCarrito.textContent = carrito.length;
+    
+    // 🆕 Calcular total de unidades (no de ítems)
+    const totalUnidades = carrito.reduce((sum, item) => sum + item.cantidad, 0);
+    
+    if (contadorCarrito) {
+        contadorCarrito.textContent = totalUnidades;
+    }
     
     // 🆕 Actualizar móvil
     if (carritoItemsMovil) {
         carritoItemsMovil.innerHTML = htmlMovil;
     }
     if (carritoContadorMobile) {
-        carritoContadorMobile.textContent = carrito.length;
+        carritoContadorMobile.textContent = totalUnidades;
     }
     if (totalMovil) { // 🔧 CORREGIDO: totalMovil en lugar de totalCarritoMovil
         totalMovil.textContent = `$${total.toLocaleString()}`;
