@@ -687,8 +687,13 @@ function actualizarCarrito() {
     if (carritoContadorMobile) {
         carritoContadorMobile.textContent = totalUnidades;
     }
-    if (totalMovil) { // 🔧 CORREGIDO: totalMovil en lugar de totalCarritoMovil
+    if (totalMovil) {
         totalMovil.textContent = `$${total.toLocaleString()}`;
+    }
+    // 🆕 Actualizar subtotal móvil (es el mismo que el total, porque IVA es 0%)
+    const subtotalMovil = document.getElementById('subtotalMovil');
+    if (subtotalMovil) {
+        subtotalMovil.textContent = `$${total.toLocaleString()}`;
     }
 
     // Habilitar/deshabilitar botón de pago

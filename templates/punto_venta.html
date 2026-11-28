@@ -17,16 +17,15 @@
         <div class="container-fluid">
             <a class="navbar-brand" href="/dashboard">
                 <i class="fas fa-bread-slice me-2"></i>
-                <strong>Panadería POS</strong>
+                <strong class="d-none d-md-inline">Panadería POS</strong>
             </a>
-            
             <div class="d-flex align-items-center">
+                <a class="btn btn-outline-light btn-sm me-2" href="{{ url_for('dashboard') }}" title="Volver a Inicio">
+                    <i class="fas fa-home"></i> <span class="d-none d-md-inline">Inicio</span>
+                </a>
+                
                 <!-- Dashboard en Tiempo Real -->
                 <div class="dashboard-rapido me-4">
-                     ventas
-                    </span>
-                    
-                    </span>
                     <span class="badge bg-info">
                         <i class="fas fa-clock"></i>
                         <span id="horaActual">--:--</span>
@@ -41,12 +40,12 @@
                 
                 <!-- 🆕 BOTÓN DE HISTORIAL DE VENTAS / ANULAR -->
                 <a class="btn btn-outline-warning btn-sm me-2" href="{{ url_for('ventas_del_dia') }}" target="_blank" title="Ventas del día y anulaciones">
-                    <i class="fas fa-history"></i> Ventas de Hoy
+                    <i class="fas fa-history"></i> <span class="d-none d-md-inline">Ventas de Hoy</span>
                 </a>
 
                 <!-- 🆕 BOTÓN DE BAJA DE INVENTARIO (Feature 30 Oct 2026) -->
                 <a class="btn btn-outline-danger btn-sm me-2" href="{{ url_for('baja_inventario') }}" target="_blank" title="Registrar baja de inventario (vencimiento o rotura)">
-                    <i class="fas fa-box-open"></i> Baja de Inventario
+                    <i class="fas fa-box-open"></i> <span class="d-none d-md-inline">Baja de Inventario</span>
                 </a>
 
                 <a class="btn btn-outline-light btn-sm" href="/logout">
@@ -289,7 +288,7 @@
         </button>
     </div>
 
-    <!-- Offcanvas del carrito para móvil -->
+       <!-- Offcanvas del carrito para móvil (ÚNICO) -->
     <div class="offcanvas offcanvas-end d-md-none" tabindex="-1" id="carritoOffcanvas" aria-labelledby="carritoOffcanvasLabel">
         <div class="offcanvas-header bg-success text-white">
             <h5 class="offcanvas-title" id="carritoOffcanvasLabel">
@@ -301,7 +300,6 @@
         <div class="offcanvas-body p-0 d-flex flex-column">
             <!-- Contenedor con scroll -->
             <div class="carrito-contenido flex-grow-1">
-                <!-- Contenido del carrito móvil -->
                 <div class="carrito-items-movil" id="carritoItemsMovil">
                     <div class="text-center py-4 text-muted">
                         <i class="fas fa-cart-plus fa-2x mb-2"></i>
@@ -309,101 +307,77 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Footer fijo -->
             <div class="carrito-footer">
+                <!-- Resumen: subtotal, IVA, total -->
+                <div class="d-flex justify-content-between mb-1">
+                    <span>Subtotal:</span>
+                    <span id="subtotalMovil">$0</span>
+                </div>
+                <div class="d-flex justify-content-between mb-1">
+                    <span>IVA (0%):</span>
+                    <span>$0</span>
+                </div>
+                <hr class="my-2">
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <strong>Total:</strong>
-                    <strong id="totalMovil">$0</strong>
+                    <strong>TOTAL:</strong>
+                    <strong id="totalMovil" class="text-success">$0</strong>
                 </div>
-                <div class="d-grid">
-                    <button class="btn btn-success btn-lg" onclick="iniciarProcesoVentaMejorado()">
-                        <i class="fas fa-credit-card me-2"></i>PROCESAR VENTA
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <div class="offcanvas offcanvas-end d-md-none" tabindex="-1" id="carritoOffcanvas" aria-labelledby="carritoOffcanvasLabel">
-        <div class="offcanvas-header bg-success text-white">
-            <h5 class="offcanvas-title" id="carritoOffcanvasLabel">
-                <i class="fas fa-shopping-cart me-2"></i>
-                Carrito de Compras
-            </h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-        </div>
-        <div class="offcanvas-body p-0 d-flex flex-column">
-            <!-- Contenedor con scroll -->
-            <div class="carrito-contenido flex-grow-1">
-                <!-- Contenido del carrito móvil -->
-                <div class="carrito-items-movil" id="carritoItemsMovil">
-                    <div class="text-center py-4 text-muted">
-                        <i class="fas fa-cart-plus fa-2x mb-2"></i>
-                        <p>El carrito está vacío</p>
+                <!-- Selector de método de pago (solo móvil) -->
+                <div class="metodos-pago-movil mt-2">
+                    <label class="form-label small text-muted mb-1">
+                        <i class="fas fa-credit-card me-1"></i> Método de Pago:
+                    </label>
+                    <div class="btn-group w-100 metodo-pago-container" role="group">
+                        <input type="radio" class="btn-check" name="metodoPagoMovil" id="efectivoMovil" value="efectivo" checked>
+                        <label class="btn btn-outline-success btn-sm" for="efectivoMovil">
+                            <i class="fas fa-money-bill-wave"></i> Efectivo
+                        </label>
+
+                        <input type="radio" class="btn-check" name="metodoPagoMovil" id="transferenciaMovil" value="transferencia">
+                        <label class="btn btn-outline-info btn-sm" for="transferenciaMovil">
+                            <i class="fas fa-university"></i> Transferencia
+                        </label>
                     </div>
                 </div>
-            </div>
-            
-            <!-- Footer fijo -->
-            <div class="carrito-footer">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <strong>Total:</strong>
-                    <strong id="totalMovil">$0</strong>
-                </div>
-                <div class="d-grid">
-                    <button class="btn btn-success btn-lg" onclick="iniciarProcesoVentaMejorado()">
-                        <i class="fas fa-credit-card me-2"></i>PROCESAR VENTA
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Modal de Confirmación de Venta -->
-    <div class="modal fade" id="confirmModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header bg-success text-white">
-                    <h5 class="modal-title">
-                        <i class="fas fa-check-circle me-2"></i>
-                        <span id="modalTitulo">Venta Exitosa</span>
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body text-center">
-                    <i class="fas fa-receipt fa-3x text-success mb-3"></i>
-                    <h5 id="modalMessage">Venta procesada correctamente</h5>
-                    <p class="mb-1"><strong>Total: </strong><span id="modalTotal" class="text-success">$0</span></p>
-                    <p class="mb-1"><strong>Documento: </strong><span id="modalDocumento">N/A</span></p>
-                    <p class="mb-1"><strong>Número: </strong><span id="modalNumero">N/A</span></p>
-                    <p class="mb-0"><strong>Método: </strong><span id="modalMetodo">Efectivo</span></p>
-                    
-                    <!-- INFORMACIÓN ADICIONAL PARA POS -->
-                    <div id="posInfo" class="mt-3 p-2 bg-light rounded" style="display: none;">
+                <!-- Toggle donación (solo móvil) -->
+                <div class="donacion-toggle-movil mt-2">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="modoDonacionMovil"
+                            onchange="toggleModoDonacionMovil()">
+                        <label class="form-check-label text-warning" for="modoDonacionMovil">
+                            <i class="fas fa-gift me-1"></i> Consumo Interno / Donación
+                        </label>
+                    </div>
+                    <div id="campoMotivoDonacionMovil" class="mt-2" style="display: none;">
+                        <input type="text" class="form-control form-control-sm"
+                            id="motivoDonacionMovil" placeholder="Motivo (opcional): Ej. Café empleados, Prueba de calidad, Donación...">
                         <small class="text-muted">
-                            <i class="fas fa-info-circle"></i>
-                            Documento equivalente POS - No válido como factura electrónica
+                            El total será $0 y los productos se descargarán del inventario.
                         </small>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-1"></i>
-                        Cerrar
+
+                <!-- Botones de acción -->
+                <div class="d-grid gap-2 mt-3">
+                    <button class="btn btn-success btn-lg" onclick="iniciarProcesoVentaMejorado()" id="btnPagarMovil">
+                        <i class="fas fa-credit-card me-2"></i> PROCESAR VENTA
                     </button>
-                    <button onclick="imprimirFactura()" class="btn btn-success">
-                        <i class="fas fa-print me-1"></i>
-                        <span id="btnImprimirTexto">Imprimir Recibo</span>
-                    </button>
-                    <button type="button" class="btn btn-outline-info" onclick="exportarXML()" id="btnExportarXML" style="display: none;">
-                        <i class="fas fa-file-export me-1"></i>
-                        Exportar XML
-                    </button>
+                    <div class="btn-group w-100">
+                        <button class="btn btn-outline-danger btn-sm" onclick="limpiarCarrito()">
+                            <i class="fas fa-trash me-1"></i> Limpiar
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="cargarProductos()">
+                            <i class="fas fa-sync me-1"></i> Actualizar
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    </div>      
 
     <!-- 🆕 SCRIPT PARA REINICIO AUTOMÁTICO -->
     <script>
@@ -1014,16 +988,25 @@ function mostrarNotificacion(mensaje, tipo = 'info') {
             }
         }
 
-        // VENTA ELECTRÓNICA
+       // VENTA ELECTRÓNICA
         async function procesarVentaElectronica() {
             if (!window.clienteActual) {
                 mostrarNotificacion('❌ No hay cliente seleccionado', 'error');
                 return;
             }
 
+            // 🆕 Sincronizar método de pago móvil con escritorio (si existe)
+            const metodoPagoMovil = document.querySelector('input[name="metodoPagoMovil"]:checked');
+            if (metodoPagoMovil) {
+                const radioEscritorio = document.querySelector(`input[name="metodoPago"][value="${metodoPagoMovil.value}"]`);
+                if (radioEscritorio) {
+                    radioEscritorio.checked = true;
+                }
+            }
+
             const metodoPago = document.querySelector('input[name="metodoPago"]:checked').value;
-            const esDonacion = document.getElementById('modoDonacion').checked;
-            const motivoDonacion = document.getElementById('motivoDonacion').value;
+            const esDonacion = document.getElementById('modoDonacion').checked || document.getElementById('modoDonacionMovil').checked;
+            const motivoDonacion = document.getElementById('motivoDonacion').value || document.getElementById('motivoDonacionMovil').value;
             
             try {
                 const response = await fetch('/registrar_venta', {
@@ -1061,7 +1044,9 @@ function mostrarNotificacion(mensaje, tipo = 'info') {
                     carrito = [];
                     window.clienteActual = null;
                     document.getElementById('modoDonacion').checked = false;
+                    document.getElementById('modoDonacionMovil').checked = false;
                     toggleModoDonacion();
+                    toggleModoDonacionMovil();
                     actualizarCarrito();
                     if (typeof actualizarCarritoMobile === 'function') {
                         actualizarCarritoMobile();
@@ -1077,9 +1062,17 @@ function mostrarNotificacion(mensaje, tipo = 'info') {
                 mostrarNotificacion('❌ Error al procesar la venta: ' + error.message, 'error');
             }
         }
-
         // VENTA POS
         async function procesarVentaPOS() {
+            // 🆕 Sincronizar método de pago móvil con escritorio (si existe)
+            const metodoPagoMovil = document.querySelector('input[name="metodoPagoMovil"]:checked');
+            if (metodoPagoMovil) {
+                const radioEscritorio = document.querySelector(`input[name="metodoPago"][value="${metodoPagoMovil.value}"]`);
+                if (radioEscritorio) {
+                    radioEscritorio.checked = true;
+                }
+            }
+            
             const metodoPago = document.querySelector('input[name="metodoPago"]:checked').value;
             const esDonacion = document.getElementById('modoDonacion').checked;
             const motivoDonacion = document.getElementById('motivoDonacion').value;
@@ -1263,6 +1256,44 @@ function mostrarNotificacion(mensaje, tipo = 'info') {
                 subtotalElement.classList.remove('text-warning');
                 
                 document.querySelectorAll('.metodo-pago-container .btn').forEach(btn => {
+                    btn.classList.remove('disabled');
+                });
+            }
+            
+        // 🆕 ACTUALIZAR VARIABLE GLOBAL DE DONACIÓN
+            window.esDonacion = esDonacion;
+        }
+
+        // 🆕 Toggle de donación móvil (sincroniza con el de escritorio)
+        function toggleModoDonacionMovil() {
+            const esDonacion = document.getElementById('modoDonacionMovil').checked;
+            const campoMotivo = document.getElementById('campoMotivoDonacionMovil');
+            const totalElement = document.getElementById('totalMovil');
+            const subtotalElement = document.getElementById('subtotalMovil');
+            
+            if (esDonacion) {
+                campoMotivo.style.display = 'block';
+                window.totalOriginal = calcularTotalCarrito();
+                subtotalElement.textContent = '$0';
+                totalElement.textContent = '$0';
+                totalElement.classList.add('text-warning');
+                subtotalElement.classList.add('text-warning');
+                
+                mostrarNotificacion('🔶 Modo donación activado - Total: $0', 'warning');
+                
+                document.querySelectorAll('.metodos-pago-movil .btn').forEach(btn => {
+                    btn.classList.add('disabled');
+                });
+                
+            } else {
+                campoMotivo.style.display = 'none';
+                const totalActual = window.totalOriginal || calcularTotalCarrito();
+                subtotalElement.textContent = `$${totalActual.toLocaleString()}`;
+                totalElement.textContent = `$${totalActual.toLocaleString()}`;
+                totalElement.classList.remove('text-warning');
+                subtotalElement.classList.remove('text-warning');
+                
+                document.querySelectorAll('.metodos-pago-movil .btn').forEach(btn => {
                     btn.classList.remove('disabled');
                 });
             }
@@ -1698,18 +1729,62 @@ function mostrarNotificacion(mensaje, tipo = 'info') {
                 } else {
                     mostrarNotificacion("❌ Producto no encontrado: " + codigo, "error");
                 }
-            })
-            .catch(function(error) {
-                console.error("Error:", error);
-                mostrarNotificacion("❌ Error al buscar producto", "error");
-            });
-    }
-
-    function limpiarCodigoBarras() {
-        document.getElementById('codigoBarrasInput').value = '';
-        codigoBarrasBuffer = '';
-        clearTimeout(timerCodigoBarras);
-    }
     </script>
+
+    <!-- ============================================= -->
+    <!-- FIX: FORZAR 2 COLUMNAS EN MÓVIL (POS)        -->
+    <!-- SOLO AFECTA A ESTE TEMPLATE                  -->
+    <!-- ============================================= -->
+    <style>
+        @media (max-width: 768px) {
+            /* 1. Forzar CSS Grid de 2 columnas en el contenedor (robusto) */
+            #productosContainer {
+                display: grid !important;
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 10px !important;
+                padding: 5px !important;
+            }
+
+            /* 2. Neutralizar el col-12 del JS y forzar que cada tarjeta ocupe su celda */
+            #productosContainer > div[class*="col-"] {
+                width: 100% !important;
+                max-width: 100% !important;
+                flex: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+
+            /* 3. Tarjetas cuadradas */
+            .producto-card-moderno {
+                display: flex !important;
+                flex-direction: column !important;
+                text-align: center !important;
+                align-items: center !important;
+                padding: 10px !important;
+                height: 100% !important;
+                min-height: 140px !important;
+                width: 100% !important;
+                border-radius: 12px !important;
+            }
+            
+            .producto-card-moderno .producto-imagen {
+                width: 50px !important;
+                height: 50px !important;
+                margin: 0 auto 8px auto !important;
+            }
+            
+            .producto-card-moderno .producto-nombre {
+                font-size: 0.8rem !important;
+                margin-bottom: 4px !important;
+                text-align: center !important;
+                line-height: 1.2 !important;
+            }
+            
+            .producto-card-moderno .producto-precio {
+                font-size: 0.95rem !important;
+                margin-bottom: 8px !important;
+            }
+        }
+    </style>
 </body>
 </html>
